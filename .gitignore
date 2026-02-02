@@ -154,3 +154,7 @@ Thumbs.db
 # OpenCode may store credentials - consider adding to gitignore
 # Uncomment if needed:
 # .opencode/
+
+# Arashi repos
+repos/
+
