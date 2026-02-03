@@ -4,152 +4,146 @@ Thank you for your interest in contributing to Arashi! This document outlines ou
 
 ## Overview
 
-Arashi uses a **two-repository workflow**:
+Arashi uses a **meta-repository structure**:
 - **This repo** (arashi-arashi): Specifications, planning, and design documents
-- **Main repo** (arashi): Implementation code
+- **Implementation repos**: Located in `repos/` directory (git worktrees)
+  - `repos/arashi/`: Main implementation repository
+
+**IMPORTANT**: The `repos/arashi/` directory is a separate git repository with its own branches and commits. Do NOT commit implementation code to the meta repo root.
+
+📖 **See [Implementation Workflow](docs/implementation-workflow.md) for detailed step-by-step guide.**
+
+## Quick Start
+
+For complete workflow documentation, see [docs/implementation-workflow.md](docs/implementation-workflow.md).
 
 ## Specs-First Development Workflow
 
-### 1. Specification Phase (This Repository)
+### 1. Specification Phase (Meta Repository)
 
 All features start with a specification in this repository.
 
 #### Step 1.1: Create Feature Branch
 ```bash
-git checkout -b feature/your-feature-name
+git checkout -b 001-feature-name
 ```
 
-#### Step 1.2: Establish or Review Constitution
-If this is your first contribution, review the project principles:
+**Branch naming**: Use `NNN-feature-name` format (e.g., `001-git-utility-lib`)
+
+#### Step 1.2: Create Specification Files
+
+Use `/speckit` commands in OpenCode to create specification:
+
 ```bash
-cat .specify/memory/constitution.md
+/speckit.specify  # Create spec.md
+/speckit.plan     # Create plan.md
+/speckit.tasks    # Create tasks.md
 ```
 
-The constitution guides all technical decisions and implementations.
+Manually create additional files as needed:
+- `research.md` - Research decisions
+- `data-model.md` - Entity definitions
+- `contracts/` - API contracts
 
-#### Step 1.3: Create Feature Specification
-Launch opencode and use the `/speckit.specify` command:
+This creates: `specs/001-feature-name/`
 
-```
-/speckit.specify
-
-[Describe your feature]
-Example:
-- What problem does it solve?
-- Who are the users?
-- What are the acceptance criteria?
-- Reference the design.md phases if applicable
-```
-
-This creates: `.specify/specs/00X-feature-name/spec.md`
-
-#### Step 1.4: Clarify Requirements (Optional but Recommended)
-Use `/speckit.clarify` to identify and resolve ambiguous areas:
-
-```
-/speckit.clarify
-```
-
-This helps catch unclear requirements before planning.
-
-#### Step 1.5: Create Implementation Plan
-Use `/speckit.plan` to generate a technical implementation plan:
-
-```
-/speckit.plan
-
-Specify tech stack and architecture decisions:
-- TypeScript/Bun
-- Which utility libraries are needed
-- Testing approach
-- Error handling strategy
-```
-
-This creates: `.specify/specs/00X-feature-name/plan.md`
-
-#### Step 1.6: Analyze Quality (Optional)
-Use `/speckit.analyze` to check consistency:
-
-```
-/speckit.analyze
-```
-
-#### Step 1.7: Generate Task Breakdown
-Use `/speckit.tasks` to create actionable tasks:
-
-```
-/speckit.tasks
-```
-
-This creates: `.specify/specs/00X-feature-name/tasks.md`
-
-#### Step 1.8: Commit Specification
+#### Step 1.3: Commit Specification
 ```bash
-git add .specify/specs/00X-feature-name/
-git commit -m "feat: add specification for your-feature
+git add specs/001-feature-name/
+git commit -m "feat: add specification for feature-name
 
-- Create spec with user stories and acceptance criteria
-- Generate implementation plan with TypeScript/Bun stack
-- Break down into actionable tasks
-- Follows constitution principles"
+- Create spec with N user stories and acceptance criteria
+- Generate implementation plan with Tech Stack
+- Document M research decisions
+- Break down into X tasks across Y phases
+- Follows constitutional principles"
+
+git push origin 001-feature-name
 ```
 
-#### Step 1.9: Create Pull Request
+#### Step 1.4: Create Meta Repo PR
 ```bash
-git push origin feature/your-feature-name
+gh pr create --head 001-feature-name --title "feat: Add Feature Name specification (Feature 001)" --base main
 ```
 
-Create a PR with:
-- Link to related issues
-- Summary of the feature
-- Key decisions made
-- Impact on existing features
+### 2. Implementation Phase (Implementation Repository)
 
-### 2. Implementation Phase (Main Repository)
+**CRITICAL**: Implementation happens in `repos/arashi/`, which is a **separate git repository**.
 
-Once the spec is approved, implement in the main arashi repository.
-
-#### Step 2.1: Reference the Spec
+#### Step 2.1: Switch to Implementation Repository
 ```bash
-cd ../../arashi  # or path to main repo
-git checkout -b feature/your-feature-name
+cd repos/arashi/
+git status  # Verify you're in the implementation repo (not meta repo!)
+git checkout -b 001-feature-name  # Same branch name as meta repo
 ```
 
-#### Step 2.2: Implement According to Spec
-Follow the implementation plan and task breakdown from the spec.
+#### Step 2.2: Implement According to Specification
 
-Key principles from constitution:
-- TypeScript strict mode
-- Comprehensive error handling with rollback
-- Test-driven development
-- Clear, informative CLI output
-- Platform-independent design
+Follow TDD approach:
+1. Write tests first (they should fail)
+2. Implement functionality  
+3. Run tests until they pass
+4. Refactor as needed
 
-#### Step 2.3: Link to Spec in Commits
 ```bash
-git commit -m "feat: implement your-feature
+# Run tests
+bun test
 
-Implements specification from arashi-arashi repo:
-https://github.com/corwinm/arashi-arashi/tree/feature/your-feature-name
-
-- Completed task 1.x
-- Completed task 2.x
-- Added tests with >80% coverage
-- Follows error handling principles"
+# Check coverage
+bun test --coverage
 ```
 
-#### Step 2.4: Create Implementation PR
-Create PR in main arashi repo with:
-- Link to specification PR/branch
-- Implementation details
-- Test coverage report
-- Screenshots/demos if applicable
+#### Step 2.3: Commit Implementation Regularly
+```bash
+git add src/ tests/
+git commit -m "feat: implement feature-name (Phase 3 - User Story 1)
 
-#### Step 2.5: Update Spec if Needed
-If implementation reveals issues with the spec:
-1. Document learnings
-2. Update spec in this repo
-3. Reference the implementation PR
+- Implement core functionality
+- Add N unit tests and M integration tests
+- All tests passing (X/X)
+
+Completed tasks: T008-T012
+Feature: 001-feature-name
+Test coverage: NN%
+Next: Phase 4"
+```
+
+#### Step 2.4: Push and Create Implementation PR
+```bash
+git push -u origin 001-feature-name
+
+gh pr create --head 001-feature-name --title "feat: Implement Feature Name (Phase 1-3)" --base main
+```
+
+**IMPORTANT**: Link to meta repo PR in the implementation PR description.
+
+### 3. Cleanup Phase (Meta Repository)
+
+#### Step 3.1: Remove Misplaced Files
+
+Common mistake: Implementation files accidentally created in meta repo.
+
+```bash
+cd ../../  # Back to meta repo root
+
+# If you see src/, tests/, package.json, tsconfig.json in meta repo:
+rm -rf src/ tests/ package.json tsconfig.json
+
+git add -A
+git commit -m "chore: remove wrongly placed implementation files from meta repo"
+```
+
+**Meta repo should ONLY contain**:
+- `specs/` - Feature specifications
+- `docs/` - Documentation
+- `repos/` - Links to implementation repos
+- `CONTRIBUTING.md`, `README.md`, `LICENSE`
+
+**Meta repo should NEVER contain**:
+- `src/` - Source code (goes in repos/arashi/)
+- `tests/` - Test files (goes in repos/arashi/)
+- `package.json` - Implementation config (goes in repos/arashi/)
+- `tsconfig.json` - TypeScript config (goes in repos/arashi/)
 
 ### 3. Review Process
 
@@ -293,34 +287,46 @@ bun run lint
 
 ## Project Structure
 
-### Specs Repository (This Repo)
+### Meta Repository (This Repo)
 ```
-.specify/
-├── memory/              # Project knowledge
-│   ├── constitution.md  # Governance principles
-│   └── design.md        # Technical design
-├── specs/               # Feature specifications
-│   └── 00X-feature/
-│       ├── spec.md      # Requirements
-│       ├── plan.md      # Implementation plan
-│       └── tasks.md     # Task breakdown
-├── templates/           # Spec-kit templates
-├── scripts/             # Automation
-└── examples/            # Reference examples
+arashi-arashi/
+├── specs/                        # Feature specifications
+│   └── 001-feature-name/
+│       ├── spec.md              # User stories, acceptance criteria
+│       ├── plan.md              # Technical implementation plan
+│       ├── research.md          # Research decisions (optional)
+│       ├── data-model.md        # Entity definitions (optional)
+│       ├── tasks.md             # Task breakdown with phases
+│       └── contracts/           # API contracts (optional)
+├── repos/                        # Implementation repositories (git worktrees)
+│   └── arashi/                  # Main implementation (SEPARATE REPO)
+├── docs/                         # Project documentation
+│   └── implementation-workflow.md  # Detailed workflow guide
+├── .specify/                     # Spec-kit configuration
+│   ├── memory/
+│   │   ├── constitution.md      # Governance principles
+│   │   └── design.md            # Technical design
+│   ├── templates/
+│   └── scripts/
+├── CONTRIBUTING.md               # This file
+└── README.md
 ```
 
-### Main Repository (arashi)
+### Implementation Repository (repos/arashi/)
 ```
-src/
-├── commands/            # CLI commands
-│   ├── init.ts
-│   ├── add.ts
-│   └── create.ts
-├── lib/                 # Utility libraries
-│   ├── git.ts
-│   ├── config.ts
-│   └── filesystem.ts
-└── types/               # TypeScript types
+repos/arashi/           # Separate git repository!
+├── src/
+│   ├── commands/       # CLI commands
+│   ├── lib/            # Utility libraries
+│   │   ├── git.ts
+│   │   └── errors.ts
+│   └── types/          # TypeScript types
+├── tests/
+│   ├── unit/           # Unit tests
+│   ├── integration/    # Integration tests
+│   └── helpers/        # Test utilities
+├── package.json        # Project configuration
+└── tsconfig.json       # TypeScript configuration
 ```
 
 ## Getting Help
