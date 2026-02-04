@@ -48,6 +48,7 @@ config-mgmt/
 - N/A (output-only utility library) (006-logger-utilities)
 - TypeScript (latest stable) + Bun (latest stable version) + @inquirer/prompts (confirm, select, checkbox, input) (007-prompt-utilities)
 - N/A (input-only utility library) (007-prompt-utilities)
+- File system (hook scripts in `.arashi/hooks/` directory, timeout configuration in `.arashi/config.json`) (001-github-issues)
 
 - Markdown documentation (N/A - no code implementation) + Git 2.5+ (subject of research) (002-git-worktree-research)
 
@@ -67,9 +68,9 @@ tests/
 Markdown documentation (N/A - no code implementation): Follow standard conventions
 
 ## Recent Changes
+- 001-github-issues: Added TypeScript (latest stable) + Bun (latest stable version for bundling and runtime) + Bun runtime (built-in APIs only - spawn, file system, path)
 - 007-prompt-utilities: Added TypeScript (latest stable) + Bun (latest stable version) + @inquirer/prompts (confirm, select, checkbox, input)
 - 006-logger-utilities: Added TypeScript (latest stable) + Bun (latest stable version) + chalk (colors), ora (spinners)
-- 005-filesystem-utilities: Added TypeScript (latest stable) + Bun (latest stable version for bundling and runtime) + Bun runtime (built-in APIs only - spawn, file system, path)
 
 
 <!-- MANUAL ADDITIONS START -->
