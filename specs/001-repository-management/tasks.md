@@ -136,19 +136,21 @@
 
 ### Tests for User Story 3
 
-- [ ] T046 [P] [US3] Unit test for detectSetupScript() with setup.sh present in repos/arashi/tests/unit/core/repository.test.ts
-- [ ] T047 [P] [US3] Unit test for detectSetupScript() with no setup script in repos/arashi/tests/unit/core/repository.test.ts
-- [ ] T048 [P] [US3] Unit test for detectSetupScript() with multiple script patterns in repos/arashi/tests/unit/core/repository.test.ts
-- [ ] T049 [P] [US3] Unit test for detectSetupScript() with custom patterns from config in repos/arashi/tests/unit/core/repository.test.ts
+- [X] T046 [P] [US3] Unit test for detectSetupScript() with setup.sh present in repos/arashi/tests/unit/core/repository.test.ts
+- [X] T047 [P] [US3] Unit test for detectSetupScript() with no setup script in repos/arashi/tests/unit/core/repository.test.ts
+- [X] T048 [P] [US3] Unit test for detectSetupScript() with multiple script patterns in repos/arashi/tests/unit/core/repository.test.ts
+- [X] T049 [P] [US3] Unit test for detectSetupScript() with custom patterns from config in repos/arashi/tests/unit/core/repository.test.ts
 
 ### Implementation for User Story 3
 
-- [ ] T050 [US3] Create detectSetupScript() function in repos/arashi/src/core/repository.ts
-- [ ] T051 [US3] Implement file existence check for setup.sh in repository root
-- [ ] T052 [US3] Support configurable script patterns (setup.sh, setup.bash, .arashi/setup.sh)
-- [ ] T053 [US3] Read script patterns from configuration using config utilities
-- [ ] T054 [US3] Return object with hasSetupScript flag and setupScriptPath
-- [ ] T055 [US3] Integrate detectSetupScript() into createRepositoryInfo()
+- [X] T050 [US3] Create detectSetupScript() function in repos/arashi/src/core/repository.ts
+- [X] T051 [US3] Implement file existence check for setup.sh in repository root
+- [X] T052 [US3] Support configurable script patterns (setup.sh, setup.bash, .arashi/setup.sh)
+- [X] T053 [US3] Read script patterns from configuration using config utilities
+- [X] T054 [US3] Return object with hasSetupScript flag and setupScriptPath
+- [X] T055 [US3] Integrate detectSetupScript() into createRepositoryInfo()
+
+**Note**: Added integration test in tests/integration/repository-integration.test.ts that verifies setup script detection across multiple repository types.
 
 **Checkpoint**: User Story 3 complete - setup script detection works
 
