@@ -55,6 +55,8 @@ config-mgmt/
 - No persistent storage required (discovery results in-memory), reads configuration from `.arashi/config.json` (001-repository-management)
 - YAML (GitHub Actions workflow configuration) (001-ci-workflow)
 - GitHub Actions artifact storage for compiled binaries (001-ci-workflow)
+- TypeScript (latest stable) with Bun (latest stable version for bundling and runtime) + Bun runtime (built-in APIs only - spawn, file system, path) (001-init-command)
+- File system (`.arashi/config.json` for configuration, `.arashi/hooks/` for hook templates) (001-init-command)
 
 - Markdown documentation (N/A - no code implementation) + Git 2.5+ (subject of research) (002-git-worktree-research)
 
@@ -74,12 +76,65 @@ tests/
 Markdown documentation (N/A - no code implementation): Follow standard conventions
 
 ## Recent Changes
+- 001-init-command: Added TypeScript (latest stable) with Bun (latest stable version for bundling and runtime) + Bun runtime (built-in APIs only - spawn, file system, path)
 - 001-ci-workflow: Added YAML (GitHub Actions workflow configuration) - Implementation complete: CI workflow with lint, test, build (3 platforms), and validate jobs
 - 001-repository-management: Added TypeScript (latest stable) with Bun (latest stable version for bundling and runtime)
-- 001-rollback-mechanism: Added TypeScript (latest stable) with Bun (latest stable version for bundling and runtime)
 
 
 <!-- MANUAL ADDITIONS START -->
+
+## Pre-Commit Quality Checks
+
+Before committing and pushing code changes, **ALWAYS** run the following checks to ensure CI will pass:
+
+### 1. Linting (Required)
+
+**Run linting before every commit:**
+
+```bash
+# For arashi repo
+cd repos/arashi
+bun run lint
+```
+
+This runs TypeScript type checking (`tsc --noEmit`) to catch type errors before CI. If linting fails:
+- Fix all TypeScript errors
+- Re-run `bun run lint` to verify fixes
+- Only commit when linting passes with no errors
+
+### 2. Tests (Required)
+
+**Run tests to ensure no regressions:**
+
+```bash
+# Run all tests
+bun test
+
+# Run specific test file
+bun test tests/integration/init.test.ts
+```
+
+All tests must pass before committing.
+
+### 3. Build (Recommended)
+
+**Verify the build succeeds:**
+
+```bash
+bun run build
+```
+
+This ensures the code compiles correctly for distribution.
+
+### Pre-Commit Checklist
+
+- [ ] `bun run lint` passes with no errors ✅ **REQUIRED**
+- [ ] `bun test` passes with all tests green ✅ **REQUIRED**
+- [ ] `bun run build` succeeds ✅ **RECOMMENDED**
+- [ ] Changes are focused and related
+- [ ] Commit message is clear and descriptive
+
+**Why?** Running these checks locally catches issues before CI runs, saving time and preventing failed builds in pull requests.
 
 ## Testing Best Practices
 
