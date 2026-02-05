@@ -83,6 +83,59 @@ Markdown documentation (N/A - no code implementation): Follow standard conventio
 
 <!-- MANUAL ADDITIONS START -->
 
+## Pre-Commit Quality Checks
+
+Before committing and pushing code changes, **ALWAYS** run the following checks to ensure CI will pass:
+
+### 1. Linting (Required)
+
+**Run linting before every commit:**
+
+```bash
+# For arashi repo
+cd repos/arashi
+bun run lint
+```
+
+This runs TypeScript type checking (`tsc --noEmit`) to catch type errors before CI. If linting fails:
+- Fix all TypeScript errors
+- Re-run `bun run lint` to verify fixes
+- Only commit when linting passes with no errors
+
+### 2. Tests (Required)
+
+**Run tests to ensure no regressions:**
+
+```bash
+# Run all tests
+bun test
+
+# Run specific test file
+bun test tests/integration/init.test.ts
+```
+
+All tests must pass before committing.
+
+### 3. Build (Recommended)
+
+**Verify the build succeeds:**
+
+```bash
+bun run build
+```
+
+This ensures the code compiles correctly for distribution.
+
+### Pre-Commit Checklist
+
+- [ ] `bun run lint` passes with no errors ✅ **REQUIRED**
+- [ ] `bun test` passes with all tests green ✅ **REQUIRED**
+- [ ] `bun run build` succeeds ✅ **RECOMMENDED**
+- [ ] Changes are focused and related
+- [ ] Commit message is clear and descriptive
+
+**Why?** Running these checks locally catches issues before CI runs, saving time and preventing failed builds in pull requests.
+
 ## Testing Best Practices
 
 When writing tests, follow these guidelines to ensure meaningful test coverage:
