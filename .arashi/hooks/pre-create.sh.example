@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+# Pre-Create Hook Example
+#
+# This hook runs BEFORE creating a worktree in each repository.
+# Use it to validate preconditions or prepare the environment.
+#
+# Environment variables:
+#   ARASHI_BRANCH     - Branch name being created
+#   ARASHI_REPO_NAME  - Repository name
+#   ARASHI_REPO_PATH  - Repository path
+#
+# Exit codes:
+#   0 - Success, continue with worktree creation
+#   Non-zero - Abort worktree creation for this repository
+
+set -e
+
+echo "Pre-create hook: Validating branch name..."
+
+# Example: Enforce branch naming convention
+if [[ ! "$ARASHI_BRANCH" =~ ^(feature|bugfix|hotfix)/.+ ]]; then
+  echo "Error: Branch name must start with feature/, bugfix/, or hotfix/"
+  exit 1
+fi
+
+echo "Pre-create hook: Validation passed"
+exit 0

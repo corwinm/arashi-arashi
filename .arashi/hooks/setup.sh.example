@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+# Setup Hook Example
+#
+# This hook runs during repository initialization (if auto_setup is enabled).
+# Use it to perform one-time setup tasks for newly discovered repositories.
+#
+# Environment variables:
+#   ARASHI_REPO_NAME    - Repository name
+#   ARASHI_REPO_PATH    - Repository path
+#
+# Exit codes:
+#   0 - Success
+#   Non-zero - Warning logged, does not abort operation
+
+set -e
+
+echo "Setup hook: Initializing repository..."
+
+cd "$ARASHI_REPO_PATH"
+
+# Example: Configure git settings
+git config core.hooksPath .arashi/hooks
+
+echo "Setup hook: Initialization complete"
+exit 0

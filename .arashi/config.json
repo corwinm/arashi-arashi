@@ -1,0 +1,12 @@
+{
+  "version": "1.0.0",
+  "repos_dir": "./repos",
+  "auto_setup": true,
+  "discovered_repos": {
+    "arashi": {
+      "path": "repos/arashi",
+      "default_branch": "main",
+      "worktrees": []
+    }
+  }
+}
