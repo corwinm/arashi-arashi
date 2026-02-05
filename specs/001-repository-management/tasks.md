@@ -164,23 +164,23 @@
 
 ### Tests for User Story 5
 
-- [ ] T056 [P] [US5] Define WorkspaceConfiguration interface in repos/arashi/src/core/repository.ts
-- [ ] T057 [P] [US5] Define RepositoryConfig interface in repos/arashi/src/core/repository.ts
-- [ ] T058 [P] [US5] Define ValidationResult interface in repos/arashi/src/core/repository.ts
-- [ ] T059 [P] [US5] Define ValidationOptions interface in repos/arashi/src/core/repository.ts
-- [ ] T060 [P] [US5] Unit test for validateWorkspace() with all repos present in repos/arashi/tests/unit/core/repository.test.ts
-- [ ] T061 [P] [US5] Unit test for validateWorkspace() with missing repos in repos/arashi/tests/unit/core/repository.test.ts
-- [ ] T062 [P] [US5] Unit test for validateWorkspace() with extra repos in repos/arashi/tests/unit/core/repository.test.ts
-- [ ] T063 [P] [US5] Unit test for validateWorkspace() reporting missing repo details in repos/arashi/tests/unit/core/repository.test.ts
+- [X] T056 [P] [US5] Define WorkspaceConfiguration interface in repos/arashi/src/core/repository.ts
+- [X] T057 [P] [US5] Define RepositoryConfig interface in repos/arashi/src/core/repository.ts
+- [X] T058 [P] [US5] Define ValidationResult interface in repos/arashi/src/core/repository.ts
+- [X] T059 [P] [US5] Define ValidationOptions interface in repos/arashi/src/core/repository.ts
+- [X] T060 [P] [US5] Unit test for validateWorkspace() with all repos present in repos/arashi/tests/unit/core/repository.test.ts
+- [X] T061 [P] [US5] Unit test for validateWorkspace() with missing repos in repos/arashi/tests/unit/core/repository.test.ts
+- [X] T062 [P] [US5] Unit test for validateWorkspace() with extra repos in repos/arashi/tests/unit/core/repository.test.ts
+- [X] T063 [P] [US5] Unit test for validateWorkspace() reporting missing repo details in repos/arashi/tests/unit/core/repository.test.ts
 
 ### Implementation for User Story 5
 
-- [ ] T064 [US5] Create validateWorkspace() function in repos/arashi/src/core/repository.ts
-- [ ] T065 [US5] Run discoverRepositories() to get actual repositories
-- [ ] T066 [US5] Parse WorkspaceConfiguration to get expected repositories
-- [ ] T067 [US5] Implement set-based comparison (present, missing, extra)
-- [ ] T068 [US5] Build ValidationResult with categorized repositories
-- [ ] T069 [US5] Implement isValid flag logic (true if no missing and no errors)
+- [X] T064 [US5] Create validateWorkspace() function in repos/arashi/src/core/repository.ts
+- [X] T065 [US5] Run discoverRepositories() to get actual repositories
+- [X] T066 [US5] Parse WorkspaceConfiguration to get expected repositories
+- [X] T067 [US5] Implement set-based comparison (present, missing, extra)
+- [X] T068 [US5] Build ValidationResult with categorized repositories
+- [X] T069 [US5] Implement isValid flag logic (true if no missing and no errors)
 
 **Checkpoint**: User Story 5 complete - workspace validation works
 
