@@ -75,6 +75,9 @@ Markdown documentation (N/A - no code implementation): Follow standard conventio
 - 001-repository-management: Added TypeScript (latest stable) with Bun (latest stable version for bundling and runtime)
 - 001-rollback-mechanism: Added TypeScript (latest stable) with Bun (latest stable version for bundling and runtime)
 - 001-worktree-orchestration: Added TypeScript (latest stable) with Bun (latest stable version for bundling and runtime)
+- 001-github-issues: Added TypeScript (latest stable) + Bun (latest stable version for bundling and runtime) + Bun runtime (built-in APIs only - spawn, file system, path)
+- 007-prompt-utilities: Added TypeScript (latest stable) + Bun (latest stable version) + @inquirer/prompts (confirm, select, checkbox, input)
+- 006-logger-utilities: Added TypeScript (latest stable) + Bun (latest stable version) + chalk (colors), ora (spinners)
 
 
 <!-- MANUAL ADDITIONS START -->
