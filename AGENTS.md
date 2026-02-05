@@ -49,6 +49,10 @@ config-mgmt/
 - TypeScript (latest stable) + Bun (latest stable version) + @inquirer/prompts (confirm, select, checkbox, input) (007-prompt-utilities)
 - N/A (input-only utility library) (007-prompt-utilities)
 - File system (hook scripts in `.arashi/hooks/` directory, timeout configuration in `.arashi/config.json`) (001-github-issues)
+- TypeScript (latest stable) with Bun (latest stable version for bundling and runtime) (001-worktree-orchestration)
+- Operation log maintained in memory during execution, configuration read from `.arashi/config.json` (001-worktree-orchestration)
+- In-memory operation log during execution (no persistence), optional future enhancement to persist logs for audit trail (001-rollback-mechanism)
+- No persistent storage required (discovery results in-memory), reads configuration from `.arashi/config.json` (001-repository-management)
 
 - Markdown documentation (N/A - no code implementation) + Git 2.5+ (subject of research) (002-git-worktree-research)
 
@@ -68,9 +72,9 @@ tests/
 Markdown documentation (N/A - no code implementation): Follow standard conventions
 
 ## Recent Changes
-- 001-github-issues: Added TypeScript (latest stable) + Bun (latest stable version for bundling and runtime) + Bun runtime (built-in APIs only - spawn, file system, path)
-- 007-prompt-utilities: Added TypeScript (latest stable) + Bun (latest stable version) + @inquirer/prompts (confirm, select, checkbox, input)
-- 006-logger-utilities: Added TypeScript (latest stable) + Bun (latest stable version) + chalk (colors), ora (spinners)
+- 001-repository-management: Added TypeScript (latest stable) with Bun (latest stable version for bundling and runtime)
+- 001-rollback-mechanism: Added TypeScript (latest stable) with Bun (latest stable version for bundling and runtime)
+- 001-worktree-orchestration: Added TypeScript (latest stable) with Bun (latest stable version for bundling and runtime)
 
 
 <!-- MANUAL ADDITIONS START -->
