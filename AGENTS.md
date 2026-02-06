@@ -58,6 +58,7 @@ config-mgmt/
 - TypeScript (latest stable) with Bun (latest stable version for bundling and runtime) + Bun runtime (built-in APIs only - spawn, file system, path) (001-init-command)
 - File system (`.arashi/config.json` for configuration, `.arashi/hooks/` for hook templates) (001-init-command)
 - File system (`.arashi/config.json` for configuration) (001-nested-worktree-paths)
+- File system (`.arashi/config.json` for configuration, git worktree metadata from `.git/worktrees/`) (001-list-command)
 
 - Markdown documentation (N/A - no code implementation) + Git 2.5+ (subject of research) (002-git-worktree-research)
 
@@ -77,9 +78,9 @@ tests/
 Markdown documentation (N/A - no code implementation): Follow standard conventions
 
 ## Recent Changes
+- 001-list-command: Added TypeScript (latest stable) with Bun (latest stable version for bundling and runtime)
 - 001-nested-worktree-paths: Added TypeScript (latest stable) with Bun (latest stable version for bundling and runtime) + Bun runtime (built-in APIs only - spawn, file system, path)
 - 001-init-command: Added TypeScript (latest stable) with Bun (latest stable version for bundling and runtime) + Bun runtime (built-in APIs only - spawn, file system, path)
-- 001-ci-workflow: Added YAML (GitHub Actions workflow configuration) - Implementation complete: CI workflow with lint, test, build (3 platforms), and validate jobs
 
 
 <!-- MANUAL ADDITIONS START -->
