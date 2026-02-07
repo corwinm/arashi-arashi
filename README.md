@@ -86,17 +86,26 @@ arashi-arashi/
 
 ### Installation
 
-1. **Install specify CLI**:
+1. **Clone this repository**:
 
    ```bash
-   uv tool install specify-cli --from git+https://github.com/github/spec-kit.git
+   git clone --bare git@github.com:corwinm/arashi-arashi.git
+   cd arashi-arashi.git
+   git worktree add main
+   cd main
+   # TODO: Add setup script to automate this process
+   cd repos
+   git clone git@github.com:corwinm/arashi.git
+   git clone git@github.com:corwinm/arashi-skills.git
    ```
 
-2. **Clone this repository**:
+2. Install arashi cli globally (optional, for easier command access):
 
    ```bash
-   git clone https://github.com/corwinm/arashi-arashi.git
-   cd arashi-arashi
+   cd repos/arashi
+   bun install
+   bun run build
+   bun link # Link to use local version for development
    ```
 
 3. **Launch opencode**:
@@ -132,7 +141,7 @@ arashi-arashi/
    ```
    /speckit.specify
 
-   [Describe your feature here, referencing design.md phases if applicable]
+   [Provide GitHub issue or describe your feature here, referencing design.md phases if applicable]
    ```
 
 4. **Follow the workflow**:
@@ -148,7 +157,7 @@ arashi-arashi/
 1. **Create branch for new feature**:
 
    ```bash
-   git checkout -b feature/your-feature-name
+   arashi create your-feature-name
    ```
 
 2. **Use spec-kit slash commands** in opencode to:
