@@ -104,13 +104,16 @@ get_highest_from_specs() {
 get_highest_from_branches() {
     local highest=0
     
-    # Get all branches (local and remote)
-    branches=$(git branch -a 2>/dev/null || echo "")
+    # Use git for-each-ref which works reliably in both regular and bare repositories
+    # Get all local and remote branches
+    branches=$(git for-each-ref --format='%(refname:short)' refs/heads/ refs/remotes/ 2>/dev/null || echo "")
     
     if [ -n "$branches" ]; then
         while IFS= read -r branch; do
-            # Clean branch name: remove leading markers and remote prefixes
-            clean_branch=$(echo "$branch" | sed 's/^[* ]*//; s|^remotes/[^/]*/||')
+            [ -z "$branch" ] && continue
+            
+            # Clean branch name: remove remote prefixes
+            clean_branch=$(echo "$branch" | sed 's|^[^/]*/||')
             
             # Extract feature number if branch matches pattern ###-*
             if echo "$clean_branch" | grep -q '^[0-9]\{3\}-'; then
