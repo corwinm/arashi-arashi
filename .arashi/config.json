@@ -7,6 +7,12 @@
       "path": "repos/arashi",
       "default_branch": "main",
       "worktrees": []
+    },
+    "arashi-skills": {
+      "path": "repos/arashi-skills",
+      "default_branch": "main",
+      "is_bare": false,
+      "worktrees": []
     }
   }
 }
