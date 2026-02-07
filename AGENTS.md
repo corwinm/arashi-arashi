@@ -59,6 +59,8 @@ config-mgmt/
 - File system (`.arashi/config.json` for configuration, `.arashi/hooks/` for hook templates) (001-init-command)
 - File system (`.arashi/config.json` for configuration) (001-nested-worktree-paths)
 - File system (`.arashi/config.json` for configuration, git worktree metadata from `.git/worktrees/`) (001-list-command)
+- TypeScript (latest stable) with Bun (latest stable version for bundling and runtime) + commander (CLI framework), chalk (colored output), ora (spinners), @inquirer/prompts (user prompts) (001-add-command)
+- File system (`.arashi/config.json` for workspace configuration) (001-add-command)
 
 - Markdown documentation (N/A - no code implementation) + Git 2.5+ (subject of research) (002-git-worktree-research)
 
@@ -78,9 +80,9 @@ tests/
 Markdown documentation (N/A - no code implementation): Follow standard conventions
 
 ## Recent Changes
+- 001-add-command: Added TypeScript (latest stable) with Bun (latest stable version for bundling and runtime) + commander (CLI framework), chalk (colored output), ora (spinners), @inquirer/prompts (user prompts)
 - 001-list-command: Added TypeScript (latest stable) with Bun (latest stable version for bundling and runtime)
 - 001-nested-worktree-paths: Added TypeScript (latest stable) with Bun (latest stable version for bundling and runtime) + Bun runtime (built-in APIs only - spawn, file system, path)
-- 001-init-command: Added TypeScript (latest stable) with Bun (latest stable version for bundling and runtime) + Bun runtime (built-in APIs only - spawn, file system, path)
 
 
 <!-- MANUAL ADDITIONS START -->
