@@ -34,6 +34,51 @@ arashi-arashi/
 │   │   ├── constitution.md        # Project governance principles
 │   │   ├── design.md              # Complete technical design document
 │   │   └── original-readme.md     # Archived README from main repo
+│   ├── templates/                 # Spec-kit templates
+│   │   ├── spec-template.md
+│   │   ├── plan-template.md
+│   │   └── tasks-template.md
+│   ├── scripts/                   # Automation scripts
+│   │   └── bash/
+│   └── examples/                  # Reference examples
+│       ├── sample-config.json     # Example arashi config
+│       └── sample-setup.sh        # Example setup script
+├── .opencode/                     # OpenCode configuration
+│   └── command/                   # Spec-kit slash commands
+├── .arashi/                       # Arashi workspace configuration
+│   ├── config.json                # Workspace settings
+│   └── hooks/                     # Hook script examples
+├── specs/                         # Feature specifications (top-level)
+│   └── 00X-feature-name/          # Individual feature folders
+│       ├── spec.md                # Feature specification
+│       ├── plan.md                # Implementation plan
+│       ├── tasks.md               # Task breakdown
+│       ├── checklists/            # Quality validation checklists
+│       ├── contracts/             # Interface contracts
+│       ├── data-model.md          # Data structures
+│       ├── quickstart.md          # Quick reference guide
+│       └── research.md            # Research findings
+├── repos/                         # Implementation repositories
+│   └── arashi/                    # Main arashi implementation
+│       ├── src/                   # Source code
+│       ├── tests/                 # Test suite
+│       ├── bin/                   # CLI entry point
+│       └── package.json           # Dependencies
+├── docs/                          # Documentation
+│   ├── implementation-workflow.md
+│   ├── cli-framework-patterns.md
+│   └── quick-reference.md
+├── AGENTS.md                      # AI agent guidelines
+├── README.md                      # This file
+├── CONTRIBUTING.md                # Development workflow guide
+└── LICENSE
+```
+arashi-arashi/
+├── .specify/
+│   ├── memory/                    # Project knowledge base
+│   │   ├── constitution.md        # Project governance principles
+│   │   ├── design.md              # Complete technical design document
+│   │   └── original-readme.md     # Archived README from main repo
 │   ├── specs/                     # Feature specifications
 │   │   └── 00X-feature-name/      # Individual feature folders
 │   │       ├── spec.md            # Feature specification
@@ -74,7 +119,7 @@ arashi-arashi/
 2. **Clone this repository**:
    ```bash
    git clone https://github.com/corwinm/arashi-arashi.git
-   cd arashi-arashi/setup  # or your worktree name
+   cd arashi-arashi
    ```
 
 3. **Launch opencode**:
@@ -133,20 +178,20 @@ arashi-arashi/
 
 4. **Commit specifications**:
    ```bash
-   git add .specify/specs/00X-your-feature/
+   git add specs/00X-your-feature/
    git commit -m "feat: add specification for your-feature"
    git push origin feature/your-feature-name
    ```
 
 5. **Create Pull Request** for review
 
-### For Implementation (Main Repo)
+### For Implementation (Arashi Repo)
 
 1. **Reference the spec** from this repository
 
 2. **Implement in arashi repo**:
    ```bash
-   cd ../../arashi  # or wherever your arashi repo is
+   cd repos/arashi
    git checkout -b feature/your-feature-name
    # Implement according to spec
    ```
