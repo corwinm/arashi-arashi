@@ -73,31 +73,6 @@ arashi-arashi/
 ├── CONTRIBUTING.md                # Development workflow guide
 └── LICENSE
 ```
-arashi-arashi/
-├── .specify/
-│   ├── memory/                    # Project knowledge base
-│   │   ├── constitution.md        # Project governance principles
-│   │   ├── design.md              # Complete technical design document
-│   │   └── original-readme.md     # Archived README from main repo
-│   ├── specs/                     # Feature specifications
-│   │   └── 00X-feature-name/      # Individual feature folders
-│   │       ├── spec.md            # Feature specification
-│   │       ├── plan.md            # Implementation plan
-│   │       └── tasks.md           # Task breakdown
-│   ├── templates/                 # Spec-kit templates
-│   │   ├── spec-template.md
-│   │   ├── plan-template.md
-│   │   └── tasks-template.md
-│   ├── scripts/                   # Automation scripts
-│   │   └── bash/
-│   └── examples/                  # Reference examples
-│       ├── sample-config.json     # Example arashi config
-│       └── sample-setup.sh        # Example setup script
-├── .opencode/                     # OpenCode configuration
-├── README.md                      # This file
-├── CONTRIBUTING.md                # Development workflow guide
-└── LICENSE
-```
 
 ## Getting Started
 
@@ -112,17 +87,20 @@ arashi-arashi/
 ### Installation
 
 1. **Install specify CLI**:
+
    ```bash
    uv tool install specify-cli --from git+https://github.com/github/spec-kit.git
    ```
 
 2. **Clone this repository**:
+
    ```bash
    git clone https://github.com/corwinm/arashi-arashi.git
    cd arashi-arashi
    ```
 
 3. **Launch opencode**:
+
    ```bash
    opencode
    ```
@@ -138,19 +116,22 @@ arashi-arashi/
 ### Creating Your First Specification
 
 1. **Review the constitution** (already created):
+
    ```bash
    cat .specify/memory/constitution.md
    ```
 
 2. **Review the design document**:
+
    ```bash
    cat .specify/memory/design.md
    ```
 
 3. **Create a new feature spec** using opencode:
+
    ```
    /speckit.specify
-   
+
    [Describe your feature here, referencing design.md phases if applicable]
    ```
 
@@ -165,6 +146,7 @@ arashi-arashi/
 ### For Specifications (This Repo)
 
 1. **Create branch for new feature**:
+
    ```bash
    git checkout -b feature/your-feature-name
    ```
@@ -177,6 +159,7 @@ arashi-arashi/
 3. **Review and refine** the generated artifacts
 
 4. **Commit specifications**:
+
    ```bash
    git add specs/00X-your-feature/
    git commit -m "feat: add specification for your-feature"
@@ -190,6 +173,7 @@ arashi-arashi/
 1. **Reference the spec** from this repository
 
 2. **Implement in arashi repo**:
+
    ```bash
    cd repos/arashi
    git checkout -b feature/your-feature-name
@@ -220,6 +204,7 @@ Optional commands for improved quality:
 See [CONTRIBUTING.md](./CONTRIBUTING.md) for detailed workflow and guidelines.
 
 Quick summary:
+
 1. Specs are created in **this repository** first
 2. Implementation happens in the **main arashi repository**
 3. Use conventional commits: `feat:`, `fix:`, `docs:`, etc.
@@ -229,6 +214,7 @@ Quick summary:
 ## Architecture
 
 Arashi is built with:
+
 - **Runtime**: Bun (single-file executable)
 - **Language**: TypeScript
 - **CLI Framework**: Commander.js
@@ -241,11 +227,13 @@ Arashi is built with:
 See [Design Document](./.specify/memory/design.md) for complete roadmap.
 
 ### Current Phase: Foundation (Phase 1)
+
 - [x] Project setup and structure
 - [x] Type definitions
 - [ ] Utility libraries (git, config, filesystem, logger, prompts)
 
 ### Next Phase: Core Commands (Phase 2)
+
 - [ ] `init` command
 - [ ] `add` command
 - [ ] `create` command
