@@ -63,6 +63,7 @@ config-mgmt/
 - File system (`.arashi/config.json` for workspace configuration) (018-add-command)
 - YAML (GitHub Actions workflow syntax v2) (019-release-workflow)
 - GitHub repository (tags, releases, artifacts), npm registry (019-release-workflow)
+- File system (`.arashi/config.json` for workspace configuration, git metadata from `.git/worktrees/`) (020-status-command)
 
 - Markdown documentation (N/A - no code implementation) + Git 2.5+ (subject of research) (002-git-worktree-research)
 
@@ -82,9 +83,9 @@ tests/
 Markdown documentation (N/A - no code implementation): Follow standard conventions
 
 ## Recent Changes
+- 020-status-command: Added TypeScript (latest stable) with Bun (latest stable version for bundling and runtime)
 - 019-release-workflow: Added YAML (GitHub Actions workflow syntax v2)
 - 018-add-command: Added TypeScript (latest stable) with Bun (latest stable version for bundling and runtime) + commander (CLI framework), chalk (colored output), ora (spinners), @inquirer/prompts (user prompts)
-- 017-list-command: Added TypeScript (latest stable) with Bun (latest stable version for bundling and runtime)
 
 
 <!-- MANUAL ADDITIONS START -->
