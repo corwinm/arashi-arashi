@@ -16,7 +16,7 @@ Auto-generated from all feature plans. Last updated: 2026-02-03
 ```
 config-mgmt/
 ├── specs/
-│   └── 001-config-management/    # Specification stays here
+│   └── 006-config-management/    # Specification stays here
 │       ├── spec.md
 │       ├── plan.md
 │       └── ...
@@ -38,27 +38,29 @@ config-mgmt/
 - TypeScript + Bun (latest stable version for bundling and runtime) (003-research-tasks)
 - Markdown (CommonMark specification) + None (pure documentation) (004-design-issues)
 - File system (specs/001-git-worktree-manager/ directory) (004-design-issues)
-- TypeScript + Bun (latest stable version for bundling and runtime) + Bun runtime (built-in APIs only - spawn, file system, path) (001-git-utility-lib)
-- N/A (library layer - operates on git repositories on filesystem) (001-git-utility-lib)
-- TypeScript + Bun (latest stable version) + Bun runtime (built-in APIs only - file system, path utilities) (001-config-management)
-- File system (`.arashi/config.json`) (001-config-management)
-- TypeScript (latest stable) + Bun (latest stable version for bundling and runtime) + Bun runtime (built-in APIs only - spawn, file system, path) (005-filesystem-utilities)
-- N/A (library layer - operates on filesystem directly) (005-filesystem-utilities)
-- TypeScript (latest stable) + Bun (latest stable version) + chalk (colors), ora (spinners) (006-logger-utilities)
-- N/A (output-only utility library) (006-logger-utilities)
-- TypeScript (latest stable) + Bun (latest stable version) + @inquirer/prompts (confirm, select, checkbox, input) (007-prompt-utilities)
-- N/A (input-only utility library) (007-prompt-utilities)
-- File system (hook scripts in `.arashi/hooks/` directory, timeout configuration in `.arashi/config.json`) (001-github-issues)
-- TypeScript (latest stable) with Bun (latest stable version for bundling and runtime) (001-worktree-orchestration)
-- Operation log maintained in memory during execution, configuration read from `.arashi/config.json` (001-worktree-orchestration)
-- In-memory operation log during execution (no persistence), optional future enhancement to persist logs for audit trail (001-rollback-mechanism)
-- No persistent storage required (discovery results in-memory), reads configuration from `.arashi/config.json` (001-repository-management)
-- YAML (GitHub Actions workflow configuration) (001-ci-workflow)
-- GitHub Actions artifact storage for compiled binaries (001-ci-workflow)
-- TypeScript (latest stable) with Bun (latest stable version for bundling and runtime) + Bun runtime (built-in APIs only - spawn, file system, path) (001-init-command)
-- File system (`.arashi/config.json` for configuration, `.arashi/hooks/` for hook templates) (001-init-command)
-- File system (`.arashi/config.json` for configuration) (001-nested-worktree-paths)
-- File system (`.arashi/config.json` for configuration, git worktree metadata from `.git/worktrees/`) (001-list-command)
+- TypeScript + Bun (latest stable version for bundling and runtime) + Bun runtime (built-in APIs only - spawn, file system, path) (005-git-utility-lib)
+- N/A (library layer - operates on git repositories on filesystem) (005-git-utility-lib)
+- TypeScript + Bun (latest stable version) + Bun runtime (built-in APIs only - file system, path utilities) (006-config-management)
+- File system (`.arashi/config.json`) (006-config-management)
+- TypeScript (latest stable) + Bun (latest stable version for bundling and runtime) + Bun runtime (built-in APIs only - spawn, file system, path) (007-filesystem-utilities)
+- N/A (library layer - operates on filesystem directly) (007-filesystem-utilities)
+- TypeScript (latest stable) + Bun (latest stable version) + chalk (colors), ora (spinners) (008-logger-utilities)
+- N/A (output-only utility library) (008-logger-utilities)
+- TypeScript (latest stable) + Bun (latest stable version) + @inquirer/prompts (confirm, select, checkbox, input) (009-prompt-utilities)
+- N/A (input-only utility library) (009-prompt-utilities)
+- File system (hook scripts in `.arashi/hooks/` directory, timeout configuration in `.arashi/config.json`) (010-github-issues)
+- TypeScript (latest stable) with Bun (latest stable version for bundling and runtime) (013-worktree-orchestration)
+- Operation log maintained in memory during execution, configuration read from `.arashi/config.json` (013-worktree-orchestration)
+- In-memory operation log during execution (no persistence), optional future enhancement to persist logs for audit trail (012-rollback-mechanism)
+- No persistent storage required (discovery results in-memory), reads configuration from `.arashi/config.json` (011-repository-management)
+- YAML (GitHub Actions workflow configuration) (014-ci-workflow)
+- GitHub Actions artifact storage for compiled binaries (014-ci-workflow)
+- TypeScript (latest stable) with Bun (latest stable version for bundling and runtime) + Bun runtime (built-in APIs only - spawn, file system, path) (015-init-command)
+- File system (`.arashi/config.json` for configuration, `.arashi/hooks/` for hook templates) (015-init-command)
+- File system (`.arashi/config.json` for configuration) (016-nested-worktree-paths)
+- File system (`.arashi/config.json` for configuration, git worktree metadata from `.git/worktrees/`) (017-list-command)
+- TypeScript (latest stable) with Bun (latest stable version for bundling and runtime) + commander (CLI framework), chalk (colored output), ora (spinners), @inquirer/prompts (user prompts) (018-add-command)
+- File system (`.arashi/config.json` for workspace configuration) (018-add-command)
 
 - Markdown documentation (N/A - no code implementation) + Git 2.5+ (subject of research) (002-git-worktree-research)
 
@@ -78,9 +80,9 @@ tests/
 Markdown documentation (N/A - no code implementation): Follow standard conventions
 
 ## Recent Changes
-- 001-list-command: Added TypeScript (latest stable) with Bun (latest stable version for bundling and runtime)
-- 001-nested-worktree-paths: Added TypeScript (latest stable) with Bun (latest stable version for bundling and runtime) + Bun runtime (built-in APIs only - spawn, file system, path)
-- 001-init-command: Added TypeScript (latest stable) with Bun (latest stable version for bundling and runtime) + Bun runtime (built-in APIs only - spawn, file system, path)
+- 018-add-command: Added TypeScript (latest stable) with Bun (latest stable version for bundling and runtime) + commander (CLI framework), chalk (colored output), ora (spinners), @inquirer/prompts (user prompts)
+- 017-list-command: Added TypeScript (latest stable) with Bun (latest stable version for bundling and runtime)
+- 016-nested-worktree-paths: Added TypeScript (latest stable) with Bun (latest stable version for bundling and runtime) + Bun runtime (built-in APIs only - spawn, file system, path)
 
 
 <!-- MANUAL ADDITIONS START -->
