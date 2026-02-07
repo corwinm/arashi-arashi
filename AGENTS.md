@@ -61,6 +61,8 @@ config-mgmt/
 - File system (`.arashi/config.json` for configuration, git worktree metadata from `.git/worktrees/`) (017-list-command)
 - TypeScript (latest stable) with Bun (latest stable version for bundling and runtime) + commander (CLI framework), chalk (colored output), ora (spinners), @inquirer/prompts (user prompts) (018-add-command)
 - File system (`.arashi/config.json` for workspace configuration) (018-add-command)
+- YAML (GitHub Actions workflow syntax v2) (019-release-workflow)
+- GitHub repository (tags, releases, artifacts), npm registry (019-release-workflow)
 
 - Markdown documentation (N/A - no code implementation) + Git 2.5+ (subject of research) (002-git-worktree-research)
 
@@ -80,9 +82,9 @@ tests/
 Markdown documentation (N/A - no code implementation): Follow standard conventions
 
 ## Recent Changes
+- 019-release-workflow: Added YAML (GitHub Actions workflow syntax v2)
 - 018-add-command: Added TypeScript (latest stable) with Bun (latest stable version for bundling and runtime) + commander (CLI framework), chalk (colored output), ora (spinners), @inquirer/prompts (user prompts)
 - 017-list-command: Added TypeScript (latest stable) with Bun (latest stable version for bundling and runtime)
-- 016-nested-worktree-paths: Added TypeScript (latest stable) with Bun (latest stable version for bundling and runtime) + Bun runtime (built-in APIs only - spawn, file system, path)
 
 
 <!-- MANUAL ADDITIONS START -->
