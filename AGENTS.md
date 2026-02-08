@@ -67,6 +67,8 @@ config-mgmt/
 - TypeScript (latest stable) with Bun (latest stable version for bundling and runtime) + commander (CLI framework), chalk (colored output), ora (spinners), @inquirer/prompts (user prompts), Bun runtime (built-in APIs - spawn, file system, path) (021-remove-command)
 - TypeScript (latest stable) + Bun (latest stable) + commander, chalk, ora, @inquirer/prompts (023-fix-remove-confirmation)
 - File system (`.arashi/config.json`, git metadata, worktree directories) (023-fix-remove-confirmation)
+- TypeScript 5.9 + Bun (latest stable) + commander, chalk, ora, @inquirer/prompts (024-fix-remove-grouping)
+- File system (`.git/worktrees`, worktree paths), `.arashi/config.json` (024-fix-remove-grouping)
 
 - Markdown documentation (N/A - no code implementation) + Git 2.5+ (subject of research) (002-git-worktree-research)
 
@@ -86,9 +88,9 @@ tests/
 Markdown documentation (N/A - no code implementation): Follow standard conventions
 
 ## Recent Changes
+- 024-fix-remove-grouping: Added TypeScript 5.9 + Bun (latest stable) + commander, chalk, ora, @inquirer/prompts
 - 023-fix-remove-confirmation: Added TypeScript (latest stable) + Bun (latest stable) + commander, chalk, ora, @inquirer/prompts
 - 021-remove-command: Added TypeScript (latest stable) with Bun (latest stable version for bundling and runtime) + commander (CLI framework), chalk (colored output), ora (spinners), @inquirer/prompts (user prompts), Bun runtime (built-in APIs - spawn, file system, path)
-- 020-status-command: Added TypeScript (latest stable) with Bun (latest stable version for bundling and runtime)
 
 
 <!-- MANUAL ADDITIONS START -->
