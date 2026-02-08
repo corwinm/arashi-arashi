@@ -84,19 +84,42 @@ find_repo_root() {
 get_highest_from_specs() {
     local specs_dir="$1"
     local highest=0
-    
+    local highest_tree=0
+    local highest_fs=0
+
+    if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+        local tree_entries=""
+        tree_entries=$(git ls-tree -d --name-only HEAD "specs" 2>/dev/null || echo "")
+        if [ -n "$tree_entries" ]; then
+            while IFS= read -r entry; do
+                [ -z "$entry" ] && continue
+                dirname=$(basename "$entry")
+                number=$(echo "$dirname" | grep -o '^[0-9]\+' || echo "0")
+                number=$((10#$number))
+                if [ "$number" -gt "$highest_tree" ]; then
+                    highest_tree=$number
+                fi
+            done <<< "$tree_entries"
+        fi
+    fi
+
     if [ -d "$specs_dir" ]; then
         for dir in "$specs_dir"/*; do
             [ -d "$dir" ] || continue
             dirname=$(basename "$dir")
             number=$(echo "$dirname" | grep -o '^[0-9]\+' || echo "0")
             number=$((10#$number))
-            if [ "$number" -gt "$highest" ]; then
-                highest=$number
+            if [ "$number" -gt "$highest_fs" ]; then
+                highest_fs=$number
             fi
         done
     fi
-    
+
+    highest=$highest_tree
+    if [ "$highest_fs" -gt "$highest" ]; then
+        highest=$highest_fs
+    fi
+
     echo "$highest"
 }
 
