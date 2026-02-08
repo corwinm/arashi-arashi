@@ -1,0 +1,106 @@
+openapi: 3.1.0
+info:
+  title: Remove Worktree Workflow
+  version: 1.0.0
+  description: Contract for listing and removing worktrees in the remove workflow.
+servers:
+  - url: https://localhost
+paths:
+  /worktrees/remove:
+    get:
+      summary: List worktrees for removal
+      description: Returns grouped worktrees with parent-child relationships and prunable status.
+      responses:
+        "200":
+          description: Worktree removal list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RemoveListResponse"
+  /worktrees/{worktreeId}:
+    delete:
+      summary: Remove a worktree entry
+      parameters:
+        - name: worktreeId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Worktree removal result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RemoveResult"
+components:
+  schemas:
+    WorktreeEntry:
+      type: object
+      required:
+        - id
+        - repository
+        - path
+        - status
+        - isMain
+      properties:
+        id:
+          type: string
+        repository:
+          type: string
+        path:
+          type: string
+        branch:
+          type: string
+          nullable: true
+        isMain:
+          type: boolean
+        status:
+          type: string
+          enum: [present, prunable, dirty]
+        dirtyDetails:
+          type: string
+          nullable: true
+        parentPath:
+          type: string
+          nullable: true
+    WorktreeGroup:
+      type: object
+      required:
+        - parent
+        - children
+      properties:
+        parent:
+          $ref: "#/components/schemas/WorktreeEntry"
+        children:
+          type: array
+          items:
+            $ref: "#/components/schemas/WorktreeEntry"
+    RemoveListResponse:
+      type: object
+      required:
+        - groups
+        - orphans
+      properties:
+        groups:
+          type: array
+          items:
+            $ref: "#/components/schemas/WorktreeGroup"
+        orphans:
+          type: array
+          items:
+            $ref: "#/components/schemas/WorktreeEntry"
+    RemoveResult:
+      type: object
+      required:
+        - removedWorktrees
+        - errors
+      properties:
+        removedWorktrees:
+          type: array
+          items:
+            $ref: "#/components/schemas/WorktreeEntry"
+        errors:
+          type: array
+          items:
+            type: string
