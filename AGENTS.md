@@ -73,6 +73,7 @@ config-mgmt/
 - Workspace configuration in `.arashi/config.json`, repository metadata on disk (025-pull-command)
 - TypeScript 5.9 with Bun (latest stable) + commander, chalk, ora, @inquirer/prompts (026-sync-command)
 - File system (`.arashi/config.json`, git metadata) (026-sync-command)
+- File system (`.arashi/config.json`, `.arashi/hooks/`, git worktree metadata) (027-rework-hooks)
 
 - Markdown documentation (N/A - no code implementation) + Git 2.5+ (subject of research) (002-git-worktree-research)
 
@@ -92,10 +93,9 @@ tests/
 Markdown documentation (N/A - no code implementation): Follow standard conventions
 
 ## Recent Changes
+- 027-rework-hooks: Added TypeScript 5.9 + Bun runtime, commander, chalk, ora, @inquirer/prompts
 - 026-sync-command: Added TypeScript 5.9 with Bun (latest stable) + commander, chalk, ora, @inquirer/prompts
 - 025-pull-command: Added TypeScript 5.9 + Bun runtime, commander, chalk, ora, @inquirer/prompts
-- 024-fix-remove-grouping: Added TypeScript 5.9 + Bun (latest stable) + commander, chalk, ora, @inquirer/prompts
-- 023-fix-remove-confirmation: Added TypeScript (latest stable) + Bun (latest stable) + commander, chalk, ora, @inquirer/prompts
 
 
 <!-- MANUAL ADDITIONS START -->

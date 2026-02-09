@@ -1,0 +1,124 @@
+openapi: 3.0.3
+info:
+  title: Hook Execution Contract
+  version: 1.0.0
+  description: Contracts for executing global and repo-specific create hooks.
+servers:
+  - url: http://localhost
+paths:
+  /hooks/execute:
+    post:
+      summary: Execute a single hook
+      operationId: executeHook
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HookExecutionRequest'
+      responses:
+        '200':
+          description: Hook executed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HookExecutionResult'
+        '400':
+          description: Invalid request
+  /hooks/execute-batch:
+    post:
+      summary: Execute hooks for a create operation
+      operationId: executeHookBatch
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HookBatchRequest'
+      responses:
+        '200':
+          description: Hooks executed in order
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HookBatchResult'
+        '400':
+          description: Invalid request
+components:
+  schemas:
+    HookExecutionRequest:
+      type: object
+      required:
+        - hookName
+        - scope
+        - lifecycle
+        - repositoryContext
+      properties:
+        hookName:
+          type: string
+          description: Hook identifier (e.g., pre-create, post-create, pre-create.<repo>)
+        scope:
+          type: string
+          enum: [global, repo-specific]
+        lifecycle:
+          type: string
+          enum: [pre-create, post-create]
+        repositoryContext:
+          $ref: '#/components/schemas/RepositoryContext'
+    HookExecutionResult:
+      type: object
+      required:
+        - hookName
+        - status
+      properties:
+        hookName:
+          type: string
+        status:
+          type: string
+          enum: [succeeded, failed, skipped]
+        exitCode:
+          type: integer
+          nullable: true
+        message:
+          type: string
+          nullable: true
+    HookBatchRequest:
+      type: object
+      required:
+        - operationId
+        - hooks
+      properties:
+        operationId:
+          type: string
+        hooks:
+          type: array
+          items:
+            $ref: '#/components/schemas/HookExecutionRequest'
+    HookBatchResult:
+      type: object
+      required:
+        - operationId
+        - results
+      properties:
+        operationId:
+          type: string
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/HookExecutionResult'
+    RepositoryContext:
+      type: object
+      required:
+        - mainRepoPath
+        - parentRepoPath
+      properties:
+        mainRepoPath:
+          type: string
+        parentRepoPath:
+          type: string
+        childRepoName:
+          type: string
+          nullable: true
+        childWorktreePath:
+          type: string
+          nullable: true
