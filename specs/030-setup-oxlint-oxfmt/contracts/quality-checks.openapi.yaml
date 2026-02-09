@@ -1,0 +1,164 @@
+openapi: 3.0.3
+info:
+  title: Repository Quality Checks Contract
+  version: 1.0.0
+  description: Conceptual contract for linting, formatting, and pull request quality validation.
+paths:
+  /quality/lint:
+    post:
+      summary: Run repository lint checks
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/QualityCheckRequest"
+      responses:
+        "200":
+          description: Lint check completed with no blocking issues
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QualityCheckRun"
+        "422":
+          description: Lint check failed due to violations
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QualityCheckRun"
+  /quality/format:
+    post:
+      summary: Run repository format checks
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/QualityCheckRequest"
+      responses:
+        "200":
+          description: Format check completed with compliant formatting
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QualityCheckRun"
+        "422":
+          description: Format check failed due to non-compliant files
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QualityCheckRun"
+  /quality/validate:
+    post:
+      summary: Evaluate pull request quality gate from lint and format checks
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ValidationRequest"
+      responses:
+        "200":
+          description: Pull request quality gate passes
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationOutcome"
+        "422":
+          description: Pull request quality gate fails
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationOutcome"
+components:
+  schemas:
+    QualityCheckRequest:
+      type: object
+      properties:
+        scope:
+          type: string
+          enum: [full-repository, changed-files]
+          description: Scope to evaluate during the check run.
+        files:
+          type: array
+          items:
+            type: string
+          description: Optional explicit file list when using changed-files scope.
+      additionalProperties: false
+    QualityIssue:
+      type: object
+      properties:
+        filePath:
+          type: string
+        line:
+          type: integer
+          minimum: 1
+        column:
+          type: integer
+          minimum: 1
+        category:
+          type: string
+          description: Lint rule category or formatting classification.
+        message:
+          type: string
+      required: [filePath, category, message]
+    QualityCheckRun:
+      type: object
+      properties:
+        runId:
+          type: string
+        checkType:
+          type: string
+          enum: [lint, format]
+        scope:
+          type: string
+          enum: [full-repository, changed-files]
+        status:
+          type: string
+          enum: [passed, failed]
+        durationMs:
+          type: integer
+          minimum: 0
+        issueCount:
+          type: integer
+          minimum: 0
+        issues:
+          type: array
+          items:
+            $ref: "#/components/schemas/QualityIssue"
+      required:
+        - runId
+        - checkType
+        - scope
+        - status
+        - durationMs
+        - issueCount
+        - issues
+    ValidationRequest:
+      type: object
+      properties:
+        pullRequestId:
+          type: string
+        lintRun:
+          $ref: "#/components/schemas/QualityCheckRun"
+        formatRun:
+          $ref: "#/components/schemas/QualityCheckRun"
+      required: [pullRequestId, lintRun, formatRun]
+      additionalProperties: false
+    ValidationOutcome:
+      type: object
+      properties:
+        pullRequestId:
+          type: string
+        lintStatus:
+          type: string
+          enum: [pass, fail]
+        formatStatus:
+          type: string
+          enum: [pass, fail]
+        overallStatus:
+          type: string
+          enum: [pass, fail]
+        failureSummary:
+          type: string
+      required: [pullRequestId, lintStatus, formatStatus, overallStatus]
