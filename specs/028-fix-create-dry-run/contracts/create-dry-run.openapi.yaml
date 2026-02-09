@@ -1,0 +1,81 @@
+openapi: 3.0.3
+info:
+  title: Create Dry-Run Plan
+  version: 1.0.0
+  description: Conceptual contract for the create dry-run planning output.
+paths:
+  /create/dry-run:
+    post:
+      summary: Generate a dry-run plan for worktree creation
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              description: Inputs equivalent to the create command.
+              additionalProperties: true
+      responses:
+        "200":
+          description: Dry-run plan generated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DryRunOutcome"
+        "409":
+          description: Blocking conflicts found in dry-run plan
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DryRunOutcome"
+components:
+  schemas:
+    PlannedWorktree:
+      type: object
+      properties:
+        repositoryName:
+          type: string
+        worktreePath:
+          type: string
+        branchName:
+          type: string
+        planStatus:
+          type: string
+          enum: [actionable, blocked]
+      required: [repositoryName, worktreePath, branchName, planStatus]
+    Conflict:
+      type: object
+      properties:
+        conflictType:
+          type: string
+          enum: [path_exists, branch_exists, permission_issue, invalid_configuration]
+        scope:
+          type: string
+        message:
+          type: string
+        blocking:
+          type: boolean
+      required: [conflictType, scope, message, blocking]
+    DryRunOutcome:
+      type: object
+      properties:
+        overallStatus:
+          type: string
+          enum: [actionable, blocked]
+        plannedWorktrees:
+          type: array
+          items:
+            $ref: "#/components/schemas/PlannedWorktree"
+        conflicts:
+          type: array
+          items:
+            $ref: "#/components/schemas/Conflict"
+        summaryCounts:
+          type: object
+          properties:
+            plannedTotal:
+              type: integer
+            conflictTotal:
+              type: integer
+          required: [plannedTotal, conflictTotal]
+      required: [overallStatus, plannedWorktrees, conflicts, summaryCounts]
