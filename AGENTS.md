@@ -75,6 +75,7 @@ config-mgmt/
 - File system (`.arashi/config.json`, git metadata) (026-sync-command)
 - File system (`.arashi/config.json`, `.arashi/hooks/`, git worktree metadata) (027-rework-hooks)
 - N/A (filesystem and git metadata only) (028-fix-create-dry-run)
+- Filesystem workspace configuration (`.arashi/config.json`) and repository setup scripts/hooks (029-implement-setup-command)
 
 - Markdown documentation (N/A - no code implementation) + Git 2.5+ (subject of research) (002-git-worktree-research)
 
@@ -94,9 +95,9 @@ tests/
 Markdown documentation (N/A - no code implementation): Follow standard conventions
 
 ## Recent Changes
+- 029-implement-setup-command: Added TypeScript 5.9 + Bun runtime, commander, chalk, ora, @inquirer/prompts
 - 028-fix-create-dry-run: Added TypeScript 5.9 + Bun runtime, commander, chalk, ora, @inquirer/prompts
 - 027-rework-hooks: Added TypeScript 5.9 + Bun runtime, commander, chalk, ora, @inquirer/prompts
-- 026-sync-command: Added TypeScript 5.9 with Bun (latest stable) + commander, chalk, ora, @inquirer/prompts
 
 
 <!-- MANUAL ADDITIONS START -->
