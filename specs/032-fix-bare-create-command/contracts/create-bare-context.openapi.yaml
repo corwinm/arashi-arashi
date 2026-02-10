@@ -1,0 +1,180 @@
+openapi: 3.0.3
+info:
+  title: Arashi Create Command Context Contract
+  version: 1.0.0
+  description: >-
+    Contract for create command behavior when invoked from bare and non-bare
+    repository contexts.
+paths:
+  /create/validate-context:
+    post:
+      summary: Validate create invocation context
+      description: Determines executable context and configuration availability for a create request.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ValidateContextRequest'
+      responses:
+        '200':
+          description: Context resolved and request is executable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidateContextResponse'
+        '400':
+          description: Request invalid or context cannot be resolved.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /create/execute:
+    post:
+      summary: Execute coordinated create request
+      description: Creates coordinated worktrees after successful context validation.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateExecuteRequest'
+      responses:
+        '200':
+          description: Create request executed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateExecuteResponse'
+        '409':
+          description: Conflict prevents create execution and includes retry guidance.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Missing setup or unresolved configuration with actionable next step.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  schemas:
+    ValidateContextRequest:
+      type: object
+      required:
+        - invocationPath
+        - branchName
+      properties:
+        invocationPath:
+          type: string
+          description: Absolute path where the create command was invoked.
+        branchName:
+          type: string
+          description: Requested branch/worktree name.
+        mode:
+          type: string
+          enum: [all, explicit, interactive]
+          default: all
+        selectedRepositories:
+          type: array
+          items:
+            type: string
+
+    ValidateContextResponse:
+      type: object
+      required:
+        - repositoryType
+        - workspaceRoot
+        - executionPath
+        - configResolved
+      properties:
+        repositoryType:
+          type: string
+          enum: [bare, non-bare]
+        workspaceRoot:
+          type: string
+        executionPath:
+          type: string
+        configResolved:
+          type: boolean
+        configSource:
+          type: string
+          enum: [local-file, repository-content]
+        guidance:
+          type: string
+          description: User-facing next step when validation fails or is partial.
+
+    CreateExecuteRequest:
+      type: object
+      required:
+        - branchName
+        - executionPath
+      properties:
+        branchName:
+          type: string
+        executionPath:
+          type: string
+        mode:
+          type: string
+          enum: [all, explicit, interactive]
+          default: all
+        selectedRepositories:
+          type: array
+          items:
+            type: string
+        dryRun:
+          type: boolean
+          default: false
+        hooksEnabled:
+          type: boolean
+          default: true
+
+    CreateExecuteResponse:
+      type: object
+      required:
+        - outcome
+        - rollbackApplied
+      properties:
+        outcome:
+          type: string
+          enum: [success, failure]
+        rollbackApplied:
+          type: boolean
+        createdWorktrees:
+          type: array
+          items:
+            $ref: '#/components/schemas/CreatedWorktree'
+        warnings:
+          type: array
+          items:
+            type: string
+        guidance:
+          type: string
+
+    CreatedWorktree:
+      type: object
+      required:
+        - repository
+        - path
+      properties:
+        repository:
+          type: string
+        path:
+          type: string
+
+    ErrorResponse:
+      type: object
+      required:
+        - code
+        - message
+        - guidance
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        guidance:
+          type: string
