@@ -26,7 +26,7 @@ If any check fails, install the missing prerequisite before continuing.
 ## 2) Install the Arashi Skill
 
 ```bash
-npx skills add corwinm/arashi-skills
+npx skills add https://github.com/corwinm/arashi-skills --skill arashi
 ```
 
 Expected result:
@@ -78,7 +78,7 @@ Quickstart is considered successful when a first-time user can:
 
 ### US1 Acceptance Sync (2026-02-10)
 
-- Install command locked to `npx skills add corwinm/arashi-skills`.
+- Install command locked to `npx skills add https://github.com/corwinm/arashi-skills --skill arashi`.
 - Verification command locked to `bash skills/arashi/scripts/validate.sh --check all`.
 - First-run flow documented in `repos/arashi-skills/examples/install-first-run.md`.
 

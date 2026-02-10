@@ -7,7 +7,7 @@ info:
     and optional publication lifecycle.
   x-parity-status:
     checkedAt: 2026-02-10
-    installCommand: npx skills add corwinm/arashi-skills
+    installCommand: npx skills add https://github.com/corwinm/arashi-skills --skill arashi
     verifyCommand: bash skills/arashi/scripts/validate.sh --check all
     workflowReferences:
       - examples/workflow-beginner.md
@@ -130,7 +130,7 @@ components:
         installCommand:
           type: string
           description: Canonical installation command documented by the skill.
-          enum: [npx skills add corwinm/arashi-skills]
+          enum: [npx skills add https://github.com/corwinm/arashi-skills --skill arashi]
         verifyCommand:
           type: string
           description: Optional immediate verification command run after install.
