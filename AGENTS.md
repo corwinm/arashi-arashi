@@ -78,6 +78,7 @@ config-mgmt/
 - Filesystem workspace configuration (`.arashi/config.json`) and repository setup scripts/hooks (029-implement-setup-command)
 - TypeScript 5.9 with Bun runtime + Oxlint, Oxfmt, Bun, GitHub Actions CI (030-setup-oxlint-oxfmt)
 - Repository configuration files and source files on filesystem (no new persistent store) (030-setup-oxlint-oxfmt)
+- N/A (filesystem, git metadata, and repository refs only) (032-fix-bare-create-command)
 
 - Markdown documentation (N/A - no code implementation) + Git 2.5+ (subject of research) (002-git-worktree-research)
 
@@ -97,9 +98,9 @@ tests/
 Markdown documentation (N/A - no code implementation): Follow standard conventions
 
 ## Recent Changes
+- 032-fix-bare-create-command: Added TypeScript 5.9 + Bun runtime, commander, chalk, ora, @inquirer/prompts
 - 030-setup-oxlint-oxfmt: Added TypeScript 5.9 with Bun runtime + Oxlint, Oxfmt, Bun, GitHub Actions CI
 - 029-implement-setup-command: Added TypeScript 5.9 + Bun runtime, commander, chalk, ora, @inquirer/prompts
-- 028-fix-create-dry-run: Added TypeScript 5.9 + Bun runtime, commander, chalk, ora, @inquirer/prompts
 
 
 <!-- MANUAL ADDITIONS START -->
