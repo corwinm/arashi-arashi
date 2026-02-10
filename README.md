@@ -54,6 +54,14 @@ This repository contains feature specifications, plans, research notes, and task
 
 Use the canonical guide: [`CONTRIBUTING.md`](./CONTRIBUTING.md).
 
+Quick path:
+
+1. Build and link Arashi CLI from `repos/arashi/`.
+2. Create a feature worktree with `arashi create NNN-feature-name`.
+3. Switch into that worktree and run `opencode`.
+4. Follow the spec-kit flow (`/speckit.specify` -> `/speckit.plan` -> `/speckit.tasks` -> `/speckit.implement`).
+5. Prefer Claude or Codex models for spec and implementation work.
+
 For implementation-specific contribution steps, see [`repos/arashi/CONTRIBUTING.md`](./repos/arashi/CONTRIBUTING.md).
 
 ## Badge Applicability Notes
