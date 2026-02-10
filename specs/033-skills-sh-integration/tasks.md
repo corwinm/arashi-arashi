@@ -20,8 +20,8 @@
 - [X] T001 Create skills package directory tree in `repos/arashi-skills/skills/arashi/` with `references/`, `assets/`, and `scripts/`
 - [X] T002 [P] Add skills repository overview and contribution notes in `repos/arashi-skills/README.md`
 - [X] T003 [P] Add skill package README stub with scope and artifact index in `repos/arashi-skills/skills/arashi/README.md`
-- [X] T004 [P] Add workflow examples directory scaffold in `repos/arashi-skills/examples/README.md`
-- [X] T005 [P] Add validation command placeholders in `repos/arashi-skills/skills/arashi/scripts/validate.sh`
+- [X] T004 [P] Add workflow reference scaffold in `repos/arashi-skills/skills/arashi/references/workflows.md`
+- [X] T005 [P] Add verification command placeholders in `repos/arashi-skills/skills/arashi/references/commands.md`
 
 ---
 
@@ -52,7 +52,7 @@
 - [X] T013 [P] [US1] Document preflight checks and expected outputs in `repos/arashi-skills/skills/arashi/references/prerequisites.md`
 - [X] T014 [P] [US1] Implement deterministic installation and verification steps in `repos/arashi-skills/skills/arashi/references/commands.md`
 - [X] T015 [US1] Implement prerequisite and install failure recovery entries in `repos/arashi-skills/skills/arashi/references/troubleshooting.md`
-- [X] T016 [US1] Add first-time install walkthrough in `repos/arashi-skills/examples/install-first-run.md`
+- [X] T016 [US1] Add first-time install walkthrough in `repos/arashi-skills/skills/arashi/references/tutorial.md`
 - [X] T017 [US1] Validate installation flow and sync acceptance criteria notes in `specs/033-skills-sh-integration/quickstart.md`
 
 **Checkpoint**: User Story 1 is independently functional and demoable as the MVP.
@@ -66,11 +66,11 @@
 **Independent Test**: Execute each workflow example and confirm expected user-visible outcomes without undocumented setup.
 
 - [X] T018 [US2] Define workflow catalog and selection guidance in `repos/arashi-skills/skills/arashi/references/workflows.md`
-- [X] T019 [P] [US2] Create beginner workflow example in `repos/arashi-skills/examples/workflow-beginner.md`
-- [X] T020 [P] [US2] Create intermediate workflow example in `repos/arashi-skills/examples/workflow-intermediate.md`
-- [X] T021 [P] [US2] Create advanced workflow example in `repos/arashi-skills/examples/workflow-advanced.md`
+- [X] T019 [P] [US2] Create beginner workflow section in `repos/arashi-skills/skills/arashi/references/workflows.md`
+- [X] T020 [P] [US2] Create intermediate workflow section in `repos/arashi-skills/skills/arashi/references/workflows.md`
+- [X] T021 [P] [US2] Create advanced workflow section in `repos/arashi-skills/skills/arashi/references/workflows.md`
 - [X] T022 [US2] Wire workflow entry commands and expected outcomes in `repos/arashi-skills/skills/arashi/SKILL.md`
-- [X] T023 [US2] Update verification script to check workflow readiness gates in `repos/arashi-skills/skills/arashi/scripts/validate.sh`
+- [X] T023 [US2] Update workflow readiness guidance in `repos/arashi-skills/skills/arashi/references/commands.md`
 
 **Checkpoint**: User Story 2 is independently functional with three runnable examples.
 
@@ -140,9 +140,9 @@ Task: "T014 [US1] Implement deterministic install and verification steps in repo
 ### User Story 2
 
 ```bash
-Task: "T019 [US2] Create beginner workflow example in repos/arashi-skills/examples/workflow-beginner.md"
-Task: "T020 [US2] Create intermediate workflow example in repos/arashi-skills/examples/workflow-intermediate.md"
-Task: "T021 [US2] Create advanced workflow example in repos/arashi-skills/examples/workflow-advanced.md"
+Task: "T019 [US2] Create beginner workflow section in repos/arashi-skills/skills/arashi/references/workflows.md"
+Task: "T020 [US2] Create intermediate workflow section in repos/arashi-skills/skills/arashi/references/workflows.md"
+Task: "T021 [US2] Create advanced workflow section in repos/arashi-skills/skills/arashi/references/workflows.md"
 ```
 
 ### User Story 3

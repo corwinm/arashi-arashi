@@ -7,12 +7,11 @@ info:
     and optional publication lifecycle.
   x-parity-status:
     checkedAt: 2026-02-10
-    installCommand: npx skills add https://github.com/corwinm/arashi-skills --skill arashi
-    verifyCommand: bash skills/arashi/scripts/validate.sh --check all
+    installCommand: npm install -g arashi
+    verifyCommand: arashi --version
     workflowReferences:
-      - examples/workflow-beginner.md
-      - examples/workflow-intermediate.md
-      - examples/workflow-advanced.md
+      - skills/arashi/references/workflows.md
+      - skills/arashi/references/session-shortcuts.md
     result: aligned
 servers:
   - url: https://skills.sh
@@ -26,7 +25,7 @@ paths:
   /skills/arashi/install:
     post:
       tags: [Installation]
-      summary: Install Arashi skill package with canonical add command
+      summary: Install Arashi CLI required by the skill
       operationId: installArashiSkill
       requestBody:
         required: true
@@ -36,7 +35,7 @@ paths:
               $ref: '#/components/schemas/InstallRequest'
       responses:
         '201':
-          description: Skill installed successfully
+          description: Arashi CLI installed successfully
           content:
             application/json:
               schema:
@@ -48,7 +47,7 @@ paths:
   /skills/arashi/verify:
     post:
       tags: [Validation]
-      summary: Verify installation and workflow readiness gates
+      summary: Verify Arashi CLI and workflow readiness
       operationId: verifyArashiSkill
       requestBody:
         required: true
@@ -123,18 +122,18 @@ components:
       properties:
         sourceRepository:
           type: string
-          example: https://github.com/corwinm/arashi-skills.git
+          example: https://github.com/corwinm/arashi.git
         targetEnvironment:
           type: string
           enum: [macos, linux, windows]
         installCommand:
           type: string
-          description: Canonical installation command documented by the skill.
-          enum: [npx skills add https://github.com/corwinm/arashi-skills --skill arashi]
+          description: Canonical Arashi CLI installation command documented by the skill.
+          enum: [npm install -g arashi]
         verifyCommand:
           type: string
           description: Optional immediate verification command run after install.
-          example: bash skills/arashi/scripts/validate.sh --check install
+          example: arashi --version
         existingSetupHandling:
           type: string
           enum: [fail, preserve, replace]
@@ -157,8 +156,8 @@ components:
           type: string
         verifyCommand:
           type: string
-          description: Canonical verification command for required gates.
-          enum: [bash skills/arashi/scripts/validate.sh --check all]
+          description: Canonical Arashi CLI verification command.
+          enum: [arashi --version]
         includePreflightCheck:
           type: boolean
           default: true
@@ -200,8 +199,8 @@ components:
           type: string
         workflowCommand:
           type: string
-          description: Human-runnable command sequence entrypoint for the selected example.
-          example: Follow examples/workflow-beginner.md command sequence
+          description: Human-runnable command sequence entrypoint for the selected workflow.
+          example: Follow skills/arashi/references/workflows.md Beginner Workflow section
         parameters:
           type: object
           additionalProperties: true
