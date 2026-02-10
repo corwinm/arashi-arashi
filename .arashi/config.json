@@ -13,6 +13,12 @@
       "default_branch": "main",
       "is_bare": false,
       "worktrees": []
+    },
+    "arashi-docs": {
+      "path": "repos/arashi-docs",
+      "default_branch": "main",
+      "is_bare": false,
+      "worktrees": []
     }
   }
 }
