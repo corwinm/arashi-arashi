@@ -1,256 +1,66 @@
 # Arashi Specifications Repository
 
-> 📋 Dedicated specifications and planning repository for [Arashi](https://github.com/corwinm/arashi) development
+[![npm version](https://img.shields.io/npm/v/arashi.svg)](https://www.npmjs.com/package/arashi)
+[![CI](https://github.com/corwinm/arashi/actions/workflows/ci.yml/badge.svg)](https://github.com/corwinm/arashi/actions/workflows/ci.yml)
+[![License](https://img.shields.io/github/license/corwinm/arashi.svg)](https://github.com/corwinm/arashi/blob/main/LICENSE)
+
+Planning and specification workspace for the Arashi project.
 
 ## Overview
 
-This repository serves as the **single source of truth** for all Arashi specifications, design documents, and planning materials. We follow a **specs-first development workflow** using [spec-kit](https://github.com/github/spec-kit) with [opencode](https://opencode.ai/) as the AI coding assistant.
+This repository contains feature specifications, plans, research notes, and task breakdowns used to guide implementation in project repositories under `repos/`.
 
-### Related Repositories
+- Specs are authored in `specs/NNN-feature-name/`.
+- Implementation is done in `repos/arashi/`.
+- Companion repository content lives in `repos/arashi-skills/`.
 
-- **Implementation Repository**: [github.com/corwinm/arashi](https://github.com/corwinm/arashi)
-- **Specs Repository** (this repo): [github.com/corwinm/arashi-arashi](https://github.com/corwinm/arashi-arashi)
+## Repositories
 
-## What is Arashi?
-
-Arashi (嵐 - "storm" in Japanese) is a Git worktree manager for meta-repositories that automatically manages worktrees across multiple related repositories. It aims to be the calm center - the eye of the storm - that brings order to the chaos of managing multiple repositories and worktrees.
+- Implementation: [github.com/corwinm/arashi](https://github.com/corwinm/arashi)
+- Specs and planning (this repo): [github.com/corwinm/arashi-arashi](https://github.com/corwinm/arashi-arashi)
 
 ## Specs-First Workflow
 
-This repository uses the spec-kit methodology for structured, AI-assisted development:
+1. Define requirements with `/speckit.specify`.
+2. Produce a technical plan with `/speckit.plan`.
+3. Generate execution tasks with `/speckit.tasks`.
+4. Implement inside `repos/arashi/`.
+5. Validate and keep specs/docs in sync.
 
-1. **Constitution** → Establish project principles and governance
-2. **Specify** → Define what to build (requirements, user stories)
-3. **Plan** → Create technical implementation plan
-4. **Tasks** → Generate actionable task breakdown
-5. **Implement** → Execute in the main arashi repository
+## Repository Layout
 
-## Repository Structure
-
-```
-arashi-arashi/
-├── .specify/
-│   ├── memory/                    # Project knowledge base
-│   │   ├── constitution.md        # Project governance principles
-│   │   ├── design.md              # Complete technical design document
-│   │   └── original-readme.md     # Archived README from main repo
-│   ├── templates/                 # Spec-kit templates
-│   │   ├── spec-template.md
-│   │   ├── plan-template.md
-│   │   └── tasks-template.md
-│   ├── scripts/                   # Automation scripts
-│   │   └── bash/
-│   └── examples/                  # Reference examples
-│       ├── sample-config.json     # Example arashi config
-│       └── sample-setup.sh        # Example setup script
-├── .opencode/                     # OpenCode configuration
-│   └── command/                   # Spec-kit slash commands
-├── .arashi/                       # Arashi workspace configuration
-│   ├── config.json                # Workspace settings
-│   └── hooks/                     # Hook script examples
-├── specs/                         # Feature specifications (top-level)
-│   └── 00X-feature-name/          # Individual feature folders
-│       ├── spec.md                # Feature specification
-│       ├── plan.md                # Implementation plan
-│       ├── tasks.md               # Task breakdown
-│       ├── checklists/            # Quality validation checklists
-│       ├── contracts/             # Interface contracts
-│       ├── data-model.md          # Data structures
-│       ├── quickstart.md          # Quick reference guide
-│       └── research.md            # Research findings
-├── repos/                         # Implementation repositories
-│   └── arashi/                    # Main arashi implementation
-│       ├── src/                   # Source code
-│       ├── tests/                 # Test suite
-│       ├── bin/                   # CLI entry point
-│       └── package.json           # Dependencies
-├── docs/                          # Documentation
-│   ├── implementation-workflow.md
-│   ├── cli-framework-patterns.md
-│   └── quick-reference.md
-├── AGENTS.md                      # AI agent guidelines
-├── README.md                      # This file
-├── CONTRIBUTING.md                # Development workflow guide
-└── LICENSE
+```text
+.
+├── specs/               # Feature specifications and planning artifacts
+├── repos/               # Project repositories (implementation lives here)
+│   ├── arashi/
+│   └── arashi-skills/
+├── docs/                # Supporting process documentation
+├── CONTRIBUTING.md
+└── README.md
 ```
 
-## Getting Started
+## Framework Support Matrix (Spec-Driven Workflows)
 
-### Prerequisites
+| Framework | Support Level | Scope | Caveats |
+| --- | --- | --- | --- |
+| Spec-Kit | Native | Primary workflow for spec, plan, and tasks generation | None |
+| OpenSpec | Supported with modifications | Compatible with equivalent artifact structure and naming | Requires mapping to this repo's `specs/NNN-*` layout |
+| Kiro | Supported with modifications | Works for story/task decomposition and implementation guidance | Requires adapting command conventions and path references |
+| Specification by Example | Experimental | Useful for acceptance-criteria shaping in specs | No dedicated automation in this repository |
+| BDD (Gherkin-first) | Not supported | Can inform narrative requirements only | No native pipeline for feature file execution here |
 
-- [opencode](https://opencode.ai/) - AI coding assistant
-- [uv](https://docs.astral.sh/uv/) - Python package manager
-- [Python 3.11+](https://www.python.org/downloads/)
-- [Git](https://git-scm.com/downloads)
-- [specify CLI](https://github.com/github/spec-kit) (installation below)
+## Contribution
 
-### Installation
+Use the canonical guide: [`CONTRIBUTING.md`](./CONTRIBUTING.md).
 
-1. **Clone this repository**:
+For implementation-specific contribution steps, see [`repos/arashi/CONTRIBUTING.md`](./repos/arashi/CONTRIBUTING.md).
 
-   ```bash
-   git clone --bare git@github.com:corwinm/arashi-arashi.git
-   cd arashi-arashi.git
-   git worktree add main
-   cd main
-   # TODO: Add setup script to automate this process
-   cd repos
-   git clone git@github.com:corwinm/arashi.git
-   git clone git@github.com:corwinm/arashi-skills.git
-   ```
+## Badge Applicability Notes
 
-2. Install arashi cli globally (optional, for easier command access):
-
-   ```bash
-   cd repos/arashi
-   bun install
-   bun run build
-   bun link # Link to use local version for development
-   ```
-
-3. **Launch opencode**:
-
-   ```bash
-   opencode
-   ```
-
-4. **Verify slash commands are available**:
-   Type `/` in opencode to see available spec-kit commands:
-   - `/speckit.constitution` - Establish project principles
-   - `/speckit.specify` - Create feature specification
-   - `/speckit.plan` - Generate implementation plan
-   - `/speckit.tasks` - Create task breakdown
-   - `/speckit.implement` - Execute implementation
-
-### Creating Your First Specification
-
-1. **Review the constitution** (already created):
-
-   ```bash
-   cat .specify/memory/constitution.md
-   ```
-
-2. **Review the design document**:
-
-   ```bash
-   cat .specify/memory/design.md
-   ```
-
-3. **Create a new feature spec** using opencode:
-
-   ```
-   /speckit.specify
-
-   [Provide GitHub issue or describe your feature here, referencing design.md phases if applicable]
-   ```
-
-4. **Follow the workflow**:
-   - Use `/speckit.clarify` to clarify ambiguous requirements (optional)
-   - Use `/speckit.plan` to create implementation plan
-   - Use `/speckit.tasks` to generate task breakdown
-   - Use `/speckit.implement` to execute in main arashi repo
-
-## Development Workflow
-
-### For Specifications (This Repo)
-
-1. **Create branch for new feature**:
-
-   ```bash
-   arashi create your-feature-name
-   ```
-
-2. **Use spec-kit slash commands** in opencode to:
-   - Create specification
-   - Generate implementation plan
-   - Create task breakdown
-
-3. **Review and refine** the generated artifacts
-
-4. **Commit specifications**:
-
-   ```bash
-   git add specs/00X-your-feature/
-   git commit -m "feat: add specification for your-feature"
-   git push origin feature/your-feature-name
-   ```
-
-5. **Create Pull Request** for review
-
-### For Implementation (Arashi Repo)
-
-1. **Reference the spec** from this repository
-
-2. **Implement in arashi repo**:
-
-   ```bash
-   cd repos/arashi
-   git checkout -b feature/your-feature-name
-   # Implement according to spec
-   ```
-
-3. **Link back to spec** in commit messages and PR descriptions
-
-4. **Update spec** if implementation requires changes
-
-## Key Documents
-
-- **[Design Document](./.specify/memory/design.md)** - Complete technical design and roadmap
-- **[Constitution](./.specify/memory/constitution.md)** - Project governance principles
-- **[Sample Config](./.specify/examples/sample-config.json)** - Example arashi configuration
-- **[Sample Setup](./.specify/examples/sample-setup.sh)** - Example setup script
-
-## Spec-Kit Enhancement Commands
-
-Optional commands for improved quality:
-
-- `/speckit.clarify` - Ask structured questions before planning
-- `/speckit.analyze` - Cross-artifact consistency analysis
-- `/speckit.checklist` - Generate quality validation checklists
-
-## Contributing
-
-See [CONTRIBUTING.md](./CONTRIBUTING.md) for detailed workflow and guidelines.
-
-Quick summary:
-
-1. Specs are created in **this repository** first
-2. Implementation happens in the **main arashi repository**
-3. Use conventional commits: `feat:`, `fix:`, `docs:`, etc.
-4. All PRs require review
-5. Squash merge with conventional commit message
-
-## Architecture
-
-Arashi is built with:
-
-- **Runtime**: Bun (single-file executable)
-- **Language**: TypeScript
-- **CLI Framework**: Commander.js
-- **User Prompts**: @inquirer/prompts
-
-## Current Status
-
-🚧 **Under Active Development** - Phase 1 Complete
-
-See [Design Document](./.specify/memory/design.md) for complete roadmap.
-
-### Current Phase: Foundation (Phase 1)
-
-- [x] Project setup and structure
-- [x] Type definitions
-- [ ] Utility libraries (git, config, filesystem, logger, prompts)
-
-### Next Phase: Core Commands (Phase 2)
-
-- [ ] `init` command
-- [ ] `add` command
-- [ ] `create` command
+- npm, CI, and license badges above represent the implementation project in `repos/arashi`.
+- This specifications repository itself is documentation-focused and does not publish an npm package.
 
 ## License
 
-MIT - See [LICENSE](./LICENSE)
-
----
-
-**Note**: This is a specifications repository. For the implementation, see [github.com/corwinm/arashi](https://github.com/corwinm/arashi).
+MIT. See [`LICENSE`](./LICENSE).
