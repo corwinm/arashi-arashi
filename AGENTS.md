@@ -81,6 +81,8 @@ config-mgmt/
 - Markdown (CommonMark), YAML for workflow badge targets, JSON for package metadata validation + Existing repository metadata in `repos/arashi` (`package.json`, GitHub workflows, LICENSE), Markdown link conventions, badge providers (GitHub Actions and npm badge endpoints) (031-audit-readmes)
 - Filesystem documentation files only (no new persistent store) (031-audit-readmes)
 - N/A (filesystem, git metadata, and repository refs only) (032-fix-bare-create-command)
+- Markdown (CommonMark), YAML 1.2, shell scripts (POSIX/Bash compatible) + skills CLI/skills.sh conventions, GitHub repository hosting, Arashi CLI distribution artifacts (033-skills-sh-integration)
+- File system (skill metadata, docs, scripts, and examples) (033-skills-sh-integration)
 
 - Markdown documentation (N/A - no code implementation) + Git 2.5+ (subject of research) (002-git-worktree-research)
 
@@ -100,10 +102,9 @@ tests/
 Markdown documentation (N/A - no code implementation): Follow standard conventions
 
 ## Recent Changes
+- 033-skills-sh-integration: Added Markdown (CommonMark), YAML 1.2, shell scripts (POSIX/Bash compatible) + skills CLI/skills.sh conventions, GitHub repository hosting, Arashi CLI distribution artifacts
 - 032-fix-bare-create-command: Added TypeScript 5.9 + Bun runtime, commander, chalk, ora, @inquirer/prompts
 - 031-audit-readmes: Added Markdown (CommonMark), YAML for workflow badge targets, JSON for package metadata validation + Existing repository metadata in `repos/arashi` (`package.json`, GitHub workflows, LICENSE), Markdown link conventions, badge providers (GitHub Actions and npm badge endpoints)
-- 030-setup-oxlint-oxfmt: Added TypeScript 5.9 with Bun runtime + Oxlint, Oxfmt, Bun, GitHub Actions CI
-- 029-implement-setup-command: Added TypeScript 5.9 + Bun runtime, commander, chalk, ora, @inquirer/prompts
 
 
 <!-- MANUAL ADDITIONS START -->
