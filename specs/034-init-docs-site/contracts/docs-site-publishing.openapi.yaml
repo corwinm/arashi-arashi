@@ -1,0 +1,478 @@
+openapi: 3.1.0
+info:
+  title: Documentation Site Initialization and Publishing Contract
+  version: 1.0.0
+  description: |
+    Planning contract for initializing a dedicated documentation repository,
+    validating documentation changes, publishing to a live site, and maintaining
+    a healthy documentation link in the main project README.
+servers:
+  - url: https://docs-management.local
+paths:
+  /docs-repositories:
+    post:
+      summary: Initialize a dedicated documentation repository
+      operationId: initializeDocsRepository
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InitializeDocsRepositoryRequest'
+      responses:
+        '201':
+          description: Documentation repository initialized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DocumentationSiteRepository'
+  /docs-repositories/{repoId}/information-architecture:
+    put:
+      summary: Define required sections and initial page structure
+      operationId: setInformationArchitecture
+      parameters:
+        - $ref: '#/components/parameters/RepoId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InformationArchitectureRequest'
+      responses:
+        '200':
+          description: Information architecture updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InformationArchitecture'
+  /docs-repositories/{repoId}/contribution-policy:
+    put:
+      summary: Set contribution and maintenance expectations
+      operationId: setContributionPolicy
+      parameters:
+        - $ref: '#/components/parameters/RepoId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ContributionPolicyRequest'
+      responses:
+        '200':
+          description: Contribution policy updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContributionPolicy'
+  /docs-repositories/{repoId}/validations:
+    post:
+      summary: Run publish-gating documentation validation checks
+      operationId: runDocumentationValidation
+      parameters:
+        - $ref: '#/components/parameters/RepoId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ValidationRunRequest'
+      responses:
+        '200':
+          description: Validation run completed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationRunResult'
+  /docs-repositories/{repoId}/publications:
+    post:
+      summary: Publish validated documentation changes
+      operationId: publishDocumentation
+      parameters:
+        - $ref: '#/components/parameters/RepoId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PublicationRequest'
+      responses:
+        '202':
+          description: Publication run started
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicationRun'
+        '409':
+          description: Publication blocked due to failed validation checks
+  /docs-repositories/{repoId}/publications/{runId}:
+    get:
+      summary: Get publication status and failure details
+      operationId: getPublicationRun
+      parameters:
+        - $ref: '#/components/parameters/RepoId'
+        - $ref: '#/components/parameters/RunId'
+      responses:
+        '200':
+          description: Publication run status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicationRun'
+        '404':
+          description: Publication run not found
+  /projects/{projectId}/documentation-link:
+    put:
+      summary: Configure the canonical documentation link in the main README
+      operationId: setDocumentationEntryLink
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DocumentationEntryLinkRequest'
+      responses:
+        '200':
+          description: Documentation link updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DocumentationEntryLink'
+  /projects/{projectId}/documentation-link/health:
+    get:
+      summary: Check health status for the README documentation link
+      operationId: getDocumentationLinkHealth
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+      responses:
+        '200':
+          description: Link health report
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DocumentationLinkHealthReport'
+
+components:
+  parameters:
+    RepoId:
+      name: repoId
+      in: path
+      required: true
+      schema:
+        type: string
+    RunId:
+      name: runId
+      in: path
+      required: true
+      schema:
+        type: string
+    ProjectId:
+      name: projectId
+      in: path
+      required: true
+      schema:
+        type: string
+
+  schemas:
+    InitializeDocsRepositoryRequest:
+      type: object
+      required: [repositoryName, defaultBranch, ownerGroup, deploymentProvider]
+      properties:
+        repositoryName:
+          type: string
+          example: arashi-docs
+        defaultBranch:
+          type: string
+          example: main
+        ownerGroup:
+          type: string
+          example: arashi-maintainers
+        visibility:
+          type: string
+          enum: [public, internal, private]
+          default: public
+        deploymentProvider:
+          type: string
+          enum: [netlify]
+          default: netlify
+        productionSiteUrl:
+          type: string
+          format: uri
+
+    DocumentationSiteRepository:
+      type: object
+      required: [repoId, repositoryName, defaultBranch, deploymentProvider, initializationState, ownerGroup]
+      properties:
+        repoId:
+          type: string
+        repositoryName:
+          type: string
+        defaultBranch:
+          type: string
+        visibility:
+          type: string
+          enum: [public, internal, private]
+        deploymentProvider:
+          type: string
+          enum: [netlify]
+        productionSiteUrl:
+          type: string
+          format: uri
+        initializationState:
+          type: string
+          enum: [not-initialized, initialized, published]
+        ownerGroup:
+          type: string
+
+    InformationArchitectureRequest:
+      type: object
+      required: [sections, pages]
+      properties:
+        sections:
+          type: array
+          minItems: 3
+          items:
+            $ref: '#/components/schemas/DocumentationSection'
+        pages:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/DocumentationPage'
+
+    InformationArchitecture:
+      type: object
+      required: [sectionCount, pageCount, requiredSectionsPresent]
+      properties:
+        sectionCount:
+          type: integer
+        pageCount:
+          type: integer
+        requiredSectionsPresent:
+          type: boolean
+
+    DocumentationSection:
+      type: object
+      required: [sectionId, title, order, required, visibility]
+      properties:
+        sectionId:
+          type: string
+        title:
+          type: string
+        order:
+          type: integer
+        required:
+          type: boolean
+        visibility:
+          type: string
+          enum: [visible, hidden]
+
+    DocumentationPage:
+      type: object
+      required: [pageId, sectionId, title, path, status]
+      properties:
+        pageId:
+          type: string
+        sectionId:
+          type: string
+        title:
+          type: string
+        path:
+          type: string
+        status:
+          type: string
+          enum: [draft, review, approved, published]
+
+    ContributionPolicyRequest:
+      type: object
+      required: [owners, reviewExpectation, updateCadence]
+      properties:
+        owners:
+          type: array
+          minItems: 1
+          items:
+            type: string
+        reviewExpectation:
+          type: string
+        updateCadence:
+          type: string
+        contributionGuidePath:
+          type: string
+
+    ContributionPolicy:
+      type: object
+      required: [owners, reviewExpectation, updateCadence, documented]
+      properties:
+        owners:
+          type: array
+          items:
+            type: string
+        reviewExpectation:
+          type: string
+        updateCadence:
+          type: string
+        documented:
+          type: boolean
+
+    ValidationRunRequest:
+      type: object
+      required: [sourceRevision, checks]
+      properties:
+        sourceRevision:
+          type: string
+        checks:
+          type: array
+          minItems: 1
+          items:
+            type: string
+            enum:
+              [
+                dependency-install,
+                docs-build,
+                internal-links,
+                content-lint,
+                accessibility-smoke,
+                external-links,
+              ]
+
+    ValidationRunResult:
+      type: object
+      required: [runId, sourceRevision, blockingPassed, checkResults]
+      properties:
+        runId:
+          type: string
+        sourceRevision:
+          type: string
+        blockingPassed:
+          type: boolean
+        checkResults:
+          type: array
+          items:
+            $ref: '#/components/schemas/CheckResult'
+
+    CheckResult:
+      type: object
+      required: [checkName, outcome, blocking]
+      properties:
+        checkName:
+          type: string
+        outcome:
+          type: string
+          enum: [pass, fail, warning]
+        blocking:
+          type: boolean
+        details:
+          type: string
+
+    PublicationRequest:
+      type: object
+      required: [sourceRevision, validationRunId]
+      properties:
+        sourceRevision:
+          type: string
+        validationRunId:
+          type: string
+        triggerType:
+          type: string
+          enum: [merge, manual, scheduled]
+          default: merge
+        deploymentEnvironment:
+          type: string
+          enum: [preview, production]
+          default: production
+
+    PublicationRun:
+      type: object
+      required:
+        [
+          runId,
+          sourceRevision,
+          triggerType,
+          validationResult,
+          publishResult,
+          deploymentEnvironment,
+          liveRevision,
+          startedAt,
+        ]
+      properties:
+        runId:
+          type: string
+        sourceRevision:
+          type: string
+        triggerType:
+          type: string
+          enum: [merge, manual, scheduled]
+        validationResult:
+          type: string
+          enum: [pass, fail]
+        publishResult:
+          type: string
+          enum: [succeeded, failed, not-attempted]
+        deploymentEnvironment:
+          type: string
+          enum: [preview, production]
+        liveRevision:
+          type: string
+        previousLiveRevision:
+          type: string
+        startedAt:
+          type: string
+          format: date-time
+        completedAt:
+          type: string
+          format: date-time
+        failureSummary:
+          type: string
+
+    DocumentationEntryLinkRequest:
+      type: object
+      required: [sourcePath, displayLabel, targetUrl, placementArea]
+      properties:
+        sourcePath:
+          type: string
+          example: repos/arashi/README.md
+        displayLabel:
+          type: string
+          example: Documentation
+        targetUrl:
+          type: string
+          format: uri
+        placementArea:
+          type: string
+          enum: [header, quick-links, getting-started]
+
+    DocumentationEntryLink:
+      type: object
+      required: [sourcePath, displayLabel, targetUrl, placementArea, healthStatus]
+      properties:
+        sourcePath:
+          type: string
+        displayLabel:
+          type: string
+        targetUrl:
+          type: string
+          format: uri
+        placementArea:
+          type: string
+          enum: [header, quick-links, getting-started]
+        healthStatus:
+          type: string
+          enum: [reachable, unreachable]
+        lastVerifiedAt:
+          type: string
+          format: date-time
+
+    DocumentationLinkHealthReport:
+      type: object
+      required: [targetUrl, reachable, statusCode, checkedAt]
+      properties:
+        targetUrl:
+          type: string
+          format: uri
+        reachable:
+          type: boolean
+        statusCode:
+          type: integer
+        checkedAt:
+          type: string
+          format: date-time
