@@ -1,0 +1,367 @@
+openapi: 3.1.0
+info:
+  title: Unified Logo Presence Contract
+  version: 1.0.0
+  description: |
+    Planning contract for defining one approved Arashi logo family,
+    assigning logo placements per required surface, handling fallback
+    behavior for constrained contexts, and producing acceptance evidence.
+servers:
+  - url: https://brand-governance.local
+
+paths:
+  /logo-family:
+    put:
+      summary: Define or update the active logo family
+      operationId: upsertLogoFamily
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LogoFamilyRequest'
+      responses:
+        '200':
+          description: Logo family updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LogoFamily'
+
+  /surfaces/readme/header-logo:
+    put:
+      summary: Configure README top logo placement
+      operationId: configureReadmePlacement
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SurfacePlacementRequest'
+      responses:
+        '200':
+          description: README placement configured
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SurfacePlacement'
+
+  /surfaces/cli/help-logo:
+    put:
+      summary: Configure CLI help logo placement and fallback behavior
+      operationId: configureCliHelpPlacement
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CliPlacementRequest'
+      responses:
+        '200':
+          description: CLI placement configured
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SurfacePlacement'
+
+  /surfaces/docs/header-logo:
+    put:
+      summary: Configure docs site visible logo placement
+      operationId: configureDocsHeaderPlacement
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SurfacePlacementRequest'
+      responses:
+        '200':
+          description: Docs header placement configured
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SurfacePlacement'
+
+  /surfaces/docs/favicon:
+    put:
+      summary: Configure docs favicon placement and icon set
+      operationId: configureDocsFaviconPlacement
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FaviconPlacementRequest'
+      responses:
+        '200':
+          description: Docs favicon placement configured
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SurfacePlacement'
+
+  /verifications/logo-presence:
+    post:
+      summary: Validate required surface presence and readability outcomes
+      operationId: verifyLogoPresence
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerificationRequest'
+      responses:
+        '201':
+          description: Verification record created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerificationRecord'
+
+  /reviews/brand-cohesion:
+    post:
+      summary: Record reviewer cohesion assessment across all required surfaces
+      operationId: recordBrandCohesionReview
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CohesionReviewRequest'
+      responses:
+        '201':
+          description: Cohesion review recorded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CohesionReviewRecord'
+
+components:
+  schemas:
+    LogoFamilyRequest:
+      type: object
+      required:
+        [
+          name,
+          fullTextVariant,
+          compactVariant,
+          docsFaviconVariant,
+          approvedBy,
+          approvedAt,
+        ]
+      properties:
+        name:
+          type: string
+          example: Arashi Unified Logo Family
+        fullTextVariant:
+          $ref: '#/components/schemas/LogoVariantDefinition'
+        compactVariant:
+          $ref: '#/components/schemas/LogoVariantDefinition'
+        docsFaviconVariant:
+          $ref: '#/components/schemas/LogoVariantDefinition'
+        approvedBy:
+          type: string
+        approvedAt:
+          type: string
+          format: date-time
+
+    LogoFamily:
+      type: object
+      required:
+        [logoFamilyId, name, status, fullTextVariant, compactVariant, docsFaviconVariant]
+      properties:
+        logoFamilyId:
+          type: string
+        name:
+          type: string
+        status:
+          type: string
+          enum: [draft, approved, active, superseded]
+        fullTextVariant:
+          $ref: '#/components/schemas/LogoVariantDefinition'
+        compactVariant:
+          $ref: '#/components/schemas/LogoVariantDefinition'
+        docsFaviconVariant:
+          $ref: '#/components/schemas/LogoVariantDefinition'
+
+    LogoVariantDefinition:
+      type: object
+      required: [variantId, variantType, charset]
+      properties:
+        variantId:
+          type: string
+        variantType:
+          type: string
+          enum: [full-text, compact-mark, favicon-mark]
+        charset:
+          type: string
+          enum: [ascii, vector]
+        maxWidthColumns:
+          type: integer
+        maxHeightLines:
+          type: integer
+
+    SurfacePlacementRequest:
+      type: object
+      required: [repository, path, primaryVariantId]
+      properties:
+        repository:
+          type: string
+          example: repos/arashi
+        path:
+          type: string
+          example: repos/arashi/README.md
+        primaryVariantId:
+          type: string
+        fallbackVariantId:
+          type: string
+
+    CliPlacementRequest:
+      allOf:
+        - $ref: '#/components/schemas/SurfacePlacementRequest'
+        - type: object
+          required: [minColumnsForPrimary, minColumnsForFallback, nonInteractiveBehavior]
+          properties:
+            minColumnsForPrimary:
+              type: integer
+              minimum: 1
+            minColumnsForFallback:
+              type: integer
+              minimum: 1
+            nonInteractiveBehavior:
+              type: string
+              enum: [primary, fallback, plain-text]
+
+    FaviconPlacementRequest:
+      allOf:
+        - $ref: '#/components/schemas/SurfacePlacementRequest'
+        - type: object
+          required: [iconAssets]
+          properties:
+            iconAssets:
+              type: array
+              minItems: 1
+              items:
+                $ref: '#/components/schemas/IconAsset'
+
+    IconAsset:
+      type: object
+      required: [assetType, path]
+      properties:
+        assetType:
+          type: string
+          enum: [svg, ico, png, apple-touch-icon, manifest-icon]
+        size:
+          type: string
+          example: 32x32
+        path:
+          type: string
+
+    SurfacePlacement:
+      type: object
+      required: [surfaceId, surfaceType, repository, path, primaryVariantId, status]
+      properties:
+        surfaceId:
+          type: string
+        surfaceType:
+          type: string
+          enum: [readme, cli-help, docs-header, docs-favicon]
+        repository:
+          type: string
+        path:
+          type: string
+        primaryVariantId:
+          type: string
+        fallbackVariantId:
+          type: string
+        status:
+          type: string
+          enum: [draft, approved, active, deprecated]
+
+    VerificationRequest:
+      type: object
+      required: [surfaceChecks]
+      properties:
+        surfaceChecks:
+          type: array
+          minItems: 4
+          items:
+            $ref: '#/components/schemas/SurfaceCheck'
+
+    SurfaceCheck:
+      type: object
+      required: [surfaceType, present, readable]
+      properties:
+        surfaceType:
+          type: string
+          enum: [readme, cli-help, docs-header, docs-favicon]
+        present:
+          type: boolean
+        readable:
+          type: boolean
+        notes:
+          type: string
+
+    VerificationRecord:
+      type: object
+      required:
+        [
+          verificationId,
+          validatedAt,
+          validatedBy,
+          requiredSurfacePresenceRate,
+          readabilityPassRate,
+          outcome,
+        ]
+      properties:
+        verificationId:
+          type: string
+        validatedAt:
+          type: string
+          format: date-time
+        validatedBy:
+          type: string
+        requiredSurfacePresenceRate:
+          type: number
+          minimum: 0
+          maximum: 100
+        readabilityPassRate:
+          type: number
+          minimum: 0
+          maximum: 100
+        outcome:
+          type: string
+          enum: [pass, fail]
+        notes:
+          type: string
+
+    CohesionReviewRequest:
+      type: object
+      required: [reviewer, score, comments]
+      properties:
+        reviewer:
+          type: string
+        score:
+          type: number
+          minimum: 0
+          maximum: 100
+        comments:
+          type: string
+
+    CohesionReviewRecord:
+      type: object
+      required: [reviewId, reviewedAt, reviewer, score]
+      properties:
+        reviewId:
+          type: string
+        reviewedAt:
+          type: string
+          format: date-time
+        reviewer:
+          type: string
+        score:
+          type: number
+          minimum: 0
+          maximum: 100
+        comments:
+          type: string
