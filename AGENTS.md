@@ -87,6 +87,8 @@ config-mgmt/
 - Markdown (CommonMark) for content, TypeScript-based static site toolchain for build/runtime orchestration + Astro, Starlight, Netlify for hosting/deploy previews, GitHub Actions for validation and link health checks (034-init-docs-site)
 - Markdown (CommonMark), TypeScript 5.9, JavaScript module config, YAML workflow definitions + Bun runtime scripts, Astro/Starlight site configuration, GitHub Actions workflows, Netlify publication pipeline (035-update-docs-domain)
 - Filesystem content and repository metadata only (no application database) (035-update-docs-domain)
+- TypeScript 5.9 (CLI), Markdown (CommonMark), Astro config/CSS, SVG/ICO static assets + Bun runtime, commander (CLI help rendering), Astro + Starlight (docs site) (036-add-logo-assets)
+- Filesystem assets and source files in repository worktrees (no application database) (036-add-logo-assets)
 
 - Markdown documentation (N/A - no code implementation) + Git 2.5+ (subject of research) (002-git-worktree-research)
 
@@ -106,9 +108,9 @@ tests/
 Markdown documentation (N/A - no code implementation): Follow standard conventions
 
 ## Recent Changes
+- 036-add-logo-assets: Added TypeScript 5.9 (CLI), Markdown (CommonMark), Astro config/CSS, SVG/ICO static assets + Bun runtime, commander (CLI help rendering), Astro + Starlight (docs site)
 - 035-update-docs-domain: Added Markdown (CommonMark), TypeScript 5.9, JavaScript module config, YAML workflow definitions + Bun runtime scripts, Astro/Starlight site configuration, GitHub Actions workflows, Netlify publication pipeline
 - 034-init-docs-site: Added Markdown (CommonMark) for content, TypeScript-based static site toolchain for build/runtime orchestration + Astro, Starlight, Netlify for hosting/deploy previews, GitHub Actions for validation and link health checks
-- 033-skills-sh-integration: Added Markdown (CommonMark), YAML 1.2, shell scripts (POSIX/Bash compatible) + skills CLI/skills.sh conventions, GitHub repository hosting, Arashi CLI distribution artifacts
 
 
 <!-- MANUAL ADDITIONS START -->
