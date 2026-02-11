@@ -1,0 +1,416 @@
+openapi: 3.1.0
+info:
+  title: Documentation Domain Migration Contract
+  version: 1.0.0
+  description: |
+    Planning contract for defining a canonical documentation domain,
+    auditing and replacing deprecated-domain references, handling
+    approved exceptions, and publishing migration evidence.
+servers:
+  - url: https://docs-governance.local
+
+paths:
+  /canonical-domain:
+    put:
+      summary: Set the active canonical documentation domain
+      operationId: setCanonicalDomain
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CanonicalDomainRequest'
+      responses:
+        '200':
+          description: Canonical domain updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CanonicalDomain'
+
+  /migration-scopes:
+    post:
+      summary: Define migration scope surfaces
+      operationId: createMigrationScope
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MigrationScopeRequest'
+      responses:
+        '201':
+          description: Migration scope created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MigrationScope'
+
+  /migration-scopes/{scopeId}/references:audit:
+    post:
+      summary: Audit documentation references in scope
+      operationId: auditReferences
+      parameters:
+        - $ref: '#/components/parameters/ScopeId'
+      responses:
+        '200':
+          description: Reference audit completed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReferenceAuditResult'
+
+  /migration-scopes/{scopeId}/references:replace:
+    post:
+      summary: Replace deprecated-domain references with canonical domain
+      operationId: replaceReferences
+      parameters:
+        - $ref: '#/components/parameters/ScopeId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReplaceReferencesRequest'
+      responses:
+        '202':
+          description: Replacement operation accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReplacementRun'
+
+  /migration-scopes/{scopeId}/exceptions:
+    post:
+      summary: Register an approved migration exception
+      operationId: registerException
+      parameters:
+        - $ref: '#/components/parameters/ScopeId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExceptionRequest'
+      responses:
+        '201':
+          description: Exception registered
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MigrationException'
+
+  /migration-scopes/{scopeId}/verification:
+    post:
+      summary: Verify migration outcomes and link health
+      operationId: verifyMigration
+      parameters:
+        - $ref: '#/components/parameters/ScopeId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerificationRequest'
+      responses:
+        '200':
+          description: Verification completed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerificationResult'
+
+  /migration-scopes/{scopeId}/evidence:
+    post:
+      summary: Generate release approval evidence
+      operationId: generateEvidence
+      parameters:
+        - $ref: '#/components/parameters/ScopeId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EvidenceRequest'
+      responses:
+        '201':
+          description: Evidence generated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MigrationEvidence'
+
+components:
+  parameters:
+    ScopeId:
+      name: scopeId
+      in: path
+      required: true
+      schema:
+        type: string
+
+  schemas:
+    CanonicalDomainRequest:
+      type: object
+      required: [baseUrl, effectiveDate, approvedBy]
+      properties:
+        baseUrl:
+          type: string
+          format: uri
+          example: https://arashi.haphazard.dev
+        effectiveDate:
+          type: string
+          format: date
+        approvedBy:
+          type: string
+
+    CanonicalDomain:
+      type: object
+      required: [domainId, baseUrl, status, effectiveDate, approvedBy]
+      properties:
+        domainId:
+          type: string
+        baseUrl:
+          type: string
+          format: uri
+        status:
+          type: string
+          enum: [proposed, approved, active]
+        effectiveDate:
+          type: string
+          format: date
+        approvedBy:
+          type: string
+
+    MigrationScopeRequest:
+      type: object
+      required: [name, surfaces]
+      properties:
+        name:
+          type: string
+        surfaces:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/ProjectSurface'
+
+    MigrationScope:
+      type: object
+      required: [scopeId, name, surfaceCount]
+      properties:
+        scopeId:
+          type: string
+        name:
+          type: string
+        surfaceCount:
+          type: integer
+
+    ProjectSurface:
+      type: object
+      required: [surfaceId, repository, path, surfaceType, owner, inScope]
+      properties:
+        surfaceId:
+          type: string
+        repository:
+          type: string
+          example: repos/arashi-docs
+        path:
+          type: string
+          example: repos/arashi-docs/README.md
+        surfaceType:
+          type: string
+          enum: [readme, site-config, contributor-doc, validation-script, workflow]
+        owner:
+          type: string
+        inScope:
+          type: boolean
+
+    ReferenceAuditResult:
+      type: object
+      required: [scopeId, auditedAt, totalReferences, targetDomainReferences, nonTargetReferences]
+      properties:
+        scopeId:
+          type: string
+        auditedAt:
+          type: string
+          format: date-time
+        totalReferences:
+          type: integer
+        targetDomainReferences:
+          type: integer
+        nonTargetReferences:
+          type: integer
+        references:
+          type: array
+          items:
+            $ref: '#/components/schemas/DocumentationReference'
+
+    DocumentationReference:
+      type: object
+      required:
+        [referenceId, surfaceId, currentUrl, normalizedUrl, classification, migrationStatus]
+      properties:
+        referenceId:
+          type: string
+        surfaceId:
+          type: string
+        currentUrl:
+          type: string
+          format: uri
+        normalizedUrl:
+          type: string
+          format: uri
+        classification:
+          type: string
+          enum: [target-domain, non-target, candidate-exception]
+        migrationStatus:
+          type: string
+          enum: [detected, updated, validated, excepted]
+        pathQueryFragmentPreserved:
+          type: boolean
+
+    ReplaceReferencesRequest:
+      type: object
+      required: [canonicalBaseUrl, preservePathQueryFragment]
+      properties:
+        canonicalBaseUrl:
+          type: string
+          format: uri
+          example: https://arashi.haphazard.dev
+        preservePathQueryFragment:
+          type: boolean
+          default: true
+        includeReferenceIds:
+          type: array
+          items:
+            type: string
+
+    ReplacementRun:
+      type: object
+      required: [runId, scopeId, status, updatedReferences, startedAt]
+      properties:
+        runId:
+          type: string
+        scopeId:
+          type: string
+        status:
+          type: string
+          enum: [queued, running, completed, failed]
+        updatedReferences:
+          type: integer
+        startedAt:
+          type: string
+          format: date-time
+        completedAt:
+          type: string
+          format: date-time
+
+    ExceptionRequest:
+      type: object
+      required: [referenceId, reason, owner]
+      properties:
+        referenceId:
+          type: string
+        reason:
+          type: string
+        owner:
+          type: string
+
+    MigrationException:
+      type: object
+      required: [exceptionId, referenceId, reason, owner, approvedAt, status]
+      properties:
+        exceptionId:
+          type: string
+        referenceId:
+          type: string
+        reason:
+          type: string
+        owner:
+          type: string
+        approvedAt:
+          type: string
+          format: date-time
+        status:
+          type: string
+          enum: [proposed, approved, rejected]
+
+    VerificationRequest:
+      type: object
+      required: [checkNames]
+      properties:
+        checkNames:
+          type: array
+          minItems: 1
+          items:
+            type: string
+            enum:
+              [
+                canonical-domain-consistency,
+                readme-entrypoint-health,
+                internal-link-health,
+                exception-completeness,
+              ]
+
+    VerificationResult:
+      type: object
+      required: [scopeId, checkedAt, outcome, criticalBrokenLinks]
+      properties:
+        scopeId:
+          type: string
+        checkedAt:
+          type: string
+          format: date-time
+        outcome:
+          type: string
+          enum: [pass, fail]
+        criticalBrokenLinks:
+          type: integer
+        findings:
+          type: array
+          items:
+            type: string
+
+    EvidenceRequest:
+      type: object
+      required: [generatedBy]
+      properties:
+        generatedBy:
+          type: string
+        approver:
+          type: string
+
+    MigrationEvidence:
+      type: object
+      required:
+        [
+          evidenceId,
+          scopeId,
+          generatedAt,
+          generatedBy,
+          totalTargetReferences,
+          updatedReferences,
+          approvedExceptions,
+          validationOutcome,
+        ]
+      properties:
+        evidenceId:
+          type: string
+        scopeId:
+          type: string
+        generatedAt:
+          type: string
+          format: date-time
+        generatedBy:
+          type: string
+        approver:
+          type: string
+        totalTargetReferences:
+          type: integer
+        updatedReferences:
+          type: integer
+        approvedExceptions:
+          type: integer
+        validationOutcome:
+          type: string
+          enum: [pass, fail]
