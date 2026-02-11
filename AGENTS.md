@@ -85,6 +85,8 @@ config-mgmt/
 - File system (skill metadata, docs, scripts, and examples) (033-skills-sh-integration)
 - Filesystem documentation content and static site artifacts (no application database) (034-init-docs-site)
 - Markdown (CommonMark) for content, TypeScript-based static site toolchain for build/runtime orchestration + Astro, Starlight, Netlify for hosting/deploy previews, GitHub Actions for validation and link health checks (034-init-docs-site)
+- Markdown (CommonMark), TypeScript 5.9, JavaScript module config, YAML workflow definitions + Bun runtime scripts, Astro/Starlight site configuration, GitHub Actions workflows, Netlify publication pipeline (035-update-docs-domain)
+- Filesystem content and repository metadata only (no application database) (035-update-docs-domain)
 
 - Markdown documentation (N/A - no code implementation) + Git 2.5+ (subject of research) (002-git-worktree-research)
 
@@ -104,10 +106,9 @@ tests/
 Markdown documentation (N/A - no code implementation): Follow standard conventions
 
 ## Recent Changes
+- 035-update-docs-domain: Added Markdown (CommonMark), TypeScript 5.9, JavaScript module config, YAML workflow definitions + Bun runtime scripts, Astro/Starlight site configuration, GitHub Actions workflows, Netlify publication pipeline
 - 034-init-docs-site: Added Markdown (CommonMark) for content, TypeScript-based static site toolchain for build/runtime orchestration + Astro, Starlight, Netlify for hosting/deploy previews, GitHub Actions for validation and link health checks
 - 033-skills-sh-integration: Added Markdown (CommonMark), YAML 1.2, shell scripts (POSIX/Bash compatible) + skills CLI/skills.sh conventions, GitHub repository hosting, Arashi CLI distribution artifacts
-- 032-fix-bare-create-command: Added TypeScript 5.9 + Bun runtime, commander, chalk, ora, @inquirer/prompts
-- 031-audit-readmes: Added Markdown (CommonMark), YAML for workflow badge targets, JSON for package metadata validation + Existing repository metadata in `repos/arashi` (`package.json`, GitHub workflows, LICENSE), Markdown link conventions, badge providers (GitHub Actions and npm badge endpoints)
 
 
 <!-- MANUAL ADDITIONS START -->
