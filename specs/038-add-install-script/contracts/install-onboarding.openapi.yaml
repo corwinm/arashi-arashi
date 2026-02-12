@@ -1,0 +1,430 @@
+openapi: 3.1.0
+info:
+  title: Install Onboarding Contract
+  version: 1.0.0
+  description: |
+    Planning contract for defining official Arashi installation methods,
+    publishing synchronized onboarding instructions across README/docs/hero,
+    and validating first-run installation outcomes.
+servers:
+  - url: https://onboarding.arashi.local
+
+paths:
+  /installation/methods:
+    get:
+      summary: List active installation methods
+      operationId: listInstallationMethods
+      responses:
+        '200':
+          description: Active installation methods returned
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [methods]
+                properties:
+                  methods:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/InstallationMethod'
+    put:
+      summary: Create or update an official installation method
+      operationId: upsertInstallationMethod
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InstallationMethodRequest'
+      responses:
+        '200':
+          description: Installation method updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InstallationMethod'
+
+  /installation/release-binding:
+    put:
+      summary: Configure curl installer release binding and fallback behavior
+      operationId: configureReleaseBinding
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReleaseBindingRequest'
+      responses:
+        '200':
+          description: Release binding configured
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReleaseBinding'
+
+  /installation/surfaces/{surfaceId}/instructions:
+    parameters:
+      - name: surfaceId
+        in: path
+        required: true
+        schema:
+          type: string
+          enum: [readme, docs-getting-started, docs-landing-hero]
+    get:
+      summary: Get installation instructions for a surface
+      operationId: getSurfaceInstructions
+      responses:
+        '200':
+          description: Surface instructions returned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GuidanceSurface'
+    put:
+      summary: Define installation instructions for a surface
+      operationId: upsertSurfaceInstructions
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GuidanceSurfaceRequest'
+      responses:
+        '200':
+          description: Surface instructions updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GuidanceSurface'
+
+  /installation/access-policy:
+    put:
+      summary: Define install onboarding access policy
+      operationId: setInstallAccessPolicy
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AccessPolicyRequest'
+      responses:
+        '200':
+          description: Access policy updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccessPolicy'
+
+  /installation/consistency-checks:
+    post:
+      summary: Run consistency check across install surfaces
+      operationId: runInstallConsistencyCheck
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConsistencyCheckRequest'
+      responses:
+        '201':
+          description: Consistency check result created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConsistencyCheckResult'
+
+  /installation/outcomes:
+    post:
+      summary: Record first-run installation outcome
+      operationId: recordInstallOutcome
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FirstRunOutcomeRequest'
+      responses:
+        '201':
+          description: Installation outcome recorded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FirstRunOutcome'
+
+components:
+  schemas:
+    InstallationMethodRequest:
+      type: object
+      required:
+        [methodType, displayName, commandTemplate, prerequisites, verificationCommand, troubleshootingReference]
+      properties:
+        methodType:
+          type: string
+          enum: [curl-script, npm-global]
+        displayName:
+          type: string
+        commandTemplate:
+          type: string
+        prerequisites:
+          type: array
+          minItems: 1
+          items:
+            type: string
+        verificationCommand:
+          type: string
+        troubleshootingReference:
+          type: string
+
+    InstallationMethod:
+      type: object
+      required:
+        [methodId, methodType, displayName, commandTemplate, prerequisites, verificationCommand, status]
+      properties:
+        methodId:
+          type: string
+        methodType:
+          type: string
+          enum: [curl-script, npm-global]
+        displayName:
+          type: string
+        commandTemplate:
+          type: string
+        prerequisites:
+          type: array
+          items:
+            type: string
+        verificationCommand:
+          type: string
+        troubleshootingReference:
+          type: string
+        status:
+          type: string
+          enum: [draft, approved, active, deprecated]
+
+    ReleaseBindingRequest:
+      type: object
+      required:
+        [defaultVersionPolicy, supportsVersionPin, platformAssetMap, integrityPolicy, fallbackMethodId]
+      properties:
+        defaultVersionPolicy:
+          type: string
+          enum: [latest-stable, pinned-required]
+        supportsVersionPin:
+          type: boolean
+        platformAssetMap:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/PlatformAsset'
+        integrityPolicy:
+          type: string
+          enum: [checksum-required, checksum-optional]
+        fallbackMethodId:
+          type: string
+
+    ReleaseBinding:
+      type: object
+      required:
+        [bindingId, defaultVersionPolicy, supportsVersionPin, platformAssetMap, integrityPolicy, fallbackMethodId, status]
+      properties:
+        bindingId:
+          type: string
+        defaultVersionPolicy:
+          type: string
+          enum: [latest-stable, pinned-required]
+        supportsVersionPin:
+          type: boolean
+        platformAssetMap:
+          type: array
+          items:
+            $ref: '#/components/schemas/PlatformAsset'
+        integrityPolicy:
+          type: string
+          enum: [checksum-required, checksum-optional]
+        fallbackMethodId:
+          type: string
+        status:
+          type: string
+          enum: [draft, approved, active, retired]
+
+    PlatformAsset:
+      type: object
+      required: [platformKey, assetName]
+      properties:
+        platformKey:
+          type: string
+          enum: [macos-arm64, linux-x64, windows-x64]
+        assetName:
+          type: string
+
+    GuidanceSurfaceRequest:
+      type: object
+      required:
+        [repository, path, methodIds, includesPrerequisites, includesVerification, includesTroubleshooting, includesNextStep]
+      properties:
+        repository:
+          type: string
+        path:
+          type: string
+        methodIds:
+          type: array
+          minItems: 2
+          items:
+            type: string
+        includesPrerequisites:
+          type: boolean
+        includesVerification:
+          type: boolean
+        includesTroubleshooting:
+          type: boolean
+        includesNextStep:
+          type: boolean
+
+    GuidanceSurface:
+      type: object
+      required:
+        [surfaceId, surfaceType, repository, path, methodIds, includesPrerequisites, includesVerification, includesTroubleshooting, includesNextStep, status]
+      properties:
+        surfaceId:
+          type: string
+        surfaceType:
+          type: string
+          enum: [readme, docs-getting-started, docs-landing-hero]
+        repository:
+          type: string
+        path:
+          type: string
+        methodIds:
+          type: array
+          items:
+            type: string
+        includesPrerequisites:
+          type: boolean
+        includesVerification:
+          type: boolean
+        includesTroubleshooting:
+          type: boolean
+        includesNextStep:
+          type: boolean
+        status:
+          type: string
+          enum: [draft, approved, active, superseded]
+
+    AccessPolicyRequest:
+      type: object
+      required: [allowsAnonymousInstall]
+      properties:
+        allowsAnonymousInstall:
+          type: boolean
+        notes:
+          type: string
+
+    AccessPolicy:
+      type: object
+      required: [policyId, allowsAnonymousInstall, status]
+      properties:
+        policyId:
+          type: string
+        allowsAnonymousInstall:
+          type: boolean
+        notes:
+          type: string
+        status:
+          type: string
+          enum: [draft, active, retired]
+
+    ConsistencyCheckRequest:
+      type: object
+      required: [surfaces]
+      properties:
+        surfaces:
+          type: array
+          minItems: 3
+          items:
+            type: string
+            enum: [readme, docs-getting-started, docs-landing-hero]
+
+    ConsistencyCheckResult:
+      type: object
+      required:
+        [checkId, checkedAt, surfacesChecked, commandParityPass, prerequisitesPass, verificationPass, troubleshootingPass, nextStepPass, outcome]
+      properties:
+        checkId:
+          type: string
+        checkedAt:
+          type: string
+          format: date-time
+        surfacesChecked:
+          type: array
+          items:
+            type: string
+        commandParityPass:
+          type: boolean
+        prerequisitesPass:
+          type: boolean
+        verificationPass:
+          type: boolean
+        troubleshootingPass:
+          type: boolean
+        nextStepPass:
+          type: boolean
+        outcome:
+          type: string
+          enum: [pass, fail]
+
+    FirstRunOutcomeRequest:
+      type: object
+      required: [methodId, surfaceId, startedAt, verificationPassed, resolvedWithFallback, nextStepCompleted]
+      properties:
+        methodId:
+          type: string
+        surfaceId:
+          type: string
+          enum: [readme, docs-getting-started, docs-landing-hero]
+        startedAt:
+          type: string
+          format: date-time
+        completedAt:
+          type: string
+          format: date-time
+        durationSeconds:
+          type: integer
+          minimum: 0
+        verificationPassed:
+          type: boolean
+        failureCategory:
+          type: string
+          enum: [missing-prerequisite, permission, network, unsupported-platform, other]
+        resolvedWithFallback:
+          type: boolean
+        nextStepCompleted:
+          type: boolean
+
+    FirstRunOutcome:
+      type: object
+      required:
+        [outcomeId, methodId, surfaceId, startedAt, verificationPassed, resolvedWithFallback, nextStepCompleted]
+      properties:
+        outcomeId:
+          type: string
+        methodId:
+          type: string
+        surfaceId:
+          type: string
+        startedAt:
+          type: string
+          format: date-time
+        completedAt:
+          type: string
+          format: date-time
+        durationSeconds:
+          type: integer
+        verificationPassed:
+          type: boolean
+        failureCategory:
+          type: string
+          enum: [missing-prerequisite, permission, network, unsupported-platform, other]
+        resolvedWithFallback:
+          type: boolean
+        nextStepCompleted:
+          type: boolean
