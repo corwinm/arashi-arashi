@@ -70,9 +70,10 @@ You **MUST** consider the user input before proceeding (if not empty).
    - State transitions if applicable
 
 2. **Generate API contracts** from functional requirements:
-   - For each user action → endpoint
-   - Use standard REST/GraphQL patterns
+   - For each user action → endpoint (if applicable)
+   - Use standard REST/GraphQL patterns (if applicable)
    - Output OpenAPI/GraphQL schema to `/contracts/`
+   - For CLI tools, define command syntax and expected output
 
 3. **Agent context update**:
    - Run `.specify/scripts/bash/update-agent-context.sh opencode`

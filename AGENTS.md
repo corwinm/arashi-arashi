@@ -91,6 +91,8 @@ config-mgmt/
 - Filesystem assets and source files in repository worktrees (no application database) (036-add-logo-assets)
 - Shell script (POSIX/Bash) for installer bootstrap, TypeScript 5.9 + Bun runtime for CLI/release support scripts, Markdown (CommonMark) for README and documentation, Astro/Starlight content frontmatter for landing hero conten + GitHub Releases distribution assets, npm global distribution (`arashi` package), Bun build/release scripts, Astro/Starlight docs site toolchain (038-add-install-script)
 - Filesystem content in repository worktrees; release artifacts in GitHub Releases (no application database) (038-add-install-script)
+- Markdown (MDX frontmatter), CSS, TypeScript 5.9 toolchain via Bun, Astro 5.x site runtime + Astro, `@astrojs/starlight`, existing docs validation scripts (040-fix-safari-hero-image)
+- Static documentation files on filesystem (no application database) (040-fix-safari-hero-image)
 
 - Markdown documentation (N/A - no code implementation) + Git 2.5+ (subject of research) (002-git-worktree-research)
 
@@ -110,9 +112,9 @@ tests/
 Markdown documentation (N/A - no code implementation): Follow standard conventions
 
 ## Recent Changes
+- 040-fix-safari-hero-image: Added Markdown (MDX frontmatter), CSS, TypeScript 5.9 toolchain via Bun, Astro 5.x site runtime + Astro, `@astrojs/starlight`, existing docs validation scripts
 - 038-add-install-script: Added Shell script (POSIX/Bash) for installer bootstrap, TypeScript 5.9 + Bun runtime for CLI/release support scripts, Markdown (CommonMark) for README and documentation, Astro/Starlight content frontmatter for landing hero conten + GitHub Releases distribution assets, npm global distribution (`arashi` package), Bun build/release scripts, Astro/Starlight docs site toolchain
 - 036-add-logo-assets: Added TypeScript 5.9 (CLI), Markdown (CommonMark), Astro config/CSS, SVG/ICO static assets + Bun runtime, commander (CLI help rendering), Astro + Starlight (docs site)
-- 035-update-docs-domain: Added Markdown (CommonMark), TypeScript 5.9, JavaScript module config, YAML workflow definitions + Bun runtime scripts, Astro/Starlight site configuration, GitHub Actions workflows, Netlify publication pipeline
 
 
 <!-- MANUAL ADDITIONS START -->
