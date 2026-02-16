@@ -134,6 +134,23 @@ Important constraints:
 - If a user asks for a "single commit," interpret that as **single commit per affected repository** unless they explicitly say otherwise.
 - Do not leave `specs/` changes uncommitted when they were intentionally updated as part of the delivered feature.
 
+## Multi-Repo PR Cross-Reference Policy
+
+When a feature requires PRs in multiple repositories, update **every** related PR description with explicit cross-references:
+
+- Include a **Related** section with the companion PR URL(s) in other repositories.
+- Include the originating GitHub issue URL (or `owner/repo#issue-number`) in each PR.
+- Keep links bidirectional so reviewers can navigate from any PR to the full implementation/spec context.
+
+Recommended template:
+
+```markdown
+## Related
+- Companion implementation PR: <url>
+- Companion specs PR: <url>
+- Related issue: <url or owner/repo#123>
+```
+
 ## Pre-Commit Quality Checks
 
 Before committing and pushing code changes, **ALWAYS** run the following checks to ensure CI will pass:
