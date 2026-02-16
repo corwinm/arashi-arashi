@@ -93,6 +93,8 @@ config-mgmt/
 - Filesystem content in repository worktrees; release artifacts in GitHub Releases (no application database) (038-add-install-script)
 - Markdown (MDX frontmatter), CSS, TypeScript 5.9 toolchain via Bun, Astro 5.x site runtime + Astro, `@astrojs/starlight`, existing docs validation scripts (040-fix-safari-hero-image)
 - Static documentation files on filesystem (no application database) (040-fix-safari-hero-image)
+- TypeScript 5.9 with Bun runtime + commander, chalk, ora, @inquirer/prompts, Bun built-in process/filesystem APIs (041-fix-child-repo-hooks)
+- Filesystem (`.arashi/config.json`, `.arashi/hooks/`) and git metadata (`.git/worktrees`) (041-fix-child-repo-hooks)
 
 - Markdown documentation (N/A - no code implementation) + Git 2.5+ (subject of research) (002-git-worktree-research)
 
@@ -112,12 +114,25 @@ tests/
 Markdown documentation (N/A - no code implementation): Follow standard conventions
 
 ## Recent Changes
+- 041-fix-child-repo-hooks: Added TypeScript 5.9 with Bun runtime + commander, chalk, ora, @inquirer/prompts, Bun built-in process/filesystem APIs
 - 040-fix-safari-hero-image: Added Markdown (MDX frontmatter), CSS, TypeScript 5.9 toolchain via Bun, Astro 5.x site runtime + Astro, `@astrojs/starlight`, existing docs validation scripts
 - 038-add-install-script: Added Shell script (POSIX/Bash) for installer bootstrap, TypeScript 5.9 + Bun runtime for CLI/release support scripts, Markdown (CommonMark) for README and documentation, Astro/Starlight content frontmatter for landing hero conten + GitHub Releases distribution assets, npm global distribution (`arashi` package), Bun build/release scripts, Astro/Starlight docs site toolchain
-- 036-add-logo-assets: Added TypeScript 5.9 (CLI), Markdown (CommonMark), Astro config/CSS, SVG/ICO static assets + Bun runtime, commander (CLI help rendering), Astro + Starlight (docs site)
 
 
 <!-- MANUAL ADDITIONS START -->
+
+## Multi-Repo Commit Policy
+
+When a feature touches both implementation code and specification artifacts, commit updates in **both** repositories:
+
+- **Project repo commit(s)**: changes under `repos/<project>/` (source, tests, project docs)
+- **Config-mgmt repo commit(s)**: changes under `specs/` (tasks, contracts, plans, quickstart, spec docs)
+
+Important constraints:
+
+- A single git commit cannot span multiple repositories/worktrees.
+- If a user asks for a "single commit," interpret that as **single commit per affected repository** unless they explicitly say otherwise.
+- Do not leave `specs/` changes uncommitted when they were intentionally updated as part of the delivered feature.
 
 ## Pre-Commit Quality Checks
 
