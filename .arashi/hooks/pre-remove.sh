@@ -21,11 +21,16 @@ set -e
 
 echo "Pre-remove hook: preparing to remove worktrees"
 
-# Example: stop a tmux session tied to branch name
+# Example: stop tmux sessions whose names contain the branch name
 if [ -n "$ARASHI_BRANCH_NAME" ] && command -v tmux >/dev/null 2>&1; then
-  tmux has-session -t "$ARASHI_BRANCH_NAME" 2>/dev/null \
-    && tmux kill-session -t "$ARASHI_BRANCH_NAME" \
-    || true
+  matching_sessions="$(tmux list-sessions -F '#{session_name}' -f "#{m:*${ARASHI_BRANCH_NAME}*,#{session_name}}" 2>/dev/null || true)"
+
+  if [ -n "$matching_sessions" ]; then
+    while IFS= read -r session_name; do
+      [ -n "$session_name" ] || continue
+      tmux kill-session -t "$session_name" || true
+    done <<< "$matching_sessions"
+  fi
 fi
 
 exit 0
