@@ -46,6 +46,22 @@ Order of operations:
 2. Execute one workflow from start to finish.
 3. Confirm expected outcomes from the workflow doc.
 
+## Remove Cleanup Hooks
+
+Use remove lifecycle hooks to automate teardown around `arashi remove`.
+
+```bash
+cp .arashi/hooks/pre-remove.sh.example .arashi/hooks/pre-remove.sh
+chmod +x .arashi/hooks/pre-remove.sh
+
+# optional post-remove finalizer
+cp .arashi/hooks/post-remove.sh.example .arashi/hooks/post-remove.sh
+chmod +x .arashi/hooks/post-remove.sh
+```
+
+`pre-remove.sh` runs before destructive remove actions.
+`post-remove.sh` runs after remove actions are attempted.
+
 ## Session Navigation (Optional)
 
 For tmux/sesh and worktree jump shortcuts, use:
