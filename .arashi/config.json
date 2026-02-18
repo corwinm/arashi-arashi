@@ -19,6 +19,12 @@
       "default_branch": "main",
       "is_bare": false,
       "worktrees": []
+    },
+    "arashi-vscode": {
+      "path": "repos/arashi-vscode",
+      "default_branch": "main",
+      "is_bare": false,
+      "worktrees": []
     }
   }
 }
