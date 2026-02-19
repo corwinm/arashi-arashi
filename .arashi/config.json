@@ -6,25 +6,29 @@
     "arashi": {
       "path": "repos/arashi",
       "default_branch": "main",
-      "worktrees": []
+      "worktrees": [],
+      "git_url": "git@github.com:corwinm/arashi.git"
     },
     "arashi-skills": {
       "path": "repos/arashi-skills",
       "default_branch": "main",
       "is_bare": false,
-      "worktrees": []
+      "worktrees": [],
+      "git_url": "git@github.com:corwinm/arashi-skills.git"
     },
     "arashi-docs": {
       "path": "repos/arashi-docs",
       "default_branch": "main",
       "is_bare": false,
-      "worktrees": []
+      "worktrees": [],
+      "git_url": "git@github.com:corwinm/arashi-docs.git"
     },
     "arashi-vscode": {
       "path": "repos/arashi-vscode",
       "default_branch": "main",
       "is_bare": false,
-      "worktrees": []
+      "worktrees": [],
+      "git_url": "git@github.com:corwinm/arashi-vscode.git"
     }
   }
 }
