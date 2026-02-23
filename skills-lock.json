@@ -5,6 +5,11 @@
       "source": "corwinm/arashi-skills",
       "sourceType": "github",
       "computedHash": "2e3d7301a63d63922553ab79b010942168f26fbffda359b97f70ae8d12732a95"
+    },
+    "frontend-design": {
+      "source": "anthropics/skills",
+      "sourceType": "github",
+      "computedHash": "063a0e6448123cd359ad0044cc46b0e490cc7964d45ef4bb9fd842bd2ffbca67"
     }
   }
 }
