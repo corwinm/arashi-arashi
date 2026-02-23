@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "skills": {
+    "arashi": {
+      "source": "corwinm/arashi-skills",
+      "sourceType": "github",
+      "computedHash": "2e3d7301a63d63922553ab79b010942168f26fbffda359b97f70ae8d12732a95"
+    }
+  }
+}

@@ -9,17 +9,18 @@ license: MIT
 compatibility:
   os: [macos, linux, windows]
   required_commands: [git]
-  optional_commands: [npm, curl, fzf, sesh]
+  optional_commands: [npm, node, fzf, tmux, sesh]
 entry_commands:
-  install_arashi: npm install -g arashi
+  install_arashi: npm install --global arashi@1.7.0
+  install_arashi_verified_release: "see references/commands.md: verified release artifact flow"
   verify_arashi: arashi --version
   workflows:
     beginner: arashi init && arashi status
-    intermediate: arashi add <repo-url> && arashi create <branch>
+    intermediate: arashi clone --all && arashi create <branch> && arashi switch <branch>
     advanced: arashi pull && arashi sync
   session_shortcuts:
-    jump: cd "$(arashi list | fzf)"
-    sesh: sesh connect "$(arashi list | fzf)"
+    list: arashi list
+    switch: arashi switch
 visibility: public
 status: draft
 ---
@@ -35,6 +36,7 @@ Use this skill when the user wants to:
 - set up Arashi quickly with a documented, repeatable install flow
 - choose a workflow by difficulty (beginner, intermediate, advanced)
 - validate readiness before running commands across multiple repositories
+- switch quickly between parent and child worktrees with `arashi switch`
 - speed up daily navigation with `fzf`, `tmux`, and `sesh`
 - automate cleanup around `arashi remove` with lifecycle hooks
 - recover from setup, network, or command failures without guesswork
@@ -42,8 +44,8 @@ Use this skill when the user wants to:
 ## Core Commands
 
 ```bash
-# install Arashi CLI
-npm install -g arashi
+# install Arashi CLI (deterministic pinned install)
+npm install --global arashi@1.7.0
 
 # verify Arashi is available
 arashi --version
@@ -54,22 +56,23 @@ arashi --version
 When guiding a user, always:
 
 1. Run preflight checks before installing Arashi CLI.
-2. Confirm `arashi --version` before running workflows.
-3. Confirm expected outcomes after each workflow step.
-4. Route failures through the troubleshooting matrix before retrying.
-5. For remove cleanup automation, use `pre-remove.sh` and `post-remove.sh` templates in `.arashi/hooks/`.
+2. Use a pinned install command (`arashi@<version>`) and avoid pipe-to-shell installers.
+3. Confirm `arashi --version` before running workflows.
+4. Confirm expected outcomes after each workflow step.
+5. Route failures through the troubleshooting matrix before retrying.
+6. Review hook scripts before enabling `pre-remove.sh` or `post-remove.sh` across repository, workspace, or global hook scopes.
 
 ## Workflow Catalog
 
 - Beginner: initialize workspace and inspect status.
-- Intermediate: add repositories and create a feature branch.
+- Intermediate: clone missing repositories and create a feature branch.
 - Advanced: pull and sync repositories safely.
-- Session shortcuts: jump or connect with `fzf` + `sesh` in tmux-based flows.
+- Session shortcuts: jump or connect with `arashi switch`, `fzf`, and `sesh` in tmux-based flows.
 
 ### Expected Workflow Outcomes
 
 - **Beginner**: workspace initialized and status visible.
-- **Intermediate**: repositories added and feature branch worktrees created.
+- **Intermediate**: missing clones recovered and feature branch worktrees created.
 - **Advanced**: repositories synchronized with clear status after reconciliation.
 
 ## References

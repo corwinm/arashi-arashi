@@ -5,8 +5,8 @@ Canonical commands for installing and using the Arashi CLI.
 ## Most Common Commands
 
 ```bash
-# install Arashi CLI
-npm install -g arashi
+# install Arashi CLI (pinned)
+npm install --global arashi@1.7.0
 
 # verify Arashi CLI
 arashi --version
@@ -17,24 +17,33 @@ arashi --help
 
 ## Installation
 
-Install with npm:
+Preferred pinned install with npm (all platforms):
 
 ```bash
-npm install -g arashi
+npm install --global arashi@1.7.0
 ```
 
-Alternative install from GitHub Releases:
+Verified release artifact flow (macOS/Linux) without pipe-to-shell:
 
 ```bash
-curl -L https://github.com/corwinm/arashi/releases/latest/download/arashi-macos-arm64 -o arashi
-chmod +x arashi
-sudo mv arashi /usr/local/bin/arashi
+ARASHI_VERSION="1.7.0"
+ARASHI_ASSET="arashi-macos-arm64"
+curl -L "https://github.com/corwinm/arashi/releases/download/v${ARASHI_VERSION}/${ARASHI_ASSET}" -o "${ARASHI_ASSET}"
+curl -L "https://github.com/corwinm/arashi/releases/download/v${ARASHI_VERSION}/arashi-checksums.txt" -o arashi-checksums.txt
+grep " ${ARASHI_ASSET}$" arashi-checksums.txt | shasum -a 256 -c -
+install -m 0755 "${ARASHI_ASSET}" "$HOME/.local/bin/arashi"
 ```
+
+Notes:
+
+- choose the correct `${ARASHI_ASSET}` for your platform
+- ensure `$HOME/.local/bin` is on `PATH`
+- avoid privileged installs unless your environment policy requires them
 
 Expected outcome:
 
 - install command exits `0`
-- `arashi --version` returns a version string
+- `arashi --version` returns `1.7.0` (or chosen pinned version)
 
 ## Workflow Execution
 
@@ -46,21 +55,142 @@ Order of operations:
 2. Execute one workflow from start to finish.
 3. Confirm expected outcomes from the workflow doc.
 
+## Workspace Initialization
+
+Initialize with defaults:
+
+```bash
+arashi init
+```
+
+Use a custom repositories directory:
+
+```bash
+arashi init --repos-dir ./workspace-repos
+```
+
+Use a custom worktree base directory:
+
+```bash
+arashi init --worktrees-dir ./workspace-worktrees
+```
+
+Expected outcomes:
+
+- `.arashi/config.json` includes `reposDir` and `worktreesDir`.
+- default `worktreesDir` is `.arashi/worktrees` when the option is omitted.
+- `.gitignore` always includes the configured repositories directory.
+- `.gitignore` auto-includes `.arashi/worktrees/` only when default `worktreesDir` is used.
+
+## Repository Cloning and Recovery
+
+Use `arashi clone` to clone configured repositories that are missing locally.
+
+```bash
+# interactively choose missing repositories
+arashi clone
+
+# clone all missing repositories
+arashi clone --all
+```
+
+Expected outcomes:
+
+- command exits `0` when clone operations succeed
+- already-present repositories are skipped
+- `arashi status` no longer reports missing repository spawn errors
+
+## Worktree Switching
+
+Use `arashi switch` to open a terminal context for an existing worktree.
+
+```bash
+# parent workspace worktrees (default)
+arashi switch
+
+# child repositories in current workspace only
+arashi switch --repos docs
+
+# include parent workspaces + nested child repo worktrees
+arashi switch --all
+
+# sesh mode inside tmux
+arashi switch --sesh
+
+# bypass configured switch launch defaults for one run
+arashi switch --no-default-launch
+```
+
+Expected outcomes:
+
+- command exits `0` and opens the selected target in a new context
+- `--repos` matches repository names first (exact match preferred)
+- `--repos` with no matches lists available child repositories
+
+## Create Defaults and Overrides
+
+Use command defaults in `.arashi/config.json` to control post-create switch/launch behavior:
+
+```json
+{
+  "defaults": {
+    "create": {
+      "switch": true,
+      "launch": true,
+      "launchMode": "sesh"
+    },
+    "switch": {
+      "launchMode": "sesh"
+    }
+  }
+}
+```
+
+Use one-off CLI overrides when needed:
+
+```bash
+arashi create feature-auth --launch
+arashi create feature-auth --no-launch
+arashi create feature-auth --no-switch
+```
+
+Precedence for create/switch launch behavior is: explicit flag > opt-out flag > config default > built-in default.
+
 ## Remove Cleanup Hooks
 
 Use remove lifecycle hooks to automate teardown around `arashi remove`.
 
 ```bash
+# workspace-root hooks
 cp .arashi/hooks/pre-remove.sh.example .arashi/hooks/pre-remove.sh
-chmod +x .arashi/hooks/pre-remove.sh
 
 # optional post-remove finalizer
 cp .arashi/hooks/post-remove.sh.example .arashi/hooks/post-remove.sh
-chmod +x .arashi/hooks/post-remove.sh
+
+# repo-scoped hook (runs for one child repo)
+mkdir -p repos/<repo>/.arashi/hooks
+cp .arashi/hooks/pre-remove.sh.example repos/<repo>/.arashi/hooks/pre-remove.sh
+
+# global shared hook (all repos)
+mkdir -p ~/.arashi/hooks
+cp .arashi/hooks/pre-remove.sh.example ~/.arashi/hooks/pre-remove.sh
+
+# global repo-targeted hook
+mkdir -p ~/.arashi/hooks/<repo>
+cp .arashi/hooks/pre-remove.sh.example ~/.arashi/hooks/<repo>/pre-remove.sh
 ```
 
-`pre-remove.sh` runs before destructive remove actions.
-`post-remove.sh` runs after remove actions are attempted.
+Before enabling hooks, review script contents and ensure commands are safe for their scope.
+
+For each targeted repository, remove hooks run in order:
+
+1. `repos/<repo>/.arashi/hooks/<lifecycle>.sh`
+2. `.arashi/hooks/<lifecycle>.sh`
+3. `~/.arashi/hooks/<repo>/<lifecycle>.sh`
+4. `~/.arashi/hooks/<lifecycle>.sh`
+
+`pre-remove.sh` runs before destructive remove actions and can abort the command when it exits non-zero.
+`post-remove.sh` runs after remove actions are attempted and can perform final cleanup (for example tmux/session teardown).
 
 ## Session Navigation (Optional)
 

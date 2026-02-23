@@ -5,13 +5,13 @@ Use this catalog to choose the right workflow by goal and confidence level.
 | Workflow | Difficulty | User Goal |
 |----------|------------|-----------|
 | Beginner | Beginner | Initialize a workspace and inspect current status |
-| Intermediate | Intermediate | Add repositories and create a feature branch across worktrees |
+| Intermediate | Intermediate | Clone missing repositories and create a feature branch across worktrees |
 | Advanced | Advanced | Recover from branch drift and synchronize repositories safely |
 
 ## Command Shape by Workflow
 
 - Beginner: `arashi init` -> `arashi status`
-- Intermediate: `arashi add` -> `arashi create` -> `arashi list`
+- Intermediate: `arashi clone --all` -> `arashi create` -> `arashi switch`
 - Advanced: `arashi pull` -> `arashi sync` -> `arashi status`
 
 ## Selection Guidance
@@ -19,7 +19,7 @@ Use this catalog to choose the right workflow by goal and confidence level.
 - Start with **Beginner** if this is your first Arashi skill session.
 - Choose **Intermediate** if you already have repositories and need cross-repo branch creation.
 - Choose **Advanced** if you need sync and recovery controls.
-- If you automate teardown on branch removal, set up `pre-remove.sh` / `post-remove.sh` from the hook templates.
+- If you automate teardown on branch removal, configure `pre-remove.sh` / `post-remove.sh` in repository, workspace, or global hook scopes.
 - If you use tmux/sesh, apply shortcuts from `references/session-shortcuts.md`.
 
 ## Workflow Entry Commands
@@ -29,6 +29,8 @@ Before running any workflow:
 ```bash
 arashi --version
 ```
+
+If your team enforces repository security checks, run them before executing workflows.
 
 ## Beginner Workflow
 
@@ -40,22 +42,26 @@ arashi status
 Expected outcomes:
 
 - `.arashi/config.json` exists after `arashi init`.
+- `.arashi/config.json` records `worktreesDir` (default `.arashi/worktrees`).
+- `.gitignore` includes the configured repositories directory.
+- `.gitignore` includes `.arashi/worktrees/` when using the default `worktreesDir`.
 - `arashi status` prints repository/worktree status without errors.
+
+If you run `arashi init --worktrees-dir <path>`, add that custom location to `.gitignore` manually when needed.
 
 ## Intermediate Workflow
 
 ```bash
-arashi add git@github.com:your-org/frontend.git
-arashi add git@github.com:your-org/backend.git
+arashi clone --all
 arashi create feature/skill-integration
-arashi list
+arashi switch feature/skill-integration
 ```
 
 Expected outcomes:
 
-- Repositories are registered in `.arashi/config.json`.
+- Missing configured repositories are materialized locally.
 - New worktrees exist for `feature/skill-integration`.
-- `arashi list` shows active worktree paths.
+- `arashi switch` opens the selected worktree in a new terminal context.
 
 ## Advanced Workflow
 
