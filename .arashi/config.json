@@ -1,34 +1,24 @@
 {
+  "$schema": "https://unpkg.com/arashi/schema/config.schema.json",
   "version": "1.0.0",
-  "repos_dir": "./repos",
-  "auto_setup": true,
-  "discovered_repos": {
-    "arashi": {
-      "path": "repos/arashi",
-      "default_branch": "main",
-      "worktrees": [],
-      "git_url": "git@github.com:corwinm/arashi.git"
-    },
-    "arashi-skills": {
-      "path": "repos/arashi-skills",
-      "default_branch": "main",
-      "is_bare": false,
-      "worktrees": [],
-      "git_url": "git@github.com:corwinm/arashi-skills.git"
-    },
+  "reposDir": "./repos",
+  "worktreesDir": ".arashi/worktrees",
+  "repos": {
     "arashi-docs": {
       "path": "repos/arashi-docs",
-      "default_branch": "main",
-      "is_bare": false,
-      "worktrees": [],
-      "git_url": "git@github.com:corwinm/arashi-docs.git"
+      "gitUrl": "git@github.com:corwinm/arashi-docs.git"
     },
     "arashi-vscode": {
       "path": "repos/arashi-vscode",
-      "default_branch": "main",
-      "is_bare": false,
-      "worktrees": [],
-      "git_url": "git@github.com:corwinm/arashi-vscode.git"
+      "gitUrl": "git@github.com:corwinm/arashi-vscode.git"
+    },
+    "arashi": {
+      "path": "repos/arashi",
+      "gitUrl": "git@github.com:corwinm/arashi.git"
+    },
+    "arashi-skills": {
+      "path": "repos/arashi-skills",
+      "gitUrl": "git@github.com:corwinm/arashi-skills.git"
     }
   }
 }
