@@ -134,6 +134,10 @@ Important constraints:
 - If a user asks for a "single commit," interpret that as **single commit per affected repository** unless they explicitly say otherwise.
 - Do not leave `specs/` changes uncommitted when they were intentionally updated as part of the delivered feature.
 
+## Arashi Docs/Skills Sync Policy
+
+When a change is made in `repos/arashi/`, also review and update `repos/arashi-docs/` and `repos/arashi-skills/` in the same delivery when command behavior, flags, configuration, workflows, or user guidance has changed.
+
 ## Multi-Repo PR Cross-Reference Policy
 
 When a feature requires PRs in multiple repositories, update **every** related PR description with explicit cross-references:
