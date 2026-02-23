@@ -30,15 +30,23 @@ The system SHALL support selecting a target by optional filter text and SHALL re
 - **THEN** the system exits with an error instructing the user to provide a more specific filter
 
 ### Requirement: Open a new terminal context at the selected worktree
-The system SHALL open a new terminal context rooted at the selected worktree path and SHALL NOT attempt to change the working directory of the invoking shell process.
+The system SHALL open a new terminal or editor context rooted at the selected worktree path and SHALL support config-driven default launch behavior with CLI overrides.
 
-#### Scenario: Successful terminal launch
-- **WHEN** a target is selected and terminal launch succeeds
-- **THEN** the system opens a new terminal context with the selected worktree as the working directory
+#### Scenario: Switch applies configured launch default
+- **WHEN** the user runs `arashi switch` and switch launch behavior is configured in workspace defaults
+- **THEN** the command launches the configured terminal/editor behavior for the selected worktree
 
-#### Scenario: Terminal launch fails
-- **WHEN** a target is selected but terminal launch fails
-- **THEN** the system exits with an actionable error that includes the selected path and failure reason
+#### Scenario: CLI launch option overrides switch default
+- **WHEN** switch launch defaults are configured and the user passes an explicit launch option
+- **THEN** the command uses the CLI launch option for that invocation
+
+#### Scenario: User opts out of default launch behavior
+- **WHEN** switch launch defaults are configured and the user provides a launch opt-out flag
+- **THEN** the command skips configured default launch behavior for that invocation
+
+#### Scenario: No switch launch defaults configured
+- **WHEN** the user runs `arashi switch` and no switch launch defaults are configured
+- **THEN** the command preserves existing switch launch behavior
 
 ### Requirement: Support tmux sesh mode
 The system SHALL provide a `--sesh` flag that uses sesh-based switching when running in tmux and SHALL validate prerequisites before attempting the switch.
