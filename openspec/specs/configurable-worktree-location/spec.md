@@ -36,14 +36,13 @@ All commands that create worktrees MUST derive their destination from a shared r
 - **WHEN** different commands create worktrees in the same workspace configuration
 - **THEN** each command resolves the same destination base path for equivalent inputs
 
-### Requirement: Default managed worktree directory is git-ignored
-When the default managed worktree location is in use, the system SHALL ensure `.arashi/worktrees/` is ignored by git in an idempotent way.
+### Requirement: Default managed worktree location avoids ignore file mutation
+When the default managed worktree location is in use, setup and initialization flows SHALL NOT modify `.gitignore` solely to add `.arashi/worktrees/`.
 
-#### Scenario: Default path adds missing ignore entry
-- **WHEN** the default managed location is active and `.gitignore` lacks `.arashi/worktrees/`
-- **THEN** the system adds `.arashi/worktrees/` to ignore rules without duplicating entries
+#### Scenario: Default path leaves missing ignore entry untouched
+- **WHEN** the default managed location is active and `.gitignore` does not include `.arashi/worktrees/`
+- **THEN** setup and initialization complete without adding `.arashi/worktrees/` to `.gitignore`
 
-#### Scenario: Existing ignore entry is preserved without duplication
+#### Scenario: Existing ignore entry is preserved without rewrite
 - **WHEN** `.gitignore` already includes `.arashi/worktrees/`
-- **THEN** setup and initialization flows complete without adding duplicate ignore lines
-
+- **THEN** setup and initialization complete without modifying existing ignore file contents
