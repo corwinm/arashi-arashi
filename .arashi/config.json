@@ -3,6 +3,15 @@
   "version": "1.0.0",
   "reposDir": "./repos",
   "worktreesDir": ".arashi/worktrees",
+  "defaults": {
+    "create": {
+      "launch": true,
+      "launchMode": "sesh"
+    },
+    "switch": {
+      "launchMode": "sesh"
+    }
+  },
   "repos": {
     "arashi-docs": {
       "path": "repos/arashi-docs",
