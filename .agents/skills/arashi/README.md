@@ -14,10 +14,19 @@ This directory contains the canonical Arashi skill definition and all supporting
 
 - `SKILL.md`: Canonical skill manifest and top-level instructions
 - `references/prerequisites.md`: Environment checks and pass criteria
-- `references/commands.md`: Installation, validation, and publication commands
+- `references/commands.md`: Verification, workflow, and publication commands
 - `references/workflows.md`: Workflow catalog and selection guidance
 - `references/session-shortcuts.md`: fzf/tmux/sesh navigation shortcuts
 - `references/troubleshooting.md`: Symptom-to-fix matrix
 - `references/tutorial.md`: End-to-end onboarding tutorial
 - `references/publication.md`: Publication policy and readiness gates
 - `assets/cheatsheet.md`: Fast command lookup
+
+## Related Docs
+
+- Workflow guides: `https://arashi.haphazard.dev/workflows/`
+- Hooks guide: `https://arashi.haphazard.dev/workflows/hooks/`
+- Config guide: `https://arashi.haphazard.dev/workflows/config/`
+- VS Code guide: `https://arashi.haphazard.dev/workflows/vscode/`
+- tmux and sesh guide: `https://arashi.haphazard.dev/workflows/tmux-and-sesh/`
+- Agents guide: `https://arashi.haphazard.dev/workflows/agents-and-specs/`

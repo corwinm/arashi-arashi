@@ -6,8 +6,6 @@ Follow this tutorial to go from zero setup to one successful Arashi workflow.
 
 ```bash
 git --version
-npm --version
-command -v shasum || command -v sha256sum || command -v openssl
 git ls-remote https://github.com/corwinm/arashi.git
 ```
 
@@ -18,20 +16,11 @@ Success criteria:
 
 ## Step 2: Install Arashi CLI
 
-```bash
-npm install --global arashi@1.7.0
-```
+Use the website install guide and follow the instructions for your platform:
 
-Optional verified release artifact flow (macOS/Linux):
+- https://arashi.haphazard.dev
 
-```bash
-ARASHI_VERSION="1.7.0"
-ARASHI_ASSET="arashi-macos-arm64"
-curl -L "https://github.com/corwinm/arashi/releases/download/v${ARASHI_VERSION}/${ARASHI_ASSET}" -o "${ARASHI_ASSET}"
-curl -L "https://github.com/corwinm/arashi/releases/download/v${ARASHI_VERSION}/arashi-checksums.txt" -o arashi-checksums.txt
-grep " ${ARASHI_ASSET}$" arashi-checksums.txt | shasum -a 256 -c -
-install -m 0755 "${ARASHI_ASSET}" "$HOME/.local/bin/arashi"
-```
+If you use the official curl installer, it can offer shell integration during install so `arashi switch --cd` works without an extra setup step. For unattended installs, use `ARASHI_SHELL_INTEGRATION=yes` or `ARASHI_SHELL_INTEGRATION=no`.
 
 ## Step 3: Verify CLI
 
@@ -47,6 +36,34 @@ Success criteria:
 
 ## Step 4: Run First Workflow
 
+Choose where you want the workspace repository to live before running `arashi init`:
+
+- Existing repository flow: `cd` into the repository root and run `arashi init` there.
+- New repository flow: `cd` into a parent directory, run `arashi init`, then enter `.` or a child name when prompted.
+
+Bootstrap the current directory:
+
+```bash
+mkdir my-arashi-workspace
+cd my-arashi-workspace
+arashi init
+# prompt: Repository target ('.' for current directory or a child directory name) -> .
+arashi status
+```
+
+Bootstrap a child directory from a parent folder:
+
+```bash
+mkdir scratch
+cd scratch
+arashi init
+# prompt: Repository target ('.' for current directory or a child directory name) -> my-arashi-repo
+cd my-arashi-repo
+arashi status
+```
+
+If you already have a repository, the shorter flow still works:
+
 ```bash
 arashi init
 arashi status
@@ -56,21 +73,22 @@ Success criteria:
 
 - `.arashi/config.json` exists after `arashi init`
 - `.arashi/config.json` includes `worktreesDir` (default `.arashi/worktrees`)
-- `.gitignore` includes `.arashi/worktrees/` when using default worktree location
+- the repository target prompt accepts `.` for the current directory and a simple child name for child-directory bootstrap
+- `.gitignore` includes the normalized managed worktree directory entry when using the default location or a safe repository-relative subdirectory
 - `arashi status` prints repository/worktree status without errors
-
-If you use `arashi init --worktrees-dir <path>`, add that custom location to `.gitignore` manually when needed.
 
 ## Step 5: Optional Session Shortcut Flow
 
 ```bash
 arashi switch
 arashi switch --repos docs
+arashi switch --cursor feature-auth
 arashi switch --sesh
 arashi switch --no-default-launch
 ```
 
 Use `--sesh` only when running inside tmux with `sesh` installed.
+Use `--vscode`, `--cursor`, or `--kiro` when you want a one-off IDE launch without changing workspace defaults.
 Use `--no-default-launch` when your workspace config has switch launch defaults you want to skip for one invocation.
 
 ## Step 6: Optional Remove Hook Setup
@@ -92,6 +110,7 @@ cp .arashi/hooks/pre-remove.sh.example ~/.arashi/hooks/pre-remove.sh
 ```
 
 Before enabling these hooks, review script contents and keep commands limited to trusted operations for each scope.
+Treat hook scripts as executable code: only enable scripts from trusted repositories and verify their contents before running `arashi remove`.
 Use these hooks to automate teardown tasks (for example tmux session cleanup) around `arashi remove`.
 
 ## Step 7: Simulate and Recover
@@ -106,9 +125,9 @@ Expected failure: `command not found`.
 
 Recovery path:
 
-1. reinstall Arashi (`npm install --global arashi@1.7.0`)
+1. reinstall Arashi using the website instructions (`https://arashi.haphazard.dev`)
 2. open a new shell
-3. if npm path is unavailable, use verified release artifact install from Step 2
+3. ensure the installed binary location is on `PATH`
 4. rerun `arashi --version`
 
 Tutorial is complete when one workflow succeeds end-to-end and failure recovery works.

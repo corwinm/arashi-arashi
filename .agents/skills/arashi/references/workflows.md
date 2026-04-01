@@ -21,6 +21,11 @@ Use this catalog to choose the right workflow by goal and confidence level.
 - Choose **Advanced** if you need sync and recovery controls.
 - If you automate teardown on branch removal, configure `pre-remove.sh` / `post-remove.sh` in repository, workspace, or global hook scopes.
 - If you use tmux/sesh, apply shortcuts from `references/session-shortcuts.md`.
+- For hooks, see `https://arashi.haphazard.dev/workflows/hooks/`.
+- For command defaults and shell-aware switching behavior, see `https://arashi.haphazard.dev/workflows/config/`.
+- For VS Code and VS Code-based editor workflows, see `https://arashi.haphazard.dev/workflows/vscode/`.
+- For tmux and sesh workflows, see `https://arashi.haphazard.dev/workflows/tmux-and-sesh/`.
+- For agent guidance in a meta-repo, see `https://arashi.haphazard.dev/workflows/agents-and-specs/`.
 
 ## Workflow Entry Commands
 
@@ -34,6 +39,11 @@ If your team enforces repository security checks, run them before executing work
 
 ## Beginner Workflow
 
+Run `arashi init` from one of two valid starting points:
+
+- inside an existing repository root you want to manage
+- inside a non-repository parent directory, then enter `.` or a child repository name when prompted
+
 ```bash
 arashi init
 arashi status
@@ -43,11 +53,10 @@ Expected outcomes:
 
 - `.arashi/config.json` exists after `arashi init`.
 - `.arashi/config.json` records `worktreesDir` (default `.arashi/worktrees`).
+- bootstrap mode accepts `.` for the current directory and a direct child repository name for child-directory creation.
 - `.gitignore` includes the configured repositories directory.
-- `.gitignore` includes `.arashi/worktrees/` when using the default `worktreesDir`.
+- `.gitignore` includes the normalized managed worktree directory entry when using the default location or a safe repository-relative subdirectory.
 - `arashi status` prints repository/worktree status without errors.
-
-If you run `arashi init --worktrees-dir <path>`, add that custom location to `.gitignore` manually when needed.
 
 ## Intermediate Workflow
 
@@ -62,6 +71,7 @@ Expected outcomes:
 - Missing configured repositories are materialized locally.
 - New worktrees exist for `feature/skill-integration`.
 - `arashi switch` opens the selected worktree in a new terminal context.
+- Add `--vscode`, `--cursor`, or `--kiro` when you want the switch step to open directly in that IDE.
 
 ## Advanced Workflow
 

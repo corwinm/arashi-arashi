@@ -17,12 +17,25 @@ arashi list
 cd -- "<selected-worktree-path>"
 ```
 
+If you want an `fzf` helper, keep selection and execution as separate steps:
+
+```bash
+arashi list | fzf > /tmp/arashi-selected-worktree
+read -r selected_worktree < /tmp/arashi-selected-worktree
+cd -- "$selected_worktree"
+```
+
+This avoids inline command substitution and keeps quoting explicit.
+
 ## Switch with Arashi
 
 ```bash
+arashi shell install
 arashi switch
+arashi switch --cd feature-auth
 arashi switch --repos docs
 arashi switch --all
+arashi switch --cursor feature-auth
 arashi switch --no-default-launch
 ```
 
@@ -41,5 +54,8 @@ Avoid command-substitution keybinds that execute unsanitized output directly.
 
 - selection flow changes shell to the selected worktree path.
 - `arashi switch` opens a terminal context for a selected worktree.
+- `arashi switch --cd` changes the current shell directory when shell integration is active.
+- `arashi switch --vscode|--cursor|--kiro` forces that IDE for one switch invocation.
 - `arashi switch --sesh` creates or switches via sesh in tmux.
+- if shell integration is inactive, `arashi switch --cd` warns and falls back to launch behavior.
 - `arashi switch --no-default-launch` bypasses configured switch launch defaults for one run.

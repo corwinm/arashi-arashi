@@ -5,9 +5,6 @@ Canonical commands for installing and using the Arashi CLI.
 ## Most Common Commands
 
 ```bash
-# install Arashi CLI (pinned)
-npm install --global arashi@1.7.0
-
 # verify Arashi CLI
 arashi --version
 
@@ -17,33 +14,16 @@ arashi --help
 
 ## Installation
 
-Preferred pinned install with npm (all platforms):
+Installation instructions are maintained on the Arashi website:
 
-```bash
-npm install --global arashi@1.7.0
-```
+- https://arashi.haphazard.dev
 
-Verified release artifact flow (macOS/Linux) without pipe-to-shell:
-
-```bash
-ARASHI_VERSION="1.7.0"
-ARASHI_ASSET="arashi-macos-arm64"
-curl -L "https://github.com/corwinm/arashi/releases/download/v${ARASHI_VERSION}/${ARASHI_ASSET}" -o "${ARASHI_ASSET}"
-curl -L "https://github.com/corwinm/arashi/releases/download/v${ARASHI_VERSION}/arashi-checksums.txt" -o arashi-checksums.txt
-grep " ${ARASHI_ASSET}$" arashi-checksums.txt | shasum -a 256 -c -
-install -m 0755 "${ARASHI_ASSET}" "$HOME/.local/bin/arashi"
-```
-
-Notes:
-
-- choose the correct `${ARASHI_ASSET}` for your platform
-- ensure `$HOME/.local/bin` is on `PATH`
-- avoid privileged installs unless your environment policy requires them
+Use the website flow for your platform and environment policy.
 
 Expected outcome:
 
-- install command exits `0`
-- `arashi --version` returns `1.7.0` (or chosen pinned version)
+- `arashi --version` exits `0`
+- `arashi --help` exits `0`
 
 ## Workflow Execution
 
@@ -57,10 +37,31 @@ Order of operations:
 
 ## Workspace Initialization
 
-Initialize with defaults:
+Run `arashi init` from an existing repository root, or from a non-repository parent directory when you want Arashi to create the repository during setup.
+
+Initialize an existing repository with defaults:
 
 ```bash
 arashi init
+```
+
+Bootstrap the current directory as a new repository:
+
+```bash
+mkdir my-arashi-workspace
+cd my-arashi-workspace
+arashi init
+# prompt: Repository target ('.' for current directory or a child directory name) -> .
+```
+
+Bootstrap a child repository from a parent directory:
+
+```bash
+mkdir scratch
+cd scratch
+arashi init
+# prompt: Repository target ('.' for current directory or a child directory name) -> my-arashi-repo
+cd my-arashi-repo
 ```
 
 Use a custom repositories directory:
@@ -79,8 +80,10 @@ Expected outcomes:
 
 - `.arashi/config.json` includes `reposDir` and `worktreesDir`.
 - default `worktreesDir` is `.arashi/worktrees` when the option is omitted.
+- bootstrap mode accepts only `.` or a direct child directory name.
 - `.gitignore` always includes the configured repositories directory.
-- `.gitignore` auto-includes `.arashi/worktrees/` only when default `worktreesDir` is used.
+- `.gitignore` auto-includes the normalized managed worktree directory entry when using the default location or a safe repository-relative subdirectory.
+- `.gitignore` skips auto-adding worktree entries for `.` and parent-traversal (`../`) `worktreesDir` values.
 
 ## Repository Cloning and Recovery
 
@@ -102,7 +105,7 @@ Expected outcomes:
 
 ## Worktree Switching
 
-Use `arashi switch` to open a terminal context for an existing worktree.
+Use `arashi switch` to open a terminal context for an existing worktree, or change the current shell directory when shell integration is active.
 
 ```bash
 # parent workspace worktrees (default)
@@ -114,6 +117,20 @@ arashi switch --repos docs
 # include parent workspaces + nested child repo worktrees
 arashi switch --all
 
+# select one exact worktree by full path
+arashi switch --path /path/to/worktree
+
+# force Cursor / VS Code / Kiro for one run
+arashi switch --cursor feature-auth
+arashi switch --vscode feature-auth
+arashi switch --kiro feature-auth
+
+# request parent-shell cd when shell integration is active
+arashi switch --cd feature-auth
+
+# force launch behavior for one run
+arashi switch --no-cd
+
 # sesh mode inside tmux
 arashi switch --sesh
 
@@ -124,8 +141,14 @@ arashi switch --no-default-launch
 Expected outcomes:
 
 - command exits `0` and opens the selected target in a new context
+- `arashi switch --cd` changes the current shell directory when invoked through the installed shell wrapper
 - `--repos` matches repository names first (exact match preferred)
 - `--repos` with no matches lists available child repositories
+- `--path` matches one exact worktree path and skips fuzzy branch/path matching
+- `--vscode`, `--cursor`, and `--kiro` override configured switch defaults for a single invocation
+- when shell integration is inactive, `--cd` warns and falls back to launch behavior instead of failing solely because the parent shell cannot be changed directly
+- compatible editor hosts can pass the matching switch flag automatically when running Arashi through the extension
+- extension-driven switch selections use exact path mode so duplicate branch names do not create ambiguous CLI matches
 
 ## Create Defaults and Overrides
 
@@ -140,6 +163,7 @@ Use command defaults in `.arashi/config.json` to control post-create switch/laun
       "launchMode": "sesh"
     },
     "switch": {
+      "mode": "auto",
       "launchMode": "sesh"
     }
   }
@@ -154,7 +178,10 @@ arashi create feature-auth --no-launch
 arashi create feature-auth --no-switch
 ```
 
+Use `arashi shell install` to enable parent-shell switching for bash, zsh, or fish, or `arashi shell init <shell>` for manual setup.
+
 Precedence for create/switch launch behavior is: explicit flag > opt-out flag > config default > built-in default.
+For `switch`, IDE-integrated terminals also prefer the matching IDE launcher when no explicit override is provided.
 
 ## Remove Cleanup Hooks
 
@@ -181,6 +208,7 @@ cp .arashi/hooks/pre-remove.sh.example ~/.arashi/hooks/<repo>/pre-remove.sh
 ```
 
 Before enabling hooks, review script contents and ensure commands are safe for their scope.
+Only use hook scripts from trusted repositories and verify file provenance before making scripts executable.
 
 For each targeted repository, remove hooks run in order:
 

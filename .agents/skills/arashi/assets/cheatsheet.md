@@ -2,13 +2,16 @@
 
 ## Install and Verify Arashi CLI
 
+Install instructions: https://arashi.haphazard.dev
+
 ```bash
-npm install --global arashi@1.7.0
 arashi --version
 arashi --help
 ```
 
 ## Core Workflow Commands
+
+Run `arashi init` inside an existing repository root, or from a parent directory and answer the repository target prompt with `.` or a child name.
 
 ```bash
 arashi init
@@ -16,10 +19,16 @@ arashi add <repo-url>
 arashi clone [--all]
 arashi create <branch>
 arashi create <branch> [--launch|--no-launch] [--switch|--no-switch] [--sesh]
+arashi shell install
+arashi shell init <bash|zsh|fish>
 arashi list
 arashi switch
+arashi switch --cd <filter>
 arashi switch --repos <repo-name>
 arashi switch --all
+arashi switch --cursor <filter>
+arashi switch --vscode <filter>
+arashi switch --kiro <filter>
 arashi switch --no-default-launch
 arashi status
 arashi pull
