@@ -21,16 +21,23 @@ set -e
 
 echo "Pre-remove hook: preparing to remove worktrees"
 
-# Example: stop tmux sessions whose names contain the branch name
-if [ -n "$ARASHI_BRANCH_NAME" ] && command -v tmux >/dev/null 2>&1; then
-  matching_sessions="$(tmux list-sessions -F '#{session_name}' -f "#{m:*${ARASHI_BRANCH_NAME}*,#{session_name}}" 2>/dev/null || true)"
-
-  if [ -n "$matching_sessions" ]; then
-    while IFS= read -r session_name; do
-      [ -n "$session_name" ] || continue
-      tmux kill-session -t "$session_name" || true
-    done <<< "$matching_sessions"
+# Example: stop tmux sessions whose names contain the branch name or worktree name.
+# tmux/sesh flows commonly derive the session name from the worktree directory,
+# which may not include the full git branch (for example, feat/status-fetch -> status-fetch).
+if command -v tmux >/dev/null 2>&1; then
+  worktree_name=""
+  if [ -n "$ARASHI_WORKTREE_PATH" ]; then
+    worktree_name="$(basename "$ARASHI_WORKTREE_PATH")"
   fi
+
+  while IFS= read -r session_name; do
+    [ -n "$session_name" ] || continue
+
+    if { [ -n "$ARASHI_BRANCH_NAME" ] && [[ "$session_name" == *"$ARASHI_BRANCH_NAME"* ]]; } ||
+      { [ -n "$worktree_name" ] && [[ "$session_name" == *"$worktree_name"* ]]; }; then
+      tmux kill-session -t "$session_name" || true
+    fi
+  done < <(tmux list-sessions -F '#{session_name}' 2>/dev/null || true)
 fi
 
 exit 0
