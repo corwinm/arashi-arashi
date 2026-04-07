@@ -21,4 +21,4 @@
 
 - [x] 4.1 Add or update unit and integration coverage for repo discovery, repo-aware tree rendering, single-confirm panel removal, repo-opening flows, and refresh synchronization.
 - [x] 4.2 Run `bun test`, `bun run lint`, and `bun run build` in `repos/arashi-vscode`.
-- [ ] 4.3 Manually verify issue `#140` flows, including panel create, external create refresh visibility, single-confirm delete, child-repo navigation, and README onboarding clarity.
+- [x] 4.3 Manually verify issue `#140` flows, including panel create, external create refresh visibility, single-confirm delete, child-repo navigation, and README onboarding clarity.
