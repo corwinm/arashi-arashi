@@ -1,8 +1,5 @@
-# vscode-worktree-panel Specification
+## MODIFIED Requirements
 
-## Purpose
-TBD - created by archiving change create-vscode-plugin. Update Purpose after archive.
-## Requirements
 ### Requirement: Display Arashi worktrees with status metadata
 The extension SHALL provide a worktree panel that groups discovered worktrees by related repository context and lists each worktree with branch identity, path, git-change status indicators, and whether the entry belongs to the current workspace or a sibling worktree.
 
@@ -17,28 +14,6 @@ The extension SHALL provide a worktree panel that groups discovered worktrees by
 #### Scenario: No worktrees are available
 - **WHEN** the worktree panel is opened and no Arashi or sibling worktrees are discovered
 - **THEN** the panel shows an explicit empty state with guidance for creating a worktree or using command-palette flows for additional setup
-
-### Requirement: Suppress init guidance for sibling worktrees
-The extension SHALL detect when the current window is opened in a sibling worktree of an initialized Arashi workspace and SHALL avoid suggesting `arashi init` for that session.
-
-#### Scenario: Current window is a sibling worktree
-- **WHEN** the extension activates inside a sibling worktree that belongs to an already initialized Arashi workspace
-- **THEN** the extension does not show guidance suggesting that the user run `arashi init`
-
-#### Scenario: Current window is not part of an initialized workspace family
-- **WHEN** the extension activates in a workspace that is not the root or sibling of an initialized Arashi workspace
-- **THEN** the extension may continue to show normal initialization guidance
-
-### Requirement: Back panel data with JSON CLI responses
-The worktree panel SHALL source its data from Arashi CLI commands invoked with `--json` when output is parsed by the extension.
-
-#### Scenario: Panel refresh succeeds
-- **WHEN** the panel performs discovery or refresh
-- **THEN** the extension invokes CLI data commands with `--json` and renders the parsed response
-
-#### Scenario: Panel refresh parse fails
-- **WHEN** JSON parsing fails during panel refresh
-- **THEN** the extension preserves the last known panel state when available and shows an actionable refresh error
 
 ### Requirement: Provide contextual worktree actions
 The worktree panel SHALL provide title actions to create a worktree and refresh the panel, SHALL provide item actions to switch to a worktree, remove a worktree, and open a repository-focused window, and SHALL execute destructive worktree removal against the exact clicked worktree without requiring a second selection step.
@@ -58,17 +33,6 @@ The worktree panel SHALL provide title actions to create a worktree and refresh 
 #### Scenario: Open repository from panel
 - **WHEN** a user triggers the open action on a repository entry from the panel
 - **THEN** the extension opens a new editor window focused on that repository root
-
-### Requirement: Confirm destructive panel operations only
-The extension MUST require explicit confirmation for destructive panel actions and SHALL NOT require confirmation for non-destructive actions.
-
-#### Scenario: Remove worktree requires confirmation
-- **WHEN** a user triggers remove on a worktree
-- **THEN** the extension requires explicit confirmation before invoking removal
-
-#### Scenario: Switch does not require confirmation
-- **WHEN** a user triggers switch on a worktree
-- **THEN** the extension executes the action without a confirmation prompt
 
 ### Requirement: Keep panel state synchronized after actions
 The worktree panel SHALL refresh after successful extension commands that change visible Arashi state, SHALL refresh when the window regains focus or the panel becomes visible again, and SHALL provide a manual refresh command.
