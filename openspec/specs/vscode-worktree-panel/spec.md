@@ -41,7 +41,7 @@ The worktree panel SHALL source its data from Arashi CLI commands invoked with `
 - **THEN** the extension preserves the last known panel state when available and shows an actionable refresh error
 
 ### Requirement: Provide contextual worktree actions
-The worktree panel SHALL provide title actions to create a worktree and refresh the panel, SHALL provide item actions to switch to a worktree, remove a worktree, and open a repository-focused window, and SHALL execute destructive worktree removal against the exact clicked worktree without requiring a second selection step.
+The worktree panel SHALL provide title actions to create a worktree and refresh the panel, SHALL provide item actions to switch to a worktree, remove a worktree, and open a repository-focused window, and SHALL execute destructive worktree removal against the exact clicked worktree without requiring a second selection step or a second confirmation prompt from the CLI.
 
 #### Scenario: Create worktree from panel title
 - **WHEN** a user triggers create from the panel title area
@@ -53,7 +53,7 @@ The worktree panel SHALL provide title actions to create a worktree and refresh 
 
 #### Scenario: Remove action confirms once for the clicked worktree
 - **WHEN** a user triggers remove on a worktree entry from the panel
-- **THEN** the extension asks for confirmation for that clicked worktree and does not require the user to select the worktree again before removal
+- **THEN** the extension asks for confirmation for that clicked worktree, invokes removal for that exact target in forced path mode after confirmation, and does not require the user to confirm again before removal
 
 #### Scenario: Open repository from panel
 - **WHEN** a user triggers the open action on a repository entry from the panel
