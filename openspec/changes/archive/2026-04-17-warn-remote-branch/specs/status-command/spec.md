@@ -1,21 +1,4 @@
-# status-command Specification
-
-## Purpose
-TBD - created by syncing change status-fetch. Update Purpose after archive.
-
-## Requirements
-### Requirement: Refresh tracked remote state before reporting branch divergence
-The system SHALL refresh the resolved remote-tracking branch for each locally present repository before `arashi status` reports ahead/behind information.
-
-#### Scenario: Repository has a resolvable upstream branch
-- **WHEN** the user runs `arashi status` for a repository whose current branch maps to a remote-tracking branch
-- **THEN** the command runs a targeted `git fetch` for that tracking branch before parsing branch divergence output
-- **AND** the reported ahead/behind counts reflect the refreshed remote-tracking ref
-
-#### Scenario: Repository has no remote-tracking target
-- **WHEN** the user runs `arashi status` for a repository that has no configured remote, no upstream, or no resolvable branch target
-- **THEN** the command skips the remote refresh for that repository
-- **AND** the command still reports the repository's local branch and working-tree status
+## MODIFIED Requirements
 
 ### Requirement: Preserve local status when remote refresh fails
 The system MUST continue reporting local repository status when the remote refresh step fails. When the failure indicates that the resolved remote branch ref does not exist, the system MUST surface that condition inline on the branch display instead of showing the generic stale remote-tracking warning. For other remote refresh failures, the system MUST continue to indicate that remote-tracking information may be stale.
