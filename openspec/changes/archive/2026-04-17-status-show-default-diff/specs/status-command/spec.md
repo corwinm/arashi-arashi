@@ -1,36 +1,4 @@
-# status-command Specification
-
-## Purpose
-TBD - created by syncing change status-fetch. Update Purpose after archive.
-## Requirements
-### Requirement: Refresh tracked remote state before reporting branch divergence
-The system SHALL refresh the resolved remote-tracking branch for each locally present repository before `arashi status` reports ahead/behind information.
-
-#### Scenario: Repository has a resolvable upstream branch
-- **WHEN** the user runs `arashi status` for a repository whose current branch maps to a remote-tracking branch
-- **THEN** the command runs a targeted `git fetch` for that tracking branch before parsing branch divergence output
-- **AND** the reported ahead/behind counts reflect the refreshed remote-tracking ref
-
-#### Scenario: Repository has no remote-tracking target
-- **WHEN** the user runs `arashi status` for a repository that has no configured remote, no upstream, or no resolvable branch target
-- **THEN** the command skips the remote refresh for that repository
-- **AND** the command still reports the repository's local branch and working-tree status
-
-### Requirement: Preserve local status when remote refresh fails
-The system MUST continue reporting local repository status when the remote refresh step fails. When the failure indicates that the resolved remote branch ref does not exist, the system MUST surface that condition inline on the branch display instead of showing the generic stale remote-tracking warning. For other remote refresh failures, the system MUST continue to indicate that remote-tracking information may be stale.
-
-#### Scenario: Fetch fails for a reachable local repository
-- **WHEN** the user runs `arashi status` and the repository's targeted `git fetch` fails because of network, authentication, or remote command errors other than a missing remote ref
-- **THEN** the command still reports the repository's local clean/dirty status
-- **AND** the command indicates that remote-tracking information could not be refreshed for that repository
-- **AND** the fetch failure is not treated as a missing-repository or git-status execution failure
-
-#### Scenario: Resolved remote branch does not exist on the remote
-- **WHEN** the user runs `arashi status` and the targeted `git fetch` fails because the resolved `refs/heads/<branch>` does not exist on the remote
-- **THEN** the command still reports the repository's local clean/dirty status
-- **AND** the Branch line shows the local branch followed by an inline warning in the remote position indicating that the remote ref could not be found
-- **AND** the Branch line is rendered as a warning rather than as a normal clean/dirty branch line
-- **AND** the command does not print the generic `Remote tracking may be stale` warning for that repository
+## ADDED Requirements
 
 ### Requirement: Refresh default-branch state before reporting behind-default status
 The system SHALL resolve each repository's default branch and refresh the compare target before `arashi status` reports whether the current branch is behind that default branch.
@@ -77,4 +45,3 @@ The system MUST continue reporting local repository status when default-branch c
 - **WHEN** the user runs `arashi status` for a repository whose default branch cannot be resolved to a comparison target
 - **THEN** the command skips default-branch comparison for that repository
 - **AND** the command still reports the repository's local branch and working-tree status without a misleading behind-default indicator
-
