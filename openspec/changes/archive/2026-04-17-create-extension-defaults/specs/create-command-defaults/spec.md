@@ -1,8 +1,5 @@
-# create-command-defaults Specification
+## MODIFIED Requirements
 
-## Purpose
-TBD - created by archiving change faster-defaults-with-create. Update Purpose after archive.
-## Requirements
 ### Requirement: Resolve create defaults from configuration and CLI
 The system SHALL resolve `arashi create` execution behavior from CLI flags, invocation context, and workspace configuration using deterministic precedence.
 
@@ -18,39 +15,6 @@ The system SHALL resolve `arashi create` execution behavior from CLI flags, invo
 - **WHEN** the user runs `arashi create <branch>` with explicit flags for switch or shell/editor launch
 - **THEN** the command uses explicit CLI values instead of configured defaults for those options
 
-### Requirement: Support default auto-switch after create
-The system SHALL support a configurable default that switches to the newly created worktree after successful creation.
-
-#### Scenario: Auto-switch default enabled
-- **WHEN** create auto-switch default is enabled and `arashi create <branch>` succeeds
-- **THEN** the command performs switch behavior for the new worktree without requiring `--switch`
-
-#### Scenario: Auto-switch default disabled
-- **WHEN** create auto-switch default is disabled and the user does not pass `--switch`
-- **THEN** the command completes create without switching
-
-### Requirement: Support default shell or editor launch after create
-The system SHALL support a configurable default launch command for `arashi create` that opens the newly created worktree in the user's preferred environment.
-
-#### Scenario: Launch default configured
-- **WHEN** the user runs `arashi create <branch>` and a default launch command is configured
-- **THEN** the command invokes the configured launch behavior for the new worktree
-
-#### Scenario: Launch default not configured
-- **WHEN** the user runs `arashi create <branch>` and no launch default is configured
-- **THEN** the command does not launch shell/editor behavior unless explicitly requested by CLI flags
-
-### Requirement: Allow one-off opt-out from create defaults
-The system SHALL provide per-invocation opt-out flags that disable configured create defaults without modifying workspace configuration.
-
-#### Scenario: Opt out of configured auto-switch
-- **WHEN** auto-switch is configured by default and the user invokes `arashi create <branch>` with a switch opt-out flag
-- **THEN** the command does not switch after creation for that invocation
-
-#### Scenario: Opt out of configured launch behavior
-- **WHEN** launch behavior is configured by default and the user invokes `arashi create <branch>` with a launch opt-out flag
-- **THEN** the command does not execute launch behavior for that invocation
-
 ### Requirement: Preserve current behavior when defaults are absent
 The system MUST preserve existing create behavior when new create default settings are not present in configuration, and editor-hosted invocations MUST fall back to no post-create defaults when no host-specific create defaults are configured.
 
@@ -61,6 +25,8 @@ The system MUST preserve existing create behavior when new create default settin
 #### Scenario: Editor host has no matching create defaults
 - **WHEN** the user runs `arashi create <branch>` from a supported editor host and the workspace does not define create defaults for that host
 - **THEN** the command does not apply generic create defaults and does not perform post-create switch or launch behavior unless explicitly requested by CLI flags
+
+## ADDED Requirements
 
 ### Requirement: Support editor-scoped create defaults
 The system SHALL allow workspace configuration to define create defaults scoped to supported editor hosts so extension-driven create flows can override generic terminal defaults.
