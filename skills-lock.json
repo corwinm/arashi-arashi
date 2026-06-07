@@ -4,7 +4,8 @@
     "arashi": {
       "source": "corwinm/arashi-skills",
       "sourceType": "github",
-      "computedHash": "c0b5b67f453189f9e6aaff5b918ac1187a02906851905cc15de497e1741603ef"
+      "skillPath": "skills/arashi/SKILL.md",
+      "computedHash": "dccd60b239c5aa664a887838cf60be5fb1feeea829f065c6c7759ee1981a0c60"
     },
     "frontend-design": {
       "source": "anthropics/skills",
