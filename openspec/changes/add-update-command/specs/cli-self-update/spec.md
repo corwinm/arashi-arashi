@@ -79,8 +79,8 @@ For npm-managed installations, the update command SHALL run the detected support
 - **WHEN** the selected package-manager update command exits non-zero
 - **THEN** the update command exits non-zero and preserves the existing working binary when possible
 
-### Requirement: Direct-binary update guidance
-For direct-binary or manual installations, the update command SHALL provide actionable guidance instead of attempting unsafe in-place replacement.
+### Requirement: Direct-binary installer update
+For official curl installer/direct-binary installations, the update command SHALL provide safe inspection modes and SHALL be able to rerun the official installer against the current binary directory when the user confirms with `--yes`.
 
 #### Scenario: Direct binary is current
 - **WHEN** a direct-binary install runs `arashi update` and no newer release is available
@@ -88,11 +88,15 @@ For direct-binary or manual installations, the update command SHALL provide acti
 
 #### Scenario: Direct binary has newer release
 - **WHEN** a direct-binary install runs `arashi update` and a newer release is available
-- **THEN** the command prints the latest release URL and platform-specific asset name to download
+- **THEN** the command prints the official installer URL, target install directory, and platform-specific asset name
 
 #### Scenario: Direct binary dry run
 - **WHEN** a direct-binary install runs `arashi update --dry-run`
-- **THEN** the command prints the release check and manual replacement guidance without modifying files
+- **THEN** the command prints the release check and installer update plan without modifying files
+
+#### Scenario: Direct binary confirmed update
+- **WHEN** a direct-binary install runs `arashi update --yes` and a newer release is available
+- **THEN** the command reruns the official installer with `ARASHI_VERSION` set to the latest version and `ARASHI_INSTALL_DIR` set to the current binary directory
 
 ### Requirement: Update command result reporting
 The update command SHALL report clear final status for successful, skipped, and failed update attempts.
