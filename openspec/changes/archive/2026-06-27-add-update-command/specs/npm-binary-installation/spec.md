@@ -1,32 +1,4 @@
-## Purpose
-
-Specify how the npm package installs, refreshes, and verifies the matching Arashi platform binary without depending on package-manager lifecycle scripts.
-## Requirements
-### Requirement: Script-free npm package installation
-The npm package MUST NOT depend on package-manager lifecycle scripts to install the Arashi platform binary.
-
-#### Scenario: Package metadata has no postinstall lifecycle
-- **WHEN** the published package metadata is prepared
-- **THEN** it MUST NOT define a `postinstall` script for downloading the Arashi binary
-
-#### Scenario: Package installs without lifecycle scripts
-- **WHEN** a user installs the npm package with lifecycle scripts disabled
-- **THEN** the package installation completes with the JavaScript entrypoint and wrapper files needed to run `arashi`
-
-### Requirement: First-use binary installation fallback
-The npm entrypoint SHALL install the matching platform binary on first use when the binary is missing.
-
-#### Scenario: Binary missing on supported platform
-- **WHEN** a user runs `arashi <command>` from the npm package and the matching platform binary is absent
-- **THEN** the entrypoint downloads the binary for the installed package version, verifies it, and then runs the requested command
-
-#### Scenario: Binary already present
-- **WHEN** a user runs `arashi <command>` from the npm package and a usable matching platform binary is already present
-- **THEN** the entrypoint runs the requested command without downloading another binary
-
-#### Scenario: Binary installation fails during first use
-- **WHEN** first-use binary download or verification fails
-- **THEN** the entrypoint exits non-zero, removes any partial downloaded binary, and reports actionable manual-install guidance
+## MODIFIED Requirements
 
 ### Requirement: Explicit install command
 The npm entrypoint SHALL provide an `arashi install` command that explicitly installs or refreshes the matching platform binary for the selected package version.
@@ -72,4 +44,3 @@ User-facing npm installation documentation SHALL describe first-use binary insta
 #### Scenario: update guidance is reviewed
 - **WHEN** a user reads npm installation, command, or troubleshooting documentation
 - **THEN** the documentation explains how to use `arashi update`, when to use `--check` or `--dry-run`, and what direct-binary users should do for manual updates
-
