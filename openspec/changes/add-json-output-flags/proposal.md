@@ -22,6 +22,6 @@ Agents, scripts, and other tooling need reliable structured output from Arashi c
 ## Impact
 
 - Affected repo: `repos/arashi` for CLI options, shared JSON helpers, command implementations, and tests.
-- Affected docs: `repos/arashi-docs` and possibly `repos/arashi/README.md` for the supported command list and JSON envelope examples.
+- Affected docs and skill guidance: `repos/arashi-docs`, `repos/arashi-skills`, and possibly `repos/arashi/README.md` for the supported command list, JSON envelope examples, and agent-facing automation guidance.
 - Likely affected commands: `clone`, `create`, `init`, `install`, `pull`, `setup`, `status`, `switch`, `sync`, and `update`; existing `list`, `add`, and `remove` support should be audited and may need envelope alignment.
 - External API/dependencies: none expected.

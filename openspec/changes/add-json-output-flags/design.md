@@ -12,6 +12,7 @@ Arashi commands currently mix human-oriented output, process spinners, hooks, pr
 - Make JSON mode non-interactive and explicit about missing required input.
 - Add tests that parse stdout and assert there is no human-only output in JSON mode.
 - Document the supported commands, envelope, and unsupported-mode error behavior.
+- Update the Arashi skill package so agent-facing command guidance reflects the new JSON automation contract.
 
 **Non-Goals:**
 
@@ -77,6 +78,12 @@ Rationale: this avoids forcing awkward JSON around actions where the primary out
 Existing `list`, `add`, and `remove` JSON modes should be treated as part of the audit. They should be migrated to the shared envelope unless implementation review finds a compatibility reason to temporarily preserve their existing shape behind a documented transition path.
 
 Rationale: automation consumers benefit most from one convention, but existing users of the current JSON shape should be considered during implementation review.
+
+### Documentation and skill package updates are part of the implementation
+
+Update the public docs and the `arashi-skills` package together with CLI behavior. The skills repo should call out JSON mode in the command reference or another appropriate support file so agents know when to prefer structured output and how to handle unsupported-mode errors.
+
+Rationale: this feature primarily benefits automation and agents, so updating only human docs would leave the agent-facing guidance stale.
 
 ## Risks / Trade-offs
 

@@ -23,4 +23,5 @@
 - [ ] 4.1 Add tests that run representative commands with `--json` and parse stdout as exactly one JSON document.
 - [ ] 4.2 Add tests for JSON-mode command failures, unsupported modes, missing non-interactive inputs, and stdout isolation.
 - [ ] 4.3 Update CLI documentation with the JSON envelope, command support matrix, unsupported-mode behavior, and examples.
-- [ ] 4.4 Run `bun run lint`, `bun run test`, and `bun run build` in `repos/arashi`; run relevant docs checks if documentation changes.
+- [ ] 4.4 Update `repos/arashi-skills` agent-facing command guidance so agents know when to prefer `--json` and how to handle structured unsupported-mode errors.
+- [ ] 4.5 Run `bun run lint`, `bun run test`, and `bun run build` in `repos/arashi`; run relevant docs and skills checks if documentation or skill guidance changes.

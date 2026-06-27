@@ -63,12 +63,17 @@ Commands or modes whose primary purpose is shell-code emission, external app lau
 - **WHEN** a user requests JSON output for a mode that would launch an editor, terminal, tmux session, or similar external application
 - **THEN** the command either returns a structured plan/result without launching unexpectedly or exits non-zero with a structured unsupported-mode error
 
-### Requirement: JSON output documentation
-Arashi documentation SHALL describe the JSON envelope, error shape, command support matrix, and stdout/stderr contract for automation consumers.
+### Requirement: JSON output documentation and skill guidance
+Arashi documentation and the Arashi skill package SHALL describe the JSON envelope, error shape, command support matrix, and stdout/stderr contract for automation consumers.
 
 #### Scenario: User looks up JSON mode support
 - **WHEN** a user reads the CLI documentation for automation or command output
 - **THEN** the documentation identifies which commands support `--json`, which modes are unsupported, and the shape of success and failure envelopes
+
+#### Scenario: Agent uses Arashi skill guidance
+- **WHEN** an agent consults the Arashi skill package for command guidance
+- **THEN** the skill references identify when to prefer `--json` for automation-safe command output
+- **AND** the guidance explains that unsupported launch, shell integration, or interactive modes return structured JSON errors rather than human prompts
 
 #### Scenario: User writes a parser from documentation
 - **WHEN** a user follows the documented JSON mode contract
