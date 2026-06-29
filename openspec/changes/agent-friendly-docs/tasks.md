@@ -26,7 +26,9 @@
 
 ## 5. Validation and Smoke Checks
 
-- [ ] 5.1 Extend internal link or export validation so required generated links and routes are checked during `bun run validate` where practical.
-- [ ] 5.2 Run `bun run validate` in `repos/arashi-docs`.
-- [ ] 5.3 Build or serve the docs site locally and smoke-check `/llms.txt`, `/llms-full.txt`, `/workflows/agents-and-specs.md`, and `/commands/status.md`.
-- [ ] 5.4 Update implementation PR notes with the generator choice, validation results, and smoke-check evidence.
+- [ ] 5.1 Audit `repos/arashi-skills` for Arashi skill content that should link to or mirror the new agent-readable docs entrypoints and workflow guidance.
+- [ ] 5.2 Update `repos/arashi-skills` content when the audit finds stale or missing agent guidance; otherwise document why no skill changes were needed in the implementation PR notes.
+- [ ] 5.3 Extend internal link or export validation so required generated links and routes are checked during `bun run validate` where practical.
+- [ ] 5.4 Run `bun run validate` in `repos/arashi-docs` and the relevant validation for `repos/arashi-skills` if skill content changes.
+- [ ] 5.5 Build or serve the docs site locally and smoke-check `/llms.txt`, `/llms-full.txt`, `/workflows/agents-and-specs.md`, and `/commands/status.md`.
+- [ ] 5.6 Update implementation PR notes with the generator choice, validation results, smoke-check evidence, and any `arashi-skills` companion changes.

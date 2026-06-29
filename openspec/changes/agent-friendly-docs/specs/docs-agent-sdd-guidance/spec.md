@@ -27,3 +27,10 @@ The command documentation SHALL include short agent-facing notes for automation-
 #### Scenario: Agent reads a key command page
 - **WHEN** an agent opens the docs for commands such as `status`, `create`, `pull`, `sync`, `remove`, or `shell`
 - **THEN** the page includes concise notes explaining when an agent should use that command and what safety or validation expectations apply
+
+### Requirement: Packaged Arashi skills SHALL be audited for alignment
+The implementation SHALL audit `repos/arashi-skills` and update the Arashi skill content when the docs changes introduce new canonical agent entrypoints, workflow wording, or command guidance that should be available to agents using packaged skills.
+
+#### Scenario: New docs entrypoints are useful to skill users
+- **WHEN** the docs implementation adds agent-readable URLs or changes recommended agent workflow guidance
+- **THEN** the implementation checks `repos/arashi-skills` for stale or missing guidance and includes companion skill updates when needed

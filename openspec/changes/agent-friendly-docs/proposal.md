@@ -8,6 +8,7 @@ Arashi's docs are useful for humans, but coding agents need a smaller set of hig
 - Expose Markdown equivalents for public docs pages via `.md` URLs while preserving authored Markdown content where practical.
 - Strengthen the existing agent/spec workflow guidance so it works as a standalone bootstrap document for coding agents.
 - Add concise agent notes to key command pages such as `status`, `create`, `pull`, `sync`, `remove`, and `shell`.
+- Audit `arashi-skills` agent guidance and update it when the docs changes introduce new recommended entrypoints, URLs, or workflow wording that should also be available to skill users.
 - Keep generated LLM/Markdown exports focused on public contribution and workflow guidance, excluding or demoting maintainer-only migration/template/noise pages.
 - Validate generated exports and smoke-check the important generated routes locally.
 
@@ -21,7 +22,8 @@ Arashi's docs are useful for humans, but coding agents need a smaller set of hig
 
 ## Impact
 
-- Affected repo: `repos/arashi-docs`.
-- Likely affected areas: docs source pages under `docs/`, Starlight/Astro routing or static generation code, validation/link-check scripts, and package dependencies if a compatible LLM-export integration is adopted.
+- Affected repos: `repos/arashi-docs`, and `repos/arashi-skills` when skill content should mirror or link to the new agent-facing docs entrypoints.
+- Likely `arashi-docs` areas: docs source pages under `docs/`, Starlight/Astro routing or static generation code, validation/link-check scripts, and package dependencies if a compatible LLM-export integration is adopted.
+- Likely `arashi-skills` areas: Arashi skill README/SKILL content and reference material that mention agent workflows, documentation URLs, contribution flow, or command guidance.
 - No breaking changes to the Arashi CLI or existing docs URLs.
 - The implementation should preserve the current source-of-truth model: authored docs in `docs/`, synced/generated Starlight content in `src/content/docs/`, and deterministic exports validated by the docs build or validation flow.

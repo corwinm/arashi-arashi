@@ -16,6 +16,7 @@ The existing `starlight-llms-txt` package is worth evaluating, but its latest pe
 - Keep default exports focused on Arashi usage, agent workflow, commands, and contribution flow.
 - Validate generated routes/links through the existing docs validation flow.
 - Strengthen the agent/spec workflow page and key command pages enough for standalone coding-agent bootstrap.
+- Audit `repos/arashi-skills` and update skill content when the docs exports or workflow changes create new URLs, guidance, or entrypoints that should be reflected in packaged agent guidance.
 
 **Non-Goals:**
 
@@ -55,6 +56,12 @@ Alternative considered: rely on manual browser/curl checks only. Manual checks a
 
 Before taking a dependency on `starlight-llms-txt`, verify it installs and builds cleanly against Astro 7/Starlight 0.41.1 and can produce the required curated outputs without over-including noisy pages. If the peer mismatch or customization model causes churn, implement a small custom generator instead.
 
+### Keep arashi-skills aligned when guidance changes
+
+Treat `repos/arashi-skills` as in scope for companion updates when this work changes agent-facing recommendations, introduces new canonical docs URLs such as `/llms.txt` or `.md` routes, or improves workflow wording that belongs in the reusable Arashi skill. The docs site remains the primary implementation target, but the implementation pass should inspect the Arashi skill package and update it if leaving it unchanged would make skill users miss or contradict the new docs guidance.
+
+Alternative considered: exclude `arashi-skills` and only update the website. That keeps the first implementation smaller, but it risks shipping improved agent guidance in one place while the package designed for agents remains stale.
+
 ## Risks / Trade-offs
 
 - [Risk] Generated Markdown route mappings drift from canonical Starlight routes. → Mitigation: share route-slug derivation with existing docs URL helpers where possible and cover key routes in validation.
@@ -62,14 +69,16 @@ Before taking a dependency on `starlight-llms-txt`, verify it installs and build
 - [Risk] Adding a plugin with stale peer ranges creates dependency churn. → Mitigation: spike first and prefer a custom generator if Astro 7 compatibility is not clean.
 - [Risk] Markdown frontmatter or MDX components leak into agent-facing output. → Mitigation: strip/normalize frontmatter and document known limitations for MDX pages; prefer clean Markdown content for docs source pages.
 - [Risk] Link validation misses generated `.md` routes. → Mitigation: extend internal link checks or add a dedicated generated-export smoke script.
+- [Risk] `arashi-skills` guidance drifts from the new docs entrypoints. → Mitigation: audit `repos/arashi-skills` during implementation and include a companion skills PR/update when the skill should link to or mirror the new guidance.
 
 ## Migration Plan
 
 1. Spike `starlight-llms-txt` compatibility against the current `arashi-docs` dependency set.
 2. Implement either plugin configuration or a custom deterministic generator, favoring source Markdown fidelity.
 3. Update agent workflow and key command docs.
-4. Add generated route/link validation and run `bun run validate`.
-5. Smoke-check the generated routes locally with the built site or preview server.
+4. Audit `repos/arashi-skills`; update skill content if the new docs entrypoints or workflow guidance should be discoverable from packaged Arashi skills.
+5. Add generated route/link validation and run `bun run validate`.
+6. Smoke-check the generated routes locally with the built site or preview server.
 
 Rollback is straightforward: remove generated routes/scripts/configuration and any dependency changes; existing HTML docs URLs should remain unaffected.
 
