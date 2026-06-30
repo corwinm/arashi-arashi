@@ -35,6 +35,13 @@ The docs site SHALL expose `.md` route variants for public documentation pages s
 - **WHEN** an agent requests a public docs page with a `.md` route such as `/workflows/agents-and-specs.md` or `/commands/status.md`
 - **THEN** the response returns a Markdown-oriented representation of that public page rather than the HTML Starlight shell
 
+### Requirement: Section index Markdown pages SHALL have clean aliases
+The docs site SHALL expose clean `.md` aliases for section index pages in addition to explicit `/index.md` routes.
+
+#### Scenario: Agent requests a section index Markdown alias
+- **WHEN** an agent requests a section index page with a clean `.md` route such as `/getting-started.md`, `/workflows.md`, `/commands.md`, or `/contributing.md`
+- **THEN** the response returns the same Markdown-oriented page content as the corresponding explicit `/getting-started/index.md`, `/workflows/index.md`, `/commands/index.md`, or `/contributing/index.md` route
+
 ### Requirement: Markdown routes SHALL preserve authored content where practical
 Generated `.md` page routes SHALL prefer the source Markdown from `docs/` and SHALL strip or normalize frontmatter and metadata that are not useful as agent context.
 

@@ -14,8 +14,9 @@
 ## 3. Markdown Page Routes
 
 - [x] 3.1 Add `.md` route generation for public docs pages such as `/getting-started/index.md`, `/workflows/agents-and-specs.md`, `/commands/status.md`, and `/contributing/index.md`.
-- [x] 3.2 Preserve authored Markdown content where practical and strip or normalize raw frontmatter for route output.
-- [x] 3.3 Keep generated Markdown URLs aligned with canonical docs URLs and existing route-slug behavior.
+- [x] 3.2 Add clean `.md` aliases for section index pages such as `/getting-started.md`, `/workflows.md`, `/commands.md`, and `/contributing.md` while keeping the explicit `/index.md` routes working.
+- [x] 3.3 Preserve authored Markdown content where practical and strip or normalize raw frontmatter for route output.
+- [x] 3.4 Keep generated Markdown URLs aligned with canonical docs URLs and existing route-slug behavior.
 
 ## 4. Agent Workflow and Command Guidance
 
