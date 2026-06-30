@@ -31,6 +31,7 @@
 - [ ] 5.1 Add unit tests for workspace resolution, dirty-state discovery, move-plan construction, target safety checks, and result summaries.
 - [ ] 5.2 Add integration tests covering moving tracked, staged, deleted, and untracked changes between coordinated worktrees.
 - [ ] 5.3 Add integration tests for partial workspaces, dirty targets, failed apply recovery, and create-time `--move-changes` behavior.
-- [ ] 5.4 Update `arashi-docs` command/workflow documentation for `arashi move` and `arashi create --move-changes`.
-- [ ] 5.5 Update `arashi-skills` guidance so agents know how to move accidental edits between worktrees safely.
-- [ ] 5.6 Validate the implementation with `bun run lint`, `bun run test`, and `bun run build` in `repos/arashi`, plus docs/skills validation as applicable.
+- [ ] 5.4 Add JSON-mode tests proving `arashi create <branch> --json` with uncommitted changes emits a single structured JSON document with dirty-workspace move guidance and no human guidance on stdout.
+- [ ] 5.5 Update `arashi-docs` command/workflow documentation for `arashi move` and `arashi create --move-changes`.
+- [ ] 5.6 Update `arashi-skills` guidance so agents know how to move accidental edits between worktrees safely.
+- [ ] 5.7 Validate the implementation with `bun run lint`, `bun run test`, and `bun run build` in `repos/arashi`, plus docs/skills validation as applicable.

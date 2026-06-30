@@ -29,3 +29,9 @@ The system SHALL show a concise help message after `arashi create` succeeds when
 #### Scenario: Partial dirty repositories after create
 - **WHEN** the user runs `arashi create <branch>` from a workspace where only some repositories have uncommitted changes
 - **THEN** the guidance identifies that only changed compatible repositories would be moved by the suggested command
+
+#### Scenario: JSON create reports dirty-workspace move guidance structurally
+- **WHEN** the user runs `arashi create <branch> --json` from a workspace with uncommitted changes and does not pass the move flag
+- **THEN** stdout contains exactly one valid JSON document
+- **AND** the JSON result includes structured dirty-workspace guidance with the changed compatible repositories and suggested follow-up move command
+- **AND** no human-readable move guidance is written to stdout
