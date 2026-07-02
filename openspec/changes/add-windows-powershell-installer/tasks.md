@@ -6,7 +6,7 @@
 - [x] 1.4 Install verified assets as `arashi.bin.exe`, `arashi.ps1`, and `arashi.bat` in `%USERPROFILE%\.arashi\bin` by default with `-InstallDir` / `ARASHI_INSTALL_DIR` overrides.
 - [x] 1.5 Add default persistent user PATH modification with duplicate-entry avoidance, `-NoModifyPath` / `ARASHI_NO_MODIFY_PATH=1` opt-out, best-effort environment broadcast, and new-terminal guidance.
 - [x] 1.6 Run an installed binary `--version` smoke test and print direct GitHub Releases fallback guidance for download, checksum, PATH, and smoke-test failures.
-- [x] 1.7 Route `arashi update --yes` through the Windows PowerShell installer on Windows while preserving the POSIX installer path on macOS/Linux.
+- [x] 1.7 Route `arashi update --yes` through a deferred Windows PowerShell installer on Windows while preserving the POSIX installer path on macOS/Linux.
 
 ## 2. Arashi CLI Tests and Docs
 
