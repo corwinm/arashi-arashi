@@ -69,5 +69,9 @@ The change spans the CLI repository, where release scripts and installer docs li
 
 ## Open Questions
 
-- Should the implementation add a dedicated Windows CI smoke test for `scripts/install.ps1`, or is helper-level testing plus manual/PR validation acceptable for the first slice?
-- Should the public docs show the long `powershell -ExecutionPolicy Bypass -c "irm ... | iex"` command everywhere, or also include a PowerShell 7 `pwsh` variant?
+None.
+
+## Resolved Questions
+
+- Windows installer smoke testing should have two layers: deterministic helper/script tests and a non-release PR validation path where practical, plus the installer's own post-install `arashi --version` smoke test when users run it. A full hosted-endpoint/latest-release smoke test is inherently post-release because `/install.ps1` and `latest` only reflect published artifacts after release.
+- Public docs should show the Windows PowerShell command only. A separate PowerShell 7 `pwsh` variant is out of scope unless future user demand requires it.
