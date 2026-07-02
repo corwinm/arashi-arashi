@@ -8,7 +8,7 @@ Arashi SHALL provide a hosted Windows PowerShell installer for direct binary ins
 - **THEN** they can inspect the script contents before executing it
 
 #### Scenario: User runs the documented one-line PowerShell installer
-- **WHEN** a Windows user runs the documented `powershell -ExecutionPolicy Bypass -c "irm https://arashi.haphazard.dev/install.ps1 | iex"` command
+- **WHEN** a Windows user runs the documented `powershell -c "irm https://arashi.haphazard.dev/install.ps1 | iex"` command
 - **THEN** the script downloads, verifies, installs, and smoke-tests the latest supported Arashi Windows release assets without requiring Node.js or npm
 
 #### Scenario: Unsupported Windows platform attempts install

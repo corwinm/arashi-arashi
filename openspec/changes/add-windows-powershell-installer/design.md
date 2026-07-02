@@ -46,15 +46,15 @@ The change spans the CLI repository, where release scripts and installer docs li
    - The script should append the install directory to the user PATH if missing, attempt a best-effort environment-change broadcast, and still tell the user to open a new terminal.
    - Rationale: PATH propagation differs across shells; success should not imply already-open shells see the change.
 
-6. **Smoke-test the installed wrapper after replacement.**
-   - Prefer invoking `arashi.ps1 --version` from the install directory; fall back to clear troubleshooting/fallback output if execution policy or wrapper behavior prevents success.
+6. **Smoke-test the installed binary after replacement.**
+   - Invoke `arashi.bin.exe --version` from the install directory so the default one-liner does not need an execution-policy bypass; keep the PowerShell wrapper installed for normal PATH use.
    - Rationale: Verifies the installed files work together, not just that downloads completed.
 
 ## Risks / Trade-offs
 
 - **Remote script execution pattern is sensitive** → Mitigate with a visible `View install.ps1`/inspection link, checksum verification, and manual release fallback docs.
 - **Windows PATH updates may not affect current shells** → Persist to user PATH, best-effort broadcast, and print explicit “open a new terminal” guidance.
-- **PowerShell execution policies vary** → Document the recommended `-ExecutionPolicy Bypass` invocation and direct-download fallback; keep smoke-test failure messages actionable.
+- **PowerShell execution policies vary** → Keep the default one-liner free of `-ExecutionPolicy Bypass`; document it only as an optional troubleshooting escape hatch for environments that block local `.ps1` execution.
 - **Checksum manifest format changes could break parsing** → Test parser behavior against current manifest lines and fail closed when expected asset hashes are absent.
 - **No Windows runner may be available locally** → Cover pure helper logic in tests and rely on GitHub Actions/Windows CI for end-to-end script execution if the repo has or adds an appropriate workflow path.
 
