@@ -1,9 +1,5 @@
-# vscode-command-integration Specification
+## MODIFIED Requirements
 
-## Purpose
-Define the VS Code extension command surface, native editor interaction patterns, structured CLI-output usage, and release expectations for integrating Arashi workflows into supported editor hosts.
-
-## Requirements
 ### Requirement: Register core Arashi commands in VS Code
 The extension SHALL register VS Code commands for `arashi init`, `arashi add`, `arashi clone`, `arashi create`, `arashi status`, `arashi move`, `arashi prune`, `arashi pull`, `arashi sync`, `arashi setup`, `arashi shell`, `arashi update`, `arashi install`, `arashi switch`, and `arashi remove`, and SHALL make them available for command-palette use and keybinding assignment. The extension MAY omit a separate command-palette entry for `arashi list` when equivalent list functionality is already provided by the worktree panel and refresh command.
 
@@ -68,76 +64,6 @@ The extension SHALL present command success and failure outcomes through standar
 - **WHEN** the extension runs a long-running Arashi command such as add, clone, create, init, install, move, prune, pull, remove, setup, shell install, switch, sync, or update
 - **THEN** the extension shows a native in-progress notification until the command finishes and then reports the final outcome
 
-### Requirement: Preserve compatibility across VS Code forks
-The extension SHALL declare `engines.vscode` as `^1.96.2` and SHALL use stable VS Code APIs so it can run in VS Code and compatible forks such as Cursor.
-
-#### Scenario: Compatible editor runs extension
-- **WHEN** the extension is installed in VS Code or a compatible fork that satisfies `^1.96.2`
-- **THEN** command registration and execution behavior matches the documented baseline
-
-### Requirement: Publish releases to both extension marketplaces
-The release process SHALL publish each production extension version to both VS Marketplace and Open VSX.
-
-#### Scenario: Production release is published
-- **WHEN** a new production extension version is released
-- **THEN** that version is available in both VS Marketplace and Open VSX
-
-### Requirement: Pass host-specific switch overrides from the extension
-The extension SHALL detect whether it is running in VS Code, Cursor, or Kiro and SHALL pass the matching `arashi switch` IDE flag when invoking switch flows that do not already specify an explicit launch override.
-
-#### Scenario: VS Code host passes VS Code override
-- **WHEN** the extension runs `arashi switch` inside VS Code and no explicit launch override has already been chosen
-- **THEN** the extension invokes the CLI with `--vscode`
-
-#### Scenario: Cursor host passes Cursor override
-- **WHEN** the extension runs `arashi switch` inside Cursor and no explicit launch override has already been chosen
-- **THEN** the extension invokes the CLI with `--cursor`
-
-#### Scenario: Kiro host passes Kiro override
-- **WHEN** the extension runs `arashi switch` inside Kiro and no explicit launch override has already been chosen
-- **THEN** the extension invokes the CLI with `--kiro`
-
-#### Scenario: Unsupported host omits IDE override
-- **WHEN** the extension runs `arashi switch` in a compatible host that does not map to a supported IDE override
-- **THEN** the extension invokes the CLI without adding an IDE-specific launch flag
-
-### Requirement: Pass exact worktree identity for selected switch targets
-The extension SHALL invoke `arashi switch` with explicit worktree-path targeting whenever an extension switch flow has already resolved a concrete worktree selection.
-
-#### Scenario: Command palette switch uses exact path mode
-- **WHEN** a user runs the extension switch command, chooses a specific worktree from the native picker, and the extension invokes `arashi switch`
-- **THEN** the extension passes the selected worktree path using the CLI's explicit path-targeting mode instead of a fuzzy positional filter
-
-#### Scenario: Exact path mode preserves host-specific launch overrides
-- **WHEN** an extension switch flow invokes `arashi switch` for a selected worktree in VS Code, Cursor, or Kiro
-- **THEN** the extension still passes the matching host-specific IDE override together with the explicit path-targeting mode
-
-### Requirement: Pass editor host context for create invocations
-The extension SHALL pass its detected editor host context when invoking `arashi create` so the CLI can resolve editor-scoped create defaults without implying a launch override.
-
-#### Scenario: VS Code create passes VS Code host context
-- **WHEN** a user runs `arashi create` from the extension inside VS Code
-- **THEN** the extension invokes the CLI with create arguments that identify the host as VS Code for default-resolution purposes
-
-#### Scenario: Cursor create passes Cursor host context
-- **WHEN** a user runs `arashi create` from the extension inside Cursor
-- **THEN** the extension invokes the CLI with create arguments that identify the host as Cursor for default-resolution purposes
-
-#### Scenario: Unknown host omits create host context
-- **WHEN** a user runs `arashi create` from the extension in a compatible host that does not map to a supported editor-host identifier
-- **THEN** the extension invokes the CLI without editor-host context and without adding an IDE launch flag on behalf of the user
-
-### Requirement: Register repository navigation commands in VS Code
-The extension SHALL register command-palette commands for opening the Arashi workspace root and related repositories in repo-focused editor windows, and SHALL reuse the same command handlers from tree-view interactions.
-
-#### Scenario: Repo navigation commands are discoverable
-- **WHEN** a user opens the command palette and searches for Arashi commands
-- **THEN** the extension shows commands for opening related repositories in addition to the existing worktree-management commands
-
-#### Scenario: Tree and command palette reuse the same repo-opening flow
-- **WHEN** a user opens a repository from either the panel or the command palette
-- **THEN** the extension executes the same repo-selection and repo-opening logic for both entry points
-
 ### Requirement: Refresh panel state after mutating extension commands
 The extension SHALL refresh the worktree panel after successful create, add, clone, remove, move, prune, setup, install, update, pull, sync, and panel mutation flows that can change visible Arashi state.
 
@@ -149,10 +75,11 @@ The extension SHALL refresh the worktree panel after successful create, add, clo
 - **WHEN** a mutating Arashi command fails
 - **THEN** the extension reports the failure and does not present the panel as successfully refreshed
 
+## ADDED Requirements
+
 ### Requirement: Document extension command-palette coverage
 The extension SHALL document the supported command-palette actions and safety behavior in extension-specific documentation.
 
 #### Scenario: User reads extension README
 - **WHEN** a user opens the extension README or marketplace documentation
 - **THEN** the documented feature list identifies the supported Arashi command-palette actions and notes that destructive or environment-changing actions require native confirmation
-
