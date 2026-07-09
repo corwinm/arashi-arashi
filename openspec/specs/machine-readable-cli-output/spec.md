@@ -44,10 +44,11 @@ Commands that accept `--json` SHALL NOT trigger interactive prompts and SHALL re
 - **AND** the command does not perform the mutation
 
 ### Requirement: Command support audit
+
 The Arashi CLI SHALL audit every user-facing command and explicitly classify JSON behavior as supported, unsupported for a specific mode, or not applicable.
 
 #### Scenario: Automation-relevant command has structured results
-- **WHEN** a user runs an automation-relevant command such as `clone`, `create`, `init`, `install`, `prune`, `pull`, `setup`, `status`, `sync`, or `update` with `--json`
+- **WHEN** a user runs an automation-relevant command such as `clone`, `create`, `doctor`, `init`, `install`, `prune`, `pull`, `setup`, `status`, `sync`, or `update` with `--json`
 - **THEN** the command either returns a structured JSON success/failure envelope or documents and emits a structured unsupported-mode error for the requested mode
 
 #### Scenario: Existing JSON command is audited
@@ -157,3 +158,33 @@ The Arashi CLI SHALL provide structured JSON results for `arashi push --json` an
 - **WHEN** a user runs `arashi push --json` and required repository selection or upstream information is ambiguous
 - **THEN** the command exits non-zero with a structured error or skipped repository result that explains how automation can retry with explicit flags such as `--only` or `--set-upstream`
 - **AND** the command does not prompt for interactive input
+
+### Requirement: Remove dry-run JSON results
+
+The Arashi CLI SHALL provide structured JSON results for `arashi remove --dry-run --json` that describe a non-mutating removal plan in the standard JSON envelope.
+
+#### Scenario: Dry-run remove JSON succeeds
+- **WHEN** a user runs `arashi remove <target> --dry-run --json`
+- **THEN** stdout contains exactly one valid JSON envelope with `ok: true` and `command: "remove"`
+- **AND** the data object identifies the invocation as dry-run preview mode
+- **AND** the data object includes planned worktree removals, planned branch deletions, skipped main worktrees, missing branches, blockers or dirty details, hook preview context, effective options, and totals
+- **AND** no human-readable preview text is mixed into stdout
+
+#### Scenario: Dry-run remove JSON requires explicit target
+- **WHEN** a user runs `arashi remove --dry-run --json` without a target and interactive selection would be required
+- **THEN** stdout contains exactly one valid JSON error envelope
+- **AND** the error explains that an explicit target is required for JSON mode
+- **AND** no prompt is shown
+
+#### Scenario: Dry-run remove JSON reports no-op keep flags
+- **WHEN** a user runs `arashi remove <target> --dry-run --json --keep-worktrees --keep-branches`
+- **THEN** stdout contains exactly one valid JSON envelope with `ok: true`
+- **AND** the plan totals show zero planned worktree removals and zero planned branch deletions
+- **AND** the effective options show both keep flags were supplied
+
+#### Scenario: Dry-run remove JSON is non-mutating
+- **WHEN** a user runs `arashi remove <target> --dry-run --json`
+- **THEN** the JSON plan describes pending operations only
+- **AND** no operation in the plan is reported as successfully executed
+- **AND** worktrees, branches, and hooks remain unmodified by the preview
+
