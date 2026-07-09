@@ -28,4 +28,4 @@
 
 - [x] 5.1 Run `bun run lint`, `bun test`, and `bun run build` in `repos/arashi-vscode`.
 - [x] 5.2 Open a focused `corwinm/arashi-vscode` implementation PR linked to issue #183 and the OpenSpec/meta PR.
-- [ ] 5.3 After implementation review, archive/sync this OpenSpec change, validate the synced specs directly, and update the meta PR body from `Tracks` to `Closes #183` before final merge.
+- [x] 5.3 After implementation review, archive/sync this OpenSpec change, validate the synced specs directly, and update the meta PR body from `Tracks` to `Closes #183` before final merge.

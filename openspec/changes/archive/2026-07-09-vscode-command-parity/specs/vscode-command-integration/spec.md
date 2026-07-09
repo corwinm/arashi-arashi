@@ -75,6 +75,8 @@ The extension SHALL refresh the worktree panel after successful create, add, clo
 - **WHEN** a mutating Arashi command fails
 - **THEN** the extension reports the failure and does not present the panel as successfully refreshed
 
+## ADDED Requirements
+
 ### Requirement: Document extension command-palette coverage
 The extension SHALL document the supported command-palette actions and safety behavior in extension-specific documentation.
 

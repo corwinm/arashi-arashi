@@ -1,7 +1,8 @@
 # vscode-worktree-panel Specification
 
 ## Purpose
-TBD - created by archiving change create-vscode-plugin. Update Purpose after archive.
+Specify the VS Code worktree panel behavior for displaying Arashi workspace state, preserving parse-failure resilience, exposing contextual actions, and keeping visible state synchronized after extension or external CLI changes.
+
 ## Requirements
 ### Requirement: Display Arashi worktrees with status metadata
 The extension SHALL provide a worktree panel that groups discovered worktrees by related repository context and lists each worktree with branch identity, path, git-change status indicators, and whether the entry belongs to the current workspace or a sibling worktree. Child repositories nested under a worktree SHALL remain visually distinguishable from top-level worktree entries even when a child repository has local modifications.
@@ -78,7 +79,7 @@ The extension MUST require explicit confirmation for destructive panel actions a
 The worktree panel SHALL refresh after successful extension commands that change visible Arashi state, SHALL refresh when the window regains focus or the panel becomes visible again, and SHALL provide a manual refresh command.
 
 #### Scenario: Panel refreshes after extension mutation
-- **WHEN** a create, add, clone, remove, pull, sync, or panel action completes successfully through the extension
+- **WHEN** a create, add, clone, remove, move, prune, setup, install, update, pull, sync, or panel action completes successfully through the extension
 - **THEN** the panel re-queries Arashi state and reflects the updated entries in the same session
 
 #### Scenario: Panel refreshes after external CLI changes
@@ -88,3 +89,4 @@ The worktree panel SHALL refresh after successful extension commands that change
 #### Scenario: Manual refresh
 - **WHEN** a user invokes panel refresh
 - **THEN** the extension re-queries Arashi state and updates displayed entries
+
