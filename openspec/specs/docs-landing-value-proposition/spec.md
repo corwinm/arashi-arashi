@@ -1,5 +1,9 @@
-## ADDED Requirements
+# docs-landing-value-proposition Specification
 
+## Purpose
+Define landing-page requirements that communicate Arashi's multi-repo parallel-worktree value proposition through concise, action-oriented onboarding copy.
+
+## Requirements
 ### Requirement: Landing page SHALL communicate Arashi's multi-repo value above the fold
 The docs landing page SHALL present a primary value proposition that explains users can coordinate multiple repositories and multiple worktrees in parallel without losing context.
 
