@@ -34,5 +34,5 @@
 ## 5. Closeout
 
 - [x] 5.1 Open implementation PRs for affected child repos and cross-link them with the meta/OpenSpec PR and issue #181.
-- [ ] 5.2 After implementation PRs pass review and CI, archive/sync the OpenSpec change into `openspec/specs/repository-group-selection/spec.md`.
-- [ ] 5.3 Update the meta PR body from `Tracks #181` to `Closes #181` after archive/sync is pushed.
+- [x] 5.2 After implementation PRs pass review and CI, archive/sync the OpenSpec change into `openspec/specs/repository-group-selection/spec.md`.
+- [x] 5.3 Update the meta PR body from `Tracks #181` to `Closes #181` after archive/sync is pushed.
