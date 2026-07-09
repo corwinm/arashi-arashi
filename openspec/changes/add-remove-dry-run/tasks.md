@@ -24,4 +24,4 @@
 - [x] 4.1 Run `bun run lint`, `bun run test`, and `bun run build` in `repos/arashi`.
 - [x] 4.2 Run `bun run validate` in `repos/arashi-docs`.
 - [x] 4.3 Run the arashi-skills validation command if present, or inspect/package the affected skill files according to existing repo scripts.
-- [ ] 4.4 Open focused, cross-linked implementation PRs for `corwinm/arashi`, `corwinm/arashi-docs`, and `corwinm/arashi-skills` as needed, then update the meta/spec PR with the related PR set.
+- [x] 4.4 Open focused, cross-linked implementation PRs for `corwinm/arashi`, `corwinm/arashi-docs`, and `corwinm/arashi-skills` as needed, then update the meta/spec PR with the related PR set.
