@@ -31,7 +31,7 @@
 
 ## 5. PR choreography and closeout
 
-- [ ] 5.1 Open focused, cross-linked implementation PRs for affected child repositories.
+- [x] 5.1 Open focused, cross-linked implementation PRs for affected child repositories.
 - [x] 5.2 Update the OpenSpec tasks as implementation and validation complete.
-- [ ] 5.3 Archive and sync the OpenSpec change after implementation is ready for merge.
-- [ ] 5.4 Update the meta/spec PR body with related PR links, synced spec paths, validation evidence, and `Closes #186` before final merge.
+- [x] 5.3 Archive and sync the OpenSpec change after implementation is ready for merge.
+- [x] 5.4 Update the meta/spec PR body with related PR links, synced spec paths, validation evidence, and `Closes #186` before final merge.
