@@ -1,0 +1,17 @@
+{
+  "name": "arashi-cross-repo-contracts",
+  "private": true,
+  "version": "0.0.0",
+  "packageManager": "bun@1.2.18",
+  "scripts": {
+    "contracts:check": "bun scripts/check-command-contracts.ts",
+    "test": "bun test tests/command-contracts.test.ts",
+    "typecheck": "bunx tsc --noEmit",
+    "format:check": "bunx prettier --check package.json tsconfig.json scripts tests docs .github"
+  },
+  "devDependencies": {
+    "@types/bun": "1.2.18",
+    "prettier": "3.6.2",
+    "typescript": "5.8.3"
+  }
+}
