@@ -1,5 +1,9 @@
-## MODIFIED Requirements
+# cli-readme-value-example Specification
 
+## Purpose
+Define README requirements that explain Arashi's current OpenSpec-based multi-repo value proposition and keep historical SpecKit references clearly contextualized.
+
+## Requirements
 ### Requirement: CLI README SHALL include a value-focused multi-repo example section
 The CLI README SHALL include a dedicated section that explains Arashi's value through a minimal frontend-and-backend multi-repo workflow and SHALL identify OpenSpec as the current spec workflow used for this project.
 

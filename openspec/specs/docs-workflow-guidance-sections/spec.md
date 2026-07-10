@@ -1,5 +1,9 @@
-## ADDED Requirements
+# docs-workflow-guidance-sections Specification
 
+## Purpose
+Define documentation requirements for discoverable workflow guidance covering hooks, configuration, integrations, and onboarding cross-links.
+
+## Requirements
 ### Requirement: Docs SHALL provide dedicated workflow guidance for hooks, configuration, and integrations
 The documentation SHALL provide dedicated, discoverable guidance for hooks, configuration options, and integrations instead of requiring users to infer those workflows only from command-reference pages.
 

@@ -1,5 +1,9 @@
-## ADDED Requirements
+# meta-repo-readme-openspec-guidance Specification
 
+## Purpose
+Define root README requirements that identify OpenSpec as the current Arashi planning workflow while treating SpecKit as historical context only.
+
+## Requirements
 ### Requirement: Meta-repo README SHALL identify OpenSpec as the current workflow
 The root `arashi-arashi` `README.md` SHALL identify OpenSpec as the current workflow used for specification and change planning in this repository.
 

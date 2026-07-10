@@ -1,5 +1,9 @@
-## ADDED Requirements
+# multi-repo-worktree-visual-walkthrough Specification
 
+## Purpose
+Define documentation requirements for an accurate visual walkthrough of Arashi's minimal multi-repo add, create, and switch workflow.
+
+## Requirements
 ### Requirement: Docs SHALL provide a visual walkthrough of the minimal multi-repo workflow
 The docs landing page SHALL provide visuals that depict adding repositories, creating worktrees, and switching between worktrees while another worktree remains active.
 
