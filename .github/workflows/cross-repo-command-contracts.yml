@@ -1,0 +1,72 @@
+name: Cross-repository command contracts
+
+on:
+  pull_request:
+    paths:
+      - "scripts/**"
+      - "tests/**"
+      - "package.json"
+      - "bun.lock"
+      - "tsconfig.json"
+      - ".github/workflows/cross-repo-command-contracts.yml"
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  contracts:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out meta-repository
+        uses: actions/checkout@v4
+        with:
+          path: meta
+      - name: Check out Arashi CLI
+        uses: actions/checkout@v4
+        with:
+          repository: corwinm/arashi
+          ref: main
+          path: meta/repos/arashi
+      - name: Check out Arashi docs
+        uses: actions/checkout@v4
+        with:
+          repository: corwinm/arashi-docs
+          ref: main
+          path: meta/repos/arashi-docs
+      - name: Check out Arashi skills
+        uses: actions/checkout@v4
+        with:
+          repository: corwinm/arashi-skills
+          ref: main
+          path: meta/repos/arashi-skills
+      - name: Check out Arashi VS Code
+        uses: actions/checkout@v4
+        with:
+          repository: corwinm/arashi-vscode
+          ref: main
+          path: meta/repos/arashi-vscode
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.2.18
+      - name: Report revisions
+        working-directory: meta
+        run: |
+          for repo in arashi arashi-docs arashi-skills arashi-vscode; do
+            printf '%s: ' "$repo"
+            git -C "repos/$repo" rev-parse HEAD
+          done
+      - name: Install pinned checker toolchain
+        working-directory: meta
+        run: bun install --frozen-lockfile
+      - name: Test checker
+        working-directory: meta
+        run: bun run test
+      - name: Type-check checker
+        working-directory: meta
+        run: bun run typecheck
+      - name: Check cross-repository contracts
+        working-directory: meta
+        run: bun run contracts:check

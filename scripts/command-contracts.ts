@@ -1,0 +1,560 @@
+import { readdir } from "node:fs/promises";
+import { join, relative } from "node:path";
+
+export type Severity = "error" | "info";
+export interface Diagnostic {
+  severity: Severity;
+  category: "schema" | "docs" | "skills" | "vscode";
+  code: string;
+  source: string;
+  subject: string;
+  message: string;
+}
+export interface CheckResult {
+  ok: boolean;
+  diagnostics: Diagnostic[];
+}
+type Obj = Record<string, unknown>;
+
+const paths = {
+  contract: "repos/arashi/contracts/cli-commands.json",
+  docs: "repos/arashi-docs/docs/commands",
+  skills: "repos/arashi-skills/skills/arashi",
+  coverage: "repos/arashi-skills/contracts/command-coverage.json",
+  policy: "repos/arashi-vscode/contracts/command-policy.json",
+  manifest: "repos/arashi-vscode/package.json",
+} as const;
+const object = (value: unknown): value is Obj =>
+  typeof value === "object" && value !== null && !Array.isArray(value);
+const text = (value: unknown): value is string =>
+  typeof value === "string" && value.trim().length > 0;
+
+async function json(
+  root: string,
+  path: string,
+  diagnostics: Diagnostic[],
+): Promise<Obj | undefined> {
+  try {
+    const value: unknown = await Bun.file(join(root, path)).json();
+    if (!object(value)) throw new Error("root must be an object");
+    return value;
+  } catch (error) {
+    diagnostics.push({
+      severity: "error",
+      category: "schema",
+      code: "SCHEMA_INVALID",
+      source: path,
+      subject: path,
+      message: `Cannot parse JSON object: ${error instanceof Error ? error.message : String(error)}`,
+    });
+  }
+}
+function version(
+  value: Obj | undefined,
+  source: string,
+  diagnostics: Diagnostic[],
+) {
+  if (value && value.schemaVersion !== 1)
+    diagnostics.push({
+      severity: "error",
+      category: "schema",
+      code: "SCHEMA_VERSION_UNSUPPORTED",
+      source,
+      subject: String(value.schemaVersion),
+      message: "Expected schemaVersion 1.",
+    });
+}
+function reason(
+  entry: Obj,
+  source: string,
+  subject: string,
+  required: boolean,
+  diagnostics: Diagnostic[],
+) {
+  if (required && !text(entry.reason))
+    diagnostics.push({
+      severity: "error",
+      category: "schema",
+      code: "POLICY_REASON_REQUIRED",
+      source,
+      subject,
+      message: "This classification requires a non-empty reason.",
+    });
+}
+function add(
+  diagnostics: Diagnostic[],
+  severity: Severity,
+  category: Diagnostic["category"],
+  code: string,
+  source: string,
+  subject: string,
+  message: string,
+) {
+  diagnostics.push({ severity, category, code, source, subject, message });
+}
+async function markdownFiles(directory: string): Promise<string[]> {
+  const result: string[] = [];
+  async function walk(path: string) {
+    for (const entry of await readdir(path, { withFileTypes: true })) {
+      const child = join(path, entry.name);
+      if (entry.isDirectory()) await walk(child);
+      else if (entry.name.endsWith(".md")) result.push(child);
+    }
+  }
+  try {
+    await walk(directory);
+  } catch {
+    /* Missing tree is diagnosed through coverage/reference checks. */
+  }
+  return result.sort();
+}
+
+export async function checkContracts(
+  root = process.cwd(),
+): Promise<CheckResult> {
+  const d: Diagnostic[] = [];
+  const contract = await json(root, paths.contract, d);
+  const coverage = await json(root, paths.coverage, d);
+  const policy = await json(root, paths.policy, d);
+  const manifest = await json(root, paths.manifest, d);
+  version(contract, paths.contract, d);
+  version(coverage, paths.coverage, d);
+  version(policy, paths.policy, d);
+  const commandEntries = Array.isArray(contract?.commands)
+    ? contract.commands.filter(object)
+    : [];
+  if (
+    contract &&
+    (!text(contract.cliVersion) || !Array.isArray(contract.commands))
+  )
+    add(
+      d,
+      "error",
+      "schema",
+      "SCHEMA_INVALID",
+      paths.contract,
+      "contract",
+      "Contract requires cliVersion and commands.",
+    );
+  const commands = new Map<string, Obj>();
+  for (const command of commandEntries) {
+    if (!text(command.path) || commands.has(command.path)) {
+      add(
+        d,
+        "error",
+        "schema",
+        "SCHEMA_INVALID",
+        paths.contract,
+        String(command.path),
+        "Command paths must be non-empty and unique.",
+      );
+      continue;
+    }
+    commands.set(command.path, command);
+    const semantics = object(command.semantics) ? command.semantics : {};
+    for (const surface of ["json", "docs", "skills", "vscode"])
+      if (!object(semantics[surface]))
+        add(
+          d,
+          "error",
+          "schema",
+          "SCHEMA_INVALID",
+          paths.contract,
+          `${command.path}.${surface}`,
+          "Missing semantic classification.",
+        );
+    const jsonPolicy = object(semantics.json) ? semantics.json : {};
+    reason(
+      jsonPolicy,
+      paths.contract,
+      `${command.path}.json`,
+      jsonPolicy.support === "conditional" ||
+        jsonPolicy.support === "unsupported",
+      d,
+    );
+    for (const surface of ["docs", "skills", "vscode"]) {
+      const p = object(semantics[surface]) ? (semantics[surface] as Obj) : {};
+      reason(
+        p,
+        paths.contract,
+        `${command.path}.${surface}`,
+        p.expectation === "excluded" || p.expectation === "represented",
+        d,
+      );
+    }
+  }
+
+  let index = "";
+  try {
+    index = await Bun.file(join(root, paths.docs, "index.md")).text();
+  } catch {
+    add(
+      d,
+      "error",
+      "docs",
+      "DOCS_INDEX_MISSING",
+      `${paths.docs}/index.md`,
+      "index",
+      "Canonical command index is missing.",
+    );
+  }
+  for (const [name, command] of commands) {
+    const p =
+      object(command.semantics) && object(command.semantics.docs)
+        ? command.semantics.docs
+        : {};
+    if (p.expectation === "required") {
+      if (!(await Bun.file(join(root, paths.docs, `${name}.md`)).exists()))
+        add(
+          d,
+          "error",
+          "docs",
+          "DOCS_PAGE_MISSING",
+          `${paths.docs}/${name}.md`,
+          name,
+          "Required canonical command page is missing.",
+        );
+      if (!new RegExp(`(?:\\./|/)?commands/${name}(?:\\.md|/|\\))`).test(index))
+        add(
+          d,
+          "error",
+          "docs",
+          "DOCS_INDEX_MISSING",
+          `${paths.docs}/index.md`,
+          name,
+          "Required command is absent from the canonical index.",
+        );
+    } else if (p.expectation === "excluded")
+      add(
+        d,
+        "info",
+        "docs",
+        "DOCS_EXCLUDED",
+        paths.contract,
+        name,
+        String(p.reason),
+      );
+  }
+
+  const covered = new Map<string, Obj>();
+  const coverageEntries = Array.isArray(coverage?.commands)
+    ? coverage.commands.filter(object)
+    : [];
+  if (coverage && !Array.isArray(coverage.commands))
+    add(
+      d,
+      "error",
+      "schema",
+      "SCHEMA_INVALID",
+      paths.coverage,
+      "commands",
+      "Coverage commands must be an array.",
+    );
+  for (const entry of coverageEntries) {
+    const name = entry.name;
+    if (!text(name) || covered.has(name)) {
+      add(
+        d,
+        "error",
+        "schema",
+        "SCHEMA_INVALID",
+        paths.coverage,
+        String(name),
+        "Coverage names must be non-empty and unique.",
+      );
+      continue;
+    }
+    covered.set(name, entry);
+    reason(entry, paths.coverage, name, entry.status === "excluded", d);
+    if (!commands.has(name))
+      add(
+        d,
+        "error",
+        "skills",
+        "SKILLS_STALE_COVERAGE",
+        paths.coverage,
+        name,
+        "Coverage names a command absent from the CLI contract.",
+      );
+  }
+  for (const [name, command] of commands) {
+    const skillsPolicy =
+      object(command.semantics) && object(command.semantics.skills)
+        ? command.semantics.skills
+        : {};
+    const expectation = skillsPolicy.expectation;
+    const entry = covered.get(name);
+    if (expectation === "excluded" && !entry) {
+      add(
+        d,
+        "info",
+        "skills",
+        "SKILLS_EXCLUDED",
+        paths.contract,
+        name,
+        String(skillsPolicy.reason),
+      );
+      continue;
+    }
+    if (!entry)
+      add(
+        d,
+        "error",
+        "skills",
+        "SKILLS_COVERAGE_MISSING",
+        paths.coverage,
+        name,
+        "Command has no structured skills decision.",
+      );
+    else if (entry.status === "covered") {
+      if (
+        !text(entry.reference) ||
+        !(await Bun.file(join(root, paths.skills, entry.reference)).exists())
+      )
+        add(
+          d,
+          "error",
+          "skills",
+          "SKILLS_REFERENCE_INVALID",
+          paths.coverage,
+          name,
+          "Covered command requires an existing relative reference.",
+        );
+    } else if (entry.status === "excluded")
+      add(
+        d,
+        "info",
+        "skills",
+        "SKILLS_EXCLUDED",
+        paths.coverage,
+        name,
+        String(entry.reason),
+      );
+    else
+      add(
+        d,
+        "error",
+        "schema",
+        "SCHEMA_INVALID",
+        paths.coverage,
+        name,
+        "Status must be covered or excluded.",
+      );
+    if (expectation === "required" && entry?.status === "excluded")
+      add(
+        d,
+        "error",
+        "skills",
+        "SKILLS_EXPECTATION_MISMATCH",
+        paths.coverage,
+        name,
+        "CLI requires skills coverage but policy excludes it.",
+      );
+  }
+  for (const file of await markdownFiles(join(root, paths.skills))) {
+    const content = await Bun.file(file).text();
+    const regex = /`arashi\s+([a-z][a-z0-9-]*)(?=[\s`])/g;
+    for (const match of content.matchAll(regex))
+      if (
+        !commands.has(match[1]) &&
+        !["--help", "--version"].includes(match[1])
+      )
+        add(
+          d,
+          "error",
+          "skills",
+          "SKILLS_STALE_REFERENCE",
+          relative(root, file),
+          match[1],
+          "Command-shaped reference is absent from the CLI contract.",
+        );
+  }
+
+  const cliPolicy = object(policy?.cliCommands) ? policy.cliCommands : {};
+  const extensionOnly = Array.isArray(policy?.extensionOnlyCommands)
+    ? policy.extensionOnlyCommands.filter(text)
+    : [];
+  const contributed = new Set(
+    (object(manifest?.contributes) &&
+    Array.isArray(manifest.contributes.commands)
+      ? manifest.contributes.commands
+      : []
+    )
+      .filter(object)
+      .map((x) => x.command)
+      .filter(text),
+  );
+  for (const [name, raw] of Object.entries(cliPolicy)) {
+    if (!object(raw)) {
+      add(
+        d,
+        "error",
+        "schema",
+        "SCHEMA_INVALID",
+        paths.policy,
+        name,
+        "CLI policy entry must be an object.",
+      );
+      continue;
+    }
+    if (!commands.has(name))
+      add(
+        d,
+        "error",
+        "vscode",
+        "VSCODE_INVALID_CLI",
+        paths.policy,
+        name,
+        "Policy names a command absent from the CLI contract.",
+      );
+    const ids = Array.isArray(raw.commands) ? raw.commands.filter(text) : [];
+    reason(
+      raw,
+      paths.policy,
+      name,
+      raw.state === "excluded" || raw.state === "represented",
+      d,
+    );
+    if (raw.state === "mapped" && ids.length === 0)
+      add(
+        d,
+        "error",
+        "vscode",
+        "VSCODE_INVALID_MAPPING",
+        paths.policy,
+        name,
+        "Mapped state requires extension command IDs.",
+      );
+    if (
+      raw.state === "represented" &&
+      ids.length === 0 &&
+      !(Array.isArray(raw.views) && raw.views.some(text))
+    )
+      add(
+        d,
+        "error",
+        "vscode",
+        "VSCODE_INVALID_MAPPING",
+        paths.policy,
+        name,
+        "Represented state requires commands or views.",
+      );
+    if (!["mapped", "represented", "excluded"].includes(String(raw.state)))
+      add(
+        d,
+        "error",
+        "schema",
+        "SCHEMA_INVALID",
+        paths.policy,
+        name,
+        "State must be mapped, represented, or excluded.",
+      );
+    for (const id of ids)
+      if (!contributed.has(id))
+        add(
+          d,
+          "error",
+          "vscode",
+          "VSCODE_INVALID_COMMAND",
+          paths.policy,
+          id,
+          "Mapped extension command is not contributed by package.json.",
+        );
+    if (raw.state === "excluded")
+      add(
+        d,
+        "info",
+        "vscode",
+        "VSCODE_EXCLUDED",
+        paths.policy,
+        name,
+        String(raw.reason),
+      );
+  }
+  for (const [name, command] of commands)
+    if (!object(cliPolicy[name])) {
+      const vscodePolicy =
+        object(command.semantics) && object(command.semantics.vscode)
+          ? command.semantics.vscode
+          : {};
+      if (vscodePolicy.expectation === "excluded")
+        add(
+          d,
+          "info",
+          "vscode",
+          "VSCODE_EXCLUDED",
+          paths.contract,
+          name,
+          String(vscodePolicy.reason),
+        );
+      else
+        add(
+          d,
+          "error",
+          "vscode",
+          "VSCODE_PARITY_MISSING",
+          paths.policy,
+          name,
+          "CLI command has no mapping, representation, or exclusion.",
+        );
+    }
+  for (const id of extensionOnly)
+    if (!contributed.has(id))
+      add(
+        d,
+        "error",
+        "vscode",
+        "VSCODE_EXTENSION_ONLY_INVALID",
+        paths.policy,
+        id,
+        "Extension-only command is not contributed.",
+      );
+  const classified = new Set(extensionOnly);
+  for (const raw of Object.values(cliPolicy))
+    if (object(raw) && Array.isArray(raw.commands))
+      raw.commands.filter(text).forEach((id) => classified.add(id));
+  for (const id of contributed)
+    if (!classified.has(id))
+      add(
+        d,
+        "error",
+        "vscode",
+        "VSCODE_COMMAND_UNCLASSIFIED",
+        paths.manifest,
+        id,
+        "Contributed command is neither CLI-backed nor extension-only.",
+      );
+
+  d.sort((a, b) =>
+    [
+      a.severity === "error" ? "0" : "1",
+      a.category,
+      a.code,
+      a.subject,
+      a.source,
+    ]
+      .join("\0")
+      .localeCompare(
+        [
+          b.severity === "error" ? "0" : "1",
+          b.category,
+          b.code,
+          b.subject,
+          b.source,
+        ].join("\0"),
+      ),
+  );
+  return { ok: !d.some((x) => x.severity === "error"), diagnostics: d };
+}
+export function formatHuman(result: CheckResult): string {
+  const lines = result.diagnostics.map(
+    (x) =>
+      `[${x.severity}] ${x.code} (${x.category}) ${x.subject} — ${x.message} [${x.source}]`,
+  );
+  lines.push(
+    result.ok
+      ? `PASS: command contracts agree (${result.diagnostics.length} informational finding(s)).`
+      : `FAIL: ${result.diagnostics.filter((x) => x.severity === "error").length} contract error(s).`,
+  );
+  return lines.join("\n");
+}
