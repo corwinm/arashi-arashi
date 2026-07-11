@@ -28,25 +28,25 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: corwinm/arashi
-          ref: ${{ github.event_name == 'pull_request' && github.head_ref || 'main' }}
+          ref: main
           path: meta/repos/arashi
       - name: Check out Arashi docs
         uses: actions/checkout@v4
         with:
           repository: corwinm/arashi-docs
-          ref: ${{ github.event_name == 'pull_request' && github.head_ref || 'main' }}
+          ref: main
           path: meta/repos/arashi-docs
       - name: Check out Arashi skills
         uses: actions/checkout@v4
         with:
           repository: corwinm/arashi-skills
-          ref: ${{ github.event_name == 'pull_request' && github.head_ref || 'main' }}
+          ref: main
           path: meta/repos/arashi-skills
       - name: Check out Arashi VS Code
         uses: actions/checkout@v4
         with:
           repository: corwinm/arashi-vscode
-          ref: ${{ github.event_name == 'pull_request' && github.head_ref || 'main' }}
+          ref: main
           path: meta/repos/arashi-vscode
       - uses: oven-sh/setup-bun@v2
         with:

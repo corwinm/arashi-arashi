@@ -34,6 +34,6 @@ The human report groups findings by stable category/code. Intentional exclusions
 
 ## CI trigger decision
 
-The authoritative workflow runs on meta-repository changes and manual dispatch. For coordinated pull requests, it checks out the matching head branch from each child repository; pushes to `main` and manual runs validate each child’s `main` branch. This preserves review-time cross-repo validation while ensuring the durable post-merge check follows released repository state.
+The authoritative workflow runs on meta-repository changes and manual dispatch. It validates each child repository’s `main` branch, which makes the durable contract check follow merged repository state and preserves child-before-meta merge ordering.
 
 Child repositories do **not** dispatch the workflow yet: cross-repository authentication, independently named PR refs, and status reporting should be designed together in a follow-up. Child-local freshness/consistency gates remain independently useful in the meantime.
