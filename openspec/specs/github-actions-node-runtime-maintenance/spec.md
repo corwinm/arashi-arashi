@@ -1,18 +1,18 @@
 # github-actions-node-runtime-maintenance Specification
 
 ## Purpose
-Define requirements for keeping Arashi child repository GitHub Actions workflows on supported GitHub-owned action runtimes while preserving project runtime compatibility and reviewable multi-repository changes.
+Define requirements for keeping Arashi meta-repository and child-repository GitHub Actions workflows on supported JavaScript action runtimes while preserving project runtime compatibility and reviewable multi-repository changes.
 
 ## Requirements
 ### Requirement: Child workflows use supported GitHub action runtimes
-Each child repository workflow SHALL use current stable major versions of GitHub-owned JavaScript actions when the existing action major targets a deprecated GitHub Actions Node runtime.
+Each meta-repository and child-repository workflow SHALL use current stable major versions of JavaScript actions when the existing action major targets a deprecated GitHub Actions Node runtime, regardless of whether the action is GitHub-owned or published by a third party.
 
 #### Scenario: Deprecated action major is discovered
-- **WHEN** a child repository workflow uses a GitHub-owned action major that GitHub identifies as running on a deprecated Node runtime
-- **THEN** the workflow is updated to the latest stable major version of that action that runs on a supported Node runtime
+- **WHEN** an Arashi workflow uses a JavaScript action major that GitHub identifies as running on a deprecated Node runtime
+- **THEN** the workflow is updated to the latest stable major version of that action that is designed to run on a supported Node runtime
 
 #### Scenario: Workflow behavior is preserved after action upgrade
-- **WHEN** a GitHub-owned action version is updated to a current stable major
+- **WHEN** a JavaScript action version is updated to a current stable major
 - **THEN** the workflow keeps its existing triggers, jobs, permissions, step order, and action inputs unless a documented action migration note requires a targeted adjustment
 
 ### Requirement: Project Node versions are reviewed separately from action runtimes
@@ -30,12 +30,12 @@ Workflows SHALL treat the Node version used by `actions/setup-node` for project 
 Workflow implementation changes SHALL be made in the child repositories that own the workflow files and remain reviewable per repository.
 
 #### Scenario: Multiple child repositories require workflow updates
-- **WHEN** the deprecated action runtime sweep affects more than one child repository
-- **THEN** each affected child repository receives its own implementation change, validation evidence, and issue #164 reference
+- **WHEN** a deprecated action runtime sweep affects more than one child repository
+- **THEN** each affected child repository receives its own implementation change, validation evidence, and reference to the issue authorizing that sweep
 
 #### Scenario: Meta-repo planning is complete before implementation
-- **WHEN** implementation begins for issue #164
-- **THEN** the OpenSpec proposal, design, specs, and tasks for `update-actions-node-version` exist in the meta-repo and validate successfully
+- **WHEN** implementation begins for a coordinated multi-repository action runtime sweep
+- **THEN** the proposal, design, specification delta, and tasks for that sweep exist in the meta-repo and validate successfully
 
 ### Requirement: Updated workflows are validated
 Each affected workflow SHALL be validated after action runtime updates with repository-appropriate checks and workflow review.
@@ -47,4 +47,15 @@ Each affected workflow SHALL be validated after action runtime updates with repo
 #### Scenario: Workflow YAML is reviewed
 - **WHEN** a workflow file is changed to update action or Node setup versions
 - **THEN** the implementation verifies the YAML remains parseable and the diff contains no unrelated trigger, permission, job, or command changes
+
+### Requirement: Action dependency automation covers each Arashi repository
+Each Arashi repository with GitHub Actions workflows SHALL use dependency automation that monitors workflow action references, or SHALL document an equivalent automated mechanism that covers every workflow in that repository.
+
+#### Scenario: GitHub Actions dependency automation is configured
+- **WHEN** the meta-repository or a child repository uses GitHub Actions workflows
+- **THEN** its dependency automation scans action references under `.github/workflows` on a recurring schedule
+
+#### Scenario: Dependabot is not the selected mechanism
+- **WHEN** an Arashi repository does not configure Dependabot for the `github-actions` ecosystem
+- **THEN** the repository documents the equivalent automated mechanism, its coverage, and how maintainers receive action update notifications
 

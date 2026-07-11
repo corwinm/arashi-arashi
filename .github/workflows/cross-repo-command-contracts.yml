@@ -21,29 +21,29 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out meta-repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           path: meta
       - name: Check out Arashi CLI
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           repository: corwinm/arashi
           ref: main
           path: meta/repos/arashi
       - name: Check out Arashi docs
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           repository: corwinm/arashi-docs
           ref: main
           path: meta/repos/arashi-docs
       - name: Check out Arashi skills
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           repository: corwinm/arashi-skills
           ref: main
           path: meta/repos/arashi-skills
       - name: Check out Arashi VS Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           repository: corwinm/arashi-vscode
           ref: main
