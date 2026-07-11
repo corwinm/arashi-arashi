@@ -43,3 +43,5 @@
 - [x] 6.4 Open separate implementation PRs for each affected child repository, reference `corwinm/arashi-arashi#201`, and cross-link the complete related PR set.
 - [x] 6.5 Wait for every required and relevant GitHub-hosted check to pass and inspect representative completed-run annotations for the removed warning.
 - [x] 6.6 Mark implementation tasks complete only after validation evidence exists, run `openspec validate update-remaining-actions-node-runtime`, and prepare the change for archive/sync after review.
+- [x] 6.7 Refresh the pre-merge workflow inventory, update the newly added meta-repository contract workflow from `actions/checkout@v4` to `@v7`, and preserve its checkout paths and repository refs.
+- [ ] 6.8 Add recurring GitHub Actions dependency automation to the meta-repository and validate the contract workflow through its pull-request check.

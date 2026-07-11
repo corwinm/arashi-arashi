@@ -1,6 +1,6 @@
 ## Context
 
-Issue #164 upgraded the GitHub-owned checkout and setup-node actions implicated at that time. GitHub now reports additional workflow steps as targeting Node.js 20 and forces them onto Node.js 24. The remaining inventory spans four independently versioned child repositories and includes both GitHub-owned and third-party actions: cache, artifact upload/download, Bun setup, and Azure login.
+Issue #164 upgraded the GitHub-owned checkout and setup-node actions implicated at that time. GitHub now reports additional workflow steps as targeting Node.js 20 and forces them onto Node.js 24. The initial inventory spanned four independently versioned child repositories and included both GitHub-owned and third-party actions: cache, artifact upload/download, Bun setup, and Azure login. Before merge, the inventory was refreshed and found that the meta-repository had since gained a cross-repository contract workflow using `actions/checkout@v4`; that workflow is included in this change as well.
 
 The issue is about the runtime embedded inside each JavaScript action, not the Node version used by project commands. Existing cache keys, artifact transfer contracts, Bun versions, and Azure OIDC/managed-identity inputs are operational contracts that must survive the major-version upgrades.
 
@@ -8,11 +8,11 @@ The issue is about the runtime embedded inside each JavaScript action, not the N
 
 **Goals:**
 
-- Remove every action reference GitHub currently reports as targeting Node.js 20 across the four child repositories.
+- Remove every action reference GitHub currently reports as targeting Node.js 20 across the meta-repository and four child repositories.
 - Move affected actions to current stable majors designed for Node.js 24, verified immediately before implementation.
 - Preserve cache, artifact, Bun setup, release, security-gate, and Azure OIDC behavior.
 - Keep each child repository change independently reviewable and validated.
-- Add Dependabot GitHub Actions coverage, or document an explicit equivalent, in each child repository.
+- Add Dependabot GitHub Actions coverage, or document an explicit equivalent, in the meta-repository and each child repository.
 - Confirm representative completed runs no longer emit the Node.js 20 deprecation annotation.
 
 **Non-Goals:**
@@ -43,7 +43,7 @@ Major upgrades will change only action references unless upstream migration note
 
 ### Add repository-local dependency automation
 
-Each child repository currently lacks Dependabot configuration. The preferred implementation is a repository-local `.github/dependabot.yml` entry for the `github-actions` ecosystem at `/` on a weekly schedule. If repository policy makes Dependabot unsuitable, the implementation must document the equivalent automation and how it covers all workflows.
+Each affected repository initially lacked Dependabot configuration. The preferred implementation is a repository-local `.github/dependabot.yml` entry for the `github-actions` ecosystem at `/` on a weekly schedule. If repository policy makes Dependabot unsuitable, the implementation must document the equivalent automation and how it covers all workflows.
 
 A single meta-repository configuration was rejected because Dependabot configuration does not propagate into independently versioned child repositories.
 
@@ -66,8 +66,8 @@ Local validation alone was rejected as final proof because it cannot emulate Git
 ## Migration Plan
 
 1. Reconfirm current stable releases, embedded runtimes, migration notes, and runner requirements.
-2. Update workflow action references in each owning child repository without unrelated workflow changes.
-3. Add or document GitHub Actions dependency automation in each child repository.
+2. Update workflow action references in each owning repository without unrelated workflow changes.
+3. Add or document GitHub Actions dependency automation in the meta-repository and each child repository.
 4. Parse changed YAML and run each repository's relevant lint, tests, build, docs, package, or security checks.
 5. Re-scan every child workflow for confirmed Node.js 20-based action majors and verify already-current references and project runtime pins are untouched.
 6. Open separate cross-linked child PRs referencing issue #201 and observe required GitHub-hosted checks.
