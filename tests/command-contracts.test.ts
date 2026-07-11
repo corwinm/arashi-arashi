@@ -49,7 +49,7 @@ async function fixture(): Promise<string> {
     },
     "repos/arashi-docs/docs/commands/add.md": "# Add\n",
     "repos/arashi-docs/docs/commands/index.md": "- [Add](/commands/add/)\n",
-    "repos/arashi-skills/skills/arashi/command-coverage.json": {
+    "repos/arashi-skills/contracts/command-coverage.json": {
       schemaVersion: 1,
       commands: [
         { name: "add", status: "covered", reference: "references/commands.md" },
@@ -108,7 +108,7 @@ describe("cross-repository command contracts", () => {
     const root = await fixture();
     const path = join(
       root,
-      "repos/arashi-skills/skills/arashi/command-coverage.json",
+      "repos/arashi-skills/contracts/command-coverage.json",
     );
     const data = JSON.parse(await Bun.file(path).text());
     data.commands.push({
@@ -147,7 +147,7 @@ describe("cross-repository command contracts", () => {
     const root = await fixture();
     const path = join(
       root,
-      "repos/arashi-skills/skills/arashi/command-coverage.json",
+      "repos/arashi-skills/contracts/command-coverage.json",
     );
     await writeFile(
       path,

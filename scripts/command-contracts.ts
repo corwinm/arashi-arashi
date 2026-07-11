@@ -20,7 +20,7 @@ const paths = {
   contract: "repos/arashi/contracts/cli-commands.json",
   docs: "repos/arashi-docs/docs/commands",
   skills: "repos/arashi-skills/skills/arashi",
-  coverage: "repos/arashi-skills/skills/arashi/command-coverage.json",
+  coverage: "repos/arashi-skills/contracts/command-coverage.json",
   policy: "repos/arashi-vscode/contracts/command-policy.json",
   manifest: "repos/arashi-vscode/package.json",
 } as const;
