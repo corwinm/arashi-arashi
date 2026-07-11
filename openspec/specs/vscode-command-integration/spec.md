@@ -2,18 +2,25 @@
 
 ## Purpose
 Define the VS Code extension command surface, native editor interaction patterns, structured CLI-output usage, and release expectations for integrating Arashi workflows into supported editor hosts.
-
 ## Requirements
 ### Requirement: Register core Arashi commands in VS Code
-The extension SHALL register VS Code commands for `arashi init`, `arashi add`, `arashi clone`, `arashi create`, `arashi status`, `arashi move`, `arashi prune`, `arashi pull`, `arashi sync`, `arashi setup`, `arashi shell`, `arashi update`, `arashi install`, `arashi switch`, and `arashi remove`, and SHALL make them available for command-palette use and keybinding assignment. The extension MAY omit a separate command-palette entry for `arashi list` when equivalent list functionality is already provided by the worktree panel and refresh command.
+The extension SHALL register VS Code commands for supported core Arashi workflows and SHALL make command-palette actions available for keybinding assignment. Every canonical CLI command SHALL have a machine-checkable extension policy state that maps it to one or more CLI-backed VS Code commands, identifies an equivalent panel or editor representation, or records an intentional exclusion with an explicit reason. The extension MAY represent `arashi list` through the worktree panel and refresh command instead of a separate command-palette entry.
 
-#### Scenario: Core commands are discoverable
+#### Scenario: Supported core commands are discoverable
 - **WHEN** the extension activates in a supported editor
-- **THEN** each registered Arashi command appears in the command palette and can be bound to a keybinding
+- **THEN** each CLI workflow classified as command-palette supported appears in the command palette and can be bound to a keybinding
 
 #### Scenario: List command is represented by the worktree panel
 - **WHEN** a user needs to inspect Arashi worktrees from VS Code
-- **THEN** the extension provides the worktree panel and refresh command as the supported list-style surface without requiring a separate `Arashi: List` command-palette entry
+- **THEN** the extension provides the worktree panel and refresh command as the declared list-style representation without requiring a separate `Arashi: List` command-palette entry
+
+#### Scenario: New CLI command lacks a parity decision
+- **WHEN** the canonical CLI contract adds a command without a VS Code mapping, equivalent representation, or reasoned exclusion
+- **THEN** contract validation reports an unresolved extension parity gap
+
+#### Scenario: Intentional extension gap is recorded
+- **WHEN** a CLI workflow is unsuitable for extension exposure
+- **THEN** extension policy records the exclusion and its reason so validation reports it separately from missing support
 
 ### Requirement: Use native VS Code input and confirmation flows
 The extension SHALL gather required command inputs and confirmations through native VS Code UI components before invoking Arashi, and SHALL treat extension-collected confirmation for destructive remove, move, prune, setup, shell install, update apply, and binary install flows as the confirmation step before invoking the CLI mutation. Non-mutating status, check, preview, or dry-run flows SHALL NOT require confirmation.
