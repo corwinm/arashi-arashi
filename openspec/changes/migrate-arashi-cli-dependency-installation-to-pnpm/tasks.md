@@ -39,6 +39,6 @@
 
 - [x] 6.1 Search all tracked files for Bun references and classify each remaining reference as production runtime, standalone compiler, historical record, or supported end-user installation channel.
 - [x] 6.2 Confirm no affected test, fixture, helper, test workflow, or test job imports `bun:test`, uses Bun runtime APIs, or installs Bun solely to run tests.
-- [ ] 6.3 Open focused cross-linked implementation PRs for each affected child repository and update this meta/OpenSpec PR with the complete related-PR set.
-- [ ] 6.4 Create or refine follow-up work for remaining production CLI Bun APIs and standalone packaging evaluation covering Node SEA, `pnpm pack-app`, and other maintained alternatives.
+- [x] 6.3 Open focused cross-linked implementation PRs for each affected child repository and update this meta/OpenSpec PR with the complete related-PR set.
+- [x] 6.4 Create or refine follow-up work for remaining production CLI Bun APIs and standalone packaging evaluation covering Node SEA, `pnpm pack-app`, and other maintained alternatives.
 - [ ] 6.5 Archive and sync the completed OpenSpec change after all implementation PRs are reviewed and validated.
