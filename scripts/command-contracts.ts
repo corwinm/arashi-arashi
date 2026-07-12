@@ -1,4 +1,4 @@
-import { readdir } from "node:fs/promises";
+import { access, readFile, readdir } from "node:fs/promises";
 import { join, relative } from "node:path";
 
 export type Severity = "error" | "info";
@@ -28,6 +28,14 @@ const object = (value: unknown): value is Obj =>
   typeof value === "object" && value !== null && !Array.isArray(value);
 const text = (value: unknown): value is string =>
   typeof value === "string" && value.trim().length > 0;
+const exists = async (path: string): Promise<boolean> => {
+  try {
+    await access(path);
+    return true;
+  } catch {
+    return false;
+  }
+};
 
 async function json(
   root: string,
@@ -35,7 +43,7 @@ async function json(
   diagnostics: Diagnostic[],
 ): Promise<Obj | undefined> {
   try {
-    const value: unknown = await Bun.file(join(root, path)).json();
+    const value: unknown = JSON.parse(await readFile(join(root, path), "utf8"));
     if (!object(value)) throw new Error("root must be an object");
     return value;
   } catch (error) {
@@ -186,7 +194,7 @@ export async function checkContracts(
 
   let index = "";
   try {
-    index = await Bun.file(join(root, paths.docs, "index.md")).text();
+    index = await readFile(join(root, paths.docs, "index.md"), "utf8");
   } catch {
     add(
       d,
@@ -204,7 +212,7 @@ export async function checkContracts(
         ? command.semantics.docs
         : {};
     if (p.expectation === "required") {
-      if (!(await Bun.file(join(root, paths.docs, `${name}.md`)).exists()))
+      if (!(await exists(join(root, paths.docs, `${name}.md`))))
         add(
           d,
           "error",
@@ -309,7 +317,7 @@ export async function checkContracts(
     else if (entry.status === "covered") {
       if (
         !text(entry.reference) ||
-        !(await Bun.file(join(root, paths.skills, entry.reference)).exists())
+        !(await exists(join(root, paths.skills, entry.reference)))
       )
         add(
           d,
@@ -352,7 +360,7 @@ export async function checkContracts(
       );
   }
   for (const file of await markdownFiles(join(root, paths.skills))) {
-    const content = await Bun.file(file).text();
+    const content = await readFile(file, "utf8");
     const regex = /`arashi\s+([a-z][a-z0-9-]*)(?=[\s`])/g;
     for (const match of content.matchAll(regex))
       if (

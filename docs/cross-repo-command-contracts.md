@@ -7,11 +7,11 @@ The meta-repository compares the generated CLI contract with the canonical docs,
 Populate all four `repos/*` checkouts, install the pinned private toolchain, then run:
 
 ```sh
-bun install --frozen-lockfile
-bun run contracts:check
-bun run contracts:check --json
-bun run test
-bun run typecheck
+pnpm install --frozen-lockfile
+pnpm contracts:check
+pnpm contracts:check --json
+pnpm test
+pnpm typecheck
 ```
 
 The human report groups findings by stable category/code. Intentional exclusions are `info`; schema, missing, stale, and invalid findings exit non-zero. JSON emits `{ ok, diagnostics }` with the same deterministic ordering.

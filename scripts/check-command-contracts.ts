@@ -1,4 +1,4 @@
-#!/usr/bin/env bun
+#!/usr/bin/env node
 import { checkContracts, formatHuman } from "./command-contracts";
 
 const args = new Set(process.argv.slice(2));

@@ -1,5 +1,5 @@
-import { afterEach, describe, expect, test } from "bun:test";
-import { mkdtemp, mkdir, rm, writeFile } from "node:fs/promises";
+import { afterEach, describe, expect, test } from "vitest";
+import { mkdtemp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { checkContracts, formatHuman } from "../scripts/command-contracts";
@@ -110,7 +110,7 @@ describe("cross-repository command contracts", () => {
       root,
       "repos/arashi-skills/contracts/command-coverage.json",
     );
-    const data = JSON.parse(await Bun.file(path).text());
+    const data = JSON.parse(await readFile(path, "utf8"));
     data.commands.push({
       name: "gone",
       status: "covered",
@@ -131,7 +131,7 @@ describe("cross-repository command contracts", () => {
       root,
       "repos/arashi-vscode/contracts/command-policy.json",
     );
-    const policy = JSON.parse(await Bun.file(policyPath).text());
+    const policy = JSON.parse(await readFile(policyPath, "utf8"));
     delete policy.cliCommands.add;
     policy.cliCommands.gone = { state: "mapped", commands: ["arashi.missing"] };
     await writeFile(policyPath, JSON.stringify(policy));
