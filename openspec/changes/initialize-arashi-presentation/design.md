@@ -9,7 +9,7 @@ The implementation spans a new repository plus small coordination/linking change
 **Goals:**
 
 - Deliver a polished, coherent deck suitable for team onboarding and a 20–30 minute project talk.
-- Explain Arashi through a problem-to-workflow narrative with visual architecture and concrete commands.
+- Explain Arashi first as a Git worktree manager for safe parallel development, then show how coordinated worktrees and meta-repositories extend that value across a repository ecosystem.
 - Keep the deck easy to run and edit with pnpm and Slidev.
 - Publish every accepted `main` change automatically to Netlify and provide deploy previews for pull requests.
 - Make the deck discoverable from the Arashi meta-repository.
@@ -40,13 +40,13 @@ The repository will use current Slidev packages, Vue, and pnpm scripts for devel
 
 The initial deck will be roughly 15–20 slides grouped into five sections:
 
-1. why multi-repository work becomes difficult;
-2. Arashi's coordinated-workspace model and value;
-3. architecture and repository ownership;
-4. command-driven workflows with reproducible demo examples;
+1. why branch switching, duplicated clones, and parallel human/agent work become difficult;
+2. Git worktree fundamentals and the simpler Arashi lifecycle for creating, entering, inspecting, and removing isolated workspaces;
+3. how the same worktree model scales to coordinated multi-repository work through an optional meta-repository, while each owning repository keeps independent Git history;
+4. command-driven single-repository and multi-repository workflows with reproducible demo examples;
 5. current boundaries, roadmap, and calls to action.
 
-Architecture and workflow slides will use Mermaid or native Slidev/Vue shapes. Command examples will be derived from current documented behavior and link back to canonical docs instead of embedding exhaustive references.
+The worktree story will receive at least equal visual and narrative weight to the meta-repository story. Architecture and workflow slides will use Mermaid or native Slidev/Vue shapes to show a main checkout beside isolated feature worktrees before introducing coordinated child-repository worktrees. Command examples will be derived from current documented behavior and link back to canonical docs instead of embedding exhaustive references.
 
 ### Make demos deterministic and presentation-safe
 

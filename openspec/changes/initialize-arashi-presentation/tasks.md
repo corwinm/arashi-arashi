@@ -7,12 +7,13 @@
 ## 2. Narrative and Visual Foundation
 
 - [ ] 2.1 Define an Arashi-specific color, typography, spacing, and reusable component system with accessible contrast
-- [ ] 2.2 Build the opening and problem section around multi-repository coordination pain and the Arashi value proposition
-- [ ] 2.3 Build the coordinated-workspace architecture section with clear visual diagrams and repository ownership boundaries
-- [ ] 2.4 Build the feature and benefit section around status, create, switch, pull, push, exec, doctor, handoff, and companion integrations without turning it into a command reference
-- [ ] 2.5 Build deterministic workflow/demo slides with concise commands, expected outcomes, and links to canonical documentation
-- [ ] 2.6 Build the boundaries, roadmap, resources, and closing slides
-- [ ] 2.7 Add useful presenter notes and transitions to substantive slides, including optional live-demo guidance and static fallback points
+- [ ] 2.2 Build the opening and problem section around branch switching, duplicate clones, parallel human/agent work, and the value of isolated Git worktrees
+- [ ] 2.3 Build a worktree-first concept and lifecycle section that visually explains native worktrees and how Arashi simplifies creating, discovering, entering, inspecting, and removing them
+- [ ] 2.4 Build the architecture section from a single repository with multiple worktrees to optional meta-repository coordination across owning child repositories, giving both models balanced emphasis
+- [ ] 2.5 Build the feature and benefit section around create, list, switch, status, remove, pull, push, exec, doctor, handoff, and companion integrations without turning it into a command reference
+- [ ] 2.6 Build deterministic single-repository and coordinated multi-repository workflow/demo slides with concise commands, expected outcomes, and links to canonical documentation
+- [ ] 2.7 Build the boundaries, roadmap, resources, and closing slides
+- [ ] 2.8 Add useful presenter notes and transitions to substantive slides, including optional live-demo guidance and static fallback points
 
 ## 3. Quality and Deployment
 
