@@ -1,11 +1,11 @@
 ## ADDED Requirements
 
 ### Requirement: Coherent Arashi presentation narrative
-The presentation SHALL provide a coherent narrative that introduces Arashi as a Git worktree manager for parallel development before explaining how meta-repositories and coordinated worktrees extend the model across multiple repositories, then demonstrates representative workflows and closes with roadmap and next-step guidance.
+The presentation SHALL frame Arashi as the solution to two equally important development problems: using Git worktrees for parallel work and using a meta-repository to coordinate an organization's distributed codebase. It SHALL show each solution independently, explain how they compose into coordinated multi-repository worktrees, demonstrate representative workflows, and close with roadmap and next-step guidance.
 
 #### Scenario: Technical onboarding talk
 - **WHEN** a presenter delivers the deck in order to a technical team unfamiliar with Arashi
-- **THEN** the audience can explain why Git worktrees are useful, how Arashi simplifies their lifecycle, when a single-repository worktree is sufficient, how coordinated multi-repository workspaces extend the model, and which main commands support those workflows
+- **THEN** the audience can identify both problems, explain Arashi's solution to each, describe when either capability is useful independently, and explain how worktrees and a meta-repository combine when parallel work spans multiple repositories
 
 #### Scenario: Self-guided viewing
 - **WHEN** a visitor opens the deployed deck without a presenter
@@ -26,16 +26,20 @@ The presentation SHALL use architecture diagrams and command examples that refle
 - **WHEN** a viewer reaches a usage or demo section
 - **THEN** the deck shows concise, reproducible commands for creating and managing an isolated worktree, inspecting workspace state, scaling the workflow to coordinated repositories, and carrying work through repository-specific changes without requiring a live environment
 
-### Requirement: Balanced worktree and meta-repository positioning
-The presentation SHALL give Git worktree management at least equal narrative and visual emphasis to meta-repository coordination and SHALL NOT imply that a meta-repository is required to benefit from Arashi.
+### Requirement: Two-pillar product positioning
+The presentation SHALL give Git worktree management and meta-repository coordination equal narrative and visual emphasis as two distinct, composable solutions. It SHALL NOT imply that a meta-repository is required to benefit from worktree management or that worktrees are only relevant to multi-repository environments.
 
 #### Scenario: Single-repository audience
 - **WHEN** a viewer works primarily in one repository
 - **THEN** the deck demonstrates a complete and valuable Arashi workflow for parallel branches or agents using isolated worktrees without requiring a multi-repository setup
 
 #### Scenario: Multi-repository audience
-- **WHEN** a viewer needs one feature branch represented across several repositories
-- **THEN** the deck presents the meta-repository as the coordination layer that extends the worktree model rather than as Arashi's only or primary value
+- **WHEN** a viewer's organization has a product or platform distributed across several repositories
+- **THEN** the deck demonstrates how a meta-repository provides a coherent workspace, planning, status, and execution surface while preserving each owning repository's independent history
+
+#### Scenario: Combined audience
+- **WHEN** a viewer needs parallel feature work across several repositories
+- **THEN** the deck demonstrates how the two solutions compose into one coordinated feature workspace containing aligned worktrees for the relevant owning repositories
 
 ### Requirement: Presentation-ready visual system
 The presentation SHALL use a consistent Arashi-specific visual system with readable typography, accessible contrast, varied visual layouts, and a visual element on each content slide.

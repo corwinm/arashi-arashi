@@ -9,7 +9,8 @@ The implementation spans a new repository plus small coordination/linking change
 **Goals:**
 
 - Deliver a polished, coherent deck suitable for team onboarding and a 20–30 minute project talk.
-- Explain Arashi first as a Git worktree manager for safe parallel development, then show how coordinated worktrees and meta-repositories extend that value across a repository ecosystem.
+- Present Arashi as the solution to two equally important development problems: managing Git worktrees for safe parallel work and using a meta-repository to coordinate work across an organization's distributed codebase.
+- Show how these solutions work independently and combine into coordinated multi-repository worktrees when both problems are present.
 - Keep the deck easy to run and edit with pnpm and Slidev.
 - Publish every accepted `main` change automatically to Netlify and provide deploy previews for pull requests.
 - Make the deck discoverable from the Arashi meta-repository.
@@ -36,17 +37,24 @@ The repository will use current Slidev packages, Vue, and pnpm scripts for devel
 
 **Alternative considered:** generate a `.pptx`. PowerPoint is portable, but it is less reviewable as source, does not provide a natural hosted web artifact, and diverges from the issue's selected Slidev format.
 
-### Organize the story as problem, model, workflow, proof, and future
+### Organize the story around two problem/solution pillars
+
+The central framing will explicitly name two common problems rather than presenting one as merely an advanced form of the other:
+
+1. **Parallel work problem:** Developers and agents need to work on several branches simultaneously without interrupting one another, repeatedly switching the primary checkout, or maintaining ad hoc duplicate clones. Arashi makes Git worktrees approachable and manages their lifecycle.
+2. **Distributed codebase problem:** An organization's product or platform is often spread across many independently versioned repositories, but features and operational changes still need one coherent place for planning, status, and coordinated execution. Arashi uses a meta-repository to describe that larger workspace and coordinate worktrees across the owning repositories.
+
+These are equal value propositions. A user can adopt Arashi for either problem independently. When both are present, the meta-repository and worktree capabilities compose: one feature workspace can contain aligned worktrees across the relevant repositories while each repository retains its own commits, reviews, and release history.
 
 The initial deck will be roughly 15–20 slides grouped into five sections:
 
-1. why branch switching, duplicated clones, and parallel human/agent work become difficult;
-2. Git worktree fundamentals and the simpler Arashi lifecycle for creating, entering, inspecting, and removing isolated workspaces;
-3. how the same worktree model scales to coordinated multi-repository work through an optional meta-repository, while each owning repository keeps independent Git history;
-4. command-driven single-repository and multi-repository workflows with reproducible demo examples;
+1. the two recurring development problems and why existing manual practices are costly;
+2. the worktree solution: isolated parallel work and the simpler Arashi lifecycle for creating, entering, inspecting, and removing workspaces;
+3. the meta-repository solution: one coordination surface over a distributed codebase while each owning repository keeps independent Git history;
+4. how the two solutions compose, demonstrated through reproducible single-repository and coordinated multi-repository workflows;
 5. current boundaries, roadmap, and calls to action.
 
-The worktree story will receive at least equal visual and narrative weight to the meta-repository story. Architecture and workflow slides will use Mermaid or native Slidev/Vue shapes to show a main checkout beside isolated feature worktrees before introducing coordinated child-repository worktrees. Command examples will be derived from current documented behavior and link back to canonical docs instead of embedding exhaustive references.
+The worktree and meta-repository stories will receive equal visual and narrative weight. Architecture and workflow slides will use Mermaid or native Slidev/Vue shapes for three distinct views: isolated worktrees around one repository, a meta-repository coordinating a distributed set of owning repositories, and the combined coordinated-worktree model. Command examples will be derived from current documented behavior and link back to canonical docs instead of embedding exhaustive references.
 
 ### Make demos deterministic and presentation-safe
 

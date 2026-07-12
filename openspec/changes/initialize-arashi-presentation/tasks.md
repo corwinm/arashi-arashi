@@ -7,13 +7,14 @@
 ## 2. Narrative and Visual Foundation
 
 - [ ] 2.1 Define an Arashi-specific color, typography, spacing, and reusable component system with accessible contrast
-- [ ] 2.2 Build the opening and problem section around branch switching, duplicate clones, parallel human/agent work, and the value of isolated Git worktrees
-- [ ] 2.3 Build a worktree-first concept and lifecycle section that visually explains native worktrees and how Arashi simplifies creating, discovering, entering, inspecting, and removing them
-- [ ] 2.4 Build the architecture section from a single repository with multiple worktrees to optional meta-repository coordination across owning child repositories, giving both models balanced emphasis
-- [ ] 2.5 Build the feature and benefit section around create, list, switch, status, remove, pull, push, exec, doctor, handoff, and companion integrations without turning it into a command reference
-- [ ] 2.6 Build deterministic single-repository and coordinated multi-repository workflow/demo slides with concise commands, expected outcomes, and links to canonical documentation
-- [ ] 2.7 Build the boundaries, roadmap, resources, and closing slides
-- [ ] 2.8 Add useful presenter notes and transitions to substantive slides, including optional live-demo guidance and static fallback points
+- [ ] 2.2 Build the opening around two explicit problems: parallel work that needs managed Git worktrees and organizational codebases distributed across repositories that need a meta-repository coordination surface
+- [ ] 2.3 Build the first problem/solution pillar around native worktrees and how Arashi simplifies creating, discovering, entering, inspecting, and removing isolated workspaces for parallel humans and agents
+- [ ] 2.4 Build the second problem/solution pillar around how a meta-repository coordinates planning, status, and execution across independently versioned owning repositories
+- [ ] 2.5 Build a composition section showing how the two pillars combine into aligned worktrees across the relevant repositories without merging their Git histories
+- [ ] 2.6 Build the feature and benefit section around create, list, switch, status, remove, pull, push, exec, doctor, handoff, and companion integrations without turning it into a command reference
+- [ ] 2.7 Build deterministic single-repository, meta-repository, and combined coordinated-worktree demos with concise commands, expected outcomes, and links to canonical documentation
+- [ ] 2.8 Build the boundaries, roadmap, resources, and closing slides
+- [ ] 2.9 Add useful presenter notes and transitions to substantive slides, including optional live-demo guidance and static fallback points
 
 ## 3. Quality and Deployment
 
