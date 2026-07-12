@@ -1,67 +1,86 @@
 ## Context
 
-The CLI repository currently uses one tool, Bun, for four distinct concerns: dependency resolution, package-script orchestration, TypeScript/test execution, and cross-platform standalone compilation. Issue #155 ultimately seeks to remove Bun, but replacing all four concerns at once would couple a low-risk package-manager migration to unresolved standalone-packaging decisions and broad runtime/test rewrites.
+Bun currently fills several roles across Arashi repositories: dependency resolver, package-script runner, test framework, TypeScript runtime, bundler, and standalone executable compiler. These roles are separable. pnpm and Vitest are production-ready for dependency management and Node-based testing now, while replacing the CLI's standalone compiler still needs a dedicated evaluation against the existing release contract.
 
-The current release contract produces macOS arm64, Linux x64, and Windows x64 executables, checksums, npm wrappers, and direct-installer assets. This first slice must not disturb that contract.
+Current repository boundaries:
+
+- `arashi-arashi`: Bun dependency management plus Bun-based contract scripts/tests.
+- `arashi`: Bun dependency management, production runtime APIs, `bun:test`, and standalone compilation.
+- `arashi-docs`: primarily Bun dependency management and TypeScript script execution; no significant Bun test suite.
+- `arashi-vscode`: Bun dependency management, `bun:test`, Bun compilation, and a Bun build API in the extension integration-test helper.
+- `arashi-skills`: no JavaScript package manager.
 
 ## Goals / Non-Goals
 
 **Goals:**
 
-- Make pnpm the authoritative dependency installer and lockfile owner for `corwinm/arashi`.
-- Make package scripts, CI, releases, and coordinated-worktree setup consistently invoke dependency-local tools through pnpm.
-- Preserve frozen, reproducible installs and cache behavior.
-- Clearly expose the remaining intentional Bun runtime/compiler/test boundary.
+- Make pnpm authoritative across every Arashi repository that installs JavaScript dependencies.
+- Replace `bun:test` with Vitest in the meta-repository, CLI, and VS Code extension.
+- Remove Bun runtime APIs from tests, fixtures, and test-only build helpers.
+- Preserve current test coverage, integration behavior, and platform matrices.
+- Isolate any remaining Bun usage to production runtime or compilation paths that require separate migration work.
 
 **Non-Goals:**
 
-- Replacing production `Bun.file`, `Bun.write`, `Bun.spawn`, or `Bun.$` usage.
-- Migrating `bun:test` to Vitest or another framework.
-- Replacing `bun build --compile`, choosing Node SEA/`pnpm pack-app`, or changing release target coverage.
-- Removing Bun as a supported end-user package-manager installation channel.
-- Migrating the meta-repo, docs, or VS Code extension in this change.
+- Selecting or deploying the CLI's final standalone executable packager.
+- Changing release asset names, direct installers, update behavior, or supported end-user installation channels.
+- Removing Bun as a supported way for users to install the published Arashi npm package.
+- Rewriting production CLI Bun APIs unless a production helper must become Node-compatible to allow Node-based integration testing.
+- Migrating `arashi-skills`, which has no package-manager dependency.
 
 ## Decisions
 
-### Use a pinned pnpm release through `packageManager`
+### Use pinned pnpm versions and per-repository lockfiles
 
-`package.json` will declare an exact pnpm version and `pnpm-lock.yaml` will replace `bun.lock`. CI and release workflows will activate the declared package manager through Corepack or the repository-standard pnpm setup action and install with `--frozen-lockfile`.
+Each affected repository will declare an exact pnpm version through `packageManager`, commit `pnpm-lock.yaml`, and use frozen installs. CI, release, Netlify, and worktree hooks will follow the owning repository's declaration.
 
-**Alternative considered:** keep Bun's lockfile while using pnpm only in CI. Rejected because two authoritative resolvers would make local and CI dependency graphs diverge.
+**Alternative considered:** keep Bun lockfiles while invoking pnpm in selected jobs. Rejected because dual authoritative resolvers make local, CI, and release dependency graphs diverge.
 
-### Separate orchestration commands from retained Bun commands
+### Standardize tests on Vitest
 
-Scripts that invoke other package scripts or dependency-local executables will use pnpm. Scripts that genuinely require Bun—the test runner, source execution where Bun APIs remain, and standalone compilation—will invoke Bun explicitly until follow-up migrations replace those capabilities.
+Vitest provides Node-native TypeScript test execution with familiar Jest-like assertions, lifecycle hooks, mocking, filtering, and coverage integration. Existing suites will import from `vitest`; configuration will preserve current include patterns, serial/concurrent assumptions, timeouts, and environment.
 
-**Alternative considered:** rename every `bun` token immediately. Rejected because `pnpm run test` cannot make `bun:test` Node-compatible and pnpm cannot replace `bun build --compile` by itself.
+**Alternative considered:** Node's built-in test runner. It has fewer migration conveniences for the existing `bun:test` mocking and matcher surface, so Vitest is the lower-risk transition for these suites.
 
-### Preserve Bun setup only in jobs that execute Bun
+### Replace Bun APIs in tests with Node APIs, not shims
 
-Workflow steps will install dependencies with pnpm. Bun setup remains only where a subsequent command actually runs Bun for tests, source execution, or compilation. Cache keys and dependency invalidation will use `pnpm-lock.yaml`.
+Test code and helpers will use `node:fs/promises`, `node:child_process`, temporary-directory APIs, and shared Node-compatible helpers. Vitest APIs will replace Bun mock and lifecycle APIs. A `bun:test` compatibility layer is explicitly avoided because it would retain conceptual and tooling coupling.
 
-### Keep standalone packaging evaluation separate
+### Decouple extension test bundling from Bun
 
-A later packaging spike will compare Node SEA, `pnpm pack-app`, and other maintained options against current target assets, installer/update compatibility, checksums, startup behavior, native OS build requirements, and signing/notarization needs. The first slice creates no dependency on an immature packaging choice.
+The VS Code integration test helper currently imports Bun's build API. It will use the same Node-compatible bundler selected for extension builds—preferably esbuild or an existing project-compatible equivalent—so the extension-host test suite can run without Bun. This does not require changing user-visible extension behavior.
+
+### Allow narrow production refactoring where integration tests require it
+
+Some CLI integration tests execute TypeScript source that currently depends on Bun. The implementation may either test a Node-compatible bundled build or migrate shared filesystem/process helpers needed by the tested path. Any production refactoring must preserve behavior and stay limited to enabling Node execution; full standalone packaging remains separate.
+
+### Keep standalone compilation separate
+
+A later packaging spike will compare Node SEA, `pnpm pack-app`, and other maintained options against current assets, native OS build requirements, installers, updates, checksums, startup behavior, and signing/notarization needs. Bun may remain installed only in jobs that still compile standalone binaries.
 
 ## Risks / Trade-offs
 
-- **Two tools remain temporarily present** → Name the boundary in scripts and contributor guidance; pnpm owns dependencies while Bun temporarily owns runtime/test/compiler functions.
-- **Lockfile conversion can resolve different transitive versions** → Review the pnpm lock diff, run full lint/test/build/schema checks, and verify package metadata plus release smoke behavior.
-- **Lifecycle scripts can differ between package managers** → Verify Husky setup and any package build scripts on a clean frozen install.
-- **CI jobs may accidentally omit Bun while still invoking it** → Audit each workflow command after conversion and keep narrowly scoped Bun setup steps where required.
-- **The change may be interpreted as completing issue #155** → Proposal and PR wording will use `Tracks #155` and explicitly list follow-up runtime, test, and packaging work.
+- **Large test surface across three repositories** → Migrate repository by repository with focused parity checks and separate child PRs.
+- **Bun and Vitest mocks differ** → Port behavior explicitly, verify mock restoration and module isolation, and avoid mechanical import-only changes.
+- **Subprocess timing can expose flakes** → Preserve timeout intent, use event-based readiness, and validate macOS/Linux/Windows CI before considering migration complete.
+- **Node execution may expose production Bun APIs during integration tests** → Bundle for Node or migrate the minimum shared production adapters needed; do not silently run migrated tests through Bun.
+- **pnpm lifecycle policy differs from Bun** → Review required build/lifecycle scripts and configure approvals explicitly rather than broadly enabling all dependency scripts.
+- **Temporary Bun compiler remains** → Keep compiler setup isolated and track full removal under issue #155 rather than claiming completion.
 
 ## Migration Plan
 
-1. Pin pnpm, generate `pnpm-lock.yaml`, and remove `bun.lock` in the CLI repository.
-2. Convert package-script orchestration and dependency-local executable invocation to pnpm while retaining direct Bun runtime/test/compiler commands.
-3. Convert the CLI post-create hook and contributor dependency-install commands.
-4. Convert CI and release dependency setup/cache behavior to pnpm; retain Bun setup only where executed.
-5. Validate from a clean install with frozen lockfile, then run lint, typecheck/schema checks, tests, local build, and available platform/release smoke checks.
-6. Roll back by restoring `bun.lock`, the Bun `packageManager` declaration, and prior workflow/hook commands if dependency resolution or release validation regresses.
+1. Convert `arashi-docs` to pnpm and Node-compatible TypeScript script execution; validate the full docs pipeline and Netlify configuration.
+2. Convert `arashi-arashi` to pnpm/Vitest and port its contract scripts/tests to Node-compatible APIs.
+3. Convert `arashi-vscode` to pnpm/Vitest, replace its Bun test-build helper with a Node-compatible bundler, and validate the extension-host matrix.
+4. Convert `arashi` to pnpm/Vitest, port tests/helpers, and establish a Node-compatible test execution target while retaining Bun standalone compilation only where necessary.
+5. Update meta-repository worktree hooks after each child repository declares its package manager.
+6. Audit every remaining Bun reference and classify it as production runtime, standalone compiler, historical documentation, or supported end-user install channel.
+7. Open focused, cross-linked child PRs and retain the meta/OpenSpec PR for final archive/sync.
+
+Rollback is per repository: restore its Bun lockfile, manifest declaration, test imports/configuration, and workflow commands if parity or platform validation fails before merge.
 
 ## Open Questions
 
-- Which exact pnpm version should be pinned based on the current supported Node release and repository policy at implementation time?
-- Should follow-up runtime and test migrations be separate changes, or combined once the shared Node subprocess adapter is proven?
-- Which standalone packaging candidate first meets the current release matrix and installer contract well enough for a production spike?
+- Should the CLI integration suite execute a Node-targeted bundle or directly execute transpiled TypeScript through a runner such as `tsx` during the transition?
+- Can the VS Code extension's production build and integration-test build move to one esbuild configuration in this change, eliminating Bun compilation there entirely?
+- Which exact pnpm and Vitest versions best match each repository's supported Node version at implementation time?
