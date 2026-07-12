@@ -45,10 +45,10 @@ The presentation SHALL include presenter notes for substantive slides and SHALL 
 - **THEN** the presenter can continue using the static commands and expected outcomes without losing the workflow explanation
 
 ### Requirement: Local development and validation
-The presentation repository SHALL provide Bun-based commands to install dependencies, run the deck locally, validate source quality, and produce a static production build from a committed lockfile.
+The presentation repository SHALL pin pnpm through the `packageManager` field and SHALL provide pnpm-based commands to install dependencies, run the deck locally, validate source quality, and produce a static production build from a committed `pnpm-lock.yaml`.
 
 #### Scenario: Local authoring
-- **WHEN** a contributor clones the repository, installs dependencies with Bun, and runs the documented development command
+- **WHEN** a contributor clones the repository, activates the pinned pnpm version through Corepack when needed, installs dependencies with pnpm, and runs the documented development command
 - **THEN** Slidev starts the presentation locally with hot reload
 
 #### Scenario: Reproducible production build
@@ -60,7 +60,7 @@ The presentation SHALL use Netlify to create deploy previews for pull requests a
 
 #### Scenario: Main branch publication
 - **WHEN** a commit reaches `main` and validation succeeds
-- **THEN** Netlify installs from the Bun lockfile, validates and builds the deck, and publishes the resulting static artifact to the production site
+- **THEN** Netlify installs with the pinned pnpm version and frozen lockfile, validates and builds the deck, and publishes the resulting static artifact to the production site
 
 #### Scenario: Pull request quality gate
 - **WHEN** a pull request changes presentation source, dependencies, or deployment configuration

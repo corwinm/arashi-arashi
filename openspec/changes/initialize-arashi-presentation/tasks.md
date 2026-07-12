@@ -1,7 +1,7 @@
 ## 1. Repository Bootstrap
 
 - [ ] 1.1 Create the public `corwinm/arashi-presentation` repository with MIT licensing, a focused README, and the `main` default branch
-- [ ] 1.2 Initialize Slidev, Vue, Bun scripts, a committed lockfile, ignore rules, and project metadata
+- [ ] 1.2 Initialize Slidev and Vue with pnpm scripts, a pinned `packageManager` field, committed `pnpm-lock.yaml`, ignore rules, and project metadata
 - [ ] 1.3 Add contributor-facing commands and maintenance guidance for local authoring, validation, building, and keeping deck claims current
 
 ## 2. Narrative and Visual Foundation
@@ -17,8 +17,8 @@
 ## 3. Quality and Deployment
 
 - [ ] 3.1 Add source-quality and production-build validation scripts suitable for local use and CI
-- [ ] 3.2 Add pull request CI that installs from the Bun lockfile, validates the deck, and completes a production build
-- [ ] 3.3 Add `netlify.toml` with pinned Bun/Node runtimes, deploy-preview and production validation/build commands, the `dist` publish directory, and required route fallback behavior
+- [ ] 3.2 Add pull request CI that activates the pinned pnpm version, installs from the frozen lockfile, validates the deck, and completes a production build
+- [ ] 3.3 Add `netlify.toml` with a pinned Node runtime, pnpm deploy-preview and production validation/build commands, the `dist` publish directory, and required route fallback behavior
 - [ ] 3.4 Connect the repository to Netlify, enable deploy previews and `main` production deployment, and verify the deck, navigation, assets, code highlighting, and direct links in both preview and production
 
 ## 4. Project Integration

@@ -10,7 +10,7 @@ The implementation spans a new repository plus small coordination/linking change
 
 - Deliver a polished, coherent deck suitable for team onboarding and a 20–30 minute project talk.
 - Explain Arashi through a problem-to-workflow narrative with visual architecture and concrete commands.
-- Keep the deck easy to run and edit with Bun and Slidev.
+- Keep the deck easy to run and edit with pnpm and Slidev.
 - Publish every accepted `main` change automatically to Netlify and provide deploy previews for pull requests.
 - Make the deck discoverable from the Arashi meta-repository.
 
@@ -30,9 +30,9 @@ The presentation will live at `corwinm/arashi-presentation`, matching the issue'
 
 **Alternative considered:** place the deck in `arashi-docs`. This reduces repository count but couples talk-specific tooling and release concerns to the documentation site and does not satisfy the requested deliverable.
 
-### Use Slidev with Bun and a focused custom theme layer
+### Use Slidev with pnpm and a focused custom theme layer
 
-The repository will use current Slidev packages, Vue, and Bun scripts for development and production builds. The deck will use Slidev's built-in layouts, code highlighting, diagrams, presenter mode, and notes, with a small project-specific stylesheet and reusable components rather than a separately published theme package.
+The repository will use current Slidev packages, Vue, and pnpm scripts for development and production builds. It will pin pnpm through the `packageManager` field, commit `pnpm-lock.yaml`, and use Corepack where the environment does not already provide the pinned package manager. Starting the new repository on pnpm avoids an immediate package-manager migration and provides a low-risk proving ground for Arashi's possible broader move from Bun to pnpm. The deck will use Slidev's built-in layouts, code highlighting, diagrams, presenter mode, and notes, with a small project-specific stylesheet and reusable components rather than a separately published theme package.
 
 **Alternative considered:** generate a `.pptx`. PowerPoint is portable, but it is less reviewable as source, does not provide a natural hosted web artifact, and diverges from the issue's selected Slidev format.
 
@@ -54,7 +54,7 @@ Demo slides will contain commands and expected outcomes that can be presented st
 
 ### Deploy through Netlify like the Arashi documentation site
 
-The repository will include a `netlify.toml` modeled on `arashi-docs`: Netlify will install with the Bun lockfile, run validation, build the static Slidev site, publish `dist`, create deploy previews for pull requests, and publish accepted `main` changes to the production site. GitHub Actions will retain an independent pull-request validation/build check so repository quality is not coupled solely to the external deployment service.
+The repository will include a `netlify.toml` modeled on `arashi-docs`: Netlify will install with the pinned pnpm version and frozen `pnpm-lock.yaml`, run validation, build the static Slidev site, publish `dist`, create deploy previews for pull requests, and publish accepted `main` changes to the production site. GitHub Actions will retain an independent pull-request validation/build check so repository quality is not coupled solely to the external deployment service.
 
 **Alternative considered:** GitHub Pages. It keeps hosting inside GitHub, but Netlify matches the established Arashi docs deployment model and provides useful per-PR visual previews for slide review.
 
@@ -65,7 +65,7 @@ Repository scripts will provide at least `dev`, `build`, and `validate`. Validat
 ## Risks / Trade-offs
 
 - **Deck facts can drift from the CLI and docs** → Keep detailed reference content in `arashi-docs`, link to canonical pages, and include a maintenance note/checklist in the presentation README.
-- **Netlify configuration can drift from the docs site's supported runtime** → Pin the Node and Bun versions in `netlify.toml` and review them alongside the equivalent `arashi-docs` settings.
+- **Netlify configuration can drift from the docs site's supported runtime** → Pin Node in `netlify.toml`, pin pnpm in `package.json`, and review runtime updates alongside the equivalent `arashi-docs` settings.
 - **Single-page navigation can fail on direct Netlify routes** → Include the required static-site fallback/redirect behavior and verify direct slide links in deploy preview and production.
 - **A broad audience can make the story unfocused** → Optimize the first deck for technical team onboarding and a 20–30 minute talk; use presenter notes to mark optional detail.
 - **Live demos can fail because of network or repository state** → Make every demo understandable from static commands and expected output; keep live execution optional.
