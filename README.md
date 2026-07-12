@@ -20,6 +20,7 @@ This repository contains the planning artifacts used to guide implementation in 
 
 - Implementation: [github.com/corwinm/arashi](https://github.com/corwinm/arashi)
 - Specs and planning (this repo): [github.com/corwinm/arashi-arashi](https://github.com/corwinm/arashi-arashi)
+- Presentation: [live deck](https://arashi-presentation.netlify.app/) · [source](https://github.com/corwinm/arashi-presentation)
 
 ## OpenSpec Workflow
 
@@ -41,7 +42,8 @@ This repository started with a SpecKit-oriented workflow, but current planning w
 │   ├── arashi/
 │   ├── arashi-docs/
 │   ├── arashi-skills/
-│   └── arashi-vscode/
+│   ├── arashi-vscode/
+│   └── arashi-presentation/
 ├── docs/                # Supporting process documentation
 ├── CONTRIBUTING.md
 └── README.md
