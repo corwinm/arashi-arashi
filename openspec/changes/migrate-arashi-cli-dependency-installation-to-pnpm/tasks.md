@@ -24,7 +24,7 @@
 - [x] 4.1 Add Vitest configuration and convert all `arashi-vscode` unit and integration tests from `bun:test` to Vitest.
 - [x] 4.2 Port test helpers and the VS Code integration build helper from Bun APIs to Node APIs and a Node-compatible bundler.
 - [x] 4.3 Convert extension CI/release dependency setup, lockfile filters, caches, script orchestration, and local executable invocation to pnpm.
-- [ ] 4.4 Verify lint, unit tests, build/package smoke tests, and real VS Code extension-host tests on macOS, Ubuntu, and Windows without Bun-dependent test execution.
+- [x] 4.4 Verify lint, unit tests, build/package smoke tests, and real VS Code extension-host tests on macOS, Ubuntu, and Windows without Bun-dependent test execution.
 
 ## 5. CLI Test Migration
 
@@ -33,7 +33,7 @@
 - [x] 5.3 Convert CLI integration tests to invoke a Node-compatible test target rather than executing TypeScript through Bun.
 - [x] 5.4 Refactor the minimum shared production filesystem/process adapters required for Node-based integration execution, with focused parity tests.
 - [x] 5.5 Convert CLI CI/release dependency setup, lockfile filters, caches, and orchestration to pnpm; isolate retained Bun setup to standalone compilation.
-- [ ] 5.6 Run lint, typecheck/schema checks, the full Vitest suite, package/install smoke tests, and standalone binary builds across the supported platform matrix.
+- [x] 5.6 Run lint, typecheck/schema checks, the full Vitest suite, package/install smoke tests, and standalone binary builds across the supported platform matrix.
 
 ## 6. Audit and Closeout
 
