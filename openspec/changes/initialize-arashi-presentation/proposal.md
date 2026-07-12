@@ -7,7 +7,7 @@ Arashi has detailed documentation but no concise, visual narrative for onboardin
 - Create a public `corwinm/arashi-presentation` repository built with Slidev and Bun.
 - Build a coherent presentation covering the problem Arashi solves, its benefits, architecture, representative workflows and demos, and the near-term roadmap.
 - Add presenter notes and demo guidance so the deck can be delivered consistently and adapted for different audiences.
-- Add automated quality checks and GitHub Pages deployment for the static Slidev build.
+- Add automated quality checks, Netlify deploy previews, and production deployment for the static Slidev build.
 - Add the presentation repository to the coordinated Arashi workspace configuration and link the live deck and source repository from the meta-repository README.
 
 ## Capabilities
@@ -24,5 +24,5 @@ None.
 
 - New repository: `corwinm/arashi-presentation`.
 - Meta-repository: `.arashi/config.json`, `README.md`, and OpenSpec artifacts.
-- Tooling/dependencies: Slidev, Vue, Bun, and GitHub Actions/GitHub Pages.
+- Tooling/dependencies: Slidev, Vue, Bun, GitHub Actions, and Netlify.
 - Public surface: a hosted deck URL and a source repository linked from the Arashi project overview.

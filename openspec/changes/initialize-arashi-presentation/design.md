@@ -11,7 +11,7 @@ The implementation spans a new repository plus small coordination/linking change
 - Deliver a polished, coherent deck suitable for team onboarding and a 20–30 minute project talk.
 - Explain Arashi through a problem-to-workflow narrative with visual architecture and concrete commands.
 - Keep the deck easy to run and edit with Bun and Slidev.
-- Publish every accepted `main` change automatically to GitHub Pages.
+- Publish every accepted `main` change automatically to Netlify and provide deploy previews for pull requests.
 - Make the deck discoverable from the Arashi meta-repository.
 
 **Non-Goals:**
@@ -26,7 +26,7 @@ The implementation spans a new repository plus small coordination/linking change
 
 ### Use a separate `arashi-presentation` repository
 
-The presentation will live at `corwinm/arashi-presentation`, matching the issue's separate-repository deliverable and keeping presentation dependencies, releases, and Pages settings isolated from the docs site. The meta-repository will register it as a managed child repository and link both source and deployed deck.
+The presentation will live at `corwinm/arashi-presentation`, matching the issue's separate-repository deliverable and keeping presentation dependencies and releases isolated from the docs site. The meta-repository will register it as a managed child repository and link both source and deployed deck.
 
 **Alternative considered:** place the deck in `arashi-docs`. This reduces repository count but couples talk-specific tooling and release concerns to the documentation site and does not satisfy the requested deliverable.
 
@@ -52,11 +52,11 @@ Architecture and workflow slides will use Mermaid or native Slidev/Vue shapes. C
 
 Demo slides will contain commands and expected outcomes that can be presented statically. Presenter notes will distinguish optional live-demo steps from the guaranteed static narrative. The first release will not execute Arashi inside CI or require live GitHub state to render the deck.
 
-### Deploy through GitHub Actions to GitHub Pages
+### Deploy through Netlify like the Arashi documentation site
 
-A workflow triggered by pushes to `main` and manual dispatch will install with the lockfile, run validation, build Slidev with the `/arashi-presentation/` base path, upload the Pages artifact, and deploy through the official Pages actions using OIDC permissions. Pull requests will run the same non-deploying validation/build checks.
+The repository will include a `netlify.toml` modeled on `arashi-docs`: Netlify will install with the Bun lockfile, run validation, build the static Slidev site, publish `dist`, create deploy previews for pull requests, and publish accepted `main` changes to the production site. GitHub Actions will retain an independent pull-request validation/build check so repository quality is not coupled solely to the external deployment service.
 
-**Alternative considered:** Netlify. It offers previews, but GitHub Pages keeps the new repository self-contained and requires no external account configuration for the initial public deck.
+**Alternative considered:** GitHub Pages. It keeps hosting inside GitHub, but Netlify matches the established Arashi docs deployment model and provides useful per-PR visual previews for slide review.
 
 ### Treat source quality and visual review as release gates
 
@@ -65,7 +65,8 @@ Repository scripts will provide at least `dev`, `build`, and `validate`. Validat
 ## Risks / Trade-offs
 
 - **Deck facts can drift from the CLI and docs** → Keep detailed reference content in `arashi-docs`, link to canonical pages, and include a maintenance note/checklist in the presentation README.
-- **GitHub Pages subpath can break assets or navigation** → Configure and test the explicit `/arashi-presentation/` base path in the production build.
+- **Netlify configuration can drift from the docs site's supported runtime** → Pin the Node and Bun versions in `netlify.toml` and review them alongside the equivalent `arashi-docs` settings.
+- **Single-page navigation can fail on direct Netlify routes** → Include the required static-site fallback/redirect behavior and verify direct slide links in deploy preview and production.
 - **A broad audience can make the story unfocused** → Optimize the first deck for technical team onboarding and a 20–30 minute talk; use presenter notes to mark optional detail.
 - **Live demos can fail because of network or repository state** → Make every demo understandable from static commands and expected output; keep live execution optional.
 - **Mermaid and code blocks can become unreadable on projectors** → Limit diagram density, keep code excerpts short, and verify rendered slides at presentation resolution.
@@ -74,10 +75,10 @@ Repository scripts will provide at least `dev`, `build`, and `validate`. Validat
 
 1. Create the public `corwinm/arashi-presentation` repository with its default `main` branch.
 2. Add the Slidev source, assets, theme styles/components, checks, and deployment workflow.
-3. Enable GitHub Pages with GitHub Actions as the deployment source.
-4. Verify the production build and deployed URL.
+3. Create and connect the Netlify site with deploy previews and `main` as the production branch.
+4. Verify the production build, deploy preview, and production URL.
 5. Add the repository to `.arashi/config.json` and add source/live links to the meta-repository README.
-6. If deployment must be rolled back, disable the Pages workflow while retaining the deck source and local build commands.
+6. If deployment must be rolled back, stop Netlify auto-publishing or restore the prior production deploy while retaining the deck source and local build commands.
 
 ## Open Questions
 

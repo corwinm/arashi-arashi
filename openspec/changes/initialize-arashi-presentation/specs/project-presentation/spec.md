@@ -56,15 +56,15 @@ The presentation repository SHALL provide Bun-based commands to install dependen
 - **THEN** the commands complete without errors and produce the static deployment artifact
 
 ### Requirement: Automated online deployment
-The presentation SHALL deploy its production build automatically to a stable public GitHub Pages URL after successful validation of changes accepted on `main`.
+The presentation SHALL use Netlify to create deploy previews for pull requests and automatically publish a stable production site after successful validation of changes accepted on `main`.
 
 #### Scenario: Main branch publication
 - **WHEN** a commit reaches `main` and validation succeeds
-- **THEN** GitHub Actions builds the deck with the repository Pages base path and deploys the resulting static artifact using GitHub Pages permissions
+- **THEN** Netlify installs from the Bun lockfile, validates and builds the deck, and publishes the resulting static artifact to the production site
 
 #### Scenario: Pull request quality gate
 - **WHEN** a pull request changes presentation source, dependencies, or deployment configuration
-- **THEN** CI validates the source and completes the production build without publishing the pull request as the public deck
+- **THEN** GitHub Actions validates the source and completes the production build while Netlify publishes an isolated deploy preview without replacing the public production deck
 
 ### Requirement: Project discoverability and coordinated workspace integration
 The Arashi meta-repository SHALL register the presentation repository as a managed child repository and SHALL link to both its source and its deployed deck from the project README.

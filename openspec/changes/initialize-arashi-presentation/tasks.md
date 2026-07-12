@@ -18,8 +18,8 @@
 
 - [ ] 3.1 Add source-quality and production-build validation scripts suitable for local use and CI
 - [ ] 3.2 Add pull request CI that installs from the Bun lockfile, validates the deck, and completes a production build
-- [ ] 3.3 Add a GitHub Pages deployment workflow for accepted `main` changes using the `/arashi-presentation/` base path
-- [ ] 3.4 Enable GitHub Pages through Actions and verify the deployed deck, navigation, assets, code highlighting, and direct links at the public URL
+- [ ] 3.3 Add `netlify.toml` with pinned Bun/Node runtimes, deploy-preview and production validation/build commands, the `dist` publish directory, and required route fallback behavior
+- [ ] 3.4 Connect the repository to Netlify, enable deploy previews and `main` production deployment, and verify the deck, navigation, assets, code highlighting, and direct links in both preview and production
 
 ## 4. Project Integration
 
