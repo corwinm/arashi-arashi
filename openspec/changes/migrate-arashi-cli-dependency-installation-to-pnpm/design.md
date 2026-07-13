@@ -81,6 +81,6 @@ Rollback is per repository: restore its Bun lockfile, manifest declaration, test
 
 ## Open Questions
 
-- Should the CLI integration suite execute a Node-targeted bundle or directly execute transpiled TypeScript through a runner such as `tsx` during the transition?
+- The CLI integration suite directly executes erasable TypeScript with Node 24.
 - Can the VS Code extension's production build and integration-test build move to one esbuild configuration in this change, eliminating Bun compilation there entirely?
 - Which exact pnpm and Vitest versions best match each repository's supported Node version at implementation time?

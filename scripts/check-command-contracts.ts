@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { checkContracts, formatHuman } from "./command-contracts";
+import { checkContracts, formatHuman } from "./command-contracts.ts";
 
 const args = new Set(process.argv.slice(2));
 const unknown = [...args].filter((arg) => arg !== "--json");

@@ -5,7 +5,7 @@
   "version": "0.0.0",
   "packageManager": "pnpm@10.33.2",
   "scripts": {
-    "contracts:check": "tsx scripts/check-command-contracts.ts",
+    "contracts:check": "node scripts/check-command-contracts.ts",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "format:check": "prettier --check package.json tsconfig.json scripts tests docs .github"
@@ -13,7 +13,6 @@
   "devDependencies": {
     "@types/node": "24.10.1",
     "prettier": "3.6.2",
-    "tsx": "4.21.0",
     "typescript": "7.0.2",
     "vitest": "4.0.18"
   }
