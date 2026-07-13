@@ -8,6 +8,7 @@
 - Reject malformed values before repository discovery begins with a clear CLI error.
 - Preserve the existing default depth and valid zero-depth behavior.
 - Add focused regression coverage for accepted and rejected values.
+- Correct the changed-files quality helper to load the repository's actual `.oxlintrc.json` configuration, with regression coverage.
 
 ## Capabilities
 
@@ -21,4 +22,4 @@ None.
 
 ## Impact
 
-The change affects the Arashi CLI's `list` command option parsing and focused command tests. It does not change configuration, dependencies, repository discovery behavior for valid inputs, or companion documentation workflows.
+The change affects the Arashi CLI's `list` command option parsing, focused command tests, and the changed-files quality helper. It does not change dependencies, repository discovery behavior for valid inputs, or companion documentation workflows.

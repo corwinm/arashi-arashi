@@ -10,9 +10,14 @@
 - [x] 2.2 Wire the validated numeric value through the list command without reparsing it during execution.
 - [x] 2.3 Run the focused tests and confirm all accepted and rejected cases pass.
 
-## 3. Verification and Delivery
+## 3. Changed-Files Quality Helper
 
-- [x] 3.1 Run lint, the full test suite, and build in `corwinm/arashi`.
-- [x] 3.2 Validate the OpenSpec change and check both repositories for clean diffs.
-- [x] 3.3 Commit, push, and cross-link the child implementation PR and meta/OpenSpec PR.
-- [x] 3.4 Verify remote CI succeeds before presenting the change for merge.
+- [x] 3.1 Add a failing regression that runs the helper against a changed TypeScript file with the repository-standard oxlint config name.
+- [x] 3.2 Update the helper to load `.oxlintrc.json` and verify `pnpm run quality:changed` succeeds.
+
+## 4. Verification and Delivery
+
+- [x] 4.1 Run lint, the full test suite, and build in `corwinm/arashi`.
+- [x] 4.2 Validate the OpenSpec change and check both repositories for clean diffs.
+- [x] 4.3 Commit, push, and cross-link the child implementation PR and meta/OpenSpec PR.
+- [ ] 4.4 Verify remote CI succeeds after all implementation commits before presenting the change for merge.

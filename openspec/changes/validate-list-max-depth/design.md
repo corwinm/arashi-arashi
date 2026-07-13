@@ -2,6 +2,8 @@
 
 The `list` command stores `--max-depth` as a string and converts it with `parseInt` while constructing core options. `parseInt` accepts partial numbers, while malformed values become `NaN`. The recursive depth comparison cannot stop traversal when its limit is `NaN`.
 
+While validating this change, `pnpm run quality:changed` also exposed a stale hardcoded `oxlint.json` path. The repository's checked-in configuration is `.oxlintrc.json`, so changed TypeScript files caused the helper to fail before linting.
+
 ## Goals / Non-Goals
 
 **Goals:**
@@ -25,6 +27,8 @@ Use a focused Commander option parser that converts the raw string into a number
 Require a decimal digit string whose numeric value is a safe integer. This admits `0` and ordinary non-negative depths while rejecting signs, fractions, exponent notation, whitespace-only input, and values that cannot be represented safely.
 
 Test the parser directly for boundary behavior and retain command integration through the existing command contract. A pure parser gives precise, fast regression coverage without invoking process exit or filesystem traversal.
+
+Point the changed-files helper at `.oxlintrc.json` and exercise it from a temporary Git repository containing a changed TypeScript file. This tests the real process boundary and prevents the no-changed-files fast path from concealing future configuration drift.
 
 ## Risks / Trade-offs
 
