@@ -17,6 +17,6 @@
 
 ## 4. Production Verification and Closeout
 
-- [ ] 4.1 On the first normal release after merge, verify the semantic-release step succeeds, npm/tag state is consistent, the GitHub release is published rather than draft, and all expected wrapper, binary, and checksum assets exist.
-- [ ] 4.2 If production verification succeeds, archive and sync the OpenSpec change, update the meta PR to close issue #168, and complete the normal child-first merge and coordinated-worktree cleanup.
-- [ ] 4.3 If production verification fails, repair the partial release, restore the Node 22 workaround in a focused follow-up if necessary, and capture the new upstream evidence before closing issue #168.
+- [x] 4.1 Verify production release v1.19.1: workflow run 29226629162 succeeded on Node 24, npm and the tag report 1.19.1, the GitHub release is published rather than draft, and all seven uploaded assets match the checksum manifest.
+- [x] 4.2 Archive and sync the OpenSpec change, update the meta PR to close issue #168, and complete the normal child-first merge and coordinated-worktree cleanup.
+- [x] 4.3 Confirm no partial-release repair or Node 22 rollback is required because production verification succeeded.
