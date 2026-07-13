@@ -21,7 +21,7 @@
 - [x] 3.1 Add source-quality and production-build validation scripts suitable for local use and CI
 - [x] 3.2 Add pull request CI that activates the pinned pnpm version, installs from the frozen lockfile, validates the deck, and completes a production build
 - [x] 3.3 Add `netlify.toml` with a pinned Node runtime, pnpm deploy-preview and production validation/build commands, the `dist` publish directory, and required route fallback behavior
-- [ ] 3.4 Connect the repository to Netlify, enable deploy previews and `main` production deployment, and verify the deck, navigation, assets, code highlighting, and direct links in both preview and production
+- [x] 3.4 Connect the repository to Netlify, enable deploy previews and `main` production deployment, and verify the deck, navigation, assets, code highlighting, and direct links in both preview and production
 
 ## 4. Project Integration
 
@@ -33,5 +33,5 @@
 
 - [x] 5.1 Render every slide to images and complete an independent visual QA pass for overflow, collision, alignment, spacing, contrast, and placeholder content
 - [x] 5.2 Apply at least one visual QA correction cycle and re-render affected slides to verify the fixes
-- [ ] 5.3 Verify extracted slide content, presenter-note coverage, links, local validation, production build, pull request checks, and the final public deployment
-- [ ] 5.4 Archive and sync the completed OpenSpec change after implementation approval, then update the meta PR to close issue #38
+- [x] 5.3 Verify extracted slide content, presenter-note coverage, links, local validation, production build, pull request checks, and the final public deployment
+- [x] 5.4 Archive and sync the completed OpenSpec change after implementation approval, then update the meta PR to close issue #38
