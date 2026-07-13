@@ -28,6 +28,10 @@
     "arashi-skills": {
       "path": "repos/arashi-skills",
       "gitUrl": "git@github.com:corwinm/arashi-skills.git"
+    },
+    "arashi-presentation": {
+      "path": "repos/arashi-presentation",
+      "gitUrl": "git@github.com:corwinm/arashi-presentation.git"
     }
   }
 }
