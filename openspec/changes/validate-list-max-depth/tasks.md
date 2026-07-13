@@ -20,4 +20,4 @@
 - [x] 4.1 Run lint, the full test suite, and build in `corwinm/arashi`.
 - [x] 4.2 Validate the OpenSpec change and check both repositories for clean diffs.
 - [x] 4.3 Commit, push, and cross-link the child implementation PR and meta/OpenSpec PR.
-- [ ] 4.4 Verify remote CI succeeds after all implementation commits before presenting the change for merge.
+- [x] 4.4 Verify remote CI succeeds after all implementation commits before presenting the change for merge.
