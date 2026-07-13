@@ -6,8 +6,9 @@ on:
       - "scripts/**"
       - "tests/**"
       - "package.json"
-      - "bun.lock"
+      - "pnpm-lock.yaml"
       - "tsconfig.json"
+      - "vitest.config.ts"
       - ".github/workflows/cross-repo-command-contracts.yml"
   push:
     branches: [main]
@@ -48,9 +49,12 @@ jobs:
           repository: corwinm/arashi-vscode
           ref: main
           path: meta/repos/arashi-vscode
-      - uses: oven-sh/setup-bun@v2
+      - uses: actions/setup-node@v6
         with:
-          bun-version: 1.2.18
+          node-version: 24
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.2
       - name: Report revisions
         working-directory: meta
         run: |
@@ -60,13 +64,13 @@ jobs:
           done
       - name: Install pinned checker toolchain
         working-directory: meta
-        run: bun install --frozen-lockfile
+        run: pnpm install --frozen-lockfile
       - name: Test checker
         working-directory: meta
-        run: bun run test
+        run: pnpm test
       - name: Type-check checker
         working-directory: meta
-        run: bun run typecheck
+        run: pnpm typecheck
       - name: Check cross-repository contracts
         working-directory: meta
-        run: bun run contracts:check
+        run: pnpm contracts:check

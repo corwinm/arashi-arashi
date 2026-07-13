@@ -2,6 +2,6 @@
 
 echo "***"
 
-bun install
+pnpm install --frozen-lockfile
 
 echo "***"

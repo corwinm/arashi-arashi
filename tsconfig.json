@@ -5,7 +5,8 @@
     "moduleResolution": "bundler",
     "strict": true,
     "noEmit": true,
-    "types": ["bun"],
+    "allowImportingTsExtensions": true,
+    "types": ["node", "vitest/globals"],
     "skipLibCheck": true
   },
   "include": ["scripts/**/*.ts", "tests/**/*.ts"]
