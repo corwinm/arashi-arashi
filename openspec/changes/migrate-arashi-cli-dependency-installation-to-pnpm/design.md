@@ -79,8 +79,8 @@ A later packaging spike will compare Node SEA, `pnpm pack-app`, and other mainta
 
 Rollback is per repository: restore its Bun lockfile, manifest declaration, test imports/configuration, and workflow commands if parity or platform validation fails before merge.
 
-## Open Questions
+## Implementation Outcomes
 
-- The CLI integration suite directly executes erasable TypeScript with Node 24.
-- Can the VS Code extension's production build and integration-test build move to one esbuild configuration in this change, eliminating Bun compilation there entirely?
-- Which exact pnpm and Vitest versions best match each repository's supported Node version at implementation time?
+- The CLI integration suite directly executes erasable TypeScript with Node 24; a separate integration-test bundle is not required.
+- The VS Code extension's integration-test build uses esbuild and no longer depends on Bun. Consolidating it with the production build was not required for this migration.
+- Each affected repository pins the pnpm and Vitest versions selected for its supported Node runtime in its manifest and lockfile rather than relying on floating tool versions.

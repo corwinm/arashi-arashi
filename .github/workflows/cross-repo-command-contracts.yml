@@ -8,6 +8,7 @@ on:
       - "package.json"
       - "pnpm-lock.yaml"
       - "tsconfig.json"
+      - "vitest.config.ts"
       - ".github/workflows/cross-repo-command-contracts.yml"
   push:
     branches: [main]
