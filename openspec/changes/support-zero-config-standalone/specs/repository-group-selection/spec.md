@@ -17,6 +17,11 @@ Arashi MUST reject repository-name, group, or interactive multi-repository selec
 - **WHEN** standalone create requests interactive multi-repository selection
 - **THEN** Arashi rejects the meaningless selection mode without prompting or broadening scope
 
+#### Scenario: Switch repository collection flags are supplied
+- **WHEN** standalone switch receives `--repos` or `--all`
+- **THEN** Arashi rejects the configured multi-repository scope before target discovery or launch
+- **AND** preserves ordinary single-repository switch behavior without those flags
+
 #### Scenario: Configured filters are used
 - **WHEN** the workspace is configured
 - **THEN** existing name/group intersection, unknown, empty, and no-match behavior remains unchanged

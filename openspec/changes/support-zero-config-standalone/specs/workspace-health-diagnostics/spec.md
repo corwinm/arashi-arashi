@@ -15,6 +15,11 @@
 - **AND** suggests `arashi init --zero-config` or a repository-local exclude repair
 - **AND** does not repair the rule
 
+#### Scenario: Synthetic repos directory is absent
+- **WHEN** doctor runs in implicit standalone mode with the in-memory `reposDir: "./repos"` compatibility value
+- **THEN** managed-ignore diagnostics inspect only the standalone `.worktrees/` convention
+- **AND** do not report or repair a missing ignore rule for the synthetic, unused `./repos` path
+
 #### Scenario: Invalid persisted config exists beside worktrees
 - **WHEN** `.arashi/config.json` exists but is malformed or invalid and `.worktrees/` also exists
 - **THEN** doctor reports the existing configuration failure as blocking

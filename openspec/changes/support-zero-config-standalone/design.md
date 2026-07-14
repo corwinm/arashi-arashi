@@ -14,7 +14,7 @@ The change spans discovery, initialization, Git ignore safety, lifecycle command
 - Preserve real-config precedence and exact config errors while resolving implicit mode from main or linked worktrees.
 - Support the natural single-repository lifecycle with `.worktrees/<branch>` paths and no persisted implicit state.
 - Make `init --zero-config` safe, local, idempotent, previewable, and transactional.
-- Block creation before mutation when `.worktrees/` is exposed to Git status.
+- Block creation before mutation when the exact planned `.worktrees/<branch>` destination is exposed to Git status.
 - Keep human, JSON, dry-run, rollback, docs, skill, and generated-contract behavior aligned.
 
 **Non-Goals:**
@@ -29,7 +29,7 @@ The change spans discovery, initialization, Git ignore safety, lifecycle command
 
 ### Resolve a typed workspace context through Git
 
-Introduce a shared resolver that starts from the invocation path, asks Git for repository state and the main worktree root, then returns a discriminated context such as configured, standalone, or unavailable. For configured context it loads and validates the real config. For standalone context it returns an in-memory config with `reposDir: "./repos"`, `worktreesDir: ".worktrees"`, and an empty repository map plus explicit mode metadata.
+Introduce a shared resolver that starts from the invocation path, asks Git for repository state and the main worktree root, then returns a discriminated context such as configured, standalone, or unavailable. Resolve the main worktree by parsing `git worktree list --porcelain` from the invocation repository, selecting the main non-bare worktree entry, and validating it against the absolute common Git directory so linked worktrees, relative common-dir output, and separate-git-dir layouts do not rely on path ancestry. For configured context it loads and validates the real config. For standalone context it returns an in-memory config with `reposDir: "./repos"`, `worktreesDir: ".worktrees"`, and an empty repository map plus explicit mode metadata.
 
 Resolution order is:
 
@@ -53,7 +53,7 @@ This centralized capability policy is preferred over allowing empty `repos` to p
 
 Standalone lifecycle orchestration uses the repository's main worktree as the sole repository regardless of where the command is invoked. Existing worktrees are discovered through `git worktree list --porcelain` from that repository. The workspace root and repository path are both the main worktree root; linked-worktree invocation metadata may still record the caller location where relevant. The stable standalone repository identity is the main-root basename.
 
-Worktree path calculation gets an explicit standalone strategy that resolves `.worktrees/<branch>` without a repository-name prefix. Branch names retain `/` separators and therefore create nested directories. Path validation and Git conflict checks remain authoritative, and rollback removes partially created nested directories when no surviving worktree needs them.
+Worktree path calculation gets an explicit standalone strategy that resolves `.worktrees/<branch>` without a repository-name prefix. Branch names retain `/` separators and therefore create nested directories. Path validation and Git conflict checks remain authoritative. Rollback may remove only nested directories created by the current invocation that are still empty and unused; it MUST preserve pre-existing parents such as `.worktrees/feat/` and any directory needed by a surviving worktree.
 
 An explicit strategy is preferred over overloading configured sibling behavior because the two layouts have different naming contracts.
 
@@ -67,7 +67,7 @@ Implicit discovery and read-only/cleanup commands inspect but never repair ignor
 - rejects incompatible configured-init options and an existing `.arashi/config.json` before mutation;
 - plans creation of the main-root `.worktrees/` directory;
 - probes a deterministic descendant such as `.worktrees/.arashi-ignore-probe` with `git check-ignore --no-index` to determine whether the convention is already covered by an effective Git ignore source;
-- otherwise appends the literal `.worktrees/` rule to the common repository's `info/exclude`, preserving newline conventions and existing content;
+- otherwise appends the literal `.worktrees/` rule to the common repository's `info/exclude`, preserving newline conventions and existing content; this dedicated bootstrap path MUST NOT reuse configured managed-ignore normalization that emits anchored `/.worktrees/` rules or managed blocks;
 - verifies the same deterministic descendant after writing and rolls back with actionable higher-precedence-rule guidance if the local rule is not effective;
 - never writes a managed block, clone-local ignore-scope preference, `.gitignore`, global configuration, or `.arashi/` state.
 

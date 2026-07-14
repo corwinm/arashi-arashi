@@ -150,6 +150,11 @@ Arashi MUST validate zero-config eligibility and incompatible initialization opt
 - **THEN** Arashi creates the worktree at `.worktrees/feat/example`
 - **AND** preserves the branch's natural nested path structure
 
+#### Scenario: Slash-branch creation rolls back
+- **WHEN** standalone creation of a slash-containing branch fails after creating one or more destination parent directories
+- **THEN** rollback removes only parent directories created by that invocation that remain empty and unused
+- **AND** preserves pre-existing parents such as `.worktrees/feat/`, non-empty directories, and every path required by a surviving worktree
+
 #### Scenario: Invocation starts in an existing linked worktree
 - **WHEN** a user creates another branch from a linked worktree in the implicit workspace
 - **THEN** the new worktree is created under the main root's `.worktrees/`
@@ -236,10 +241,38 @@ Commands and options whose semantics require persisted child repositories, group
 - **THEN** Arashi rejects the option before mutation
 - **AND** does not silently ignore the filter, broaden scope, or reinterpret it as the standalone repository
 
+#### Scenario: Switch repository scope is supplied
+- **WHEN** a user passes switch repository-scope flags such as `--repos` or `--all` in implicit standalone mode
+- **THEN** Arashi rejects the meaningless multi-repository scope before target selection or launch
+- **AND** explains that ordinary standalone switch already operates on the resolved repository's worktrees
+
 #### Scenario: Other coordinated command is audited
 - **WHEN** a command depends on configured repository maps, groups, hooks, setup, pull, push, or cross-repository execution
 - **THEN** its standalone support is explicitly classified as supported single-repository behavior or configured-only with a reason
 - **AND** it cannot accidentally succeed as an empty configured workspace
+
+### Requirement: Human output identifies standalone behavior consistently
+Human-readable output for workspace-aware standalone lifecycle commands SHALL identify implicit standalone mode and use single-repository terminology without leaking configured-workspace assumptions.
+
+#### Scenario: Human lifecycle command succeeds
+- **WHEN** a user runs a human-output init, status, create, list, switch, remove, prune, doctor, move, or handoff operation in implicit standalone mode or zero-config bootstrap
+- **THEN** output identifies standalone mode at the command's workspace summary or result boundary
+- **AND** reports the main repository and exact worktree paths without configured child-repository labels
+
+#### Scenario: Human command runs from linked worktree
+- **WHEN** a human-output standalone command is invoked from a linked worktree
+- **THEN** output distinguishes the caller worktree from the resolved main repository root where relevant
+- **AND** does not imply that the linked worktree is a configured workspace root
+
+#### Scenario: Human create reports ignore blocker
+- **WHEN** standalone create or create dry-run finds the exact destination unignored
+- **THEN** human output identifies standalone mode, the blocked destination, and `arashi init --zero-config` or repository-local exclude guidance
+- **AND** does not claim configured managed-ignore reconciliation occurred
+
+#### Scenario: Human configured-only command is rejected
+- **WHEN** a configured-only command or meaningless repository/group scope is used in implicit standalone mode
+- **THEN** human output explains that the command requires configured mode and suggests ordinary `arashi init`
+- **AND** does not describe the failure as an undiscovered or empty child repository set
 
 ### Requirement: Documentation presents standalone mode as supported
 Arashi documentation SHALL teach zero-config standalone mode as a first-class one-repository workflow and SHALL distinguish it from configured mode.

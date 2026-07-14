@@ -14,6 +14,6 @@ The Arashi skill package SHALL direct agents to use zero-config standalone mode 
 - **AND** does not recommend zero-config mode as equivalent
 
 #### Scenario: Agent encounters an unignored convention
-- **WHEN** standalone `create` reports that `.worktrees/` is not ignored
+- **WHEN** standalone `create` reports that the exact planned `.worktrees/<branch>` destination is not ignored
 - **THEN** the skill recommends `arashi init --zero-config` or a repository-local exclude rule
 - **AND** does not instruct the agent to modify global Git configuration or tracked `.gitignore` automatically

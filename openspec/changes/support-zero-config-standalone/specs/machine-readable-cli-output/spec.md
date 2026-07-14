@@ -28,7 +28,7 @@ Commands that support `--json` in implicit standalone mode SHALL include stable 
 - **AND** no filesystem or Git configuration mutation occurs
 
 #### Scenario: Existing effective rule is reported
-- **WHEN** zero-config bootstrap finds a tracked, repository-local, or global rule that already ignores `.worktrees/`
+- **WHEN** zero-config bootstrap finds a tracked, repository-local, or global rule that already ignores the deterministic `.worktrees/.arashi-ignore-probe` descendant
 - **THEN** data identifies the effective source and unchanged ignore action
 - **AND** does not claim that Arashi wrote another source
 
