@@ -32,3 +32,11 @@ Arashi currently updates only tracked `.gitignore` content during `init`, even t
 - Expected docs and skill areas include Getting Started, command pages for `init`, `pull`, `clone`, `add`, and `create`, automation/agent guidance, and generated Markdown/LLM exports.
 - No new runtime dependency or writable global Git configuration is expected.
 - This change provides shared ignore infrastructure that the separate zero-config standalone workflow in #212 can reuse later; it does not implement configless workspace discovery.
+
+## Implementation
+
+- CLI: [corwinm/arashi#92](https://github.com/corwinm/arashi/pull/92)
+- Documentation: [corwinm/arashi-docs#46](https://github.com/corwinm/arashi-docs/pull/46)
+- Skills: [corwinm/arashi-skills#38](https://github.com/corwinm/arashi-skills/pull/38)
+
+Validation completed across the three child repositories. The CLI full suite completed with 850 passing tests and one unrelated timing assertion that exceeded its five-second threshold by 219 ms; the isolated timing test then passed three consecutive runs at 2.1–2.2 seconds.
