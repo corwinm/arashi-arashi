@@ -48,7 +48,7 @@
 
 - [x] 6.1 Add failing source/generated-content tests proving standalone workflow, `init --zero-config`, lifecycle scope, configured-only guidance, required routes, and prioritized export ordering remain aligned across CLI, docs, and skills.
 - [x] 6.2 Update CLI-owned init/help and relevant command documentation with zero-config eligibility, ignore safety, paths, supported/unsupported commands, dry-run/JSON behavior, and configured-mode upgrade guidance.
-- [x] 6.3 Add a dedicated `arashi-docs` standalone workflow showing explicit and manual bootstrap, create/list/status/switch/remove lifecycle, `.worktrees/<branch>` layout, and configured-mode contrast.
+- [x] 6.3 Add a dedicated `arashi-docs` standalone workflow showing explicit CLI bootstrap, create/list/status/switch/remove lifecycle, `.worktrees/<branch>` layout, and configured-mode contrast.
 - [x] 6.4 Link standalone guidance from Getting Started, workflow indexes, supported lifecycle pages, and configured-only add/clone/sync/pull/push/exec/setup pages without duplicating long procedures.
 - [x] 6.5 Update `arashi-skills` routing and workflow/command/troubleshooting references so agents choose the correct mode and never auto-edit global or tracked ignore state for zero-config bootstrap.
 - [x] 6.6 Regenerate CLI command contracts, docs indexes, `coreOrder`/`requiredRoutes`, Markdown routes, `llms.txt`/`llms-full.txt`, packaged skill outputs, and cross-repository coverage fixtures until the tests pass.
@@ -59,5 +59,5 @@
 - [x] 7.2 Run full CLI validation with `pnpm run lint`, `pnpm run test`, `pnpm run build`, contract/schema freshness, package smoke tests, and Git diff checks.
 - [x] 7.3 Run `pnpm validate` plus generated route, Markdown, link, and standalone-content checks in `corwinm/arashi-docs`.
 - [x] 7.4 Run `arashi-skills` security, self-test, packaging-boundary, and cross-repository contract validation.
-- [x] 7.5 Perform manual real-repository smoke tests from both main and linked worktrees for explicit/manual bootstrap, ignored/unignored create, lifecycle cleanup, invalid-config precedence, and no implicit config writes.
+- [x] 7.5 Perform real-repository smoke tests from both main and linked worktrees for explicit bootstrap, ignored/unignored create, lifecycle cleanup, invalid-config precedence, and no implicit config writes.
 - [x] 7.6 Open focused cross-linked CLI, docs, and skills PRs plus the meta/OpenSpec PR, record exact validation evidence, and keep the meta PR as the sole eventual closing-keyword owner for issue #212.

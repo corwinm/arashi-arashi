@@ -282,10 +282,6 @@ Arashi documentation SHALL teach zero-config standalone mode as a first-class on
 - **THEN** it shows `arashi init --zero-config` followed by create, list, status, switch, and remove examples
 - **AND** shows the resulting `.worktrees/<branch>` layout
 
-#### Scenario: User follows manual bootstrap workflow
-- **WHEN** a user prefers manual setup
-- **THEN** documentation shows creating `.worktrees/` and adding `.worktrees/` to the repository-local exclude resolved through Git
-- **AND** does not recommend automatically changing global Git configuration or tracked `.gitignore`
 
 #### Scenario: User needs configured capabilities
 - **WHEN** a user needs child repositories, groups, hooks, defaults, custom paths, or coordination

@@ -89,7 +89,7 @@ The envelope schema version remains unchanged because fields are additive. Comma
 
 ### Update source documentation, generated exports, and packaged guidance together
 
-Add a dedicated standalone workflow page showing explicit and manual bootstrap, create/list/status/switch/remove lifecycle, path layout, configured-mode contrast, and upgrade with ordinary `arashi init`. Link it from Getting Started and relevant command pages. Update CLI-owned help/docs and the packaged skill. Regenerate command contracts, Markdown routes, and LLM exports, and validate cross-repository coverage so generated artifacts do not drift from source guidance.
+Add a dedicated standalone workflow page showing explicit CLI bootstrap, create/list/status/switch/remove lifecycle, path layout, configured-mode contrast, and upgrade with ordinary `arashi init`. Link it from Getting Started and relevant command pages. Update CLI-owned help/docs and the packaged skill. Regenerate command contracts, Markdown routes, and LLM exports, and validate cross-repository coverage so generated artifacts do not drift from source guidance. Keep implementation-detail shell procedures out of user-facing docs and direct users through `arashi init --zero-config`.
 
 ## Risks / Trade-offs
 
