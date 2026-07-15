@@ -2,7 +2,6 @@
 
 ## Purpose
 Define the machine-readable documentation exports that help coding agents discover, fetch, and use Arashi documentation without scraping the full HTML site.
-
 ## Requirements
 ### Requirement: Docs SHALL publish a curated LLM entrypoint
 The docs site SHALL expose `/llms.txt` as a concise Markdown-oriented entrypoint for coding agents that summarizes Arashi and points to the highest-value docs pages and exports.
@@ -66,4 +65,21 @@ The docs validation flow SHALL cover generated agent-readable exports and repres
 #### Scenario: Contributor runs docs validation
 - **WHEN** a contributor runs `bun run validate`
 - **THEN** validation fails if required generated outputs such as `/llms.txt`, `/llms-full.txt`, `/workflows/agents-and-specs.md`, or `/commands/status.md` are missing or contain broken required links
+
+### Requirement: Agent-readable exports include standalone workflow guidance
+Generated Markdown routes, `/llms.txt`, and `/llms-full.txt` SHALL make the supported zero-config standalone workflow discoverable from authored documentation.
+
+#### Scenario: Agent fetches standalone workflow Markdown
+- **WHEN** an agent requests the standalone workflow's `.md` route
+- **THEN** the response includes explicit CLI bootstrap, supported lifecycle commands, `.worktrees/<branch>` layout, ignore safety, configured-mode contrast, and upgrade guidance
+
+#### Scenario: Agent fetches the curated entrypoint
+- **WHEN** an agent requests `/llms.txt`
+- **THEN** the curated guidance links directly or through a high-priority workflow index to zero-config standalone usage
+- **AND** does not describe configured meta-repositories as the only valid Arashi workflow
+
+#### Scenario: Full export is regenerated
+- **WHEN** documentation validation generates `/llms-full.txt`
+- **THEN** the standalone workflow and updated Getting Started and command guidance appear in the deterministic export
+- **AND** validation fails when required standalone source pages or generated routes are stale or missing
 

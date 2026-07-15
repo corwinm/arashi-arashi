@@ -2,7 +2,6 @@
 
 ## Purpose
 Define how the Arashi skill package keeps its top-level skill guidance minimal while directing detailed workflow instructions to reference files and canonical docs.
-
 ## Requirements
 ### Requirement: Minimal skill entry point
 The Arashi skill package SHALL keep `skills/arashi/SKILL.md` focused on skill routing, core operating rules, and links to detailed references rather than duplicating workflow manuals or exhaustive command parameters.
@@ -31,3 +30,21 @@ The Arashi skill package SHALL align contributor guidance with the minimal entry
 #### Scenario: Contributor updates procedural guidance
 - **WHEN** a contributor changes detailed workflow, command, troubleshooting, or shortcut instructions
 - **THEN** repository guidance directs them to update the smallest affected reference first and only update `SKILL.md` when routing, policy, or reference links change
+
+### Requirement: Skill guidance distinguishes standalone and configured workflows
+The Arashi skill package SHALL direct agents to use zero-config standalone mode for a normal one-repository `.worktrees/` workflow and configured mode for child-repository coordination or persisted customization.
+
+#### Scenario: Agent manages one repository
+- **WHEN** an agent needs Arashi worktree lifecycle behavior for a non-bare repository without `.arashi/config.json`
+- **THEN** the skill guidance explains `arashi init --zero-config` and the manual root `.worktrees/` plus repository-local exclude setup
+- **AND** cautions that passive discovery does not repair missing ignore coverage
+
+#### Scenario: Agent needs configured capabilities
+- **WHEN** an agent needs child repositories, groups, hooks, defaults, custom managed paths, or coordinated commands
+- **THEN** the skill directs the agent to ordinary `arashi init` and configured workspace references
+- **AND** does not recommend zero-config mode as equivalent
+
+#### Scenario: Agent encounters an unignored convention
+- **WHEN** standalone `create` reports that the exact planned `.worktrees/<branch>` destination is not ignored
+- **THEN** the skill recommends `arashi init --zero-config` or a repository-local exclude rule
+- **AND** does not instruct the agent to modify global Git configuration or tracked `.gitignore` automatically
