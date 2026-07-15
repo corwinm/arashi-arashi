@@ -235,6 +235,25 @@ describe("cross-repository command contracts", () => {
       }),
     );
   });
+  test("rejects init options that are not classified for zero-config mode", async () => {
+    const root = await fixture();
+    const path = join(root, "repos/arashi/contracts/cli-commands.json");
+    const data = JSON.parse(await readFile(path, "utf8"));
+    data.commands
+      .find((command: { path: string }) => command.path === "init")
+      .options.push({
+        description: "future mode",
+        flags: "--future-mode",
+        optional: false,
+        required: false,
+        variadic: false,
+      });
+    await writeFile(path, JSON.stringify(data));
+
+    expect((await checkContracts(root)).diagnostics).toContainEqual(
+      expect.objectContaining({ code: "STANDALONE_INIT_POLICY_INVALID" }),
+    );
+  });
   test.each([
     [
       "policy",

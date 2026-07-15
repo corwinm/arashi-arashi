@@ -494,9 +494,7 @@ export async function checkContracts(
       jsonPolicy.suppressesHumanStdout === true &&
       sameStrings(strings(policy.compatibleOptions), initCompatibleOptions) &&
       sameStrings(strings(policy.incompatibleOptions), initIncompatibleOptions) &&
-      ["--zero-config", ...initCompatibleOptions, ...initIncompatibleOptions].every((option) =>
-        options.includes(option),
-      );
+      sameStrings(options, ["--zero-config", ...initCompatibleOptions, ...initIncompatibleOptions]);
     if (!validPolicy)
       add(
         d,
