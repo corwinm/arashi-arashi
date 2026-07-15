@@ -60,4 +60,4 @@
 - [x] 7.3 Run `pnpm validate` plus generated route, Markdown, link, and standalone-content checks in `corwinm/arashi-docs`.
 - [x] 7.4 Run `arashi-skills` security, self-test, packaging-boundary, and cross-repository contract validation.
 - [x] 7.5 Perform manual real-repository smoke tests from both main and linked worktrees for explicit/manual bootstrap, ignored/unignored create, lifecycle cleanup, invalid-config precedence, and no implicit config writes.
-- [ ] 7.6 Open focused cross-linked CLI, docs, and skills PRs plus the meta/OpenSpec PR, record exact validation evidence, and keep the meta PR as the sole eventual closing-keyword owner for issue #212.
+- [x] 7.6 Open focused cross-linked CLI, docs, and skills PRs plus the meta/OpenSpec PR, record exact validation evidence, and keep the meta PR as the sole eventual closing-keyword owner for issue #212.
