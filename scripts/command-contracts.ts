@@ -474,25 +474,29 @@ export async function checkContracts(
               : [],
           )
       : [];
-    const standalone =
-      object(initCommand.semantics) && object(initCommand.semantics.standalone)
-        ? initCommand.semantics.standalone
-        : {};
-    const policy = object(standalone.policy) ? standalone.policy : {};
+    const semantics = object(initCommand.semantics) ? initCommand.semantics : {};
+    const rawPolicy = object(semantics.zeroConfig) ? semantics.zeroConfig : {};
+    const dryRun = object(rawPolicy.dryRun) ? rawPolicy.dryRun : {};
+    const jsonPolicy = object(rawPolicy.json) ? rawPolicy.json : {};
+    const policy: Obj = {
+      compatibleOptions: rawPolicy.compatibleOptions,
+      dryRun: dryRun.supported,
+      incompatibleOptions: rawPolicy.incompatibleOptions,
+      json: jsonPolicy.supported,
+      option: rawPolicy.option,
+    };
     const validPolicy =
       policy.option === "--zero-config" &&
-      policy.dryRun === true &&
-      policy.json === true &&
+      dryRun.supported === true &&
+      dryRun.finalState === "unchanged" &&
+      jsonPolicy.supported === true &&
+      jsonPolicy.singleEnvelope === true &&
+      jsonPolicy.suppressesHumanStdout === true &&
       sameStrings(strings(policy.compatibleOptions), initCompatibleOptions) &&
-      sameStrings(
-        strings(policy.incompatibleOptions),
-        initIncompatibleOptions,
-      ) &&
-      [
-        "--zero-config",
-        ...initCompatibleOptions,
-        ...initIncompatibleOptions,
-      ].every((option) => options.includes(option));
+      sameStrings(strings(policy.incompatibleOptions), initIncompatibleOptions) &&
+      ["--zero-config", ...initCompatibleOptions, ...initIncompatibleOptions].every((option) =>
+        options.includes(option),
+      );
     if (!validPolicy)
       add(
         d,
@@ -500,8 +504,8 @@ export async function checkContracts(
         "schema",
         "STANDALONE_INIT_POLICY_INVALID",
         paths.contract,
-        "init.standalone.policy",
-        "init --zero-config requires dry-run and JSON support plus complete compatible and incompatible option policy metadata.",
+        "init.zeroConfig",
+        "init --zero-config requires unchanged dry-run behavior, single-envelope JSON behavior, and complete compatible and incompatible option policy metadata.",
       );
     if (initCoverage) {
       const coverageStandalone = object(initCoverage.standalone)

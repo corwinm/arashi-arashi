@@ -63,19 +63,23 @@ async function fixture(): Promise<string> {
               support: "conditional",
               reason:
                 "Only init --zero-config prepares standalone mode; ordinary init creates configured mode.",
-              policy: {
-                option: "--zero-config",
-                dryRun: true,
-                json: true,
-                compatibleOptions: ["--dry-run", "--json", "--verbose"],
-                incompatibleOptions: [
-                  "--force",
-                  "--ignore-scope",
-                  "--no-discover",
-                  "--repos-dir",
-                  "--worktrees-dir",
-                ],
+            },
+            zeroConfig: {
+              option: "--zero-config",
+              dryRun: { finalState: "unchanged", supported: true },
+              json: {
+                singleEnvelope: true,
+                supported: true,
+                suppressesHumanStdout: true,
               },
+              compatibleOptions: ["--dry-run", "--json", "--verbose"],
+              incompatibleOptions: [
+                "--force",
+                "--ignore-scope",
+                "--no-discover",
+                "--repos-dir",
+                "--worktrees-dir",
+              ],
             },
             vscode: { expectation: "required" },
           },
@@ -234,35 +238,42 @@ describe("cross-repository command contracts", () => {
   test.each([
     [
       "policy",
-      (standalone: Record<string, unknown>) => delete standalone.policy,
+      (semantics: Record<string, unknown>) => delete semantics.zeroConfig,
     ],
     [
       "reason",
-      (standalone: Record<string, unknown>) => delete standalone.reason,
+      (semantics: Record<string, unknown>) =>
+        delete (semantics.standalone as Record<string, unknown>).reason,
     ],
     [
       "dry-run support",
-      (standalone: Record<string, unknown>) =>
-        ((standalone.policy as Record<string, unknown>).dryRun = false),
+      (semantics: Record<string, unknown>) =>
+        (((semantics.zeroConfig as Record<string, unknown>).dryRun as Record<
+          string,
+          unknown
+        >).supported = false),
     ],
     [
       "JSON support",
-      (standalone: Record<string, unknown>) =>
-        ((standalone.policy as Record<string, unknown>).json = false),
+      (semantics: Record<string, unknown>) =>
+        (((semantics.zeroConfig as Record<string, unknown>).json as Record<
+          string,
+          unknown
+        >).supported = false),
     ],
     [
       "compatible options",
-      (standalone: Record<string, unknown>) =>
+      (semantics: Record<string, unknown>) =>
         (
-          (standalone.policy as Record<string, unknown>)
+          (semantics.zeroConfig as Record<string, unknown>)
             .compatibleOptions as unknown[]
         ).pop(),
     ],
     [
       "incompatible options",
-      (standalone: Record<string, unknown>) =>
+      (semantics: Record<string, unknown>) =>
         (
-          (standalone.policy as Record<string, unknown>)
+          (semantics.zeroConfig as Record<string, unknown>)
             .incompatibleOptions as unknown[]
         ).pop(),
     ],
@@ -275,7 +286,7 @@ describe("cross-repository command contracts", () => {
       mutate(
         data.commands.find(
           (command: { path: string }) => command.path === "init",
-        ).semantics.standalone,
+        ).semantics,
       );
       await writeFile(path, JSON.stringify(data));
 
