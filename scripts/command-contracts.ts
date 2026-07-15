@@ -28,6 +28,49 @@ const object = (value: unknown): value is Obj =>
   typeof value === "object" && value !== null && !Array.isArray(value);
 const text = (value: unknown): value is string =>
   typeof value === "string" && value.trim().length > 0;
+const strings = (value: unknown): string[] | undefined =>
+  Array.isArray(value) && value.every(text) ? value : undefined;
+const sorted = (values: string[]): string[] => [...values].sort();
+const sameStrings = (left: string[] | undefined, right: string[]): boolean =>
+  left !== undefined &&
+  left.length === new Set(left).size &&
+  JSON.stringify(sorted(left)) === JSON.stringify(sorted(right));
+const cliStandaloneSupport = new Set([
+  "full",
+  "conditional",
+  "configured-only",
+  "not-applicable",
+]);
+const skillsStandaloneSupport = new Set([
+  "supported",
+  "conditional",
+  "configured-only",
+  "not-applicable",
+]);
+const normalizeStandaloneSupport = (value: unknown): string | undefined => {
+  if (!text(value)) return undefined;
+  return value === "full" ? "supported" : value;
+};
+const initCompatibleOptions = ["--dry-run", "--json", "--verbose"];
+const initIncompatibleOptions = [
+  "--force",
+  "--ignore-scope",
+  "--no-discover",
+  "--repos-dir",
+  "--worktrees-dir",
+];
+const sameInitPolicy = (left: Obj, right: Obj): boolean =>
+  left.option === right.option &&
+  left.dryRun === right.dryRun &&
+  left.json === right.json &&
+  sameStrings(
+    strings(left.compatibleOptions),
+    strings(right.compatibleOptions) ?? [],
+  ) &&
+  sameStrings(
+    strings(left.incompatibleOptions),
+    strings(right.incompatibleOptions) ?? [],
+  );
 const exists = async (path: string): Promise<boolean> => {
   try {
     await access(path);
@@ -160,7 +203,7 @@ export async function checkContracts(
     }
     commands.set(command.path, command);
     const semantics = object(command.semantics) ? command.semantics : {};
-    for (const surface of ["json", "docs", "skills", "vscode"])
+    for (const surface of ["json", "docs", "skills", "standalone", "vscode"])
       if (!object(semantics[surface]))
         add(
           d,
@@ -178,6 +221,26 @@ export async function checkContracts(
       `${command.path}.json`,
       jsonPolicy.support === "conditional" ||
         jsonPolicy.support === "unsupported",
+      d,
+    );
+    const standalonePolicy = object(semantics.standalone)
+      ? semantics.standalone
+      : {};
+    if (!cliStandaloneSupport.has(String(standalonePolicy.support)))
+      add(
+        d,
+        "error",
+        "schema",
+        "SCHEMA_INVALID",
+        paths.contract,
+        `${command.path}.standalone`,
+        "Standalone support must be full, conditional, configured-only, or not-applicable.",
+      );
+    reason(
+      standalonePolicy,
+      paths.contract,
+      `${command.path}.standalone`,
+      standalonePolicy.support !== "full",
       d,
     );
     for (const surface of ["docs", "skills", "vscode"]) {
@@ -274,6 +337,24 @@ export async function checkContracts(
     }
     covered.set(name, entry);
     reason(entry, paths.coverage, name, entry.status === "excluded", d);
+    const standalonePolicy = object(entry.standalone) ? entry.standalone : {};
+    if (!skillsStandaloneSupport.has(String(standalonePolicy.support)))
+      add(
+        d,
+        "error",
+        "schema",
+        "SCHEMA_INVALID",
+        paths.coverage,
+        `${name}.standalone`,
+        "Standalone support must be supported, conditional, configured-only, or not-applicable.",
+      );
+    reason(
+      standalonePolicy,
+      paths.coverage,
+      `${name}.standalone`,
+      standalonePolicy.support !== "supported",
+      d,
+    );
     if (!commands.has(name))
       add(
         d,
@@ -358,6 +439,92 @@ export async function checkContracts(
         name,
         "CLI requires skills coverage but policy excludes it.",
       );
+    if (entry) {
+      const cliStandalone =
+        object(command.semantics) && object(command.semantics.standalone)
+          ? command.semantics.standalone
+          : {};
+      const skillsStandalone = object(entry.standalone) ? entry.standalone : {};
+      const cliSupport = normalizeStandaloneSupport(cliStandalone.support);
+      const skillsSupport = normalizeStandaloneSupport(
+        skillsStandalone.support,
+      );
+      if (cliSupport !== skillsSupport)
+        add(
+          d,
+          "error",
+          "skills",
+          "SKILLS_STANDALONE_MISMATCH",
+          paths.coverage,
+          name,
+          `Skills classify standalone support as ${String(skillsStandalone.support)}, but the CLI classifies it as ${String(cliStandalone.support)}.`,
+        );
+    }
+  }
+
+  const initCommand = commands.get("init");
+  const initCoverage = covered.get("init");
+  if (initCommand) {
+    const options = Array.isArray(initCommand.options)
+      ? initCommand.options
+          .filter(object)
+          .flatMap((option) =>
+            text(option.flags)
+              ? (option.flags.match(/--[a-z0-9-]+/g) ?? [])
+              : [],
+          )
+      : [];
+    const standalone =
+      object(initCommand.semantics) && object(initCommand.semantics.standalone)
+        ? initCommand.semantics.standalone
+        : {};
+    const policy = object(standalone.policy) ? standalone.policy : {};
+    const validPolicy =
+      policy.option === "--zero-config" &&
+      policy.dryRun === true &&
+      policy.json === true &&
+      sameStrings(strings(policy.compatibleOptions), initCompatibleOptions) &&
+      sameStrings(
+        strings(policy.incompatibleOptions),
+        initIncompatibleOptions,
+      ) &&
+      [
+        "--zero-config",
+        ...initCompatibleOptions,
+        ...initIncompatibleOptions,
+      ].every((option) => options.includes(option));
+    if (!validPolicy)
+      add(
+        d,
+        "error",
+        "schema",
+        "STANDALONE_INIT_POLICY_INVALID",
+        paths.contract,
+        "init.standalone.policy",
+        "init --zero-config requires dry-run and JSON support plus complete compatible and incompatible option policy metadata.",
+      );
+    if (initCoverage) {
+      const coverageStandalone = object(initCoverage.standalone)
+        ? initCoverage.standalone
+        : {};
+      const coveragePolicy = object(coverageStandalone.policy)
+        ? coverageStandalone.policy
+        : {};
+      const requiredOptions = strings(initCoverage.requiredOptions);
+      if (
+        !sameStrings(requiredOptions, ["--zero-config"]) ||
+        !sameInitPolicy(policy, coveragePolicy)
+      )
+        add(
+          d,
+          "error",
+          "skills",
+          "SKILLS_INIT_POLICY_MISMATCH",
+          paths.coverage,
+          "init",
+          "Skills init --zero-config option policy metadata must match the CLI contract.",
+        );
+    }
   }
   for (const file of await markdownFiles(join(root, paths.skills))) {
     const content = await readFile(file, "utf8");

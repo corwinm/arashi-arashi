@@ -28,6 +28,55 @@ async function fixture(): Promise<string> {
             json: { support: "full" },
             docs: { expectation: "required" },
             skills: { expectation: "required" },
+            standalone: { support: "full" },
+            vscode: { expectation: "required" },
+          },
+        },
+        {
+          path: "init",
+          description: "init",
+          aliases: [],
+          hidden: false,
+          arguments: [],
+          options: [
+            "--dry-run",
+            "--force",
+            "--ignore-scope <scope>",
+            "--json",
+            "--no-discover",
+            "--repos-dir <path>",
+            "--verbose",
+            "--worktrees-dir <path>",
+            "--zero-config",
+          ].map((flags) => ({
+            flags,
+            description: flags,
+            required: flags.includes("<"),
+            optional: false,
+            variadic: false,
+          })),
+          semantics: {
+            json: { support: "full" },
+            docs: { expectation: "required" },
+            skills: { expectation: "required" },
+            standalone: {
+              support: "conditional",
+              reason:
+                "Only init --zero-config prepares standalone mode; ordinary init creates configured mode.",
+              policy: {
+                option: "--zero-config",
+                dryRun: true,
+                json: true,
+                compatibleOptions: ["--dry-run", "--json", "--verbose"],
+                incompatibleOptions: [
+                  "--force",
+                  "--ignore-scope",
+                  "--no-discover",
+                  "--repos-dir",
+                  "--worktrees-dir",
+                ],
+              },
+            },
             vscode: { expectation: "required" },
           },
         },
@@ -42,18 +91,55 @@ async function fixture(): Promise<string> {
             json: { support: "unsupported", reason: "interactive" },
             docs: { expectation: "excluded", reason: "internal" },
             skills: { expectation: "excluded", reason: "internal" },
+            standalone: { support: "not-applicable", reason: "internal" },
             vscode: { expectation: "excluded", reason: "internal" },
           },
         },
       ],
     },
     "repos/arashi-docs/docs/commands/add.md": "# Add\n",
-    "repos/arashi-docs/docs/commands/index.md": "- [Add](/commands/add/)\n",
+    "repos/arashi-docs/docs/commands/init.md": "# Init\n",
+    "repos/arashi-docs/docs/commands/index.md":
+      "- [Add](/commands/add/)\n- [Init](/commands/init/)\n",
     "repos/arashi-skills/contracts/command-coverage.json": {
       schemaVersion: 1,
       commands: [
-        { name: "add", status: "covered", reference: "references/commands.md" },
-        { name: "old", status: "excluded", reason: "internal" },
+        {
+          name: "add",
+          status: "covered",
+          reference: "references/commands.md",
+          standalone: { support: "supported" },
+        },
+        {
+          name: "init",
+          status: "covered",
+          reference: "references/commands.md",
+          requiredOptions: ["--zero-config"],
+          standalone: {
+            support: "conditional",
+            reason:
+              "Only init --zero-config prepares standalone mode; ordinary init creates configured mode.",
+            policy: {
+              option: "--zero-config",
+              dryRun: true,
+              json: true,
+              compatibleOptions: ["--dry-run", "--json", "--verbose"],
+              incompatibleOptions: [
+                "--force",
+                "--ignore-scope",
+                "--no-discover",
+                "--repos-dir",
+                "--worktrees-dir",
+              ],
+            },
+          },
+        },
+        {
+          name: "old",
+          status: "excluded",
+          reason: "internal",
+          standalone: { support: "not-applicable", reason: "internal" },
+        },
       ],
     },
     "repos/arashi-skills/skills/arashi/references/commands.md":
@@ -62,6 +148,7 @@ async function fixture(): Promise<string> {
       schemaVersion: 1,
       cliCommands: {
         add: { state: "mapped", commands: ["arashi.add"] },
+        init: { state: "mapped", commands: ["arashi.add"] },
         old: { state: "excluded", reason: "internal" },
       },
       extensionOnlyCommands: ["arashi.open"],
@@ -125,6 +212,83 @@ describe("cross-repository command contracts", () => {
     for (const code of ["SKILLS_STALE_COVERAGE", "SKILLS_STALE_REFERENCE"])
       expect(codes).toContain(code);
   });
+  test("rejects normalized standalone classification drift", async () => {
+    const root = await fixture();
+    const path = join(root, "repos/arashi/contracts/cli-commands.json");
+    const data = JSON.parse(await readFile(path, "utf8"));
+    data.commands.find(
+      (command: { path: string }) => command.path === "add",
+    ).semantics.standalone = {
+      support: "configured-only",
+      reason: "Changed CLI policy.",
+    };
+    await writeFile(path, JSON.stringify(data));
+
+    expect((await checkContracts(root)).diagnostics).toContainEqual(
+      expect.objectContaining({
+        code: "SKILLS_STANDALONE_MISMATCH",
+        subject: "add",
+      }),
+    );
+  });
+  test.each([
+    [
+      "policy",
+      (standalone: Record<string, unknown>) => delete standalone.policy,
+    ],
+    [
+      "reason",
+      (standalone: Record<string, unknown>) => delete standalone.reason,
+    ],
+    [
+      "dry-run support",
+      (standalone: Record<string, unknown>) =>
+        ((standalone.policy as Record<string, unknown>).dryRun = false),
+    ],
+    [
+      "JSON support",
+      (standalone: Record<string, unknown>) =>
+        ((standalone.policy as Record<string, unknown>).json = false),
+    ],
+    [
+      "compatible options",
+      (standalone: Record<string, unknown>) =>
+        (
+          (standalone.policy as Record<string, unknown>)
+            .compatibleOptions as unknown[]
+        ).pop(),
+    ],
+    [
+      "incompatible options",
+      (standalone: Record<string, unknown>) =>
+        (
+          (standalone.policy as Record<string, unknown>)
+            .incompatibleOptions as unknown[]
+        ).pop(),
+    ],
+  ])(
+    "requires complete init --zero-config %s metadata",
+    async (_label, mutate) => {
+      const root = await fixture();
+      const path = join(root, "repos/arashi/contracts/cli-commands.json");
+      const data = JSON.parse(await readFile(path, "utf8"));
+      mutate(
+        data.commands.find(
+          (command: { path: string }) => command.path === "init",
+        ).semantics.standalone,
+      );
+      await writeFile(path, JSON.stringify(data));
+
+      const codes = (await checkContracts(root)).diagnostics.map(
+        (diagnostic) => diagnostic.code,
+      );
+      expect(codes).toContain(
+        _label === "reason"
+          ? "POLICY_REASON_REQUIRED"
+          : "STANDALONE_INIT_POLICY_INVALID",
+      );
+    },
+  );
   test("finds unresolved parity, invalid mappings, and undeclared extension commands", async () => {
     const root = await fixture();
     const policyPath = join(
