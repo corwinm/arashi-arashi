@@ -175,7 +175,7 @@ export async function checkContracts(
   const commandEntries = Array.isArray(contract?.commands)
     ? contract.commands.filter(object)
     : [];
-  if (contract && "cliVersion" in contract)
+  if (contract?.schemaVersion === 2 && "cliVersion" in contract)
     add(
       d,
       "error",

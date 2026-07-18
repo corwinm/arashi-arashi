@@ -183,18 +183,26 @@ describe("cross-repository command contracts", () => {
       "VSCODE_EXCLUDED",
     ]);
   });
-  test("rejects the previous command contract schema", async () => {
+  test("rejects the previous command contract schema without applying schema 2 rules", async () => {
     const root = await fixture();
     const path = join(root, "repos/arashi/contracts/cli-commands.json");
     const data = JSON.parse(await readFile(path, "utf8"));
     data.schemaVersion = 1;
+    data.cliVersion = "1.20.1";
     await writeFile(path, JSON.stringify(data));
 
-    expect((await checkContracts(root)).diagnostics).toContainEqual(
+    const diagnostics = (await checkContracts(root)).diagnostics;
+    expect(diagnostics).toContainEqual(
       expect.objectContaining({
         code: "SCHEMA_VERSION_UNSUPPORTED",
         source: "repos/arashi/contracts/cli-commands.json",
         subject: "1",
+      }),
+    );
+    expect(diagnostics).not.toContainEqual(
+      expect.objectContaining({
+        code: "SCHEMA_INVALID",
+        subject: "cliVersion",
       }),
     );
   });
