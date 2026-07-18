@@ -15,4 +15,4 @@
 - [x] 3.1 Run CLI format, lint, typecheck, full tests, build, and contract freshness gates
 - [x] 3.2 Run meta-repository format, typecheck, full tests, OpenSpec validation, and cross-repository checks
 - [x] 3.3 Independently review both repository diffs and address any blocking findings
-- [ ] 3.4 Commit and open cross-linked CLI and meta/OpenSpec pull requests, then verify remote CI
+- [x] 3.4 Commit and open cross-linked CLI and meta/OpenSpec pull requests, then verify remote CI
