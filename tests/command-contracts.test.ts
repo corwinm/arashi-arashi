@@ -14,8 +14,7 @@ async function fixture(): Promise<string> {
   roots.push(root);
   const files: Record<string, unknown | string> = {
     "repos/arashi/contracts/cli-commands.json": {
-      schemaVersion: 1,
-      cliVersion: "1.0.0",
+      schemaVersion: 2,
       commands: [
         {
           path: "add",
@@ -183,6 +182,36 @@ describe("cross-repository command contracts", () => {
       "SKILLS_EXCLUDED",
       "VSCODE_EXCLUDED",
     ]);
+  });
+  test("rejects the previous command contract schema", async () => {
+    const root = await fixture();
+    const path = join(root, "repos/arashi/contracts/cli-commands.json");
+    const data = JSON.parse(await readFile(path, "utf8"));
+    data.schemaVersion = 1;
+    await writeFile(path, JSON.stringify(data));
+
+    expect((await checkContracts(root)).diagnostics).toContainEqual(
+      expect.objectContaining({
+        code: "SCHEMA_VERSION_UNSUPPORTED",
+        source: "repos/arashi/contracts/cli-commands.json",
+        subject: "1",
+      }),
+    );
+  });
+  test("rejects package release metadata in schema version 2", async () => {
+    const root = await fixture();
+    const path = join(root, "repos/arashi/contracts/cli-commands.json");
+    const data = JSON.parse(await readFile(path, "utf8"));
+    data.cliVersion = "1.20.1";
+    await writeFile(path, JSON.stringify(data));
+
+    expect((await checkContracts(root)).diagnostics).toContainEqual(
+      expect.objectContaining({
+        code: "SCHEMA_INVALID",
+        source: "repos/arashi/contracts/cli-commands.json",
+        subject: "cliVersion",
+      }),
+    );
   });
   test("finds missing docs page and index entry", async () => {
     const root = await fixture();
