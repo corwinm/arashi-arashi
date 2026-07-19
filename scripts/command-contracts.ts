@@ -104,15 +104,16 @@ function version(
   value: Obj | undefined,
   source: string,
   diagnostics: Diagnostic[],
+  expected = 1,
 ) {
-  if (value && value.schemaVersion !== 1)
+  if (value && value.schemaVersion !== expected)
     diagnostics.push({
       severity: "error",
       category: "schema",
       code: "SCHEMA_VERSION_UNSUPPORTED",
       source,
       subject: String(value.schemaVersion),
-      message: "Expected schemaVersion 1.",
+      message: `Expected schemaVersion ${expected}.`,
     });
 }
 function reason(
@@ -168,16 +169,23 @@ export async function checkContracts(
   const coverage = await json(root, paths.coverage, d);
   const policy = await json(root, paths.policy, d);
   const manifest = await json(root, paths.manifest, d);
-  version(contract, paths.contract, d);
+  version(contract, paths.contract, d, 2);
   version(coverage, paths.coverage, d);
   version(policy, paths.policy, d);
   const commandEntries = Array.isArray(contract?.commands)
     ? contract.commands.filter(object)
     : [];
-  if (
-    contract &&
-    (!text(contract.cliVersion) || !Array.isArray(contract.commands))
-  )
+  if (contract?.schemaVersion === 2 && "cliVersion" in contract)
+    add(
+      d,
+      "error",
+      "schema",
+      "SCHEMA_INVALID",
+      paths.contract,
+      "cliVersion",
+      "Contract schema version 2 excludes package release metadata.",
+    );
+  if (contract && !Array.isArray(contract.commands))
     add(
       d,
       "error",
@@ -185,7 +193,7 @@ export async function checkContracts(
       "SCHEMA_INVALID",
       paths.contract,
       "contract",
-      "Contract requires cliVersion and commands.",
+      "Contract requires commands.",
     );
   const commands = new Map<string, Obj>();
   for (const command of commandEntries) {
