@@ -1,20 +1,20 @@
 ## 1. CLI Contract and Test Coverage
 
-- [ ] 1.1 Add failing real-Git-topology tests for non-bare main-checkout resolution across configured linked repositories, coordinated `--all` augmentation, create primary selection, implicit standalone linked worktrees, and explicit unavailable state for bare repositories.
+- [ ] 1.1 Add failing real-Git-topology tests for non-bare main-checkout resolution across configured linked repositories, coordinated `--all` augmentation, create primary selection, implicit standalone linked worktrees, main-checkout targets, explicit unavailable state for bare repositories, and the existing invocation-relative `WorktreeInfo.isMain` pitfall.
 - [ ] 1.2 Add failing configuration/default-resolution tests for `launchMode: "herdr"` in switch, generic create, and editor-scoped create defaults.
 - [ ] 1.3 Add failing command tests for `switch --herdr`, `create --herdr` implying launch, CLI help/human launch output, create sesh conflicts, switch IDE/sesh conflicts, `--cd`, `--no-cd`, `--no-default-launch`, `--no-launch`, and pre-mutation JSON-mode rejection.
-- [ ] 1.4 Add failing shared-launcher tests for exact normalized `HERDR_ENV=1` detection, explicit/configured/automatic precedence, nested tmux behavior, and cmux/IDE/terminal regressions.
+- [ ] 1.4 Add failing shared-launcher tests for exact normalized `HERDR_ENV=1` detection (including absent, empty, `0`, `true`, and unrelated Herdr variables), explicit/configured/automatic precedence, nested tmux behavior, and cmux/IDE/terminal regressions.
 - [ ] 1.5 Add failing launcher tests for exact argv-safe `herdr worktree open` arguments, first-open and already-open payloads, `worktree_opened`/boolean-reuse/workspace-ID validation, structured API errors, missing binary/server/socket errors, non-zero exit, malformed JSON, and protocol-mismatched JSON.
 - [ ] 1.6 Add failing create integration tests proving coordinated and standalone worktrees survive Herdr launch/process/response failures.
 
 ## 2. CLI Implementation
 
-- [ ] 2.1 Extend switch candidate discovery and creation with Git-resolved non-bare main-checkout or unavailable-source state for configured, augmented, create, standalone, and bare candidates.
+- [ ] 2.1 Extend switch candidate discovery and creation with Git-resolved non-bare main-checkout or unavailable-source state for configured, augmented, create, standalone, and bare candidates without relying on invocation-relative `WorktreeInfo.isMain`.
 - [ ] 2.2 Extend launch result types, config types/schema normalization, generated schema, defaults, CLI options, help, semantic contracts/generated contract JSON, errors, and human output with `herdr` while preserving JSON execution restrictions.
 - [ ] 2.3 Implement exact `HERDR_ENV=1` detection and resolve explicit launcher, configured launch mode, automatic tmux, automatic Herdr, cmux/IDE/terminal, and fallback precedence.
 - [ ] 2.4 Implement `herdr worktree open --cwd ... --path ... --label ... --focus --json` as an argv array and validate `worktree_opened`, boolean `already_open`, and a non-empty `result.workspace.workspace_id`.
 - [ ] 2.5 Emit actionable `LAUNCH_FAILED` diagnostics for execution, server/socket, exit, and response failures without fallback or Git rollback.
-- [ ] 2.6 Update Arashi's maintained `docs/configuration.md` and `docs/commands/switch.md`, then run focused tests, `pnpm run lint`, `pnpm run test`, `pnpm run build`, schema checks, contract checks, and workspace-level `pnpm contracts:check`.
+- [ ] 2.6 Update Arashi's maintained `README.md`, `docs/configuration.md`, and `docs/commands/switch.md` where the affected launch/config behavior is documented, then run focused tests, `pnpm run lint`, `pnpm run test`, `pnpm run build`, schema checks, contract checks, and workspace-level `pnpm contracts:check`.
 
 ## 3. User Documentation
 

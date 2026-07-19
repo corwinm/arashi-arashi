@@ -21,6 +21,11 @@ The system SHALL use Git metadata to associate every switch target with either t
 - **THEN** the candidate records that Herdr source resolution is unavailable
 - **AND** an attempted Herdr switch fails actionably before invoking Herdr or another launcher
 
+#### Scenario: Main checkout is selected
+- **WHEN** the selected target path is the repository's non-bare main checkout
+- **THEN** Arashi uses that same absolute checkout for both Herdr `--cwd` and `--path`
+- **AND** Herdr launch remains a supported operation
+
 ### Requirement: Launch selected worktrees as Herdr workspaces
 The system SHALL open and focus selected existing worktrees through Herdr without asking Herdr to create or remove Git worktrees.
 
@@ -45,6 +50,7 @@ The system SHALL open and focus selected existing worktrees through Herdr withou
 - **WHEN** Herdr reports that the selected checkout is already open
 - **THEN** Arashi treats the focused existing workspace as a successful `herdr` launch
 - **AND** repeating the switch does not require creating a duplicate workspace
+- **AND** Herdr reapplies Arashi's requested label to the reused workspace
 
 ### Requirement: Use the structured Herdr existing-worktree contract
 The system SHALL invoke Herdr with the source checkout, selected worktree, generated label, focus request, and JSON response request as distinct process arguments and SHALL validate structured success before reporting launch completion.

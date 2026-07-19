@@ -25,13 +25,14 @@ Local verification against an Arashi linked worktree produced `result.already_op
 - Call `herdr worktree create`, `herdr worktree remove`, or otherwise transfer Git worktree ownership to Herdr.
 - Close Herdr workspaces automatically during `arashi remove`.
 - Add a direct Herdr socket client, package dependency, named-session selector, remote-session support, or fallback to `herdr workspace create`.
+- Add first-class Herdr UI to `repos/arashi-vscode`; its explicit `--vscode` switch behavior remains authoritative, while existing editor-scoped create defaults may select `herdr`.
 - Change cmux, tmux/sesh, IDE, shell-integration, or generic terminal behavior except where the new precedence rules select Herdr.
 
 ## Decisions
 
-- Resolve Herdr source checkout state on every launch candidate
+### Resolve Herdr source checkout state on every launch candidate
 
-Extend the internal switch candidate contract with resolved Herdr source state: either an absolute non-bare main checkout or an explicit unavailable state. Candidate discovery runs Git main-worktree resolution from each candidate repository path rather than treating `WorkspaceRepository.path` as canonical. Augmented `--all` child candidates resolve from the matching child checkout, create resolves from the successful primary repository, and standalone mode reuses its already-resolved shared main checkout. Tests use real linked-worktree topology to prove the result is the main checkout rather than an injected path.
+Extend the internal switch candidate contract with resolved Herdr source state: either an absolute non-bare main checkout or an explicit unavailable state. Candidate discovery runs Git main-worktree resolution from each candidate repository path rather than treating `WorkspaceRepository.path` as canonical or trusting `WorktreeInfo.isMain`, whose current invocation-path comparison can misidentify the main checkout when discovery starts in a linked worktree. Augmented `--all` child candidates resolve from the matching child checkout, create resolves from the successful primary repository, and standalone mode reuses its already-resolved shared main checkout. Tests use real linked-worktree topology to prove the result is the main checkout rather than an injected path.
 
 This keeps the generic process-launch helper deterministic while making bare-repository limitations explicit. When a repository has no non-bare main checkout, switch Herdr launch fails before invoking Herdr; post-create Herdr launch fails after creation and preserves the successfully created worktrees. Arashi does not fall back to generic workspace creation because that would lose Herdr worktree provenance.
 
@@ -63,7 +64,7 @@ Configured or explicit Herdr therefore works outside a Herdr pane when the CLI r
 
 ### Validate structured Herdr success and never silently fall through
 
-A Herdr launch succeeds only when the process exits zero, stdout is valid JSON, `result.type` is exactly `worktree_opened`, `result.already_open` is a boolean, and `result.workspace.workspace_id` is a non-empty string. Reuse does not change launch mode or success output. Process execution failure, structured API error/non-zero exit, malformed or protocol-mismatched JSON, or missing workspace ID produces `LAUNCH_FAILED` with the attempted command, target path, and useful stderr/stdout guidance about the CLI and running server/socket.
+A Herdr launch succeeds only when the process exits zero, stdout is valid JSON, `result.type` is exactly `worktree_opened`, `result.already_open` is a boolean, and `result.workspace.workspace_id` is a non-empty string. Reuse does not change launch mode or success output; Herdr reapplies the requested label when focusing an already-open workspace, so the deterministic Arashi label may rename it. Process execution failure, structured API error/non-zero exit, malformed or protocol-mismatched JSON, or missing workspace ID produces `LAUNCH_FAILED` with the attempted command, target path, and useful stderr/stdout guidance about the CLI and running server/socket.
 
 Once Herdr is explicitly, configurably, or automatically selected, Arashi does not try another launcher. For create, this error occurs after creation and MUST leave successful worktrees intact.
 
