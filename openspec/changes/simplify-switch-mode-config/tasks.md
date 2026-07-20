@@ -35,5 +35,5 @@
 
 - [x] 6.1 Run strict OpenSpec validation and reconcile the implementation against every requirement/scenario and issue #225 acceptance criterion.
 - [x] 6.2 Run one independent read-only spec-compliance review followed by a code-quality/integration review; fix all blocking findings and rerun affected tests after the final source edit.
-- [ ] 6.3 Run final complete validation in every changed repository, verify clean coordinated status, commit each repository separately, and open cross-linked child PRs with non-closing issue references.
+- [x] 6.3 Run final complete validation in every changed repository, verify clean coordinated status, commit each repository separately, and open cross-linked child PRs with non-closing issue references.
 - [ ] 6.4 After child PRs are green and approved, archive/sync the OpenSpec change, directly validate the archived spec, update the meta PR to be the sole closing reference, and complete child-first merge plus coordinated cleanup.
