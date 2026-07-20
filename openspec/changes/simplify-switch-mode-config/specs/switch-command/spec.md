@@ -83,10 +83,11 @@ The system SHALL continue reading legacy `defaults.switch.launchMode` and `defau
 - **THEN** Arashi rejects the configuration with an actionable error naming both values
 - **AND** does not launch, switch directories, or otherwise mutate workspace state
 
-#### Scenario: Equal camel-case and snake-case legacy fields are accepted once
+#### Scenario: Equal camel-case and snake-case legacy fields are collapsed before mapping
 - **WHEN** `launchMode` and `launch_mode` are both present with the same value
 - **THEN** Arashi treats them as one legacy launch value
-- **AND** emits one migration diagnostic with the exact unified replacement
+- **AND** applies the same mode-mapping acceptance or rejection rules as one occurrence of that value
+- **AND** emits exactly one migration diagnostic with the exact unified replacement only when the resulting mapping is accepted
 
 #### Scenario: Conflicting camel-case and snake-case legacy fields are rejected
 - **WHEN** `launchMode` and `launch_mode` are both present with different values
