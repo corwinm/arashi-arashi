@@ -1,6 +1,6 @@
 # Cross-repository command contract checks
 
-The meta-repository compares the generated CLI contract with the canonical docs, structured skill coverage, and VS Code policy. Generated docs exports (`public/`, `dist/`, and curated `llms.txt`) are deliberately not exhaustive inputs.
+The meta-repository compares the generated CLI command contract with the canonical docs, structured skill coverage, and VS Code policy. It also compares the generated CLI configuration schema with structured switch-configuration contracts in the docs and skill repositories. Docs-local validation proves that canonical sources and generated agent exports agree with the docs contract; skill-local validation proves packaged guidance agrees with the skill contract.
 
 ## Run locally
 
@@ -22,13 +22,15 @@ The human report groups findings by stable category/code. Intentional exclusions
 2. Add or remove `repos/arashi-docs/docs/commands/<command>.md` and its link in `docs/commands/index.md`. Do not edit generated exports for this checker.
 3. Update `repos/arashi-skills/contracts/command-coverage.json`; covered entries need an existing skill-relative reference, exclusions need a reason. Keep backticked `arashi <command>` references current.
 4. Update `repos/arashi-vscode/contracts/command-policy.json`. Every CLI command must be `mapped`, `represented`, or reasoned `excluded`; every contributed extension command must be CLI-backed or listed in `extensionOnlyCommands`.
-5. Run child-repository checks and then the commands above from this meta-repository.
+5. For switch-configuration changes, regenerate `repos/arashi/schema/config.schema.json`; update `repos/arashi-docs/contracts/switch-config.json` and `repos/arashi-skills/contracts/switch-config.json`; then run each child repository's source/export/package checks so the structured declarations cannot drift from their human and agent-facing surfaces.
+6. Run child-repository checks and then the commands above from this meta-repository.
 
 ## Troubleshooting
 
 - `SCHEMA_*` / `POLICY_REASON_REQUIRED`: use schema version 1, valid arrays/objects, unique command names, and non-empty reasons for conditional/unsupported/excluded/represented states.
 - `DOCS_*`: check only canonical `docs/commands` sources and use a `/commands/<name>/` or `commands/<name>.md` index link.
 - `SKILLS_*`: remove renamed commands from structured coverage and backticked command-shaped prose; ensure covered `reference` paths are relative to `skills/arashi` and exist.
+- `SWITCH_CONFIG_*`: keep the generated schema mode enum, canonical field, docs contract, and skill contract aligned. Deprecated launcher aliases are runtime migration inputs only and must not reappear in the canonical switch schema.
 - `VSCODE_*`: ensure mapping IDs exist in `package.json` contributions and classify extension-only navigation/panel commands explicitly.
 - CI prints all checked-out SHAs. Reproduce a failure by checking out those exact revisions into `repos/*`.
 

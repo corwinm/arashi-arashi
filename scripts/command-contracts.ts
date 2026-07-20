@@ -18,12 +18,21 @@ type Obj = Record<string, unknown>;
 
 const paths = {
   contract: "repos/arashi/contracts/cli-commands.json",
+  configSchema: "repos/arashi/schema/config.schema.json",
   docs: "repos/arashi-docs/docs/commands",
+  docsSwitchConfig: "repos/arashi-docs/contracts/switch-config.json",
   skills: "repos/arashi-skills/skills/arashi",
   coverage: "repos/arashi-skills/contracts/command-coverage.json",
+  skillsSwitchConfig: "repos/arashi-skills/contracts/switch-config.json",
   policy: "repos/arashi-vscode/contracts/command-policy.json",
   manifest: "repos/arashi-vscode/package.json",
 } as const;
+const switchModes = ["auto", "cd", "launch", "sesh", "herdr"];
+const switchAutoOrder = ["tmux", "herdr", "cmux", "ide", "cd", "platform"];
+const switchLegacyFields = [
+  "defaults.switch.launchMode",
+  "defaults.switch.launch_mode",
+];
 const object = (value: unknown): value is Obj =>
   typeof value === "object" && value !== null && !Array.isArray(value);
 const text = (value: unknown): value is string =>
@@ -144,6 +153,40 @@ function add(
 ) {
   diagnostics.push({ severity, category, code, source, subject, message });
 }
+function checkSwitchConfigContract(
+  value: Obj | undefined,
+  source: string,
+  diagnostics: Diagnostic[],
+) {
+  if (!value) return;
+  version(value, source, diagnostics);
+  const expectations: Array<[string, boolean]> = [
+    ["canonicalField", value?.canonicalField === "defaults.switch.mode"],
+    ["modes", sameStrings(strings(value?.modes), switchModes)],
+    ["absentMode", value?.absentMode === "launch"],
+    [
+      "autoOrder",
+      JSON.stringify(strings(value?.autoOrder)) ===
+        JSON.stringify(switchAutoOrder),
+    ],
+    [
+      "legacyFields",
+      sameStrings(strings(value?.legacyFields), switchLegacyFields),
+    ],
+    ["createDefaultsUnchanged", value?.createDefaultsUnchanged === true],
+  ];
+  for (const [subject, matches] of expectations)
+    if (!matches)
+      add(
+        diagnostics,
+        "error",
+        source.includes("arashi-docs") ? "docs" : "skills",
+        "SWITCH_CONFIG_MISMATCH",
+        source,
+        subject,
+        "Switch configuration semantics must match the canonical unified-mode contract.",
+      );
+}
 async function markdownFiles(directory: string): Promise<string[]> {
   const result: string[] = [];
   async function walk(path: string) {
@@ -166,9 +209,73 @@ export async function checkContracts(
 ): Promise<CheckResult> {
   const d: Diagnostic[] = [];
   const contract = await json(root, paths.contract, d);
+  const configSchema = await json(root, paths.configSchema, d);
+  const docsSwitchConfig = await json(root, paths.docsSwitchConfig, d);
   const coverage = await json(root, paths.coverage, d);
+  const skillsSwitchConfig = await json(root, paths.skillsSwitchConfig, d);
   const policy = await json(root, paths.policy, d);
   const manifest = await json(root, paths.manifest, d);
+  checkSwitchConfigContract(docsSwitchConfig, paths.docsSwitchConfig, d);
+  checkSwitchConfigContract(skillsSwitchConfig, paths.skillsSwitchConfig, d);
+  const definitions = object(configSchema?.definitions)
+    ? configSchema.definitions
+    : {};
+  const switchMode = object(definitions.SwitchMode)
+    ? definitions.SwitchMode
+    : {};
+  if (!sameStrings(strings(switchMode.enum), switchModes))
+    add(
+      d,
+      "error",
+      "schema",
+      "SWITCH_CONFIG_MISMATCH",
+      paths.configSchema,
+      "modes",
+      "SwitchMode must enumerate auto, cd, launch, sesh, and herdr.",
+    );
+  const switchDefaults = object(definitions.SwitchCommandDefaults)
+    ? definitions.SwitchCommandDefaults
+    : {};
+  const switchProperties = object(switchDefaults.properties)
+    ? switchDefaults.properties
+    : {};
+  if (!("mode" in switchProperties))
+    add(
+      d,
+      "error",
+      "schema",
+      "SWITCH_CONFIG_MISMATCH",
+      paths.configSchema,
+      "mode",
+      "SwitchCommandDefaults must expose the canonical mode field.",
+    );
+  for (const deprecated of ["launchMode", "launch_mode"])
+    if (deprecated in switchProperties)
+      add(
+        d,
+        "error",
+        "schema",
+        "SWITCH_CONFIG_DEPRECATED_FIELD",
+        paths.configSchema,
+        deprecated,
+        "Deprecated switch launcher aliases must not be canonical schema properties.",
+      );
+  const createDefaults = object(definitions.CreateCommandDefaults)
+    ? definitions.CreateCommandDefaults
+    : {};
+  const createProperties = object(createDefaults.properties)
+    ? createDefaults.properties
+    : {};
+  if (!("launchMode" in createProperties))
+    add(
+      d,
+      "error",
+      "schema",
+      "SWITCH_CONFIG_MISMATCH",
+      paths.configSchema,
+      "create.launchMode",
+      "Create launch defaults must remain unchanged.",
+    );
   version(contract, paths.contract, d, 2);
   version(coverage, paths.coverage, d);
   version(policy, paths.policy, d);
@@ -482,7 +589,9 @@ export async function checkContracts(
               : [],
           )
       : [];
-    const semantics = object(initCommand.semantics) ? initCommand.semantics : {};
+    const semantics = object(initCommand.semantics)
+      ? initCommand.semantics
+      : {};
     const rawPolicy = object(semantics.zeroConfig) ? semantics.zeroConfig : {};
     const dryRun = object(rawPolicy.dryRun) ? rawPolicy.dryRun : {};
     const jsonPolicy = object(rawPolicy.json) ? rawPolicy.json : {};
@@ -501,8 +610,15 @@ export async function checkContracts(
       jsonPolicy.singleEnvelope === true &&
       jsonPolicy.suppressesHumanStdout === true &&
       sameStrings(strings(policy.compatibleOptions), initCompatibleOptions) &&
-      sameStrings(strings(policy.incompatibleOptions), initIncompatibleOptions) &&
-      sameStrings(options, ["--zero-config", ...initCompatibleOptions, ...initIncompatibleOptions]);
+      sameStrings(
+        strings(policy.incompatibleOptions),
+        initIncompatibleOptions,
+      ) &&
+      sameStrings(options, [
+        "--zero-config",
+        ...initCompatibleOptions,
+        ...initIncompatibleOptions,
+      ]);
     if (!validPolicy)
       add(
         d,
