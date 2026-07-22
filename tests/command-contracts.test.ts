@@ -13,6 +13,42 @@ async function fixture(): Promise<string> {
   const root = await mkdtemp(join(tmpdir(), "arashi-contracts-"));
   roots.push(root);
   const files: Record<string, unknown | string> = {
+    "repos/arashi/schema/config.schema.json": {
+      definitions: {
+        CreateCommandDefaults: {
+          properties: { launchMode: { $ref: "#/definitions/LaunchMode" } },
+        },
+        SwitchCommandDefaults: {
+          additionalProperties: false,
+          properties: { mode: { $ref: "#/definitions/SwitchMode" } },
+        },
+        SwitchMode: { enum: ["auto", "cd", "launch", "sesh", "herdr"] },
+      },
+    },
+    "repos/arashi-docs/contracts/switch-config.json": {
+      schemaVersion: 1,
+      canonicalField: "defaults.switch.mode",
+      modes: ["auto", "cd", "launch", "sesh", "herdr"],
+      absentMode: "launch",
+      autoOrder: ["tmux", "herdr", "cmux", "ide", "cd", "platform"],
+      legacyFields: [
+        "defaults.switch.launchMode",
+        "defaults.switch.launch_mode",
+      ],
+      createDefaultsUnchanged: true,
+    },
+    "repos/arashi-skills/contracts/switch-config.json": {
+      schemaVersion: 1,
+      canonicalField: "defaults.switch.mode",
+      modes: ["auto", "cd", "launch", "sesh", "herdr"],
+      absentMode: "launch",
+      autoOrder: ["tmux", "herdr", "cmux", "ide", "cd", "platform"],
+      legacyFields: [
+        "defaults.switch.launchMode",
+        "defaults.switch.launch_mode",
+      ],
+      createDefaultsUnchanged: true,
+    },
     "repos/arashi/contracts/cli-commands.json": {
       schemaVersion: 2,
       commands: [
@@ -304,18 +340,22 @@ describe("cross-repository command contracts", () => {
     [
       "dry-run support",
       (semantics: Record<string, unknown>) =>
-        (((semantics.zeroConfig as Record<string, unknown>).dryRun as Record<
-          string,
-          unknown
-        >).supported = false),
+        ((
+          (semantics.zeroConfig as Record<string, unknown>).dryRun as Record<
+            string,
+            unknown
+          >
+        ).supported = false),
     ],
     [
       "JSON support",
       (semantics: Record<string, unknown>) =>
-        (((semantics.zeroConfig as Record<string, unknown>).json as Record<
-          string,
-          unknown
-        >).supported = false),
+        ((
+          (semantics.zeroConfig as Record<string, unknown>).json as Record<
+            string,
+            unknown
+          >
+        ).supported = false),
     ],
     [
       "compatible options",
@@ -390,6 +430,47 @@ describe("cross-repository command contracts", () => {
     const codes = (await checkContracts(root)).diagnostics.map((d) => d.code);
     for (const code of ["POLICY_REASON_REQUIRED", "SCHEMA_VERSION_UNSUPPORTED"])
       expect(codes).toContain(code);
+  });
+  test("rejects a controlled switch-configuration semantic mismatch", async () => {
+    const root = await fixture();
+    const path = join(root, "repos/arashi-docs/contracts/switch-config.json");
+    const data = JSON.parse(await readFile(path, "utf8"));
+    data.autoOrder = ["cd", "tmux", "herdr", "cmux", "ide", "platform"];
+    await writeFile(path, JSON.stringify(data));
+
+    expect((await checkContracts(root)).diagnostics).toContainEqual(
+      expect.objectContaining({
+        code: "SWITCH_CONFIG_MISMATCH",
+        source: "repos/arashi-docs/contracts/switch-config.json",
+        subject: "autoOrder",
+      }),
+    );
+  });
+  test("rejects stale switch schema modes and deprecated canonical fields", async () => {
+    const root = await fixture();
+    const path = join(root, "repos/arashi/schema/config.schema.json");
+    const data = JSON.parse(await readFile(path, "utf8"));
+    data.definitions.SwitchMode.enum = ["auto", "cd", "launch"];
+    data.definitions.SwitchCommandDefaults.properties.launchMode = {
+      $ref: "#/definitions/LaunchMode",
+    };
+    await writeFile(path, JSON.stringify(data));
+
+    const diagnostics = (await checkContracts(root)).diagnostics;
+    expect(diagnostics).toContainEqual(
+      expect.objectContaining({
+        code: "SWITCH_CONFIG_MISMATCH",
+        source: "repos/arashi/schema/config.schema.json",
+        subject: "modes",
+      }),
+    );
+    expect(diagnostics).toContainEqual(
+      expect.objectContaining({
+        code: "SWITCH_CONFIG_DEPRECATED_FIELD",
+        source: "repos/arashi/schema/config.schema.json",
+        subject: "launchMode",
+      }),
+    );
   });
   test("sorts diagnostics deterministically and formats stable output", async () => {
     const root = await fixture();
