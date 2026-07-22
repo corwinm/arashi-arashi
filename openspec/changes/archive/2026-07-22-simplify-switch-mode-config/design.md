@@ -64,21 +64,21 @@ The canonical TypeScript config and generated schema remove `defaults.switch.lau
 
 Mappings are:
 
-| Legacy `mode` | Legacy `launchMode` | Unified mode |
-| --- | --- | --- |
-| absent | absent | absent (built-in `launch`) |
-| absent | `auto` | `launch` |
-| absent | `sesh` / `herdr` | matching explicit mode |
-| `launch` | absent / `auto` | `launch` |
-| `launch` | `sesh` / `herdr` | matching explicit mode |
-| `auto` | absent / `auto` | `auto` |
-| `auto` | `sesh` / `herdr` | matching explicit mode |
-| `cd` | absent / `auto` | `cd` |
-| `cd` | `sesh` / `herdr` | reject as ambiguous |
-| `sesh` | absent / `auto` / `sesh` | `sesh` |
-| `sesh` | `herdr` | reject as conflicting |
-| `herdr` | absent / `auto` / `herdr` | `herdr` |
-| `herdr` | `sesh` | reject as conflicting |
+| Legacy `mode` | Legacy `launchMode`       | Unified mode               |
+| ------------- | ------------------------- | -------------------------- |
+| absent        | absent                    | absent (built-in `launch`) |
+| absent        | `auto`                    | `launch`                   |
+| absent        | `sesh` / `herdr`          | matching explicit mode     |
+| `launch`      | absent / `auto`           | `launch`                   |
+| `launch`      | `sesh` / `herdr`          | matching explicit mode     |
+| `auto`        | absent / `auto`           | `auto`                     |
+| `auto`        | `sesh` / `herdr`          | matching explicit mode     |
+| `cd`          | absent / `auto`           | `cd`                       |
+| `cd`          | `sesh` / `herdr`          | reject as ambiguous        |
+| `sesh`        | absent / `auto` / `sesh`  | `sesh`                     |
+| `sesh`        | `herdr`                   | reject as conflicting      |
+| `herdr`       | absent / `auto` / `herdr` | `herdr`                    |
+| `herdr`       | `sesh`                    | reject as conflicting      |
 
 If both camel-case `launchMode` and snake-case `launch_mode` are present, equal values are collapsed to one legacy value before mode mapping; the result produces one migration diagnostic only when that mapping is accepted, while unrepresentable mode combinations still follow the rejection rows above. Conflicting alias values are rejected before mode mapping with an error naming both fields. The explicit launcher wins for legacy `auto` combinations so configured intent is not discarded merely because shell integration is active. A `cd` plus explicit launcher combination cannot be represented faithfully: current behavior uses the launcher only as an unavailable-shell or `--no-cd` fallback. A unified explicit mode plus `auto` or the same legacy explicit launcher is redundant and preserves the unified mode, while the opposite explicit launcher is conflicting. Rejected combinations raise a configuration error naming every conflicting field/value and give equivalent single-mode alternatives instead of selecting one silently.
 
