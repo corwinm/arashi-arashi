@@ -5,6 +5,46 @@ import { tmpdir } from "node:os";
 import { checkContracts, formatHuman } from "../scripts/command-contracts";
 
 const roots: string[] = [];
+const createLaunchContract = {
+  schemaVersion: 1,
+  canonicalField: "defaults.create.launch",
+  modes: ["none", "auto", "sesh", "herdr"],
+  absentMode: "none",
+  switch: {
+    field: "defaults.create.switch",
+    type: "boolean",
+    independent: true,
+    launchImpliesSwitch: true,
+  },
+  editorHosts: ["vscode", "cursor", "kiro"],
+  editorScope: "defaults.editors.<host>.create",
+  editorScopeFallback: "none",
+  cliPrecedence: [
+    "explicit-launcher",
+    "launch",
+    "no-launch",
+    "configured",
+    "none",
+  ],
+  legacyFields: ["launch:boolean", "launchMode", "launch_mode"],
+  acceptedMigrations: [
+    "launcher-without-boolean",
+    "true-with-absent-or-launcher",
+    "false-without-launcher",
+    "canonical-with-compatible-launcher",
+    "equal-launcher-aliases",
+  ],
+  rejectedMigrations: [
+    "false-with-launcher",
+    "conflicting-launcher-aliases",
+    "none-with-launcher",
+    "auto-with-explicit-launcher",
+    "opposite-explicit-launchers",
+    "invalid-values",
+  ],
+  jsonRestrictedModes: ["auto", "sesh", "herdr"],
+  failurePreservesCreatedWorktrees: true,
+};
 afterEach(async () =>
   Promise.all(roots.splice(0).map((root) => rm(root, { recursive: true }))),
 );
@@ -13,10 +53,33 @@ async function fixture(): Promise<string> {
   const root = await mkdtemp(join(tmpdir(), "arashi-contracts-"));
   roots.push(root);
   const files: Record<string, unknown | string> = {
+    "repos/arashi/contracts/create-launch-config.json": createLaunchContract,
     "repos/arashi/schema/config.schema.json": {
       definitions: {
+        CommandDefaultsConfig: {
+          properties: {
+            create: { $ref: "#/definitions/CreateCommandDefaults" },
+            editors: { $ref: "#/definitions/EditorDefaultsConfig" },
+          },
+        },
         CreateCommandDefaults: {
-          properties: { launchMode: { $ref: "#/definitions/LaunchMode" } },
+          properties: {
+            launch: { $ref: "#/definitions/CreateLaunchMode" },
+            switch: { type: "boolean" },
+          },
+        },
+        CreateLaunchMode: { enum: ["none", "auto", "sesh", "herdr"] },
+        EditorCommandDefaults: {
+          properties: {
+            create: { $ref: "#/definitions/CreateCommandDefaults" },
+          },
+        },
+        EditorDefaultsConfig: {
+          properties: {
+            cursor: { $ref: "#/definitions/EditorCommandDefaults" },
+            kiro: { $ref: "#/definitions/EditorCommandDefaults" },
+            vscode: { $ref: "#/definitions/EditorCommandDefaults" },
+          },
         },
         SwitchCommandDefaults: {
           additionalProperties: false,
@@ -35,8 +98,9 @@ async function fixture(): Promise<string> {
         "defaults.switch.launchMode",
         "defaults.switch.launch_mode",
       ],
-      createDefaultsUnchanged: true,
     },
+    "repos/arashi-docs/contracts/create-launch-config.json":
+      createLaunchContract,
     "repos/arashi-skills/contracts/switch-config.json": {
       schemaVersion: 1,
       canonicalField: "defaults.switch.mode",
@@ -47,8 +111,9 @@ async function fixture(): Promise<string> {
         "defaults.switch.launchMode",
         "defaults.switch.launch_mode",
       ],
-      createDefaultsUnchanged: true,
     },
+    "repos/arashi-skills/contracts/create-launch-config.json":
+      createLaunchContract,
     "repos/arashi/contracts/cli-commands.json": {
       schemaVersion: 2,
       commands: [
@@ -446,6 +511,81 @@ describe("cross-repository command contracts", () => {
       }),
     );
   });
+  test("rejects a controlled create-launch semantic mismatch", async () => {
+    const root = await fixture();
+    const contract = createLaunchContract;
+    const skillsPath = join(
+      root,
+      "repos/arashi-skills/contracts/create-launch-config.json",
+    );
+    const docsPath = join(
+      root,
+      "repos/arashi-docs/contracts/create-launch-config.json",
+    );
+    await writeFile(skillsPath, JSON.stringify(contract));
+    await writeFile(
+      docsPath,
+      JSON.stringify({
+        ...contract,
+        modes: ["none", "auto", "sesh", "herdr", "drift"],
+      }),
+    );
+
+    expect((await checkContracts(root)).diagnostics).toContainEqual(
+      expect.objectContaining({
+        code: "CREATE_CONFIG_MISMATCH",
+        source: "repos/arashi-docs/contracts/create-launch-config.json",
+        subject: "modes",
+      }),
+    );
+  });
+  test("derives coordinated create semantics from the CLI contract and schema", async () => {
+    const root = await fixture();
+    const modes = ["none", "auto", "sesh", "herdr", "future"];
+    for (const relativePath of [
+      "repos/arashi/contracts/create-launch-config.json",
+      "repos/arashi-docs/contracts/create-launch-config.json",
+      "repos/arashi-skills/contracts/create-launch-config.json",
+    ]) {
+      const path = join(root, relativePath);
+      const data = JSON.parse(await readFile(path, "utf8"));
+      data.modes = modes;
+      await writeFile(path, JSON.stringify(data));
+    }
+    const schemaPath = join(root, "repos/arashi/schema/config.schema.json");
+    const schema = JSON.parse(await readFile(schemaPath, "utf8"));
+    schema.definitions.CreateLaunchMode.enum = modes;
+    await writeFile(schemaPath, JSON.stringify(schema));
+
+    expect(
+      (await checkContracts(root)).diagnostics.filter((diagnostic) =>
+        diagnostic.code.startsWith("CREATE_CONFIG"),
+      ),
+    ).toEqual([]);
+  });
+  test("rejects effective create refs and editor schema drift", async () => {
+    const root = await fixture();
+    const path = join(root, "repos/arashi/schema/config.schema.json");
+    const data = JSON.parse(await readFile(path, "utf8"));
+    data.definitions.CreateCommandDefaults.properties.launch = {
+      $ref: "#/definitions/SwitchMode",
+      enum: ["none", "auto", "sesh", "herdr"],
+    };
+    delete data.definitions.EditorCommandDefaults.properties.create;
+    delete data.definitions.EditorDefaultsConfig.properties.cursor;
+    await writeFile(path, JSON.stringify(data));
+
+    const diagnostics = (await checkContracts(root)).diagnostics;
+    for (const subject of ["launch", "editorCreate", "editorHosts"]) {
+      expect(diagnostics).toContainEqual(
+        expect.objectContaining({
+          code: "CREATE_CONFIG_MISMATCH",
+          source: "repos/arashi/schema/config.schema.json",
+          subject,
+        }),
+      );
+    }
+  });
   test("rejects stale switch schema modes and deprecated canonical fields", async () => {
     const root = await fixture();
     const path = join(root, "repos/arashi/schema/config.schema.json");
@@ -467,6 +607,42 @@ describe("cross-repository command contracts", () => {
     expect(diagnostics).toContainEqual(
       expect.objectContaining({
         code: "SWITCH_CONFIG_DEPRECATED_FIELD",
+        source: "repos/arashi/schema/config.schema.json",
+        subject: "launchMode",
+      }),
+    );
+  });
+  test("rejects stale create schema modes and deprecated canonical fields", async () => {
+    const root = await fixture();
+    const path = join(root, "repos/arashi/schema/config.schema.json");
+    const data = JSON.parse(await readFile(path, "utf8"));
+    data.definitions.CreateLaunchMode.enum = ["none", "auto", "sesh"];
+    data.definitions.CreateCommandDefaults.properties.launch = {
+      type: "string",
+    };
+    data.definitions.CreateCommandDefaults.properties.launchMode = {
+      $ref: "#/definitions/LaunchMode",
+    };
+    await writeFile(path, JSON.stringify(data));
+
+    const diagnostics = (await checkContracts(root)).diagnostics;
+    expect(diagnostics).toContainEqual(
+      expect.objectContaining({
+        code: "CREATE_CONFIG_MISMATCH",
+        source: "repos/arashi/schema/config.schema.json",
+        subject: "modes",
+      }),
+    );
+    expect(diagnostics).toContainEqual(
+      expect.objectContaining({
+        code: "CREATE_CONFIG_MISMATCH",
+        source: "repos/arashi/schema/config.schema.json",
+        subject: "launch",
+      }),
+    );
+    expect(diagnostics).toContainEqual(
+      expect.objectContaining({
+        code: "CREATE_CONFIG_DEPRECATED_FIELD",
         source: "repos/arashi/schema/config.schema.json",
         subject: "launchMode",
       }),
