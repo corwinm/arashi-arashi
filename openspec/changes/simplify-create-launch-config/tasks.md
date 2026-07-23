@@ -29,7 +29,7 @@
 - [ ] 5.1 Add or update failing skill checks for canonical create examples, one-off CLI overrides, launch-implies-switch, generic/editor scope behavior, failure preservation, migration guidance, and removal of canonical create `launchMode` advice.
 - [ ] 5.2 Update the smallest affected Arashi skill references and semantic contract/package metadata without changing unrelated workflow policy.
 - [ ] 5.3 Run skill formatting, security, package-boundary, and complete repository validation; inspect the built package rather than source paths alone.
-- [ ] 5.4 Update the canonical cross-repository contract checker for the create launch enum and migration rules, run it against all configured repositories/exports, and prove enforcement with one controlled out-of-repository semantic mismatch.
+- [ ] 5.4 Add a failing cross-repository semantic-drift fixture for one controlled out-of-repository create launch mismatch, verify RED against the current checker, then update the checker for the create launch enum and migration rules and prove the fixture fails for the intended mismatch while the aligned configured repositories/exports pass.
 - [ ] 5.5 Verify the VS Code extension still passes only supported `--editor-host` context and run its existing contract/tests if cross-repository checks or generated fixtures require an update; do not change extension behavior without a failing parity test.
 
 ## 6. Final review and delivery

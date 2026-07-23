@@ -31,4 +31,4 @@ None.
 - Create and launcher guidance, package checks, and semantic contracts in `repos/arashi-skills`.
 - Cross-repository semantic contract enforcement in the meta-repository.
 - `repos/arashi-vscode` continues passing only the hidden editor-host context; no extension API change is expected, but all supported host scopes consume the new canonical configuration vocabulary.
-- Existing `version: "1.0.0"` configuration remains readable through bounded compatibility normalization, while newly authored configuration and schema consumers move to the single `launch` string field.
+- Representable existing `version: "1.0.0"` create defaults remain readable through bounded compatibility normalization; ambiguous or inert two-field combinations are rejected with actionable single-field alternatives. Newly authored configuration and schema consumers move to the single `launch` string field.
