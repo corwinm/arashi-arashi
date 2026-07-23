@@ -71,6 +71,57 @@ const initIncompatibleOptions = [
   "--repos-dir",
   "--worktrees-dir",
 ];
+const tmuxOptionPolicies: Record<"create" | "switch", Obj> = {
+  create: {
+    compatibleOptions: ["--no-launch", "--no-switch"],
+    conflicts: ["--herdr", "--sesh"],
+    environment: { name: "TMUX", nonEmptyAfterTrim: true },
+    implies: ["launch", "switch"],
+    json: {
+      guardPrecedence: "before-option-validation",
+      mode: "interactive-or-launch",
+      unsupported: true,
+    },
+    persisted: false,
+  },
+  switch: {
+    compatibleOptions: ["--no-cd", "--no-default-launch"],
+    conflicts: ["--cd", "--cursor", "--herdr", "--kiro", "--sesh", "--vscode"],
+    environment: { name: "TMUX", nonEmptyAfterTrim: true },
+    implies: ["launch"],
+    json: {
+      guardPrecedence: "before-option-validation",
+      mode: "launch",
+      unsupported: true,
+    },
+    persisted: false,
+  },
+};
+const sameTmuxPolicy = (actual: Obj, expected: Obj): boolean => {
+  const actualEnvironment = object(actual.environment)
+    ? actual.environment
+    : {};
+  const expectedEnvironment = object(expected.environment)
+    ? expected.environment
+    : {};
+  const actualJson = object(actual.json) ? actual.json : {};
+  const expectedJson = object(expected.json) ? expected.json : {};
+  return (
+    sameStrings(
+      strings(actual.compatibleOptions),
+      strings(expected.compatibleOptions) ?? [],
+    ) &&
+    sameStrings(strings(actual.conflicts), strings(expected.conflicts) ?? []) &&
+    sameStrings(strings(actual.implies), strings(expected.implies) ?? []) &&
+    actualEnvironment.name === expectedEnvironment.name &&
+    actualEnvironment.nonEmptyAfterTrim ===
+      expectedEnvironment.nonEmptyAfterTrim &&
+    actualJson.guardPrecedence === expectedJson.guardPrecedence &&
+    actualJson.mode === expectedJson.mode &&
+    actualJson.unsupported === expectedJson.unsupported &&
+    actual.persisted === expected.persisted
+  );
+};
 const sameInitPolicy = (left: Obj, right: Obj): boolean =>
   left.option === right.option &&
   left.dryRun === right.dryRun &&
@@ -471,6 +522,7 @@ export async function checkContracts(
       "modes",
       "CreateLaunchMode must enumerate none, auto, sesh, and herdr.",
     );
+
   if (!("launch" in createProperties))
     add(
       d,
@@ -592,13 +644,13 @@ export async function checkContracts(
         "Each editor host must reference EditorCommandDefaults.",
       );
   }
-  version(contract, paths.contract, d, 2);
+  version(contract, paths.contract, d, 3);
   version(coverage, paths.coverage, d);
   version(policy, paths.policy, d);
   const commandEntries = Array.isArray(contract?.commands)
     ? contract.commands.filter(object)
     : [];
-  if (contract?.schemaVersion === 2 && "cliVersion" in contract)
+  if (contract?.schemaVersion === 3 && "cliVersion" in contract)
     add(
       d,
       "error",
@@ -606,7 +658,7 @@ export async function checkContracts(
       "SCHEMA_INVALID",
       paths.contract,
       "cliVersion",
-      "Contract schema version 2 excludes package release metadata.",
+      "Contract schema version 3 excludes package release metadata.",
     );
   if (contract && !Array.isArray(contract.commands))
     add(
@@ -967,6 +1019,59 @@ export async function checkContracts(
           "Skills init --zero-config option policy metadata must match the CLI contract.",
         );
     }
+  }
+  for (const commandName of ["create", "switch"] as const) {
+    const command = commands.get(commandName);
+    if (!command) continue;
+    const commandOptions = Array.isArray(command.options)
+      ? command.options
+          .filter(object)
+          .flatMap((option) =>
+            text(option.flags)
+              ? (option.flags.match(/--[a-z0-9-]+/g) ?? [])
+              : [],
+          )
+      : [];
+    const semantics = object(command.semantics) ? command.semantics : {};
+    const optionPolicies = object(semantics.optionPolicies)
+      ? semantics.optionPolicies
+      : {};
+    const tmuxPolicy = object(optionPolicies["--tmux"])
+      ? optionPolicies["--tmux"]
+      : {};
+    const expectedPolicy = tmuxOptionPolicies[commandName];
+    const requiredOptions = [
+      "--tmux",
+      ...(strings(expectedPolicy.compatibleOptions) ?? []),
+      ...(strings(expectedPolicy.conflicts) ?? []),
+    ];
+    if (
+      !sameTmuxPolicy(tmuxPolicy, expectedPolicy) ||
+      !requiredOptions.every((option) => commandOptions.includes(option))
+    )
+      add(
+        d,
+        "error",
+        "schema",
+        "TMUX_OPTION_POLICY_MISMATCH",
+        paths.contract,
+        `${commandName}.--tmux`,
+        `${commandName} --tmux requires the canonical conflict, prerequisite, implication, JSON-precedence, and non-persisted policy metadata.`,
+      );
+    const coverageEntry = covered.get(commandName);
+    if (
+      coverageEntry &&
+      !(strings(coverageEntry.requiredOptions) ?? []).includes("--tmux")
+    )
+      add(
+        d,
+        "error",
+        "skills",
+        "SKILLS_TMUX_POLICY_MISMATCH",
+        paths.coverage,
+        commandName,
+        `Skills coverage for ${commandName} must require --tmux.`,
+      );
   }
   for (const file of await markdownFiles(join(root, paths.skills))) {
     const content = await readFile(file, "utf8");

@@ -115,7 +115,7 @@ async function fixture(): Promise<string> {
     "repos/arashi-skills/contracts/create-launch-config.json":
       createLaunchContract,
     "repos/arashi/contracts/cli-commands.json": {
-      schemaVersion: 2,
+      schemaVersion: 3,
       commands: [
         {
           path: "add",
@@ -284,11 +284,11 @@ describe("cross-repository command contracts", () => {
       "VSCODE_EXCLUDED",
     ]);
   });
-  test("rejects the previous command contract schema without applying schema 2 rules", async () => {
+  test("rejects the previous command contract schema without applying schema 3 rules", async () => {
     const root = await fixture();
     const path = join(root, "repos/arashi/contracts/cli-commands.json");
     const data = JSON.parse(await readFile(path, "utf8"));
-    data.schemaVersion = 1;
+    data.schemaVersion = 2;
     data.cliVersion = "1.20.1";
     await writeFile(path, JSON.stringify(data));
 
@@ -297,7 +297,7 @@ describe("cross-repository command contracts", () => {
       expect.objectContaining({
         code: "SCHEMA_VERSION_UNSUPPORTED",
         source: "repos/arashi/contracts/cli-commands.json",
-        subject: "1",
+        subject: "2",
       }),
     );
     expect(diagnostics).not.toContainEqual(
@@ -307,7 +307,7 @@ describe("cross-repository command contracts", () => {
       }),
     );
   });
-  test("rejects package release metadata in schema version 2", async () => {
+  test("rejects package release metadata in schema version 3", async () => {
     const root = await fixture();
     const path = join(root, "repos/arashi/contracts/cli-commands.json");
     const data = JSON.parse(await readFile(path, "utf8"));
@@ -461,6 +461,195 @@ describe("cross-repository command contracts", () => {
       );
     },
   );
+  test.each([
+    [
+      "conflicts",
+      (policy: Record<string, unknown>) => (policy.conflicts = ["--sesh"]),
+    ],
+    [
+      "environment prerequisite",
+      (policy: Record<string, unknown>) =>
+        (policy.environment = { name: "TMUX", nonEmptyAfterTrim: false }),
+    ],
+    [
+      "implications",
+      (policy: Record<string, unknown>) => (policy.implies = []),
+    ],
+    [
+      "JSON precedence and label",
+      (policy: Record<string, unknown>) =>
+        (policy.json = {
+          guardPrecedence: "after-option-validation",
+          mode: "wrong",
+          unsupported: true,
+        }),
+    ],
+    [
+      "persistence",
+      (policy: Record<string, unknown>) => (policy.persisted = true),
+    ],
+  ])("rejects switch --tmux %s drift", async (_label, mutate) => {
+    const root = await fixture();
+    const contractPath = join(root, "repos/arashi/contracts/cli-commands.json");
+    const contract = JSON.parse(await readFile(contractPath, "utf8"));
+    const tmuxPolicy = {
+      compatibleOptions: ["--no-cd", "--no-default-launch"],
+      conflicts: [
+        "--cd",
+        "--cursor",
+        "--herdr",
+        "--kiro",
+        "--sesh",
+        "--vscode",
+      ],
+      environment: { name: "TMUX", nonEmptyAfterTrim: true },
+      implies: ["launch"],
+      json: {
+        guardPrecedence: "before-option-validation",
+        mode: "launch",
+        unsupported: true,
+      },
+      persisted: false,
+    };
+    mutate(tmuxPolicy);
+    contract.commands.push({
+      path: "switch",
+      description: "switch",
+      aliases: [],
+      hidden: false,
+      arguments: [],
+      options: [
+        "--cd",
+        "--cursor",
+        "--herdr",
+        "--kiro",
+        "--no-cd",
+        "--no-default-launch",
+        "--sesh",
+        "--tmux",
+        "--vscode",
+      ].map((flags) => ({
+        flags,
+        description: flags,
+        required: false,
+        optional: false,
+        variadic: false,
+      })),
+      semantics: {
+        json: { support: "unsupported", reason: "launch" },
+        docs: { expectation: "required" },
+        skills: { expectation: "required" },
+        standalone: { support: "full" },
+        vscode: { expectation: "excluded", reason: "terminal" },
+        optionPolicies: { "--tmux": tmuxPolicy },
+      },
+    });
+    await writeFile(contractPath, JSON.stringify(contract));
+
+    const coveragePath = join(
+      root,
+      "repos/arashi-skills/contracts/command-coverage.json",
+    );
+    const coverage = JSON.parse(await readFile(coveragePath, "utf8"));
+    coverage.commands.push({
+      name: "switch",
+      status: "covered",
+      reference: "references/commands.md",
+      requiredOptions: ["--tmux"],
+      standalone: { support: "supported" },
+    });
+    await writeFile(coveragePath, JSON.stringify(coverage));
+
+    expect((await checkContracts(root)).diagnostics).toContainEqual(
+      expect.objectContaining({
+        code: "TMUX_OPTION_POLICY_MISMATCH",
+        subject: "switch.--tmux",
+      }),
+    );
+  });
+  test("rejects missing skills --tmux coverage", async () => {
+    const root = await fixture();
+    const contractPath = join(root, "repos/arashi/contracts/cli-commands.json");
+    const contract = JSON.parse(await readFile(contractPath, "utf8"));
+    contract.commands.push({
+      path: "create",
+      description: "create",
+      aliases: [],
+      hidden: false,
+      arguments: [],
+      options: [
+        {
+          flags: "--tmux",
+          description: "tmux",
+          required: false,
+          optional: false,
+          variadic: false,
+        },
+      ],
+      semantics: {
+        json: { support: "conditional", reason: "non-interactive" },
+        docs: { expectation: "excluded", reason: "fixture" },
+        skills: { expectation: "required" },
+        standalone: { support: "full" },
+        vscode: { expectation: "excluded", reason: "terminal" },
+        optionPolicies: {
+          "--tmux": {
+            compatibleOptions: ["--no-launch", "--no-switch"],
+            conflicts: ["--herdr", "--sesh"],
+            environment: { name: "TMUX", nonEmptyAfterTrim: true },
+            implies: ["launch", "switch"],
+            json: {
+              guardPrecedence: "before-option-validation",
+              mode: "interactive-or-launch",
+              unsupported: true,
+            },
+            persisted: false,
+          },
+        },
+      },
+    });
+    await writeFile(contractPath, JSON.stringify(contract));
+    const coveragePath = join(
+      root,
+      "repos/arashi-skills/contracts/command-coverage.json",
+    );
+    const coverage = JSON.parse(await readFile(coveragePath, "utf8"));
+    coverage.commands.push({
+      name: "create",
+      status: "covered",
+      reference: "references/commands.md",
+      requiredOptions: [],
+      standalone: { support: "supported" },
+    });
+    await writeFile(coveragePath, JSON.stringify(coverage));
+
+    expect((await checkContracts(root)).diagnostics).toContainEqual(
+      expect.objectContaining({
+        code: "SKILLS_TMUX_POLICY_MISMATCH",
+        subject: "create",
+      }),
+    );
+
+    coverage.commands.at(-1).requiredOptions = ["--tmux", "--future-option"];
+    await writeFile(coveragePath, JSON.stringify(coverage));
+    expect((await checkContracts(root)).diagnostics).not.toContainEqual(
+      expect.objectContaining({
+        code: "SKILLS_TMUX_POLICY_MISMATCH",
+        subject: "create",
+      }),
+    );
+
+    contract.commands.at(-1).semantics.optionPolicies["--tmux"].conflicts = [
+      "--sesh",
+    ];
+    await writeFile(contractPath, JSON.stringify(contract));
+    expect((await checkContracts(root)).diagnostics).toContainEqual(
+      expect.objectContaining({
+        code: "TMUX_OPTION_POLICY_MISMATCH",
+        subject: "create.--tmux",
+      }),
+    );
+  });
   test("finds unresolved parity, invalid mappings, and undeclared extension commands", async () => {
     const root = await fixture();
     const policyPath = join(
