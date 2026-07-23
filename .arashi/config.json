@@ -9,7 +9,7 @@
       "launchMode": "sesh"
     },
     "switch": {
-      "launchMode": "sesh"
+      "mode": "sesh"
     }
   },
   "repos": {
