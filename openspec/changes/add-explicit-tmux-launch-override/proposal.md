@@ -33,4 +33,5 @@ Arashi can already choose plain tmux automatically, but users cannot request tha
 - `repos/arashi`: switch/create option parsing, launch resolution, switch errors/result typing, help and generated CLI command contracts, configuration no-change contract coverage, and focused unit/integration/standalone tests.
 - `repos/arashi-docs`: canonical switch/create references and the tmux/sesh workflow guide, including generated agent-readable exports if required by validation.
 - `repos/arashi-skills`: tmux/session shortcut and tutorial/troubleshooting guidance plus command-contract fixtures if affected.
+- Meta-repository contract tooling: typed option-policy ingestion, cross-repository semantic checks, and deliberate-drift fixtures in `scripts/command-contracts.ts` and `tests/command-contracts.test.ts`.
 - No new runtime dependency and no breaking change to existing invocations; automatic tmux, sesh, Herdr, cmux, IDE, terminal-app, platform fallback, and configured launcher behavior remains unchanged unless `--tmux` is selected explicitly.

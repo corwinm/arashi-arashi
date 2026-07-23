@@ -45,15 +45,15 @@ Alternative: let create finish and fail only inside the launcher. Rejected for t
 
 ### Model explicit launcher resolution as one discriminated choice
 
-Switch conflict collection gains `tmux`; create conflict validation counts `tmux`, `sesh`, and `herdr` and reports the complete deterministic flag list. Resolution maps the selected named mode to one shared-launcher options object. This prevents boolean combinations and precedence conditionals from drifting as launchers are added.
+Switch runtime conflict collection gains `tmux`; create runtime conflict validation counts `tmux`, `sesh`, and `herdr` and reports the complete deterministic flag list. These launcher conflicts SHALL NOT use Commander `Option.conflicts()` because the command action's structured JSON guard must run before runtime conflict validation for invocations such as `--json --tmux --sesh`. Resolution maps the selected named mode to one shared-launcher options object. This prevents boolean combinations and precedence conditionals from drifting as launchers are added.
 
 ### Preserve JSON non-mutation
 
-`create --json --tmux` is rejected before worktree creation using the existing structured unsupported-mode envelope. Switch JSON with explicit tmux returns the structured unsupported-mode result and never invokes tmux. Both the Commander action and lower-level exported executor enforce each JSON guard so direct callers cannot bypass non-mutation. Human-readable errors for missing tmux context remain usage errors; JSON execution emits exactly one JSON document on stdout and keeps diagnostics off stdout.
+`create --json --tmux` is rejected before worktree creation using the existing structured unsupported-mode envelope and existing `interactive-or-launch` mode label. Switch JSON with explicit tmux returns the structured unsupported-mode result with the existing `launch` mode label and never invokes tmux. The structured JSON guard takes precedence over explicit-launcher conflicts and tmux-context validation, so `--json --tmux --sesh` and JSON invocations with missing or blank `TMUX` still emit one structured unsupported-mode document. Both the Commander action and lower-level exported executor enforce each JSON guard so direct callers cannot bypass non-mutation. Human-readable errors for missing tmux context remain usage errors; JSON execution emits exactly one JSON document on stdout and keeps diagnostics off stdout.
 
 ### Update command contracts while proving config contracts do not change
 
-Canonical command help and docs are updated first; agent-readable docs exports and skill contract checks are regenerated or updated only through their owning repositories. Existing configuration type, normalization, schema, and switch-config contract tests shall prove that `tmux` was not added as a persisted mode accidentally.
+Canonical command help and docs are updated first; agent-readable docs exports and skill contract checks are regenerated or updated only through their owning repositories. The CLI contract gains typed option-policy metadata for switch/create `--tmux`: per-command conflicts, the `TMUX` prerequisite, create launch/switch implication, JSON restriction, and non-persisted configuration status. The contract schema version is bumped if this changes the serialized shape. The meta-repository checker consumes that metadata and deliberate-drift tests prove each semantic rule is enforced. Existing configuration type, normalization, schema, and switch-config contract tests shall prove that `tmux` was not added as a persisted mode accidentally.
 
 ## Risks / Trade-offs
 

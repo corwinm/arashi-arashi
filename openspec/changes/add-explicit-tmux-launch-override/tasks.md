@@ -2,24 +2,25 @@
 
 - [ ] 1.1 Add failing switch/create tests for `--tmux` help, parsing, explicit conflict sets, and per-invocation-only behavior.
 - [ ] 1.2 Add or update no-change contract coverage proving create `LaunchMode`, unified `SwitchMode`, legacy switch normalization, generated schema, and switch-config exports do not gain a persisted `tmux` value.
-- [ ] 1.3 Add the dedicated missing-tmux-context error code and structured error classification without changing existing sesh or generic launch errors.
+- [ ] 1.3 Add failing tests for a dedicated missing-tmux-context error code, usage/exit classification, and unchanged sesh and generic launch error behavior.
 - [ ] 1.4 Update typed CLI semantic metadata and regenerate `contracts/cli-commands.json` from the Commander tree so switch/create `--tmux` support and companion-surface policy remain source-derived.
+- [ ] 1.5 Extend the meta-repository contract checker and deliberate-drift fixtures to enforce tmux option conflicts, prerequisite, create implications, JSON restriction, and non-persisted status; bump the contract schema version if its serialized shape changes.
 
 ## 2. Shared launcher behavior
 
 - [ ] 2.1 Add failing shared-launcher tests proving forced tmux precedence, missing-context failure without fallback, argv-safe paths, subprocess failure behavior, and unchanged automatic launch resolution.
-- [ ] 2.2 Implement forced tmux in the shared launcher by reusing one plain-tmux command path for explicit, configured, and automatic invocation.
+- [ ] 2.2 Implement the dedicated missing-context error and reuse one plain-tmux command path for explicit forced tmux and the existing automatic branch, including configured `auto` when contextual resolution selects tmux.
 - [ ] 2.3 Run focused launcher tests and the no-flag regression matrix for tmux, Herdr, cmux, IDE, terminal-app, and platform fallback behavior.
 
 ## 3. Switch command
 
-- [ ] 3.1 Add failing unit and real temporary-workspace tests for configured-workspace and standalone `switch --tmux`, config/managed-context precedence, `--cd` and explicit-launch conflicts, `--no-cd`/`--no-default-launch` semantics, missing context, and JSON rejection at both Commander and direct-executor boundaries.
+- [ ] 3.1 Add failing unit and real temporary-workspace tests for configured-workspace and standalone `switch --tmux`, config/managed-context precedence, `--cd` and explicit-launch conflicts, `--no-cd`/`--no-default-launch` semantics, missing context, and JSON rejection at both Commander and direct-executor boundaries, including `--json --tmux --sesh`, blank `TMUX`, and preserved `launch` mode labels.
 - [ ] 3.2 Register `--tmux`, carry the discriminated launcher choice through switch behavior and launch resolution, and validate conflicts/prerequisites before launch or directory switching.
 - [ ] 3.3 Verify human and JSON result/error typing, exact-path behavior, unchanged configured modes, and unchanged switch behavior when `--tmux` is absent.
 
 ## 4. Create command
 
-- [ ] 4.1 Add failing unit and real temporary-workspace tests for configured-workspace and standalone `create --tmux`, implied launch, generic/editor-default override precedence, `--no-launch`/`--no-switch` semantics, conflicts, missing-context non-mutation, JSON non-mutation at both Commander and direct-executor boundaries, argv safety, and post-create process failure preservation.
+- [ ] 4.1 Add failing unit and real temporary-workspace tests for configured-workspace and standalone `create --tmux`, implied launch, generic/editor-default override precedence, `--no-launch`/`--no-switch` semantics, conflicts, missing-context non-mutation, JSON non-mutation at both Commander and direct-executor boundaries, including `--json --tmux --sesh`, blank `TMUX`, preserved `interactive-or-launch` mode labels, argv safety, and post-create process failure preservation.
 - [ ] 4.2 Register `--tmux`, resolve it as an implied explicit launch mode, validate missing explicit tmux context before mutation, and pass forced tmux to the shared post-create launcher.
 - [ ] 4.3 Verify create hooks/worktrees are absent after preflight or JSON rejection and remain present after a post-create tmux subprocess failure.
 
