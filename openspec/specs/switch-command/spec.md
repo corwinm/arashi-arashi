@@ -3,9 +3,7 @@
 ## Purpose
 
 Define how `arashi switch` discovers and selects worktrees, resolves parent-shell or launcher behavior, and preserves deterministic launch semantics across configured and standalone repositories.
-
 ## Requirements
-
 ### Requirement: Discover switchable worktree targets
 
 The system SHALL discover existing git worktrees associated with the current Arashi workspace and expose each target with its branch reference and absolute worktree path.
@@ -494,7 +492,7 @@ The system SHALL preserve the existing non-mutating restriction for `arashi swit
 
 ### Requirement: Configure switch behavior with one canonical mode
 
-The system SHALL expose `defaults.switch.mode` as the single canonical configured switch choice, SHALL accept `auto`, `cd`, `launch`, `sesh`, and `herdr`, and SHALL NOT advertise `defaults.switch.launchMode` in the generated schema, maintained examples, generated agent-readable exports, or skill guidance. An absent configured mode SHALL preserve automatic launcher selection without preferring parent-shell `cd`. `defaults.create` and editor-scoped create defaults SHALL retain their independent launch fields.
+The system SHALL expose `defaults.switch.mode` as the single canonical configured switch choice, SHALL accept `auto`, `cd`, `launch`, `sesh`, and `herdr`, and SHALL NOT advertise `defaults.switch.launchMode` in the generated schema, maintained examples, generated agent-readable exports, or skill guidance. An absent configured mode SHALL preserve automatic launcher selection without preferring parent-shell `cd`. `defaults.create` and editor-scoped create defaults SHALL retain an independent `switch` boolean and SHALL use their own canonical `launch` choice.
 
 #### Scenario: Automatic contextual mode is configured
 
@@ -532,7 +530,7 @@ The system SHALL expose `defaults.switch.mode` as the single canonical configure
 - **WHEN** Arashi generates its configuration schema
 - **THEN** `defaults.switch.mode` enumerates `auto`, `cd`, `launch`, `sesh`, and `herdr`
 - **AND** `defaults.switch.launchMode` is not a canonical schema property
-- **AND** create launch configuration remains unchanged
+- **AND** create defaults expose their independent canonical `launch` choice without create-specific `launchMode`
 
 #### Scenario: Unsupported unified mode is rejected
 
@@ -544,6 +542,7 @@ The system SHALL expose `defaults.switch.mode` as the single canonical configure
 - **WHEN** Arashi publishes the unified switch configuration model
 - **THEN** CLI help and diagnostics, maintained CLI documentation, canonical documentation, generated agent-readable exports, and the Arashi skill package use the same unified mode vocabulary and legacy migration rules
 - **AND** none of those canonical surfaces instruct users to compose `defaults.switch.mode` with `defaults.switch.launchMode`
+- **AND** references to create defaults use the independent canonical create `launch` choice
 
 ### Requirement: Normalize legacy switch defaults without discarding intent
 

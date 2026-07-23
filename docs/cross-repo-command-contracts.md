@@ -1,6 +1,6 @@
 # Cross-repository command contract checks
 
-The meta-repository compares the generated CLI command contract with the canonical docs, structured skill coverage, and VS Code policy. It also compares the generated CLI configuration schema with structured switch-configuration contracts in the docs and skill repositories. Docs-local validation proves that canonical sources and generated agent exports agree with the docs contract; skill-local validation proves packaged guidance agrees with the skill contract.
+The meta-repository compares the generated CLI command contract with the canonical docs, structured skill coverage, and VS Code policy. For create launch configuration, it normalizes the CLI semantic manifest as the authority, verifies its modes, fields, and editor scopes against the generated CLI schema, and compares the docs and skill companions with those CLI-derived semantics. Switch configuration remains checked against its generated schema and companion contracts. Docs-local validation proves that canonical sources and generated agent exports agree with the docs contract; skill-local validation proves packaged guidance agrees with the skill contract.
 
 ## Run locally
 
@@ -22,7 +22,10 @@ The human report groups findings by stable category/code. Intentional exclusions
 2. Add or remove `repos/arashi-docs/docs/commands/<command>.md` and its link in `docs/commands/index.md`. Do not edit generated exports for this checker.
 3. Update `repos/arashi-skills/contracts/command-coverage.json`; covered entries need an existing skill-relative reference, exclusions need a reason. Keep backticked `arashi <command>` references current.
 4. Update `repos/arashi-vscode/contracts/command-policy.json`. Every CLI command must be `mapped`, `represented`, or reasoned `excluded`; every contributed extension command must be CLI-backed or listed in `extensionOnlyCommands`.
-5. For switch-configuration changes, regenerate `repos/arashi/schema/config.schema.json`; update `repos/arashi-docs/contracts/switch-config.json` and `repos/arashi-skills/contracts/switch-config.json`; then run each child repository's source/export/package checks so the structured declarations cannot drift from their human and agent-facing surfaces.
+5. For configuration-contract changes, regenerate `repos/arashi/schema/config.schema.json` and keep the relevant semantic companions aligned:
+   - switch mode: `repos/arashi-docs/contracts/switch-config.json` and `repos/arashi-skills/contracts/switch-config.json`
+   - create launch: `repos/arashi/contracts/create-launch-config.json`, `repos/arashi-docs/contracts/create-launch-config.json`, and `repos/arashi-skills/contracts/create-launch-config.json`
+     Then run each child repository's source/export/package checks so the structured declarations cannot drift from their human and agent-facing surfaces.
 6. Run child-repository checks and then the commands above from this meta-repository.
 
 ## Troubleshooting
@@ -31,6 +34,7 @@ The human report groups findings by stable category/code. Intentional exclusions
 - `DOCS_*`: check only canonical `docs/commands` sources and use a `/commands/<name>/` or `commands/<name>.md` index link.
 - `SKILLS_*`: remove renamed commands from structured coverage and backticked command-shaped prose; ensure covered `reference` paths are relative to `skills/arashi` and exist.
 - `SWITCH_CONFIG_*`: keep the generated schema mode enum, canonical field, docs contract, and skill contract aligned. Deprecated launcher aliases are runtime migration inputs only and must not reappear in the canonical switch schema.
+- `CREATE_CONFIG_*`: keep the CLI create-launch manifest, generated schema, docs contract, and skill contract semantically identical. Legacy `launchMode`, `launch_mode`, and boolean `launch` remain runtime migration inputs only.
 - `VSCODE_*`: ensure mapping IDs exist in `package.json` contributions and classify extension-only navigation/panel commands explicitly.
 - CI prints all checked-out SHAs. Reproduce a failure by checking out those exact revisions into `repos/*`.
 

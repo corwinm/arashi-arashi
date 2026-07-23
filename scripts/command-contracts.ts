@@ -18,11 +18,14 @@ type Obj = Record<string, unknown>;
 
 const paths = {
   contract: "repos/arashi/contracts/cli-commands.json",
+  cliCreateConfig: "repos/arashi/contracts/create-launch-config.json",
   configSchema: "repos/arashi/schema/config.schema.json",
   docs: "repos/arashi-docs/docs/commands",
+  docsCreateConfig: "repos/arashi-docs/contracts/create-launch-config.json",
   docsSwitchConfig: "repos/arashi-docs/contracts/switch-config.json",
   skills: "repos/arashi-skills/skills/arashi",
   coverage: "repos/arashi-skills/contracts/command-coverage.json",
+  skillsCreateConfig: "repos/arashi-skills/contracts/create-launch-config.json",
   skillsSwitchConfig: "repos/arashi-skills/contracts/switch-config.json",
   policy: "repos/arashi-vscode/contracts/command-policy.json",
   manifest: "repos/arashi-vscode/package.json",
@@ -224,7 +227,7 @@ function checkSwitchConfigContract(
       "legacyFields",
       sameStrings(strings(value?.legacyFields), switchLegacyFields),
     ],
-    ["createDefaultsUnchanged", value?.createDefaultsUnchanged === true],
+    ["createDefaultsUnchanged", !("createDefaultsUnchanged" in value)],
   ];
   for (const [subject, matches] of expectations)
     if (!matches)
@@ -238,6 +241,140 @@ function checkSwitchConfigContract(
         "Switch configuration semantics must match the canonical unified-mode contract.",
       );
 }
+const createUnorderedArraySubjects = [
+  "modes",
+  "editorHosts",
+  "legacyFields",
+  "acceptedMigrations",
+  "rejectedMigrations",
+  "jsonRestrictedModes",
+] as const;
+
+const createScalarSubjects = [
+  "canonicalField",
+  "absentMode",
+  "editorScope",
+  "editorScopeFallback",
+  "failurePreservesCreatedWorktrees",
+] as const;
+
+const createCategory = (source: string): Diagnostic["category"] =>
+  source.includes("arashi-docs")
+    ? "docs"
+    : source.includes("arashi-skills")
+      ? "skills"
+      : "schema";
+
+function validateCreateConfigContract(
+  value: Obj | undefined,
+  source: string,
+  diagnostics: Diagnostic[],
+): boolean {
+  if (!value) return false;
+  version(value, source, diagnostics);
+  const switchContract = object(value.switch) ? value.switch : {};
+  const arrays = [...createUnorderedArraySubjects, "cliPrecedence"] as const;
+  const expectations: Array<[string, boolean]> = [
+    ["schemaVersion", value.schemaVersion === 1],
+    ["canonicalField", text(value.canonicalField)],
+    ["absentMode", text(value.absentMode)],
+    ["editorScope", text(value.editorScope)],
+    ["editorScopeFallback", text(value.editorScopeFallback)],
+    [
+      "switch",
+      text(switchContract.field) &&
+        text(switchContract.type) &&
+        typeof switchContract.independent === "boolean" &&
+        typeof switchContract.launchImpliesSwitch === "boolean",
+    ],
+    [
+      "failurePreservesCreatedWorktrees",
+      typeof value.failurePreservesCreatedWorktrees === "boolean",
+    ],
+    ...arrays.map((subject): [string, boolean] => {
+      const values = strings(value[subject]) ?? [];
+      return [
+        subject,
+        values.length > 0 && new Set(values).size === values.length,
+      ];
+    }),
+  ];
+  const modes = strings(value.modes) ?? [];
+  const restricted = strings(value.jsonRestrictedModes) ?? [];
+  expectations.push([
+    "jsonRestrictedModes",
+    restricted.every((mode) => modes.includes(mode)),
+  ]);
+  const accepted = strings(value.acceptedMigrations) ?? [];
+  const rejected = new Set(strings(value.rejectedMigrations) ?? []);
+  expectations.push([
+    "migrationClassifications",
+    accepted.every((classification) => !rejected.has(classification)),
+  ]);
+
+  let valid = true;
+  for (const [subject, matches] of expectations) {
+    if (matches) continue;
+    valid = false;
+    add(
+      diagnostics,
+      "error",
+      createCategory(source),
+      "CREATE_CONFIG_INVALID",
+      source,
+      subject,
+      "Create launch semantic contract is missing or structurally invalid.",
+    );
+  }
+  return valid;
+}
+
+function checkCreateConfigContract(
+  value: Obj | undefined,
+  canonical: Obj | undefined,
+  source: string,
+  diagnostics: Diagnostic[],
+) {
+  if (!value || !canonical) return;
+  const switchContract = object(value.switch) ? value.switch : {};
+  const canonicalSwitch = object(canonical.switch) ? canonical.switch : {};
+  const expectations: Array<[string, boolean]> = [
+    ...createScalarSubjects.map((subject): [string, boolean] => [
+      subject,
+      value[subject] === canonical[subject],
+    ]),
+    [
+      "switch",
+      switchContract.field === canonicalSwitch.field &&
+        switchContract.type === canonicalSwitch.type &&
+        switchContract.independent === canonicalSwitch.independent &&
+        switchContract.launchImpliesSwitch ===
+          canonicalSwitch.launchImpliesSwitch,
+    ],
+    ...createUnorderedArraySubjects.map((subject): [string, boolean] => [
+      subject,
+      sameStrings(strings(value[subject]), strings(canonical[subject]) ?? []),
+    ]),
+    [
+      "cliPrecedence",
+      JSON.stringify(strings(value.cliPrecedence)) ===
+        JSON.stringify(strings(canonical.cliPrecedence)),
+    ],
+  ];
+  for (const [subject, matches] of expectations) {
+    if (matches) continue;
+    add(
+      diagnostics,
+      "error",
+      createCategory(source),
+      "CREATE_CONFIG_MISMATCH",
+      source,
+      subject,
+      "Create launch semantics must match the CLI semantic contract.",
+    );
+  }
+}
+
 async function markdownFiles(directory: string): Promise<string[]> {
   const result: string[] = [];
   async function walk(path: string) {
@@ -260,12 +397,44 @@ export async function checkContracts(
 ): Promise<CheckResult> {
   const d: Diagnostic[] = [];
   const contract = await json(root, paths.contract, d);
+  const cliCreateConfig = await json(root, paths.cliCreateConfig, d);
   const configSchema = await json(root, paths.configSchema, d);
+  const docsCreateConfig = await json(root, paths.docsCreateConfig, d);
   const docsSwitchConfig = await json(root, paths.docsSwitchConfig, d);
   const coverage = await json(root, paths.coverage, d);
+  const skillsCreateConfig = await json(root, paths.skillsCreateConfig, d);
   const skillsSwitchConfig = await json(root, paths.skillsSwitchConfig, d);
   const policy = await json(root, paths.policy, d);
   const manifest = await json(root, paths.manifest, d);
+  const cliCreateConfigValid = validateCreateConfigContract(
+    cliCreateConfig,
+    paths.cliCreateConfig,
+    d,
+  );
+  const docsCreateConfigValid = validateCreateConfigContract(
+    docsCreateConfig,
+    paths.docsCreateConfig,
+    d,
+  );
+  const skillsCreateConfigValid = validateCreateConfigContract(
+    skillsCreateConfig,
+    paths.skillsCreateConfig,
+    d,
+  );
+  if (cliCreateConfigValid && docsCreateConfigValid)
+    checkCreateConfigContract(
+      docsCreateConfig,
+      cliCreateConfig,
+      paths.docsCreateConfig,
+      d,
+    );
+  if (cliCreateConfigValid && skillsCreateConfigValid)
+    checkCreateConfigContract(
+      skillsCreateConfig,
+      cliCreateConfig,
+      paths.skillsCreateConfig,
+      d,
+    );
   checkSwitchConfigContract(docsSwitchConfig, paths.docsSwitchConfig, d);
   checkSwitchConfigContract(skillsSwitchConfig, paths.skillsSwitchConfig, d);
   const definitions = object(configSchema?.definitions)
@@ -311,22 +480,170 @@ export async function checkContracts(
         deprecated,
         "Deprecated switch launcher aliases must not be canonical schema properties.",
       );
+  const commandDefaults = object(definitions.CommandDefaultsConfig)
+    ? definitions.CommandDefaultsConfig
+    : {};
+  const commandDefaultProperties = object(commandDefaults.properties)
+    ? commandDefaults.properties
+    : {};
+  const commandCreate = object(commandDefaultProperties.create)
+    ? commandDefaultProperties.create
+    : {};
+  if (
+    cliCreateConfig?.canonicalField !== "defaults.create.launch" ||
+    commandCreate.$ref !== "#/definitions/CreateCommandDefaults"
+  )
+    add(
+      d,
+      "error",
+      "schema",
+      "CREATE_CONFIG_MISMATCH",
+      paths.configSchema,
+      "canonicalField",
+      "The CLI canonical field and generated defaults.create schema path must resolve to CreateCommandDefaults.launch.",
+    );
   const createDefaults = object(definitions.CreateCommandDefaults)
     ? definitions.CreateCommandDefaults
     : {};
   const createProperties = object(createDefaults.properties)
     ? createDefaults.properties
     : {};
-  if (!("launchMode" in createProperties))
+  const createLaunchMode = object(definitions.CreateLaunchMode)
+    ? definitions.CreateLaunchMode
+    : {};
+  const cliCreateModes = strings(cliCreateConfig?.modes) ?? [];
+  if (!sameStrings(strings(createLaunchMode.enum), cliCreateModes))
     add(
       d,
       "error",
       "schema",
-      "SWITCH_CONFIG_MISMATCH",
+      "CREATE_CONFIG_MISMATCH",
       paths.configSchema,
-      "create.launchMode",
-      "Create launch defaults must remain unchanged.",
+      "modes",
+      "CreateLaunchMode must enumerate none, auto, sesh, and herdr.",
     );
+
+  if (!("launch" in createProperties))
+    add(
+      d,
+      "error",
+      "schema",
+      "CREATE_CONFIG_MISMATCH",
+      paths.configSchema,
+      "launch",
+      "CreateCommandDefaults must expose the canonical launch field.",
+    );
+  const createLaunch = object(createProperties.launch)
+    ? createProperties.launch
+    : {};
+  if (createLaunch.$ref !== "#/definitions/CreateLaunchMode")
+    add(
+      d,
+      "error",
+      "schema",
+      "CREATE_CONFIG_MISMATCH",
+      paths.configSchema,
+      "launch",
+      "CreateCommandDefaults.launch must use the canonical create launch enum.",
+    );
+  const createSwitch = object(createProperties.switch)
+    ? createProperties.switch
+    : {};
+  const cliCreateSwitch = object(cliCreateConfig?.switch)
+    ? cliCreateConfig.switch
+    : {};
+  if (
+    createSwitch.type !== "boolean" ||
+    cliCreateSwitch.field !== "defaults.create.switch" ||
+    cliCreateSwitch.type !== createSwitch.type
+  )
+    add(
+      d,
+      "error",
+      "schema",
+      "CREATE_CONFIG_MISMATCH",
+      paths.configSchema,
+      "switch",
+      "CreateCommandDefaults.switch must remain an independent boolean.",
+    );
+  for (const deprecated of ["launchMode", "launch_mode"])
+    if (deprecated in createProperties)
+      add(
+        d,
+        "error",
+        "schema",
+        "CREATE_CONFIG_DEPRECATED_FIELD",
+        paths.configSchema,
+        deprecated,
+        "Deprecated create launcher aliases must not be canonical schema properties.",
+      );
+  const commandEditors = object(commandDefaultProperties.editors)
+    ? commandDefaultProperties.editors
+    : {};
+  if (
+    cliCreateConfig?.editorScope !== "defaults.editors.<host>.create" ||
+    commandEditors.$ref !== "#/definitions/EditorDefaultsConfig"
+  )
+    add(
+      d,
+      "error",
+      "schema",
+      "CREATE_CONFIG_MISMATCH",
+      paths.configSchema,
+      "editorScope",
+      "The CLI editor scope and generated defaults.editors schema path must resolve through EditorDefaultsConfig.",
+    );
+  const editorCommandDefaults = object(definitions.EditorCommandDefaults)
+    ? definitions.EditorCommandDefaults
+    : {};
+  const editorCommandProperties = object(editorCommandDefaults.properties)
+    ? editorCommandDefaults.properties
+    : {};
+  const editorCreate = object(editorCommandProperties.create)
+    ? editorCommandProperties.create
+    : {};
+  if (editorCreate.$ref !== "#/definitions/CreateCommandDefaults")
+    add(
+      d,
+      "error",
+      "schema",
+      "CREATE_CONFIG_MISMATCH",
+      paths.configSchema,
+      "editorCreate",
+      "EditorCommandDefaults.create must reference CreateCommandDefaults.",
+    );
+  const editorDefaults = object(definitions.EditorDefaultsConfig)
+    ? definitions.EditorDefaultsConfig
+    : {};
+  const editorProperties = object(editorDefaults.properties)
+    ? editorDefaults.properties
+    : {};
+  const cliEditorHosts = strings(cliCreateConfig?.editorHosts) ?? [];
+  if (!sameStrings(Object.keys(editorProperties), cliEditorHosts))
+    add(
+      d,
+      "error",
+      "schema",
+      "CREATE_CONFIG_MISMATCH",
+      paths.configSchema,
+      "editorHosts",
+      "EditorDefaultsConfig hosts must match the CLI create-launch contract.",
+    );
+  for (const host of cliEditorHosts) {
+    const editorHost = object(editorProperties[host])
+      ? editorProperties[host]
+      : {};
+    if (editorHost.$ref !== "#/definitions/EditorCommandDefaults")
+      add(
+        d,
+        "error",
+        "schema",
+        "CREATE_CONFIG_MISMATCH",
+        paths.configSchema,
+        `editorHost:${host}`,
+        "Each editor host must reference EditorCommandDefaults.",
+      );
+  }
   version(contract, paths.contract, d, 3);
   version(coverage, paths.coverage, d);
   version(policy, paths.policy, d);
