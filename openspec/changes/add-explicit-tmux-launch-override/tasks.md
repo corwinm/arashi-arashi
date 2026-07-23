@@ -45,5 +45,5 @@
 ## 8. Coordinated verification and closeout readiness
 
 - [x] 8.1 Reconcile all OpenSpec scenarios against implementation/tests, mark completed tasks with evidence, and run `openspec validate add-explicit-tmux-launch-override` after final artifact updates.
-- [ ] 8.2 Verify all related child PR bodies, CI matrices, top-level feedback, inline comments, and unresolved review threads; address every actionable finding before declaring the change ready.
-- [ ] 8.3 Confirm child PRs are green and mergeable, the meta proposal PR remains non-closing until archive, and exactly one final closing reference will live on the meta PR during approved closeout.
+- [x] 8.2 Verify all related child PR bodies, CI matrices, top-level feedback, inline comments, and unresolved review threads; address every actionable finding before declaring the change ready.
+- [x] 8.3 Confirm child PRs are green and mergeable, the meta proposal PR remains non-closing until archive, and exactly one final closing reference will live on the meta PR during approved closeout.
