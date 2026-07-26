@@ -1,8 +1,5 @@
-# configurable-worktree-location Specification
+## MODIFIED Requirements
 
-## Purpose
-TBD - created by archiving change add-config-option-for-worktrees-locations. Update Purpose after archive.
-## Requirements
 ### Requirement: Workspace configuration defines worktree base location
 The system SHALL support a workspace configuration field that defines the base directory used for newly created worktrees, SHALL persist the repository-aware default selected by configured initialization, and SHALL retain `.arashi/worktrees/` as the compatibility fallback when an existing configuration omits the field.
 
@@ -23,28 +20,6 @@ The system SHALL support a workspace configuration field that defines the base d
 - **WHEN** an existing workspace config does not provide a worktree location value
 - **THEN** the system MUST use `.arashi/worktrees/` as the compatibility base directory
 - **AND** reading the config does not automatically persist or migrate the omitted field
-
-### Requirement: Relative path inputs are normalized consistently
-The system MUST normalize supported relative path inputs for worktree location, including optional trailing slash variants, before destination paths are used.
-
-#### Scenario: Dot path variants normalize to repository root
-- **WHEN** the configured location is `.` or `./`
-- **THEN** destination resolution treats both values as the same repository-root base path
-
-#### Scenario: Managed directory variants normalize identically
-- **WHEN** the configured location is `.arashi/worktrees` or `.arashi/worktrees/`
-- **THEN** destination resolution treats both values as the same base path
-
-#### Scenario: Parent directory variant remains valid
-- **WHEN** the configured location is `../` (or equivalent trailing-slash form)
-- **THEN** destination resolution uses the workspace parent directory as the base path
-
-### Requirement: Worktree creation uses a single resolved base path
-All commands that create worktrees MUST derive their destination from a shared resolved worktree base path rather than command-specific path logic.
-
-#### Scenario: Worktree-producing commands resolve destinations consistently
-- **WHEN** different commands create worktrees in the same workspace configuration
-- **THEN** each command resolves the same destination base path for equivalent inputs
 
 ### Requirement: Default managed worktree directory is git-ignored
 The system SHALL ensure the active managed worktree location is effectively ignored by Git in an idempotent way when that location is an applicable safe repository-relative working-tree directory pattern, using configured lifecycle reconciliation and repository-local rules by default. Paths resolved from a canonical bare repository root are not working-tree paths and SHALL follow the bare non-worktree reporting contract instead.
@@ -75,20 +50,3 @@ The system SHALL ensure the active managed worktree location is effectively igno
 - **WHEN** configured init resolves a worktree location beneath a canonical bare repository root
 - **THEN** the path is reported as non-applicable to working-tree ignore rules
 - **AND** init does not inspect or mutate ignore files for that path
-
-### Requirement: Implicit standalone mode uses a fixed worktree location
-The configurable worktree-location contract SHALL remain authoritative for configured workspaces, while implicit standalone workspaces SHALL use the fixed main-root `.worktrees` base and natural branch-relative destination.
-
-#### Scenario: Standalone branch path resolves
-- **WHEN** standalone create plans branch `feat/example`
-- **THEN** the destination is `<main-root>/.worktrees/feat/example`
-- **AND** no repository-name prefix or configured default location is applied
-
-#### Scenario: Configured custom location exists
-- **WHEN** a valid configured workspace defines `worktreesDir`
-- **THEN** Arashi continues using the configured location and existing configured path strategy
-- **AND** the presence of a root `.worktrees/` directory does not override it
-
-#### Scenario: Standalone invocation starts in linked worktree
-- **WHEN** standalone create runs from a linked worktree
-- **THEN** the fixed base remains the Git main worktree's `.worktrees/` directory
