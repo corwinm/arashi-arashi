@@ -15,7 +15,7 @@
 
 ## 3. Verification and Delivery
 
-- [ ] 3.1 Run Bash/ShellCheck validation and an ephemeral-key smoke test; rerun a branch-scoped Release workflow dry run using the actual repository secrets after the final workflow edit
-- [ ] 3.2 Run Arashi formatting, lint, typecheck, test, build, and lockfile validation gates after the final edit
-- [ ] 3.3 Open and cross-link the child implementation PR and proposal PR, then verify their CI and review surfaces
+- [x] 3.1 Run Bash/ShellCheck validation and an ephemeral-key smoke test; rerun a branch-scoped Release workflow dry run using the actual repository secrets after the final signing-code edit, then verify the final `main` guard skips non-default refs before all steps
+- [x] 3.2 Run Arashi formatting, lint, typecheck, test, build, and lockfile validation gates after the final edit
+- [x] 3.3 Open and cross-link the child implementation PR and proposal PR, then verify their CI and review surfaces
 - [ ] 3.4 After merge, verify the first intentional production release commit is GitHub-verified and its lightweight tag resolves to the same commit
