@@ -41,7 +41,7 @@ Store the ASCII-armored private key and its passphrase as separate repository Ac
 
 ### Import and configure signing with a SHA-pinned action
 
-The workflow will use `crazy-max/ghaction-import-gpg` pinned to reviewed commit `2dc316deee8e90f13e1a351ab510b4d5bc0c82cd` (the current `v7` tag target at proposal time). It will receive the private key and passphrase secrets and set repository-local `user.signingkey` plus `commit.gpgsign=true`. Tag signing remains disabled so semantic-release's current lightweight tags do not change form.
+The workflow will use `crazy-max/ghaction-import-gpg` pinned to reviewed commit `2dc316deee8e90f13e1a351ab510b4d5bc0c82cd` (the current `v7` tag target at proposal time). It will receive the private key and passphrase secrets and set repository-local `user.signingkey` plus `commit.gpgsign=true`. The workflow will also explicitly set repository-local `gpg.format=openpgp` so a runner or developer-level SSH signing preference cannot be inherited by the release checkout. Tag signing remains disabled so semantic-release's current lightweight tags do not change form.
 
 The release step will explicitly set `GIT_AUTHOR_NAME`, `GIT_AUTHOR_EMAIL`, `GIT_COMMITTER_NAME`, and `GIT_COMMITTER_EMAIL` to the GPG UID identity. This is required because `@semantic-release/git` otherwise supplies its own semantic-release-bot defaults, overriding ordinary `git config user.*` values.
 
