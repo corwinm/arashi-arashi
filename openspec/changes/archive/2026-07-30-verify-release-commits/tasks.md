@@ -18,4 +18,4 @@
 - [x] 3.1 Run Bash/ShellCheck validation and an ephemeral-key smoke test; rerun a branch-scoped Release workflow dry run using the actual repository secrets after the final signing-code edit, then verify the final `main` guard skips non-default refs before all steps
 - [x] 3.2 Run Arashi formatting, lint, typecheck, test, build, and lockfile validation gates after the final edit
 - [x] 3.3 Open and cross-link the child implementation PR and proposal PR, then verify their CI and review surfaces
-- [ ] 3.4 After merge, verify the first intentional production release commit is GitHub-verified and its lightweight tag resolves to the same commit
+- [x] 3.4 Verify production release `v1.23.0`: commit `18060eed2267deab4d9c6fcd4293c8442721bd63` is GitHub-verified with reason `valid`, uses the expected release identity, contains only `package.json` and `CHANGELOG.md`, and is the lightweight tag target; workflow `30518977919`, npm `latest`, release assets, and checksums all passed
