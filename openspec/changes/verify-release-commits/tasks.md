@@ -1,9 +1,8 @@
-## 1. Signing Contract Tests
+## 1. Signing Contract
 
-- [x] 1.1 Add focused workflow contract tests for the immutable GPG-import action SHA and separate private-key/passphrase secret wiring
-- [x] 1.2 Add focused tests for repository-local commit signing, matching author/committer identity and fingerprint/UID checks, and signing preflight ordering
-- [x] 1.3 Add a regression assertion that tag signing remains disabled and `@semantic-release/git` assets/message/plugin ordering remain unchanged
-- [x] 1.4 Add a real-Git preflight test using an isolated temporary object directory and assert cleanup plus unchanged refs, HEAD, index, worktree, and normal object storage
+- [x] 1.1 Retain `@semantic-release/git`, its release assets/message, and the existing lightweight-tag topology
+- [x] 1.2 Define immutable action pinning, separate secret wiring, repository-local commit signing, and explicit release identity requirements
+- [x] 1.3 Define an isolated-object signed-commit preflight that checks identity, fingerprint/UID, cleanup, and repository non-mutation
 
 ## 2. Key Provisioning and Workflow
 
@@ -15,7 +14,7 @@
 
 ## 3. Verification and Delivery
 
-- [x] 3.1 Run focused workflow tests and semantic-release dry-run validation
+- [x] 3.1 Run Bash/ShellCheck validation plus a branch-scoped Release workflow dry run using the actual repository secrets
 - [x] 3.2 Run Arashi formatting, lint, typecheck, test, build, and lockfile validation gates after the final edit
 - [x] 3.3 Open and cross-link the child implementation PR and proposal PR, then verify their CI and review surfaces
 - [ ] 3.4 After merge, verify the first intentional production release commit is GitHub-verified and its lightweight tag resolves to the same commit

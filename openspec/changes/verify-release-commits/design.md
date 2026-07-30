@@ -53,7 +53,7 @@ The preflight will use the same four `GIT_AUTHOR_*` and `GIT_COMMITTER_*` overri
 
 Missing secrets, failed key import, identity/fingerprint mismatch, an unusable passphrase, a failed signature, or any checkout-state mutation must fail at preflight, before version/changelog files are prepared or pushed.
 
-Repository tests will enforce the pinned action SHA, secret wiring, commit-signing options, explicit author/committer identity, and the absence of tag-signing configuration. A real production release remains the final proof that GitHub associates the signature with the registered account key.
+Source review, Bash/ShellCheck validation, and a branch-scoped Release workflow dry run will validate the pinned action SHA, secret wiring, commit-signing options, explicit author/committer identity, preflight behavior, and the absence of tag-signing configuration. These checks belong to the release infrastructure rather than Arashi's application test suite. A real production release remains the final proof that GitHub associates the signature with the registered account key.
 
 ## Risks / Trade-offs
 
@@ -66,11 +66,11 @@ Repository tests will enforce the pinned action SHA, secret wiring, commit-signi
 
 ## Migration Plan
 
-1. Add source-level workflow contract tests for immutable action pinning, secret wiring, commit-only signing, explicit identity/fingerprint checks, and isolated temporary-object preflight cleanup.
-2. Generate the dedicated passphrase-protected release GPG key outside the repository.
-3. Register its public key with Corwin's GitHub account and store the private key/passphrase as repository Actions secrets.
-4. Add the SHA-pinned import/configuration and signing preflight to the release workflow; retain `@semantic-release/git` unchanged.
-5. Run focused tests, release dry-run, and the complete Arashi validation gates.
+1. Generate the dedicated passphrase-protected release GPG key outside the repository.
+2. Register its public key with Corwin's GitHub account and store the private key/passphrase as repository Actions secrets.
+3. Add the SHA-pinned import/configuration and signing preflight to the release workflow; retain `@semantic-release/git` unchanged.
+4. Validate the preflight with Bash, ShellCheck, source review, and a branch-scoped Release workflow dry run using the actual repository secrets.
+5. Run the complete Arashi validation gates to confirm the workflow-only change does not regress the application.
 6. Merge through the normal PR process. On the next intentional release, verify the release commit is `verified: true`, its signer identity matches the dedicated key, and the lightweight release tag resolves to that commit.
 7. Roll back by removing the import/preflight steps and secret references; do not rewrite historical refs. Revoke the dedicated key if compromise is suspected.
 
