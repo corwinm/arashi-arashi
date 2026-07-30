@@ -56,7 +56,9 @@ const kittyWorktreeSessionContract: Obj = {
   detection: {
     beforeSupportPreflight: true,
     trimMarkers: true,
-    evidence: ["KITTY_PID", "KITTY_WINDOW_ID", "TERM=xterm-kitty"],
+    requireAllEvidence: true,
+    termOnlyManaged: false,
+    evidence: ["KITTY_PID", "KITTY_WINDOW_ID"],
   },
   remoteControl: {
     required: true,
