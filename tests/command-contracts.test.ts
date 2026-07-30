@@ -45,6 +45,59 @@ const createLaunchContract = {
   jsonRestrictedModes: ["auto", "sesh", "herdr"],
   failurePreservesCreatedWorktrees: true,
 };
+const kittyWorktreeSessionContract = {
+  schemaVersion: 1,
+  minimumVersion: "0.43.0",
+  resultMode: "kitty",
+  autoOrder: ["tmux", "herdr", "cmux", "ide", "kitty", "cd", "platform"],
+  detection: {
+    beforeSupportPreflight: true,
+    trimMarkers: true,
+    evidence: ["KITTY_PID", "KITTY_WINDOW_ID", "TERM=xterm-kitty"],
+  },
+  remoteControl: {
+    required: true,
+    clients: ["inherited-path", "macos-app-bundle"],
+    arbitrarySocketDiscovery: false,
+  },
+  identity: {
+    source: "canonical-realpath",
+    algorithm: "sha256",
+    marker: "arashi_worktree_id",
+    exactMatch: true,
+  },
+  reuse: {
+    existing: "focus",
+    duplicate: "fail",
+    closeRaceRetries: 1,
+    automaticWindowCleanup: false,
+    staleReadableMetadata: "accept",
+  },
+  locking: {
+    crossProcess: true,
+    scope: "identity",
+    timeoutMs: 10_000,
+    liveOwnerStealing: false,
+    deadOwnerRecovery: true,
+    malformedOwnerRecoveryAfterMs: 30_000,
+    ownershipSafeRelease: true,
+  },
+  session: {
+    scope: "live-only",
+    persistentFiles: false,
+    removeClosesWindows: false,
+  },
+  selection: {
+    autoDetectedOnly: true,
+    explicitFlag: false,
+    persistedMode: false,
+    failClosed: true,
+  },
+  create: {
+    sharedLauncher: true,
+    failurePreservesCreatedWorktrees: true,
+  },
+};
 afterEach(async () =>
   Promise.all(roots.splice(0).map((root) => rm(root, { recursive: true }))),
 );
@@ -54,6 +107,8 @@ async function fixture(): Promise<string> {
   roots.push(root);
   const files: Record<string, unknown | string> = {
     "repos/arashi/contracts/create-launch-config.json": createLaunchContract,
+    "repos/arashi/contracts/kitty-worktree-sessions.json":
+      kittyWorktreeSessionContract,
     "repos/arashi/schema/config.schema.json": {
       definitions: {
         CommandDefaultsConfig: {
@@ -93,7 +148,7 @@ async function fixture(): Promise<string> {
       canonicalField: "defaults.switch.mode",
       modes: ["auto", "cd", "launch", "sesh", "herdr"],
       absentMode: "launch",
-      autoOrder: ["tmux", "herdr", "cmux", "ide", "cd", "platform"],
+      autoOrder: ["tmux", "herdr", "cmux", "ide", "kitty", "cd", "platform"],
       legacyFields: [
         "defaults.switch.launchMode",
         "defaults.switch.launch_mode",
@@ -101,12 +156,14 @@ async function fixture(): Promise<string> {
     },
     "repos/arashi-docs/contracts/create-launch-config.json":
       createLaunchContract,
+    "repos/arashi-docs/contracts/kitty-worktree-sessions.json":
+      kittyWorktreeSessionContract,
     "repos/arashi-skills/contracts/switch-config.json": {
       schemaVersion: 1,
       canonicalField: "defaults.switch.mode",
       modes: ["auto", "cd", "launch", "sesh", "herdr"],
       absentMode: "launch",
-      autoOrder: ["tmux", "herdr", "cmux", "ide", "cd", "platform"],
+      autoOrder: ["tmux", "herdr", "cmux", "ide", "kitty", "cd", "platform"],
       legacyFields: [
         "defaults.switch.launchMode",
         "defaults.switch.launch_mode",
@@ -114,6 +171,8 @@ async function fixture(): Promise<string> {
     },
     "repos/arashi-skills/contracts/create-launch-config.json":
       createLaunchContract,
+    "repos/arashi-skills/contracts/kitty-worktree-sessions.json":
+      kittyWorktreeSessionContract,
     "repos/arashi/contracts/cli-commands.json": {
       schemaVersion: 3,
       commands: [
@@ -205,6 +264,12 @@ async function fixture(): Promise<string> {
     "repos/arashi-docs/docs/commands/init.md": "# Init\n",
     "repos/arashi-docs/docs/commands/index.md":
       "- [Add](/commands/add/)\n- [Init](/commands/init/)\n",
+    "repos/arashi-docs/docs/workflows/kitty.md":
+      "Kitty 0.43 or newer\n`allow_remote_control`\nexact Arashi worktree identity\nafter integrated IDE detection and before parent-shell `cd`\nlive only\n`.kitty-session`\n`arashi remove` does not close Kitty windows or sessions\nno `--kitty` flag\ndoes not add Kitty to persistent Arashi launch configuration\n`LAUNCH_FAILED`\ndoes not fall back\ncreated worktrees remain available\ncross-process identity lock\n10 seconds\nlive owner\ndead owner\n30 seconds\nownership-safe release\n",
+    "repos/arashi-docs/public/workflows/kitty.md":
+      "Kitty 0.43 or newer\n`allow_remote_control`\nexact Arashi worktree identity\nafter integrated IDE detection and before parent-shell `cd`\nlive only\n`.kitty-session`\n`arashi remove` does not close Kitty windows or sessions\nno `--kitty` flag\ndoes not add Kitty to persistent Arashi launch configuration\n`LAUNCH_FAILED`\ndoes not fall back\ncreated worktrees remain available\ncross-process identity lock\n10 seconds\nlive owner\ndead owner\n30 seconds\nownership-safe release\n",
+    "repos/arashi-docs/public/llms-full.txt":
+      "Kitty 0.43 or newer\n`allow_remote_control`\nexact Arashi worktree identity\nafter integrated IDE detection and before parent-shell `cd`\nlive only\n`.kitty-session`\n`arashi remove` does not close Kitty windows or sessions\nno `--kitty` flag\ndoes not add Kitty to persistent Arashi launch configuration\n`LAUNCH_FAILED`\ndoes not fall back\ncreated worktrees remain available\ncross-process identity lock\n10 seconds\nlive owner\ndead owner\n30 seconds\nownership-safe release\n",
     "repos/arashi-skills/contracts/command-coverage.json": {
       schemaVersion: 1,
       commands: [
@@ -247,7 +312,13 @@ async function fixture(): Promise<string> {
       ],
     },
     "repos/arashi-skills/skills/arashi/references/commands.md":
-      "Use `arashi add`.\n",
+      'Use `arashi add`.\ntmux → Herdr → cmux → integrated IDE → Kitty → parent-shell `cd` → terminal application/platform fallback\n`mode: "kitty"`\nno explicit Kitty launcher flag\nnot a persisted create or switch mode\ndoes not fall back\n',
+    "repos/arashi-skills/skills/arashi/references/prerequisites.md":
+      "Kitty 0.43+\nkitten --version\nremote control\nallow_remote_control\n",
+    "repos/arashi-skills/skills/arashi/references/workflows.md":
+      "Kitty 0.43+\nexact Arashi-managed marker\nstable identity\n`<repo-name>: <branch-name>`\nsame managed Kitty flow\nlive-only\n`.kitty-session`\nRemoval does not close Kitty\npreserves every successfully created worktree\n",
+    "repos/arashi-skills/skills/arashi/references/troubleshooting.md":
+      "Kitty 0.43+\nremote control\nLAUNCH_FAILED\nduplicate exact marked Kitty windows\ndoes not close ambiguous Kitty windows\npreserve the created worktrees\ncross-process identity lock\n10-second wait\nlive owner\ndead owner\n30 seconds\nownership-safe release\n",
     "repos/arashi-vscode/contracts/command-policy.json": {
       schemaVersion: 1,
       cliCommands: {
@@ -685,6 +756,33 @@ describe("cross-repository command contracts", () => {
     for (const code of ["POLICY_REASON_REQUIRED", "SCHEMA_VERSION_UNSUPPORTED"])
       expect(codes).toContain(code);
   });
+  test("accepts managed Kitty in the canonical automatic launcher order", async () => {
+    const root = await fixture();
+    const autoOrder = [
+      "tmux",
+      "herdr",
+      "cmux",
+      "ide",
+      "kitty",
+      "cd",
+      "platform",
+    ];
+    for (const relativePath of [
+      "repos/arashi-docs/contracts/switch-config.json",
+      "repos/arashi-skills/contracts/switch-config.json",
+    ]) {
+      const path = join(root, relativePath);
+      const data = JSON.parse(await readFile(path, "utf8"));
+      data.autoOrder = autoOrder;
+      await writeFile(path, JSON.stringify(data));
+    }
+
+    expect(
+      (await checkContracts(root)).diagnostics.filter(
+        (diagnostic) => diagnostic.code === "SWITCH_CONFIG_MISMATCH",
+      ),
+    ).toEqual([]);
+  });
   test("rejects a controlled switch-configuration semantic mismatch", async () => {
     const root = await fixture();
     const path = join(root, "repos/arashi-docs/contracts/switch-config.json");
@@ -697,6 +795,68 @@ describe("cross-repository command contracts", () => {
         code: "SWITCH_CONFIG_MISMATCH",
         source: "repos/arashi-docs/contracts/switch-config.json",
         subject: "autoOrder",
+      }),
+    );
+  });
+  test.each([
+    { subject: "minimumVersion", value: "0.42.0" },
+    { subject: "remoteControl.required", value: false },
+    { subject: "identity.exactMatch", value: false },
+    { subject: "reuse.automaticWindowCleanup", value: true },
+    { subject: "locking.timeoutMs", value: 9_999 },
+    { subject: "locking.ownershipSafeRelease", value: false },
+    { subject: "session.persistentFiles", value: true },
+    { subject: "session.removeClosesWindows", value: true },
+    { subject: "selection.autoDetectedOnly", value: false },
+    { remove: true, subject: "selection.failClosed" },
+  ])(
+    "rejects controlled Kitty semantic drift at $subject",
+    async ({ remove, subject, value }) => {
+      const root = await fixture();
+      const path = join(
+        root,
+        "repos/arashi-docs/contracts/kitty-worktree-sessions.json",
+      );
+      const data = JSON.parse(await readFile(path, "utf8")) as Record<
+        string,
+        unknown
+      >;
+      const segments = subject.split(".");
+      const leaf = segments.pop()!;
+      let parent = data;
+      for (const segment of segments) {
+        parent = parent[segment] as Record<string, unknown>;
+      }
+      if (remove) {
+        delete parent[leaf];
+      } else {
+        parent[leaf] = value;
+      }
+      await writeFile(path, JSON.stringify(data));
+
+      expect((await checkContracts(root)).diagnostics).toContainEqual(
+        expect.objectContaining({
+          code: "KITTY_WORKTREE_SESSION_MISMATCH",
+          source: "repos/arashi-docs/contracts/kitty-worktree-sessions.json",
+          subject,
+        }),
+      );
+    },
+  );
+  test("rejects Kitty semantic drift in canonical human guidance", async () => {
+    const root = await fixture();
+    const path = join(root, "repos/arashi-docs/docs/workflows/kitty.md");
+    const content = await readFile(path, "utf8");
+    await writeFile(
+      path,
+      content.replace("Kitty 0.43 or newer", "Kitty 0.42 or newer"),
+    );
+
+    expect((await checkContracts(root)).diagnostics).toContainEqual(
+      expect.objectContaining({
+        code: "KITTY_GUIDANCE_MISMATCH",
+        source: "repos/arashi-docs/docs/workflows/kitty.md",
+        subject: "Kitty 0.43 or newer",
       }),
     );
   });

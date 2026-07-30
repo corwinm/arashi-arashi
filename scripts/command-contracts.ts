@@ -19,22 +19,178 @@ type Obj = Record<string, unknown>;
 const paths = {
   contract: "repos/arashi/contracts/cli-commands.json",
   cliCreateConfig: "repos/arashi/contracts/create-launch-config.json",
+  cliKittySessions: "repos/arashi/contracts/kitty-worktree-sessions.json",
   configSchema: "repos/arashi/schema/config.schema.json",
   docs: "repos/arashi-docs/docs/commands",
   docsCreateConfig: "repos/arashi-docs/contracts/create-launch-config.json",
+  docsKittySessions: "repos/arashi-docs/contracts/kitty-worktree-sessions.json",
   docsSwitchConfig: "repos/arashi-docs/contracts/switch-config.json",
   skills: "repos/arashi-skills/skills/arashi",
   coverage: "repos/arashi-skills/contracts/command-coverage.json",
   skillsCreateConfig: "repos/arashi-skills/contracts/create-launch-config.json",
+  skillsKittySessions:
+    "repos/arashi-skills/contracts/kitty-worktree-sessions.json",
   skillsSwitchConfig: "repos/arashi-skills/contracts/switch-config.json",
   policy: "repos/arashi-vscode/contracts/command-policy.json",
   manifest: "repos/arashi-vscode/package.json",
 } as const;
 const switchModes = ["auto", "cd", "launch", "sesh", "herdr"];
-const switchAutoOrder = ["tmux", "herdr", "cmux", "ide", "cd", "platform"];
+const switchAutoOrder = [
+  "tmux",
+  "herdr",
+  "cmux",
+  "ide",
+  "kitty",
+  "cd",
+  "platform",
+];
 const switchLegacyFields = [
   "defaults.switch.launchMode",
   "defaults.switch.launch_mode",
+];
+const kittyWorktreeSessionContract: Obj = {
+  schemaVersion: 1,
+  minimumVersion: "0.43.0",
+  resultMode: "kitty",
+  autoOrder: ["tmux", "herdr", "cmux", "ide", "kitty", "cd", "platform"],
+  detection: {
+    beforeSupportPreflight: true,
+    trimMarkers: true,
+    evidence: ["KITTY_PID", "KITTY_WINDOW_ID", "TERM=xterm-kitty"],
+  },
+  remoteControl: {
+    required: true,
+    clients: ["inherited-path", "macos-app-bundle"],
+    arbitrarySocketDiscovery: false,
+  },
+  identity: {
+    source: "canonical-realpath",
+    algorithm: "sha256",
+    marker: "arashi_worktree_id",
+    exactMatch: true,
+  },
+  reuse: {
+    existing: "focus",
+    duplicate: "fail",
+    closeRaceRetries: 1,
+    automaticWindowCleanup: false,
+    staleReadableMetadata: "accept",
+  },
+  locking: {
+    crossProcess: true,
+    scope: "identity",
+    timeoutMs: 10_000,
+    liveOwnerStealing: false,
+    deadOwnerRecovery: true,
+    malformedOwnerRecoveryAfterMs: 30_000,
+    ownershipSafeRelease: true,
+  },
+  session: {
+    scope: "live-only",
+    persistentFiles: false,
+    removeClosesWindows: false,
+  },
+  selection: {
+    autoDetectedOnly: true,
+    explicitFlag: false,
+    persistedMode: false,
+    failClosed: true,
+  },
+  create: {
+    sharedLauncher: true,
+    failurePreservesCreatedWorktrees: true,
+  },
+};
+const kittyDocsGuidance = [
+  "Kitty 0.43 or newer",
+  "`allow_remote_control`",
+  "after integrated IDE detection and before parent-shell `cd`",
+  "exact Arashi worktree identity",
+  "live only",
+  "`.kitty-session`",
+  "`arashi remove` does not close Kitty windows or sessions",
+  "no `--kitty` flag",
+  "does not add Kitty to persistent Arashi launch configuration",
+  "`LAUNCH_FAILED`",
+  "does not fall back",
+  "created worktrees remain available",
+  "cross-process identity lock",
+  "10 seconds",
+  "live owner",
+  "dead owner",
+  "30 seconds",
+  "ownership-safe release",
+] as const;
+const kittyGuidanceRequirements: Array<{
+  category: "docs" | "skills";
+  phrases: readonly string[];
+  source: string;
+}> = [
+  {
+    category: "docs",
+    source: "repos/arashi-docs/docs/workflows/kitty.md",
+    phrases: kittyDocsGuidance,
+  },
+  {
+    category: "docs",
+    source: "repos/arashi-docs/public/workflows/kitty.md",
+    phrases: kittyDocsGuidance,
+  },
+  {
+    category: "docs",
+    source: "repos/arashi-docs/public/llms-full.txt",
+    phrases: kittyDocsGuidance,
+  },
+  {
+    category: "skills",
+    source: "repos/arashi-skills/skills/arashi/references/prerequisites.md",
+    phrases: [
+      "Kitty 0.43+",
+      "kitten --version",
+      "remote control",
+      "allow_remote_control",
+    ],
+  },
+  {
+    category: "skills",
+    source: "repos/arashi-skills/skills/arashi/references/commands.md",
+    phrases: [
+      "tmux → Herdr → cmux → integrated IDE → Kitty → parent-shell `cd` → terminal application/platform fallback",
+      '`mode: "kitty"`',
+      "no explicit Kitty launcher flag",
+      "not a persisted create or switch mode",
+      "does not fall back",
+    ],
+  },
+  {
+    category: "skills",
+    source: "repos/arashi-skills/skills/arashi/references/workflows.md",
+    phrases: [
+      "Kitty 0.43+",
+      "exact Arashi-managed marker",
+      "stable identity",
+      "live-only",
+      "`.kitty-session`",
+      "does not close Kitty",
+      "preserves every successfully created worktree",
+    ],
+  },
+  {
+    category: "skills",
+    source: "repos/arashi-skills/skills/arashi/references/troubleshooting.md",
+    phrases: [
+      "Kitty 0.43+",
+      "remote control",
+      "LAUNCH_FAILED",
+      "duplicate exact marked Kitty windows",
+      "cross-process identity lock",
+      "10-second wait",
+      "live owner",
+      "dead owner",
+      "30 seconds",
+      "ownership-safe release",
+    ],
+  },
 ];
 const object = (value: unknown): value is Obj =>
   typeof value === "object" && value !== null && !Array.isArray(value);
@@ -241,6 +397,87 @@ function checkSwitchConfigContract(
         "Switch configuration semantics must match the canonical unified-mode contract.",
       );
 }
+function checkKittyWorktreeSessionContract(
+  value: Obj | undefined,
+  source: string,
+  category: "schema" | "docs" | "skills",
+  diagnostics: Diagnostic[],
+) {
+  if (!value) return;
+
+  const visit = (actual: unknown, expected: unknown, subject: string): void => {
+    if (object(expected)) {
+      if (!object(actual)) {
+        add(
+          diagnostics,
+          "error",
+          category,
+          "KITTY_WORKTREE_SESSION_MISMATCH",
+          source,
+          subject,
+          "Managed Kitty worktree-session semantics must match the canonical CLI-owned contract.",
+        );
+        return;
+      }
+      const keys = new Set([...Object.keys(expected), ...Object.keys(actual)]);
+      for (const key of [...keys].sort())
+        visit(
+          actual[key],
+          expected[key],
+          subject.length > 0 ? `${subject}.${key}` : key,
+        );
+      return;
+    }
+
+    if (JSON.stringify(actual) !== JSON.stringify(expected))
+      add(
+        diagnostics,
+        "error",
+        category,
+        "KITTY_WORKTREE_SESSION_MISMATCH",
+        source,
+        subject,
+        "Managed Kitty worktree-session semantics must match the canonical CLI-owned contract.",
+      );
+  };
+
+  visit(value, kittyWorktreeSessionContract, "");
+}
+
+async function checkKittyGuidance(
+  root: string,
+  diagnostics: Diagnostic[],
+): Promise<void> {
+  for (const requirement of kittyGuidanceRequirements) {
+    let content: string;
+    try {
+      content = await readFile(join(root, requirement.source), "utf8");
+    } catch {
+      add(
+        diagnostics,
+        "error",
+        requirement.category,
+        "KITTY_GUIDANCE_MISMATCH",
+        requirement.source,
+        "file",
+        "Managed Kitty human guidance is missing.",
+      );
+      continue;
+    }
+    for (const phrase of requirement.phrases) {
+      if (content.includes(phrase)) continue;
+      add(
+        diagnostics,
+        "error",
+        requirement.category,
+        "KITTY_GUIDANCE_MISMATCH",
+        requirement.source,
+        phrase,
+        "Managed Kitty human guidance must match the normalized cross-repository contract.",
+      );
+    }
+  }
+}
 const createUnorderedArraySubjects = [
   "modes",
   "editorHosts",
@@ -398,11 +635,14 @@ export async function checkContracts(
   const d: Diagnostic[] = [];
   const contract = await json(root, paths.contract, d);
   const cliCreateConfig = await json(root, paths.cliCreateConfig, d);
+  const cliKittySessions = await json(root, paths.cliKittySessions, d);
   const configSchema = await json(root, paths.configSchema, d);
   const docsCreateConfig = await json(root, paths.docsCreateConfig, d);
+  const docsKittySessions = await json(root, paths.docsKittySessions, d);
   const docsSwitchConfig = await json(root, paths.docsSwitchConfig, d);
   const coverage = await json(root, paths.coverage, d);
   const skillsCreateConfig = await json(root, paths.skillsCreateConfig, d);
+  const skillsKittySessions = await json(root, paths.skillsKittySessions, d);
   const skillsSwitchConfig = await json(root, paths.skillsSwitchConfig, d);
   const policy = await json(root, paths.policy, d);
   const manifest = await json(root, paths.manifest, d);
@@ -435,6 +675,24 @@ export async function checkContracts(
       paths.skillsCreateConfig,
       d,
     );
+  checkKittyWorktreeSessionContract(
+    cliKittySessions,
+    paths.cliKittySessions,
+    "schema",
+    d,
+  );
+  checkKittyWorktreeSessionContract(
+    docsKittySessions,
+    paths.docsKittySessions,
+    "docs",
+    d,
+  );
+  checkKittyWorktreeSessionContract(
+    skillsKittySessions,
+    paths.skillsKittySessions,
+    "skills",
+    d,
+  );
   checkSwitchConfigContract(docsSwitchConfig, paths.docsSwitchConfig, d);
   checkSwitchConfigContract(skillsSwitchConfig, paths.skillsSwitchConfig, d);
   const definitions = object(configSchema?.definitions)
@@ -1246,6 +1504,8 @@ export async function checkContracts(
         id,
         "Contributed command is neither CLI-backed nor extension-only.",
       );
+
+  await checkKittyGuidance(root, d);
 
   d.sort((a, b) =>
     [
