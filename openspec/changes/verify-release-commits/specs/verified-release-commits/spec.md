@@ -45,12 +45,12 @@ The release workflow MUST keep private signing material out of the repository an
 - **WHEN** tracked files and generated release artifacts are reviewed
 - **THEN** they contain no private key, passphrase, or secret-derived signing material
 
-### Requirement: Immutable signing setup dependency
-The release workflow SHALL pin the third-party GPG import action to a reviewed immutable commit SHA and SHALL configure repository-local commit signing without enabling tag signing.
+### Requirement: Auditable repository-owned signing setup
+The release workflow SHALL use reviewed repository-owned code to import and use the GPG key without passing signing secrets to a third-party action and SHALL configure repository-local commit signing without enabling tag signing.
 
-#### Scenario: Import action executes
+#### Scenario: Signing setup executes
 - **WHEN** the workflow imports the release key
-- **THEN** it runs the reviewed action commit and configures `user.signingkey` plus `commit.gpgsign=true`
+- **THEN** repository-owned code confines key material to mode-restricted temporary storage, supplies the passphrase without process arguments or logs, configures `user.signingkey` plus `commit.gpgsign=true`, and removes the temporary signing state during an always-run cleanup step
 
 #### Scenario: Semantic-release creates the tag
 - **WHEN** the signed release commit has been created

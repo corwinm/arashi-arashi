@@ -8,7 +8,7 @@ Arashi's automated semantic-release commits are currently created locally by `@s
 - Generate a dedicated, passphrase-protected GPG signing key for Arashi releases and register only its public key with the maintainer's GitHub account.
 - Store the private key and passphrase as GitHub Actions secrets and import them only into the ephemeral release runner.
 - Configure Git commit signing and an identity matching the registered GPG key before semantic-release runs.
-- Pin the GPG-import action to a reviewed immutable commit SHA.
+- Use repository-owned shell code for key import, passphrase delivery, Git configuration, and cleanup so no third-party action receives the signing secrets.
 - Preserve the release commit's tracked assets (`package.json` and `CHANGELOG.md`), existing commit message, lightweight tag target, npm trusted publishing, artifacts, and dry-run behavior.
 - Leave historical unsigned release commits and existing tags unchanged.
 
@@ -24,7 +24,7 @@ None.
 
 ## Impact
 
-- `repos/arashi/.github/workflows/release.yml`: imports the dedicated GPG key, configures commit signing, and supplies the matching Git author/committer identity.
+- `repos/arashi/.github/workflows/release.yml` and `scripts/release/`: import the dedicated GPG key, configure and verify commit signing, clean up key material, and supply the matching Git author/committer identity.
 - Repository Actions secrets: adds a release-only armored private key and passphrase.
 - Maintainer GitHub account: registers the dedicated public GPG key against a verified noreply email.
 - `@semantic-release/git`, `.releaserc.json`, package dependencies, npm trusted publishing, and release assets remain otherwise unchanged.
