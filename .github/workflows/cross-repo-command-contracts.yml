@@ -84,6 +84,11 @@ jobs:
       - name: Type-check checker
         working-directory: meta
         run: pnpm typecheck
+      - name: Generate documentation contract exports
+        working-directory: meta/repos/arashi-docs
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm sync:content
       - name: Check cross-repository contracts
         working-directory: meta
         run: pnpm contracts:check
