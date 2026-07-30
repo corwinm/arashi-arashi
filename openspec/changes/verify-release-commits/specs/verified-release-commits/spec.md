@@ -41,6 +41,10 @@ The release workflow MUST keep private signing material out of the repository an
 - **WHEN** the manual Release workflow starts
 - **THEN** key material is read only from encrypted secrets, is masked from logs, and exists only for the lifetime of the runner
 
+#### Scenario: Manual dispatch targets a non-default branch
+- **WHEN** a user dispatches the Release workflow with a ref other than `main`
+- **THEN** the release job is skipped before checkout, runner allocation, or release-secret access
+
 #### Scenario: Repository content is inspected
 - **WHEN** tracked files and generated release artifacts are reviewed
 - **THEN** they contain no private key, passphrase, or secret-derived signing material

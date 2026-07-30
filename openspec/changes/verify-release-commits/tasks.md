@@ -11,6 +11,7 @@
 - [x] 2.3 Add repository-owned GPG import/configuration/cleanup code and configure repository-local OpenPGP automatic commit signing
 - [x] 2.4 Set all `GIT_AUTHOR_*` and `GIT_COMMITTER_*` values for the semantic-release step to the registered key identity
 - [x] 2.5 Add a non-mutating signed-commit preflight that fails before semantic-release on missing or invalid signing configuration
+- [x] 2.6 Restrict the release job to `main` before any branch-controlled step can access repository signing secrets
 
 ## 3. Verification and Delivery
 
