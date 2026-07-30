@@ -30,7 +30,7 @@
 
 ## 5. Verify the completed change
 
-- [ ] 5.1 Run focused and complete CLI format, lint, typecheck/test, build, generated-contract freshness, and package checks after the final CLI source edit.
+- [x] 5.1 Run focused and complete CLI format, lint, typecheck/test, build, generated-contract freshness, and package checks after the final CLI source edit.
 - [x] 5.2 Run docs formatting, tests, build, link/export freshness, and rendered workflow/troubleshooting verification after the final docs edit.
 - [x] 5.3 Run skills source/package tests and inspect the extracted package file list after the final skills edit.
 - [x] 5.4 Run the meta-repository cross-contract checker, deliberate-mismatch fixture, strict OpenSpec validation, and `git diff --check` after the final contract edit.
