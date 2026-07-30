@@ -5,8 +5,7 @@
   "worktreesDir": ".arashi/worktrees",
   "defaults": {
     "create": {
-      "launch": true,
-      "launchMode": "sesh"
+      "launch": "sesh"
     },
     "switch": {
       "mode": "sesh"
