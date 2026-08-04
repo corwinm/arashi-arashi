@@ -1049,9 +1049,10 @@ async function checkTabCompanionSemantics(
   const terminalGuidance = [
     "press Command-T manually, then run `arashi switch --cd`",
     "requires active Arashi shell integration",
-    'cd "$(arashi switch --no-cd --no-default-launch)"',
     "when automatic launcher resolution selects Terminal.app",
   ];
+  const invalidTerminalGuidance =
+    'cd "$(arashi switch --no-cd --no-default-launch)"';
   for (const companion of companions) {
     let content: string | undefined;
     let projection: TabProjection | undefined;
@@ -1084,6 +1085,16 @@ async function checkTabCompanionSemantics(
           "launcherSupport.macos-terminal.guidance",
           `Terminal.app unsupported-tab guidance is missing ${JSON.stringify(required)}.`,
         );
+    if (content?.includes(invalidTerminalGuidance))
+      add(
+        diagnostics,
+        "error",
+        companion.category,
+        companion.code,
+        companion.source,
+        "launcherSupport.macos-terminal.guidance",
+        "Terminal.app guidance must not recommend launch-mode output as a path-only command substitution.",
+      );
     for (const command of ["create", "switch"] as const)
       for (const field of [
         "conflicts",

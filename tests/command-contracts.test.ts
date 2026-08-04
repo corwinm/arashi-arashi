@@ -235,7 +235,7 @@ For create, create tab implies launch and switch.
 | IDE workspaces | Existing editor behavior | Unsupported | No terminal-tab contract |
 | generic fallback | New terminal/platform window | Unsupported | No portable exact tab target |
 
-For Terminal.app, press Command-T manually, then run \`arashi switch --cd\`; this requires active Arashi shell integration. Without shell integration, run \`cd "$(arashi switch --no-cd --no-default-launch)"\`. Normal automatic launch opens a new Terminal window only when automatic launcher resolution selects Terminal.app.
+For Terminal.app, press Command-T manually, then run \`arashi switch --cd\`; this requires active Arashi shell integration. Normal automatic launch opens a new Terminal window only when automatic launcher resolution selects Terminal.app.
 
 Unsupported tab disposition never opens a window or falls through to another launcher.
 These guards win before launcher conflicts or runtime-context validation.
@@ -281,7 +281,7 @@ A requested tab never silently falls back. Enforce each guard before option or c
 | iTerm2 | new window with current profile | tab in exact target window with current profile |
 | Generic Linux/macOS/Windows fallback | independent window | \`TAB_DISPOSITION_UNSUPPORTED\` |
 
-For Terminal.app, press Command-T manually, then run \`arashi switch --cd\`; this requires active Arashi shell integration. Without shell integration, run \`cd "$(arashi switch --no-cd --no-default-launch)"\`. Normal automatic launch opens a new Terminal window only when automatic launcher resolution selects Terminal.app.
+For Terminal.app, press Command-T manually, then run \`arashi switch --cd\`; this requires active Arashi shell integration. Normal automatic launch opens a new Terminal window only when automatic launcher resolution selects Terminal.app.
 `;
 afterEach(async () =>
   Promise.all(roots.splice(0).map((root) => rm(root, { recursive: true }))),
@@ -975,10 +975,24 @@ describe("cross-repository command contracts", () => {
       "DOCS_TAB_POLICY_MISMATCH",
     ],
     [
+      "docs invalid Terminal.app path-substitution guidance",
+      "repos/arashi-docs/docs/workflows/launch-disposition.md",
+      (content: string) =>
+        `${content}\nWithout shell integration, run \`cd "$(arashi switch --no-cd --no-default-launch)"\`.\n`,
+      "DOCS_TAB_POLICY_MISMATCH",
+    ],
+    [
       "skills Terminal.app guidance drift",
       "repos/arashi-skills/skills/arashi/references/commands.md",
       (content: string) =>
         content.replace("press Command-T manually", "create a tab somehow"),
+      "SKILLS_TAB_POLICY_MISMATCH",
+    ],
+    [
+      "skills invalid Terminal.app path-substitution guidance",
+      "repos/arashi-skills/skills/arashi/references/commands.md",
+      (content: string) =>
+        `${content}\nWithout shell integration, run \`cd "$(arashi switch --no-cd --no-default-launch)"\`.\n`,
       "SKILLS_TAB_POLICY_MISMATCH",
     ],
     [
