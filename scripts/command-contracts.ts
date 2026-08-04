@@ -245,7 +245,6 @@ const tabLauncherSupport: Obj = {
     "herdr-with-workspace",
     "macos-ghostty-1.3+",
     "macos-iterm2",
-    "macos-terminal",
     "managed-kitty",
     "sesh",
     "tmux",
@@ -258,6 +257,7 @@ const tabLauncherSupport: Obj = {
     "git-bash",
     "linux-ghostty",
     "macos-ghostty-before-1.3",
+    "macos-terminal",
     "unmanaged-kitty",
   ],
 };
@@ -743,7 +743,7 @@ const launcherSemantics = new Map<string, LauncherProjection>([
   ],
   [
     "macos-terminal",
-    { defaultDisposition: "window", tabClassification: "true-tab" },
+    { defaultDisposition: "window", tabClassification: "unsupported" },
   ],
   [
     "macos-iterm2",
@@ -1046,13 +1046,19 @@ async function checkTabCompanionSemantics(
       source: paths.skillsTabPolicy,
     },
   ];
+  const terminalGuidance = [
+    "press Command-T manually, then run `arashi switch --cd`",
+    "requires active Arashi shell integration",
+    "when automatic launcher resolution selects Terminal.app",
+  ];
+  const invalidTerminalGuidance =
+    'cd "$(arashi switch --no-cd --no-default-launch)"';
   for (const companion of companions) {
+    let content: string | undefined;
     let projection: TabProjection | undefined;
     try {
-      projection = companionProjection(
-        await readFile(join(root, companion.source), "utf8"),
-        companion.category,
-      );
+      content = await readFile(join(root, companion.source), "utf8");
+      projection = companionProjection(content, companion.category);
     } catch {
       // Report the same owning-source mismatch below.
     }
@@ -1068,6 +1074,27 @@ async function checkTabCompanionSemantics(
       );
       continue;
     }
+    for (const required of terminalGuidance)
+      if (!content?.includes(required))
+        add(
+          diagnostics,
+          "error",
+          companion.category,
+          companion.code,
+          companion.source,
+          "launcherSupport.macos-terminal.guidance",
+          `Terminal.app unsupported-tab guidance is missing ${JSON.stringify(required)}.`,
+        );
+    if (content?.includes(invalidTerminalGuidance))
+      add(
+        diagnostics,
+        "error",
+        companion.category,
+        companion.code,
+        companion.source,
+        "launcherSupport.macos-terminal.guidance",
+        "Terminal.app guidance must not recommend launch-mode output as a path-only command substitution.",
+      );
     for (const command of ["create", "switch"] as const)
       for (const field of [
         "conflicts",

@@ -114,7 +114,6 @@ const tabLauncherSupport = {
     "herdr-with-workspace",
     "macos-ghostty-1.3+",
     "macos-iterm2",
-    "macos-terminal",
     "managed-kitty",
     "sesh",
     "tmux",
@@ -127,6 +126,7 @@ const tabLauncherSupport = {
     "git-bash",
     "linux-ghostty",
     "macos-ghostty-before-1.3",
+    "macos-terminal",
     "unmanaged-kitty",
   ],
 };
@@ -225,7 +225,7 @@ For create, create tab implies launch and switch.
 | tmux / sesh | tmux window or sesh-managed session | Managed tab equivalent | Active tmux/session evidence |
 | cmux | Workspace | cmux workspace / vertical tab | Active session identifiers |
 | active-workspace Herdr | Workspace | Herdr tab | Active workspace ID |
-| Terminal.app | New window | True tab | Current application/window |
+| Terminal.app | New window | Unsupported | No supported true-tab automation |
 | iTerm2 | New window | True tab | Current application/window/session |
 | macOS Ghostty older than 1.3 or missing supported-version evidence | New window | Unsupported | No supported tab API |
 | macOS Ghostty 1.3+ | New window | True tab | Current Ghostty window and supported version |
@@ -234,6 +234,8 @@ For create, create tab implies launch and switch.
 | Linux Ghostty | New window | Unsupported | No external true-tab adapter |
 | IDE workspaces | Existing editor behavior | Unsupported | No terminal-tab contract |
 | generic fallback | New terminal/platform window | Unsupported | No portable exact tab target |
+
+For Terminal.app, press Command-T manually, then run \`arashi switch --cd\`; this requires active Arashi shell integration. Normal automatic launch opens a new Terminal window only when automatic launcher resolution selects Terminal.app.
 
 Unsupported tab disposition never opens a window or falls through to another launcher.
 These guards win before launcher conflicts or runtime-context validation.
@@ -275,9 +277,11 @@ A requested tab never silently falls back. Enforce each guard before option or c
 | Linux Ghostty | \`ghostty +new-window\` | \`TAB_DISPOSITION_UNSUPPORTED\`; never map to a window |
 | macOS Ghostty older than 1.3 or missing supported-version evidence | independent window | \`TAB_DISPOSITION_UNSUPPORTED\` |
 | macOS Ghostty 1.3+ | \`new window with configuration\` | \`new tab in <captured-window> with configuration\` |
-| Terminal.app | new window transaction | tab in exact target window |
+| Terminal.app | new window transaction | \`TAB_DISPOSITION_UNSUPPORTED\`; no supported true-tab automation |
 | iTerm2 | new window with current profile | tab in exact target window with current profile |
 | Generic Linux/macOS/Windows fallback | independent window | \`TAB_DISPOSITION_UNSUPPORTED\` |
+
+For Terminal.app, press Command-T manually, then run \`arashi switch --cd\`; this requires active Arashi shell integration. Normal automatic launch opens a new Terminal window only when automatic launcher resolution selects Terminal.app.
 `;
 afterEach(async () =>
   Promise.all(roots.splice(0).map((root) => rm(root, { recursive: true }))),
@@ -953,6 +957,44 @@ describe("cross-repository command contracts", () => {
     expect(codes).toContain("SKILLS_OPTION_POLICY_CHECK_UNREACHABLE");
   });
   test.each([
+    [
+      "docs Terminal.app capability drift",
+      "repos/arashi-docs/docs/workflows/launch-disposition.md",
+      (content: string) =>
+        content.replace(
+          "| Terminal.app | New window | Unsupported | No supported true-tab automation |",
+          "| Terminal.app | New window | True tab | Current application/window |",
+        ),
+      "DOCS_TAB_POLICY_MISMATCH",
+    ],
+    [
+      "docs Terminal.app guidance drift",
+      "repos/arashi-docs/docs/workflows/launch-disposition.md",
+      (content: string) =>
+        content.replace("press Command-T manually", "create a tab somehow"),
+      "DOCS_TAB_POLICY_MISMATCH",
+    ],
+    [
+      "docs invalid Terminal.app path-substitution guidance",
+      "repos/arashi-docs/docs/workflows/launch-disposition.md",
+      (content: string) =>
+        `${content}\nWithout shell integration, run \`cd "$(arashi switch --no-cd --no-default-launch)"\`.\n`,
+      "DOCS_TAB_POLICY_MISMATCH",
+    ],
+    [
+      "skills Terminal.app guidance drift",
+      "repos/arashi-skills/skills/arashi/references/commands.md",
+      (content: string) =>
+        content.replace("press Command-T manually", "create a tab somehow"),
+      "SKILLS_TAB_POLICY_MISMATCH",
+    ],
+    [
+      "skills invalid Terminal.app path-substitution guidance",
+      "repos/arashi-skills/skills/arashi/references/commands.md",
+      (content: string) =>
+        `${content}\nWithout shell integration, run \`cd "$(arashi switch --no-cd --no-default-launch)"\`.\n`,
+      "SKILLS_TAB_POLICY_MISMATCH",
+    ],
     [
       "docs default disposition drift",
       "repos/arashi-docs/docs/workflows/launch-disposition.md",
