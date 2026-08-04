@@ -105,6 +105,10 @@ The Windows installer SHALL add the install directory to the persistent user PAT
 - **WHEN** the installer adds or reports the install directory for Git Bash use
 - **THEN** it does not create or modify `.bashrc`, `.bash_profile`, `.profile`, or other shell startup files
 
+#### Scenario: Default installation is inherited by a fresh Git Bash process
+- **WHEN** Windows integration validation runs canonical `install.ps1` without an install-directory or no-PATH override in an isolated user environment and then starts a separate Git Bash process using the persisted machine and user PATH values
+- **THEN** the installer has written the verified four-file payload to `%USERPROFILE%\.arashi\bin`, the persistent user PATH contains that directory exactly once, and extensionless `arashi --version` resolves successfully without a Git Bash profile edit
+
 ### Requirement: Windows install smoke test and fallback reporting
 The Windows installer SHALL verify the installed executable after installation, the Windows validation workflow MUST verify the extensionless Git Bash command path, and failures SHALL include actionable fallback guidance.
 
@@ -160,7 +164,8 @@ The Windows installer implementation SHALL have automated coverage for determini
 
 #### Scenario: Git Bash smoke validation runs
 - **WHEN** Windows CI validates the direct-install payload
-- **THEN** the assembled four-file payload returns successful version output when Git for Windows Bash invokes extensionless `arashi --version`, PowerShell invokes `arashi.ps1 --version`, and Command Prompt invokes `arashi.bat --version` from the staged install directory on PATH
+- **THEN** a hermetic run of canonical `install.ps1` against a deterministic same-release fixture uses the default `%USERPROFILE%\.arashi\bin` destination, persists that directory to user PATH, and returns successful version output in separately launched Git for Windows Bash, PowerShell, and Command Prompt processes using the installer-produced wrappers
+- **AND** the harness restores the runner's original persistent user PATH and removes its temporary user profile even when installation or shell validation fails
 
 #### Scenario: Documentation publish path is tested or smoke-checked
 - **WHEN** docs/build validation runs for the hosted installer endpoint
