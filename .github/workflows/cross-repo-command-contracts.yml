@@ -89,6 +89,12 @@ jobs:
         run: |
           pnpm install --frozen-lockfile
           pnpm sync:content
+      - name: Check focused tab launch-disposition documentation semantics
+        working-directory: meta
+        run: pnpm --dir repos/arashi-docs validate:tab-launch-docs
+      - name: Check focused packaged-skill tab launch-disposition semantics
+        working-directory: meta
+        run: node repos/arashi-skills/scripts/tab-launch-disposition-guidance-selftest.mjs
       - name: Check cross-repository contracts
         working-directory: meta
         run: pnpm contracts:check
