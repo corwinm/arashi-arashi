@@ -39,7 +39,7 @@
 
 ## 6. Coordinated Delivery
 
-- [ ] 6.1 Open and cross-link separate CLI, docs, and skill PRs with non-closing references to issue #240 and exact post-edit validation evidence.
+- [x] 6.1 Open and cross-link separate CLI, docs, and skill PRs with non-closing references to issue #240 and exact post-edit validation evidence.
 - [ ] 6.2 Verify all related PR review surfaces and complete replacement CI matrices; address only approved-contract blockers and report any design contradiction or adjacent extension.
 - [ ] 6.3 Mark implementation tasks complete from verified evidence, merge green child PRs first, archive and directly validate the synced OpenSpec capabilities, change the meta PR to the sole closing reference, and merge it last.
 - [ ] 6.4 Verify issue #240 closure, synchronize main across the configured workspace, remove the coordinated feature worktree and surviving local/remote branches, and confirm final clean aligned status.
