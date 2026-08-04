@@ -1,11 +1,11 @@
 ## MODIFIED Requirements
 
 ### Requirement: Docs SHALL present Windows PowerShell install guidance
-The docs landing and onboarding surfaces SHALL present PowerShell as the canonical Windows install path alongside POSIX and npm install options, SHALL identify the installed payload's Git Bash support, and SHALL explain when a new shell is required for persistent user PATH changes.
+The docs landing surface SHALL present PowerShell as the canonical Windows install path alongside POSIX and npm install options without expanded shell-specific explanation. Windows onboarding and troubleshooting surfaces SHALL identify the installed payload's Git Bash support and SHALL explain when a new shell is required for persistent user PATH changes.
 
 #### Scenario: Visitor reviews install choices on the landing page
 - **WHEN** a visitor opens the docs landing page install section
-- **THEN** they can choose a Windows PowerShell install command, the existing POSIX install command, or npm install guidance
+- **THEN** they can choose a Windows PowerShell install command, the existing POSIX install command, or npm install guidance without additional Git Bash explanatory copy in the install tab
 
 #### Scenario: Visitor wants to inspect the Windows installer
 - **WHEN** a visitor reviews the Windows PowerShell install command
