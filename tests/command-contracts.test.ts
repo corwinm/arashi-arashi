@@ -100,6 +100,185 @@ const kittyWorktreeSessionContract = {
     failurePreservesCreatedWorktrees: true,
   },
 };
+const option = (flags: string) => ({
+  flags,
+  description: flags,
+  required: false,
+  optional: false,
+  variadic: false,
+});
+const tabLauncherSupport = {
+  noFallback: true,
+  supported: [
+    "cmux",
+    "herdr-with-workspace",
+    "macos-ghostty-1.3+",
+    "macos-iterm2",
+    "macos-terminal",
+    "managed-kitty",
+    "sesh",
+    "tmux",
+    "wezterm-with-pane",
+    "windows-terminal-with-session",
+  ],
+  unsupported: [
+    "available-ide",
+    "generic",
+    "git-bash",
+    "linux-ghostty",
+    "macos-ghostty-before-1.3",
+    "unmanaged-kitty",
+  ],
+};
+const optionPolicies = {
+  create: {
+    "--tab": {
+      compatibleOptions: [
+        "--herdr",
+        "--launch",
+        "--no-launch",
+        "--no-switch",
+        "--sesh",
+        "--switch",
+        "--tmux",
+      ],
+      conflicts: [],
+      dryRun: { runtimeTargetEvidenceRequired: false, supported: true },
+      implies: ["launch", "switch"],
+      json: {
+        guardPrecedence: "before-option-validation",
+        mode: "interactive-or-launch",
+        unsupported: true,
+      },
+      launcherSupport: tabLauncherSupport,
+      overrides: ["--no-launch", "--no-switch"],
+      persisted: false,
+    },
+    "--tmux": {
+      compatibleOptions: ["--no-launch", "--no-switch"],
+      conflicts: ["--herdr", "--sesh"],
+      environment: { name: "TMUX", nonEmptyAfterTrim: true },
+      implies: ["launch", "switch"],
+      json: {
+        guardPrecedence: "before-option-validation",
+        mode: "interactive-or-launch",
+        unsupported: true,
+      },
+      persisted: false,
+    },
+  },
+  switch: {
+    "--tab": {
+      compatibleOptions: [
+        "--cursor",
+        "--herdr",
+        "--kiro",
+        "--no-cd",
+        "--no-default-launch",
+        "--sesh",
+        "--tmux",
+        "--vscode",
+      ],
+      conflicts: ["--cd"],
+      implies: ["launch"],
+      json: {
+        guardPrecedence: "before-option-validation",
+        mode: "launch",
+        unsupported: true,
+      },
+      launcherSupport: tabLauncherSupport,
+      overrides: ["configured-cd", "contextual-cd"],
+      persisted: false,
+    },
+    "--tmux": {
+      compatibleOptions: ["--no-cd", "--no-default-launch"],
+      conflicts: [
+        "--cd",
+        "--cursor",
+        "--herdr",
+        "--kiro",
+        "--sesh",
+        "--vscode",
+      ],
+      environment: { name: "TMUX", nonEmptyAfterTrim: true },
+      implies: ["launch"],
+      json: {
+        guardPrecedence: "before-option-validation",
+        mode: "launch",
+        unsupported: true,
+      },
+      persisted: false,
+    },
+  },
+} as const;
+const docsTabContract = `# Window and Tab Launching
+
+\`--tab\` is a CLI-only, one-invocation request and does not create a persistent preference.
+For \`switch\`, explicit tab intent overrides configured parent-shell cd and conflicts only with explicit \`--cd\`.
+For create, create tab implies launch and switch.
+
+| Launcher or context | Default independent launch | Explicit tab | Required target evidence |
+| --- | --- | --- | --- |
+| Windows Terminal | New window | True tab | Current window/profile when available |
+| WezTerm | New window | True tab | Current exact pane for tab targeting |
+| managed Kitty | Exact managed session/tab | Managed tab | Managed remote-control identity |
+| tmux / sesh | tmux window or sesh-managed session | Managed tab equivalent | Active tmux/session evidence |
+| cmux | Workspace | cmux workspace / vertical tab | Active session identifiers |
+| active-workspace Herdr | Workspace | Herdr tab | Active workspace ID |
+| Terminal.app | New window | True tab | Current application/window |
+| iTerm2 | New window | True tab | Current application/window/session |
+| macOS Ghostty older than 1.3 or missing supported-version evidence | New window | Unsupported | No supported tab API |
+| macOS Ghostty 1.3+ | New window | True tab | Current Ghostty window and supported version |
+| Git Bash / MinTTY | New supported default path only | Unsupported | No stable exact tab-group target |
+| unmanaged Kitty | New supported default path only | Unsupported | No managed remote-control identity |
+| Linux Ghostty | New window | Unsupported | No external true-tab adapter |
+| IDE workspaces | Existing editor behavior | Unsupported | No terminal-tab contract |
+| generic fallback | New terminal/platform window | Unsupported | No portable exact tab target |
+
+Unsupported tab disposition never opens a window or falls through to another launcher.
+These guards win before launcher conflicts or runtime-context validation.
+
+- \`switch --json --tab\` returns one \`JSON_UNSUPPORTED_FOR_MODE\` document using the existing \`launch\` mode and exit status \`2\`.
+- \`create --json --tab\` returns one \`JSON_UNSUPPORTED_FOR_MODE\` document using the existing \`interactive-or-launch\` mode and exit status \`1\`.
+`;
+const skillsTabContract = `
+### Launch disposition (\`--tab\`)
+
+\`--tab\` is a one-shot CLI-only launch disposition and is never persisted.
+A \`switch --tab\` request expresses explicit launch intent and conflicts only with explicit \`--cd\`.
+\`create --tab\` implies launch and switch.
+A requested tab never silently falls back. Enforce each guard before option or context validation.
+
+\`switch --tab --json\` returns \`JSON_UNSUPPORTED_FOR_MODE\` with \`details.mode: "launch"\` and exits \`2\`.
+\`create --tab --json\` returns \`JSON_UNSUPPORTED_FOR_MODE\` with \`details.mode: "interactive-or-launch"\` and exits \`1\`.
+
+\`\`\`json
+{"ok":false,"command":"switch","schemaVersion":1,"error":{"code":"JSON_UNSUPPORTED_FOR_MODE","message":"JSON output is not supported for this mode","details":{"mode":"launch"}},"warnings":[]}
+\`\`\`
+
+\`\`\`json
+{"ok":false,"command":"create","schemaVersion":1,"error":{"code":"JSON_UNSUPPORTED_FOR_MODE","message":"JSON output is not supported for this mode","details":{"mode":"interactive-or-launch"}},"warnings":[]}
+\`\`\`
+
+| Launcher/context | Default \`window\` disposition | Explicit \`tab\` disposition |
+|---|---|---|
+| Windows Terminal | \`wt.exe -w new new-tab\` | \`wt.exe -w 0 new-tab\`; failure returns \`LAUNCH_FAILED\` without fallback |
+| Standalone Git Bash / configured MinTTY | independent window | \`TAB_DISPOSITION_UNSUPPORTED\`; use the default window or Windows Terminal |
+| WezTerm | \`wezterm cli spawn --new-window --cwd <path>\` | \`wezterm cli spawn --pane-id <WEZTERM_PANE> --cwd <path>\`; missing evidence returns \`TAB_DISPOSITION_UNSUPPORTED\` |
+| Managed Kitty | managed independent session | same managed Kitty tab/session primitive, not a window fallback |
+| Unmanaged Kitty | New Kitty OS window | \`TAB_DISPOSITION_UNSUPPORTED\`; never probe another instance |
+| tmux and sesh | \`tmux new-window -c <path>\` | same managed primitive, reported as tab equivalent |
+| cmux | workspace | same workspace/vertical-tab primitive |
+| Herdr | \`herdr worktree open\` | \`herdr tab create\`; missing evidence returns \`TAB_DISPOSITION_UNSUPPORTED\` |
+| Automatically detected IDE with unavailable CLI | continue terminal resolution | continue terminal resolution |
+| VS Code / Cursor / Kiro | \`--new-window\` | \`TAB_DISPOSITION_UNSUPPORTED\` |
+| Linux Ghostty | \`ghostty +new-window\` | \`TAB_DISPOSITION_UNSUPPORTED\`; never map to a window |
+| macOS Ghostty older than 1.3 or missing supported-version evidence | independent window | \`TAB_DISPOSITION_UNSUPPORTED\` |
+| macOS Ghostty 1.3+ | \`new window with configuration\` | \`new tab in <captured-window> with configuration\` |
+| Terminal.app | new window transaction | tab in exact target window |
+| iTerm2 | new window with current profile | tab in exact target window with current profile |
+| Generic Linux/macOS/Windows fallback | independent window | \`TAB_DISPOSITION_UNSUPPORTED\` |
+`;
 afterEach(async () =>
   Promise.all(roots.splice(0).map((root) => rm(root, { recursive: true }))),
 );
@@ -176,7 +355,7 @@ async function fixture(): Promise<string> {
     "repos/arashi-skills/contracts/kitty-worktree-sessions.json":
       kittyWorktreeSessionContract,
     "repos/arashi/contracts/cli-commands.json": {
-      schemaVersion: 3,
+      schemaVersion: 4,
       commands: [
         {
           path: "add",
@@ -245,6 +424,32 @@ async function fixture(): Promise<string> {
             vscode: { expectation: "required" },
           },
         },
+        ...(["create", "switch"] as const).map((path) => {
+          const policies = optionPolicies[path];
+          const flags = [
+            ...Object.keys(policies),
+            ...Object.values(policies).flatMap((policy) => [
+              ...policy.compatibleOptions,
+              ...policy.conflicts,
+            ]),
+          ];
+          return {
+            path,
+            description: path,
+            aliases: [],
+            hidden: false,
+            arguments: [],
+            options: [...new Set(flags)].map(option),
+            semantics: {
+              json: { support: "conditional", reason: "launch" },
+              docs: { expectation: "required" },
+              skills: { expectation: "required" },
+              standalone: { support: "full" },
+              vscode: { expectation: "required" },
+              optionPolicies: policies,
+            },
+          };
+        }),
         {
           path: "old",
           description: "old",
@@ -263,9 +468,19 @@ async function fixture(): Promise<string> {
       ],
     },
     "repos/arashi-docs/docs/commands/add.md": "# Add\n",
+    "repos/arashi-docs/docs/commands/create.md": "# Create\n`--tab`\n",
     "repos/arashi-docs/docs/commands/init.md": "# Init\n",
+    "repos/arashi-docs/docs/commands/switch.md": "# Switch\n`--tab`\n",
     "repos/arashi-docs/docs/commands/index.md":
-      "- [Add](/commands/add/)\n- [Init](/commands/init/)\n",
+      "- [Add](/commands/add/)\n- [Create](/commands/create/)\n- [Init](/commands/init/)\n- [Switch](/commands/switch/)\n",
+    "repos/arashi-docs/docs/workflows/launch-disposition.md": docsTabContract,
+    "repos/arashi-docs/scripts/check-tab-launch-docs.ts":
+      "console.log('tab launch docs checker passed');\n",
+    "repos/arashi-docs/package.json": {
+      scripts: {
+        "validate:tab-launch-docs": "node scripts/check-tab-launch-docs.ts",
+      },
+    },
     "repos/arashi-docs/docs/workflows/kitty.md":
       "Kitty 0.43 or newer\n`allow_remote_control`\nexact Arashi worktree identity\nafter integrated IDE detection and before parent-shell `cd`\nlive only\n`.kitty-session`\n`arashi remove` does not close Kitty windows or sessions\nno `--kitty` flag\ndoes not add Kitty to persistent Arashi launch configuration\n`LAUNCH_FAILED`\ndoes not fall back\ncreated worktrees remain available\ncross-process identity lock\n10 seconds\nlive owner\ndead owner\n30 seconds\nownership-safe release\n",
     "repos/arashi-docs/public/workflows/kitty.md":
@@ -305,6 +520,13 @@ async function fixture(): Promise<string> {
             },
           },
         },
+        ...(["create", "switch"] as const).map((name) => ({
+          name,
+          status: "covered",
+          reference: "references/commands.md",
+          requiredOptions: ["--tab", "--tmux"],
+          standalone: { support: "supported" },
+        })),
         {
           name: "old",
           status: "excluded",
@@ -314,7 +536,10 @@ async function fixture(): Promise<string> {
       ],
     },
     "repos/arashi-skills/skills/arashi/references/commands.md":
-      'Use `arashi add`.\ntmux → Herdr → cmux → integrated IDE → Kitty → parent-shell `cd` → terminal application/platform fallback\n`mode: "kitty"`\nno explicit Kitty launcher flag\nnot a persisted create or switch mode\ndoes not fall back\n',
+      'Use `arashi add`.\nUse `arashi create feature --tab`.\nUse `arashi switch --tab feature`.\ntmux → Herdr → cmux → integrated IDE → Kitty → parent-shell `cd` → terminal application/platform fallback\n`mode: "kitty"`\nno explicit Kitty launcher flag\nnot a persisted create or switch mode\ndoes not fall back\n' +
+      skillsTabContract,
+    "repos/arashi-skills/scripts/tab-launch-disposition-guidance-selftest.mjs":
+      "console.log('tab launch skill checker passed');\n",
     "repos/arashi-skills/skills/arashi/references/prerequisites.md":
       "Kitty 0.43+\nkitten --version\nremote control\nallow_remote_control\n",
     "repos/arashi-skills/skills/arashi/references/workflows.md":
@@ -325,8 +550,10 @@ async function fixture(): Promise<string> {
       schemaVersion: 1,
       cliCommands: {
         add: { state: "mapped", commands: ["arashi.add"] },
+        create: { state: "mapped", commands: ["arashi.add"] },
         init: { state: "mapped", commands: ["arashi.add"] },
         old: { state: "excluded", reason: "internal" },
+        switch: { state: "mapped", commands: ["arashi.add"] },
       },
       extensionOnlyCommands: ["arashi.open"],
     },
@@ -335,6 +562,8 @@ async function fixture(): Promise<string> {
         commands: [{ command: "arashi.add" }, { command: "arashi.open" }],
       },
     },
+    ".github/workflows/cross-repo-command-contracts.yml":
+      "jobs:\n  contracts:\n    runs-on: ubuntu-latest\n    steps:\n      - name: docs\n        run: pnpm --dir repos/arashi-docs validate:tab-launch-docs\n      - name: skills\n        run: node repos/arashi-skills/scripts/tab-launch-disposition-guidance-selftest.mjs\n",
   };
   for (const [path, value] of Object.entries(files)) {
     const target = join(root, path);
@@ -350,18 +579,234 @@ async function fixture(): Promise<string> {
 describe("cross-repository command contracts", () => {
   test("accepts coverage and reports intentional exclusions as info", async () => {
     const result = await checkContracts(await fixture());
-    expect(result.ok).toBe(true);
+    expect(result.ok, JSON.stringify(result.diagnostics, null, 2)).toBe(true);
     expect(result.diagnostics.map((d) => d.code)).toEqual([
       "DOCS_EXCLUDED",
       "SKILLS_EXCLUDED",
       "VSCODE_EXCLUDED",
     ]);
   });
-  test("rejects the previous command contract schema without applying schema 3 rules", async () => {
+  test("accepts schema v4 generic typed option policies for create and switch", async () => {
+    const result = await checkContracts(await fixture());
+    expect(result.diagnostics).not.toContainEqual(
+      expect.objectContaining({ code: "OPTION_POLICY_MISMATCH" }),
+    );
+    expect(result.ok).toBe(true);
+  });
+  test("accepts an arbitrary typed policy when its command option and skills coverage exist", async () => {
+    const root = await fixture();
+    const contractPath = join(root, "repos/arashi/contracts/cli-commands.json");
+    const contract = JSON.parse(await readFile(contractPath, "utf8"));
+    const create = contract.commands.find(
+      (command: { path: string }) => command.path === "create",
+    );
+    create.options.push(option("--future-mode"));
+    create.semantics.optionPolicies["--future-mode"] = {
+      compatibleOptions: [],
+      conflicts: [],
+      implies: ["launch"],
+      json: {
+        guardPrecedence: "before-option-validation",
+        mode: "interactive-or-launch",
+        unsupported: true,
+      },
+      persisted: false,
+    };
+    await writeFile(contractPath, JSON.stringify(contract));
+    const coveragePath = join(
+      root,
+      "repos/arashi-skills/contracts/command-coverage.json",
+    );
+    const coverage = JSON.parse(await readFile(coveragePath, "utf8"));
+    coverage.commands
+      .find((command: { name: string }) => command.name === "create")
+      .requiredOptions.push("--future-mode");
+    await writeFile(coveragePath, JSON.stringify(coverage));
+
+    expect((await checkContracts(root)).ok).toBe(true);
+  });
+  test("rejects an option policy whose key is not an option on that exact command", async () => {
+    const root = await fixture();
+    const contractPath = join(root, "repos/arashi/contracts/cli-commands.json");
+    const contract = JSON.parse(await readFile(contractPath, "utf8"));
+    contract.commands
+      .find((command: { path: string }) => command.path === "switch")
+      .options.push(option("--future-mode"));
+    contract.commands.find(
+      (command: { path: string }) => command.path === "create",
+    ).semantics.optionPolicies["--future-mode"] = {
+      compatibleOptions: [],
+      conflicts: [],
+      implies: [],
+      json: {
+        guardPrecedence: "before-option-validation",
+        mode: "interactive-or-launch",
+        unsupported: true,
+      },
+      persisted: false,
+    };
+    await writeFile(contractPath, JSON.stringify(contract));
+
+    expect((await checkContracts(root)).diagnostics).toContainEqual(
+      expect.objectContaining({
+        code: "OPTION_POLICY_OPTION_MISSING",
+        subject: "create.--future-mode",
+      }),
+    );
+  });
+  test("requires skills coverage for every generic option policy", async () => {
+    const root = await fixture();
+    const contractPath = join(root, "repos/arashi/contracts/cli-commands.json");
+    const contract = JSON.parse(await readFile(contractPath, "utf8"));
+    const create = contract.commands.find(
+      (command: { path: string }) => command.path === "create",
+    );
+    create.options.push(option("--future-mode"));
+    create.semantics.optionPolicies["--future-mode"] = {
+      compatibleOptions: [],
+      conflicts: [],
+      implies: [],
+      json: {
+        guardPrecedence: "before-option-validation",
+        mode: "interactive-or-launch",
+        unsupported: true,
+      },
+      persisted: false,
+    };
+    await writeFile(contractPath, JSON.stringify(contract));
+
+    expect((await checkContracts(root)).diagnostics).toContainEqual(
+      expect.objectContaining({
+        code: "SKILLS_OPTION_POLICY_MISMATCH",
+        subject: "create.--future-mode",
+      }),
+    );
+  });
+  test("rejects an excluded skills command whose option policy is absent from requiredOptions", async () => {
+    const root = await fixture();
+    const contractPath = join(root, "repos/arashi/contracts/cli-commands.json");
+    const contract = JSON.parse(await readFile(contractPath, "utf8"));
+    const old = contract.commands.find(
+      (command: { path: string }) => command.path === "old",
+    );
+    old.options.push(option("--future-mode"));
+    old.semantics.optionPolicies = {
+      "--future-mode": {
+        compatibleOptions: [],
+        conflicts: [],
+        implies: [],
+        json: {
+          guardPrecedence: "before-option-validation",
+          mode: "interactive",
+          unsupported: true,
+        },
+        persisted: false,
+      },
+    };
+    await writeFile(contractPath, JSON.stringify(contract));
+
+    expect((await checkContracts(root)).diagnostics).toContainEqual(
+      expect.objectContaining({
+        code: "SKILLS_OPTION_POLICY_MISMATCH",
+        subject: "old.--future-mode",
+      }),
+    );
+  });
+  test("accepts an excluded skills command whose option policy is represented in requiredOptions", async () => {
+    const root = await fixture();
+    const contractPath = join(root, "repos/arashi/contracts/cli-commands.json");
+    const contract = JSON.parse(await readFile(contractPath, "utf8"));
+    const old = contract.commands.find(
+      (command: { path: string }) => command.path === "old",
+    );
+    old.options.push(option("--future-mode"));
+    old.semantics.optionPolicies = {
+      "--future-mode": {
+        compatibleOptions: [],
+        conflicts: [],
+        implies: [],
+        json: {
+          guardPrecedence: "before-option-validation",
+          mode: "interactive",
+          unsupported: true,
+        },
+        persisted: false,
+      },
+    };
+    await writeFile(contractPath, JSON.stringify(contract));
+
+    const coveragePath = join(
+      root,
+      "repos/arashi-skills/contracts/command-coverage.json",
+    );
+    const coverage = JSON.parse(await readFile(coveragePath, "utf8"));
+    coverage.commands.find(
+      (command: { name: string }) => command.name === "old",
+    ).requiredOptions = ["--future-mode"];
+    await writeFile(coveragePath, JSON.stringify(coverage));
+
+    expect((await checkContracts(root)).ok).toBe(true);
+  });
+  test.each([
+    [
+      "extra top-level field",
+      (policy: Record<string, unknown>) => (policy.extra = true),
+    ],
+    [
+      "extra nested field",
+      (policy: Record<string, unknown>) =>
+        ((policy.json as Record<string, unknown>).extra = true),
+    ],
+    [
+      "overlapping launcher classification",
+      (policy: Record<string, unknown>) =>
+        ((policy.launcherSupport as Record<string, unknown>).unsupported = [
+          "tmux",
+        ]),
+    ],
+    [
+      "persisted option policy",
+      (policy: Record<string, unknown>) => (policy.persisted = true),
+    ],
+    [
+      "JSON-supported option policy",
+      (policy: Record<string, unknown>) =>
+        ((policy.json as Record<string, unknown>).unsupported = false),
+    ],
+    [
+      "unsupported dry-run policy",
+      (policy: Record<string, unknown>) =>
+        ((policy.dryRun as Record<string, unknown>).supported = false),
+    ],
+    [
+      "launcher policy that permits fallback",
+      (policy: Record<string, unknown>) =>
+        ((policy.launcherSupport as Record<string, unknown>).noFallback =
+          false),
+    ],
+  ])("rejects generic policy malformed shape: %s", async (_label, mutate) => {
+    const root = await fixture();
+    const contractPath = join(root, "repos/arashi/contracts/cli-commands.json");
+    const contract = JSON.parse(await readFile(contractPath, "utf8"));
+    mutate(
+      contract.commands.find(
+        (command: { path: string }) => command.path === "create",
+      ).semantics.optionPolicies["--tab"],
+    );
+    await writeFile(contractPath, JSON.stringify(contract));
+
+    expect((await checkContracts(root)).diagnostics).toContainEqual(
+      expect.objectContaining({
+        code: "SCHEMA_INVALID",
+        subject: "create.--tab",
+      }),
+    );
+  });
+  test("rejects the previous command contract schema without applying schema 4 rules", async () => {
     const root = await fixture();
     const path = join(root, "repos/arashi/contracts/cli-commands.json");
     const data = JSON.parse(await readFile(path, "utf8"));
-    data.schemaVersion = 2;
+    data.schemaVersion = 3;
     data.cliVersion = "1.20.1";
     await writeFile(path, JSON.stringify(data));
 
@@ -370,7 +815,7 @@ describe("cross-repository command contracts", () => {
       expect.objectContaining({
         code: "SCHEMA_VERSION_UNSUPPORTED",
         source: "repos/arashi/contracts/cli-commands.json",
-        subject: "2",
+        subject: "3",
       }),
     );
     expect(diagnostics).not.toContainEqual(
@@ -380,7 +825,7 @@ describe("cross-repository command contracts", () => {
       }),
     );
   });
-  test("rejects package release metadata in schema version 3", async () => {
+  test("rejects package release metadata in schema version 4", async () => {
     const root = await fixture();
     const path = join(root, "repos/arashi/contracts/cli-commands.json");
     const data = JSON.parse(await readFile(path, "utf8"));
@@ -395,6 +840,257 @@ describe("cross-repository command contracts", () => {
       }),
     );
   });
+  test.each([
+    [
+      "semantic drift",
+      (policy: Record<string, unknown>) => (policy.overrides = []),
+    ],
+    [
+      "missing policy",
+      (_policy: Record<string, unknown>, policies: Record<string, unknown>) =>
+        delete policies["--tab"],
+    ],
+  ])("rejects create --tab %s", async (_label, mutate) => {
+    const root = await fixture();
+    const path = join(root, "repos/arashi/contracts/cli-commands.json");
+    const data = JSON.parse(await readFile(path, "utf8"));
+    const policies = data.commands.find(
+      (command: { path: string }) => command.path === "create",
+    ).semantics.optionPolicies;
+    mutate(policies["--tab"], policies);
+    await writeFile(path, JSON.stringify(data));
+
+    expect((await checkContracts(root)).diagnostics).toContainEqual(
+      expect.objectContaining({
+        code: "OPTION_POLICY_MISMATCH",
+        source: "repos/arashi/contracts/cli-commands.json",
+        subject: "create.--tab",
+      }),
+    );
+  });
+  test("rejects missing --tab skills coverage generically", async () => {
+    const root = await fixture();
+    const path = join(
+      root,
+      "repos/arashi-skills/contracts/command-coverage.json",
+    );
+    const data = JSON.parse(await readFile(path, "utf8"));
+    data.commands.find(
+      (command: { name: string }) => command.name === "switch",
+    ).requiredOptions = ["--tmux"];
+    await writeFile(path, JSON.stringify(data));
+
+    expect((await checkContracts(root)).diagnostics).toContainEqual(
+      expect.objectContaining({
+        category: "skills",
+        code: "SKILLS_OPTION_POLICY_MISMATCH",
+        subject: "switch.--tab",
+      }),
+    );
+  });
+  test.each([
+    [
+      "docs",
+      "pnpm --dir repos/arashi-docs validate:tab-launch-docs",
+      "DOCS_OPTION_POLICY_CHECK_UNREACHABLE",
+    ],
+    [
+      "skills",
+      "node repos/arashi-skills/scripts/tab-launch-disposition-guidance-selftest.mjs",
+      "SKILLS_OPTION_POLICY_CHECK_UNREACHABLE",
+    ],
+  ])(
+    "rejects missing %s focused option-policy CI coverage",
+    async (_label, command, code) => {
+      const root = await fixture();
+      const path = join(
+        root,
+        ".github/workflows/cross-repo-command-contracts.yml",
+      );
+      const workflow = await readFile(path, "utf8");
+      await writeFile(path, workflow.replace(`run: ${command}\n`, ""));
+
+      expect((await checkContracts(root)).diagnostics).toContainEqual(
+        expect.objectContaining({
+          code,
+          source: ".github/workflows/cross-repo-command-contracts.yml",
+        }),
+      );
+    },
+  );
+  test.each([
+    [
+      "comment-only text",
+      "# run: pnpm --dir repos/arashi-docs validate:tab-launch-docs\n# run: node repos/arashi-skills/scripts/tab-launch-disposition-guidance-selftest.mjs\n",
+    ],
+    [
+      "non-run step fields",
+      'jobs:\n  contracts:\n    steps:\n      - name: "run: pnpm --dir repos/arashi-docs validate:tab-launch-docs"\n        env:\n          NOTE: "run: node repos/arashi-skills/scripts/tab-launch-disposition-guidance-selftest.mjs"\n        uses: actions/checkout@v4\n',
+    ],
+    [
+      "uses step with with.run",
+      "jobs:\n  contracts:\n    steps:\n      - uses: actions/checkout@v4\n        with:\n          run: pnpm --dir repos/arashi-docs validate:tab-launch-docs\n      - uses: actions/checkout@v4\n        with:\n          run: node repos/arashi-skills/scripts/tab-launch-disposition-guidance-selftest.mjs\n",
+    ],
+    [
+      "uses step with env.run",
+      "jobs:\n  contracts:\n    steps:\n      - uses: actions/checkout@v4\n        env:\n          run: pnpm --dir repos/arashi-docs validate:tab-launch-docs\n      - uses: actions/checkout@v4\n        env:\n          run: node repos/arashi-skills/scripts/tab-launch-disposition-guidance-selftest.mjs\n",
+    ],
+    [
+      "nested arbitrary run objects",
+      "jobs:\n  contracts:\n    steps:\n      - name: docs\n        metadata:\n          run: pnpm --dir repos/arashi-docs validate:tab-launch-docs\n      - name: skills\n        metadata:\n          run: node repos/arashi-skills/scripts/tab-launch-disposition-guidance-selftest.mjs\n",
+    ],
+  ])("rejects focused checker reachability in %s", async (_label, workflow) => {
+    const root = await fixture();
+    await writeFile(
+      join(root, ".github/workflows/cross-repo-command-contracts.yml"),
+      workflow,
+    );
+
+    const codes = (await checkContracts(root)).diagnostics.map(
+      (diagnostic) => diagnostic.code,
+    );
+    expect(codes).toContain("DOCS_OPTION_POLICY_CHECK_UNREACHABLE");
+    expect(codes).toContain("SKILLS_OPTION_POLICY_CHECK_UNREACHABLE");
+  });
+  test.each([
+    [
+      "docs default disposition drift",
+      "repos/arashi-docs/docs/workflows/launch-disposition.md",
+      (content: string) =>
+        content.replace(
+          "| Windows Terminal | New window | True tab |",
+          "| Windows Terminal | Reused current window | True tab |",
+        ),
+      "DOCS_TAB_POLICY_MISMATCH",
+    ],
+    [
+      "skills managed-equivalent drift",
+      "repos/arashi-skills/skills/arashi/references/commands.md",
+      (content: string) =>
+        content.replace(
+          "| Managed Kitty | managed independent session | same managed Kitty tab/session primitive, not a window fallback |",
+          "| Managed Kitty | New Kitty OS window | same managed Kitty tab/session primitive, not a window fallback |",
+        ),
+      "SKILLS_TAB_POLICY_MISMATCH",
+    ],
+    [
+      "docs missing old Ghostty row",
+      "repos/arashi-docs/docs/workflows/launch-disposition.md",
+      (content: string) =>
+        content.replace(
+          "| macOS Ghostty older than 1.3 or missing supported-version evidence | New window | Unsupported | No supported tab API |\n",
+          "",
+        ),
+      "DOCS_TAB_POLICY_MISMATCH",
+    ],
+    [
+      "docs launcher mapping",
+      "repos/arashi-docs/docs/workflows/launch-disposition.md",
+      (content: string) =>
+        content.replace(
+          "| WezTerm | New window | True tab |",
+          "| WezTerm | New window | Unsupported |",
+        ),
+      "DOCS_TAB_POLICY_MISMATCH",
+    ],
+    [
+      "docs unknown launcher row",
+      "repos/arashi-docs/docs/workflows/launch-disposition.md",
+      (content: string) =>
+        content.replace(
+          "| generic fallback | New terminal/platform window | Unsupported | No portable exact tab target |",
+          "| Surprise Terminal | New window | True tab | Exact surprise target |\n| generic fallback | New terminal/platform window | Unsupported | No portable exact tab target |",
+        ),
+      "DOCS_TAB_POLICY_MISMATCH",
+    ],
+    [
+      "skills launcher mapping",
+      "repos/arashi-skills/skills/arashi/references/commands.md",
+      (content: string) =>
+        content.replace(
+          "| WezTerm | `wezterm cli spawn --new-window --cwd <path>` | `wezterm cli spawn --pane-id",
+          "| WezTerm | `wezterm cli spawn --new-window --cwd <path>` | `TAB_DISPOSITION_UNSUPPORTED`; `wezterm cli spawn --pane-id",
+        ),
+      "SKILLS_TAB_POLICY_MISMATCH",
+    ],
+    [
+      "docs JSON guard mode",
+      "repos/arashi-docs/docs/workflows/launch-disposition.md",
+      (content: string) => content.replace("`launch` mode", "`cd` mode"),
+      "DOCS_TAB_POLICY_MISMATCH",
+    ],
+    [
+      "skills JSON exit",
+      "repos/arashi-skills/skills/arashi/references/commands.md",
+      (content: string) => content.replace("and exits `2`", "and exits `7`"),
+      "SKILLS_TAB_POLICY_MISMATCH",
+    ],
+    [
+      "docs no-fallback guarantee",
+      "repos/arashi-docs/docs/workflows/launch-disposition.md",
+      (content: string) =>
+        content.replace(
+          "never opens a window or falls through to another launcher",
+          "may fall back to a window",
+        ),
+      "DOCS_TAB_POLICY_MISMATCH",
+    ],
+  ])(
+    "rejects contradictory companion semantics: %s",
+    async (_label, relativePath, mutate, code) => {
+      const root = await fixture();
+      const path = join(root, relativePath);
+      await writeFile(path, mutate(await readFile(path, "utf8")));
+
+      expect((await checkContracts(root)).diagnostics).toContainEqual(
+        expect.objectContaining({ code }),
+      );
+    },
+  );
+  test.each([
+    [
+      "docs",
+      "repos/arashi-docs/scripts/check-tab-launch-docs.ts",
+      "DOCS_OPTION_POLICY_CHECK_FAILED",
+    ],
+    [
+      "skills",
+      "repos/arashi-skills/scripts/tab-launch-disposition-guidance-selftest.mjs",
+      "SKILLS_OPTION_POLICY_CHECK_FAILED",
+    ],
+  ])(
+    "runs the actual %s focused checker and rejects failure",
+    async (_label, relativePath, code) => {
+      const root = await fixture();
+      await writeFile(join(root, relativePath), "process.exit(9);\n");
+
+      expect((await checkContracts(root)).diagnostics).toContainEqual(
+        expect.objectContaining({ code }),
+      );
+    },
+  );
+  test.each([
+    [
+      "docs",
+      "repos/arashi-docs/scripts/check-tab-launch-docs.ts",
+      "DOCS_OPTION_POLICY_CHECK_FAILED",
+    ],
+    [
+      "skills",
+      "repos/arashi-skills/scripts/tab-launch-disposition-guidance-selftest.mjs",
+      "SKILLS_OPTION_POLICY_CHECK_FAILED",
+    ],
+  ])(
+    "rejects an empty %s focused checker stub",
+    async (_label, relativePath, code) => {
+      const root = await fixture();
+      await writeFile(join(root, relativePath), "// empty fixture stub\n");
+
+      expect((await checkContracts(root)).diagnostics).toContainEqual(
+        expect.objectContaining({ code }),
+      );
+    },
+  );
   test("finds missing docs page and index entry", async () => {
     const root = await fixture();
     await rm(join(root, "repos/arashi-docs/docs/commands/add.md"));
@@ -565,160 +1261,57 @@ describe("cross-repository command contracts", () => {
     const root = await fixture();
     const contractPath = join(root, "repos/arashi/contracts/cli-commands.json");
     const contract = JSON.parse(await readFile(contractPath, "utf8"));
-    const tmuxPolicy = {
-      compatibleOptions: ["--no-cd", "--no-default-launch"],
-      conflicts: [
-        "--cd",
-        "--cursor",
-        "--herdr",
-        "--kiro",
-        "--sesh",
-        "--vscode",
-      ],
-      environment: { name: "TMUX", nonEmptyAfterTrim: true },
-      implies: ["launch"],
-      json: {
-        guardPrecedence: "before-option-validation",
-        mode: "launch",
-        unsupported: true,
-      },
-      persisted: false,
-    };
+    const tmuxPolicy = contract.commands.find(
+      (command: { path: string }) => command.path === "switch",
+    ).semantics.optionPolicies["--tmux"];
     mutate(tmuxPolicy);
-    contract.commands.push({
-      path: "switch",
-      description: "switch",
-      aliases: [],
-      hidden: false,
-      arguments: [],
-      options: [
-        "--cd",
-        "--cursor",
-        "--herdr",
-        "--kiro",
-        "--no-cd",
-        "--no-default-launch",
-        "--sesh",
-        "--tmux",
-        "--vscode",
-      ].map((flags) => ({
-        flags,
-        description: flags,
-        required: false,
-        optional: false,
-        variadic: false,
-      })),
-      semantics: {
-        json: { support: "unsupported", reason: "launch" },
-        docs: { expectation: "required" },
-        skills: { expectation: "required" },
-        standalone: { support: "full" },
-        vscode: { expectation: "excluded", reason: "terminal" },
-        optionPolicies: { "--tmux": tmuxPolicy },
-      },
-    });
     await writeFile(contractPath, JSON.stringify(contract));
-
-    const coveragePath = join(
-      root,
-      "repos/arashi-skills/contracts/command-coverage.json",
-    );
-    const coverage = JSON.parse(await readFile(coveragePath, "utf8"));
-    coverage.commands.push({
-      name: "switch",
-      status: "covered",
-      reference: "references/commands.md",
-      requiredOptions: ["--tmux"],
-      standalone: { support: "supported" },
-    });
-    await writeFile(coveragePath, JSON.stringify(coverage));
 
     expect((await checkContracts(root)).diagnostics).toContainEqual(
       expect.objectContaining({
-        code: "TMUX_OPTION_POLICY_MISMATCH",
+        code: "OPTION_POLICY_MISMATCH",
         subject: "switch.--tmux",
       }),
     );
   });
   test("rejects missing skills --tmux coverage", async () => {
     const root = await fixture();
-    const contractPath = join(root, "repos/arashi/contracts/cli-commands.json");
-    const contract = JSON.parse(await readFile(contractPath, "utf8"));
-    contract.commands.push({
-      path: "create",
-      description: "create",
-      aliases: [],
-      hidden: false,
-      arguments: [],
-      options: [
-        {
-          flags: "--tmux",
-          description: "tmux",
-          required: false,
-          optional: false,
-          variadic: false,
-        },
-      ],
-      semantics: {
-        json: { support: "conditional", reason: "non-interactive" },
-        docs: { expectation: "excluded", reason: "fixture" },
-        skills: { expectation: "required" },
-        standalone: { support: "full" },
-        vscode: { expectation: "excluded", reason: "terminal" },
-        optionPolicies: {
-          "--tmux": {
-            compatibleOptions: ["--no-launch", "--no-switch"],
-            conflicts: ["--herdr", "--sesh"],
-            environment: { name: "TMUX", nonEmptyAfterTrim: true },
-            implies: ["launch", "switch"],
-            json: {
-              guardPrecedence: "before-option-validation",
-              mode: "interactive-or-launch",
-              unsupported: true,
-            },
-            persisted: false,
-          },
-        },
-      },
-    });
-    await writeFile(contractPath, JSON.stringify(contract));
     const coveragePath = join(
       root,
       "repos/arashi-skills/contracts/command-coverage.json",
     );
     const coverage = JSON.parse(await readFile(coveragePath, "utf8"));
-    coverage.commands.push({
-      name: "create",
-      status: "covered",
-      reference: "references/commands.md",
-      requiredOptions: [],
-      standalone: { support: "supported" },
-    });
+    const createCoverage = coverage.commands.find(
+      (command: { name: string }) => command.name === "create",
+    );
+    createCoverage.requiredOptions = ["--tab"];
     await writeFile(coveragePath, JSON.stringify(coverage));
 
     expect((await checkContracts(root)).diagnostics).toContainEqual(
       expect.objectContaining({
-        code: "SKILLS_TMUX_POLICY_MISMATCH",
-        subject: "create",
+        code: "SKILLS_OPTION_POLICY_MISMATCH",
+        subject: "create.--tmux",
       }),
     );
 
-    coverage.commands.at(-1).requiredOptions = ["--tmux", "--future-option"];
+    createCoverage.requiredOptions = ["--tab", "--tmux", "--future-option"];
     await writeFile(coveragePath, JSON.stringify(coverage));
     expect((await checkContracts(root)).diagnostics).not.toContainEqual(
       expect.objectContaining({
-        code: "SKILLS_TMUX_POLICY_MISMATCH",
-        subject: "create",
+        code: "SKILLS_OPTION_POLICY_MISMATCH",
+        subject: "create.--tmux",
       }),
     );
 
-    contract.commands.at(-1).semantics.optionPolicies["--tmux"].conflicts = [
-      "--sesh",
-    ];
+    const contractPath = join(root, "repos/arashi/contracts/cli-commands.json");
+    const contract = JSON.parse(await readFile(contractPath, "utf8"));
+    contract.commands.find(
+      (command: { path: string }) => command.path === "create",
+    ).semantics.optionPolicies["--tmux"].conflicts = ["--sesh"];
     await writeFile(contractPath, JSON.stringify(contract));
     expect((await checkContracts(root)).diagnostics).toContainEqual(
       expect.objectContaining({
-        code: "TMUX_OPTION_POLICY_MISMATCH",
+        code: "OPTION_POLICY_MISMATCH",
         subject: "create.--tmux",
       }),
     );
