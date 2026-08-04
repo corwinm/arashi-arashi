@@ -1,5 +1,7 @@
 import { access, readFile, readdir } from "node:fs/promises";
+import { execFile } from "node:child_process";
 import { join, relative } from "node:path";
+import { promisify } from "node:util";
 
 export type Severity = "error" | "info";
 export interface Diagnostic {
@@ -33,7 +35,14 @@ const paths = {
   skillsSwitchConfig: "repos/arashi-skills/contracts/switch-config.json",
   policy: "repos/arashi-vscode/contracts/command-policy.json",
   manifest: "repos/arashi-vscode/package.json",
+  workflow: ".github/workflows/cross-repo-command-contracts.yml",
+  docsOptionPolicyCheck: "repos/arashi-docs/scripts/check-tab-launch-docs.ts",
+  docsTabPolicy: "repos/arashi-docs/docs/workflows/launch-disposition.md",
+  skillsOptionPolicyCheck:
+    "repos/arashi-skills/scripts/tab-launch-disposition-guidance-selftest.mjs",
+  skillsTabPolicy: "repos/arashi-skills/skills/arashi/references/commands.md",
 } as const;
+const execFileAsync = promisify(execFile);
 const switchModes = ["auto", "cd", "launch", "sesh", "herdr"];
 const switchAutoOrder = [
   "tmux",
@@ -229,56 +238,205 @@ const initIncompatibleOptions = [
   "--repos-dir",
   "--worktrees-dir",
 ];
-const tmuxOptionPolicies: Record<"create" | "switch", Obj> = {
+const tabLauncherSupport: Obj = {
+  noFallback: true,
+  supported: [
+    "cmux",
+    "herdr-with-workspace",
+    "macos-ghostty-1.3+",
+    "macos-iterm2",
+    "macos-terminal",
+    "managed-kitty",
+    "sesh",
+    "tmux",
+    "wezterm-with-pane",
+    "windows-terminal-with-session",
+  ],
+  unsupported: [
+    "available-ide",
+    "generic",
+    "git-bash",
+    "linux-ghostty",
+    "macos-ghostty-before-1.3",
+    "unmanaged-kitty",
+  ],
+};
+const canonicalOptionPolicies: Record<
+  "create" | "switch",
+  Record<string, Obj>
+> = {
   create: {
-    compatibleOptions: ["--no-launch", "--no-switch"],
-    conflicts: ["--herdr", "--sesh"],
-    environment: { name: "TMUX", nonEmptyAfterTrim: true },
-    implies: ["launch", "switch"],
-    json: {
-      guardPrecedence: "before-option-validation",
-      mode: "interactive-or-launch",
-      unsupported: true,
+    "--tab": {
+      compatibleOptions: [
+        "--herdr",
+        "--launch",
+        "--no-launch",
+        "--no-switch",
+        "--sesh",
+        "--switch",
+        "--tmux",
+      ],
+      conflicts: [],
+      dryRun: { runtimeTargetEvidenceRequired: false, supported: true },
+      implies: ["launch", "switch"],
+      json: {
+        guardPrecedence: "before-option-validation",
+        mode: "interactive-or-launch",
+        unsupported: true,
+      },
+      launcherSupport: tabLauncherSupport,
+      overrides: ["--no-launch", "--no-switch"],
+      persisted: false,
     },
-    persisted: false,
+    "--tmux": {
+      compatibleOptions: ["--no-launch", "--no-switch"],
+      conflicts: ["--herdr", "--sesh"],
+      environment: { name: "TMUX", nonEmptyAfterTrim: true },
+      implies: ["launch", "switch"],
+      json: {
+        guardPrecedence: "before-option-validation",
+        mode: "interactive-or-launch",
+        unsupported: true,
+      },
+      persisted: false,
+    },
   },
   switch: {
-    compatibleOptions: ["--no-cd", "--no-default-launch"],
-    conflicts: ["--cd", "--cursor", "--herdr", "--kiro", "--sesh", "--vscode"],
-    environment: { name: "TMUX", nonEmptyAfterTrim: true },
-    implies: ["launch"],
-    json: {
-      guardPrecedence: "before-option-validation",
-      mode: "launch",
-      unsupported: true,
+    "--tab": {
+      compatibleOptions: [
+        "--cursor",
+        "--herdr",
+        "--kiro",
+        "--no-cd",
+        "--no-default-launch",
+        "--sesh",
+        "--tmux",
+        "--vscode",
+      ],
+      conflicts: ["--cd"],
+      implies: ["launch"],
+      json: {
+        guardPrecedence: "before-option-validation",
+        mode: "launch",
+        unsupported: true,
+      },
+      launcherSupport: tabLauncherSupport,
+      overrides: ["configured-cd", "contextual-cd"],
+      persisted: false,
     },
-    persisted: false,
+    "--tmux": {
+      compatibleOptions: ["--no-cd", "--no-default-launch"],
+      conflicts: [
+        "--cd",
+        "--cursor",
+        "--herdr",
+        "--kiro",
+        "--sesh",
+        "--vscode",
+      ],
+      environment: { name: "TMUX", nonEmptyAfterTrim: true },
+      implies: ["launch"],
+      json: {
+        guardPrecedence: "before-option-validation",
+        mode: "launch",
+        unsupported: true,
+      },
+      persisted: false,
+    },
   },
 };
-const sameTmuxPolicy = (actual: Obj, expected: Obj): boolean => {
-  const actualEnvironment = object(actual.environment)
-    ? actual.environment
-    : {};
-  const expectedEnvironment = object(expected.environment)
-    ? expected.environment
-    : {};
-  const actualJson = object(actual.json) ? actual.json : {};
-  const expectedJson = object(expected.json) ? expected.json : {};
+const samePolicyValue = (actual: unknown, expected: unknown): boolean => {
+  if (Array.isArray(expected))
+    return (
+      Array.isArray(actual) &&
+      actual.length ===
+        new Set(actual.map((value) => JSON.stringify(value))).size &&
+      JSON.stringify([...actual].sort()) ===
+        JSON.stringify([...expected].sort())
+    );
+  if (object(expected)) {
+    if (!object(actual)) return false;
+    const actualKeys = Object.keys(actual).sort();
+    const expectedKeys = Object.keys(expected).sort();
+    return (
+      JSON.stringify(actualKeys) === JSON.stringify(expectedKeys) &&
+      expectedKeys.every((key) => samePolicyValue(actual[key], expected[key]))
+    );
+  }
+  return actual === expected;
+};
+const exactKeys = (
+  value: Obj,
+  required: readonly string[],
+  optional: readonly string[] = [],
+): boolean => {
+  const allowed = new Set([...required, ...optional]);
   return (
-    sameStrings(
-      strings(actual.compatibleOptions),
-      strings(expected.compatibleOptions) ?? [],
-    ) &&
-    sameStrings(strings(actual.conflicts), strings(expected.conflicts) ?? []) &&
-    sameStrings(strings(actual.implies), strings(expected.implies) ?? []) &&
-    actualEnvironment.name === expectedEnvironment.name &&
-    actualEnvironment.nonEmptyAfterTrim ===
-      expectedEnvironment.nonEmptyAfterTrim &&
-    actualJson.guardPrecedence === expectedJson.guardPrecedence &&
-    actualJson.mode === expectedJson.mode &&
-    actualJson.unsupported === expectedJson.unsupported &&
-    actual.persisted === expected.persisted
+    required.every((key) => key in value) &&
+    Object.keys(value).every((key) => allowed.has(key))
   );
+};
+const uniqueStrings = (value: unknown): value is string[] => {
+  const values = strings(value);
+  return values !== undefined && values.length === new Set(values).size;
+};
+const validOptionPolicy = (value: unknown): value is Obj => {
+  if (!object(value)) return false;
+  if (
+    !exactKeys(
+      value,
+      ["compatibleOptions", "conflicts", "implies", "json", "persisted"],
+      ["dryRun", "environment", "launcherSupport", "overrides"],
+    )
+  )
+    return false;
+  const jsonPolicy = object(value.json) ? value.json : {};
+  if (
+    !uniqueStrings(value.compatibleOptions) ||
+    !uniqueStrings(value.conflicts) ||
+    !uniqueStrings(value.implies) ||
+    value.persisted !== false ||
+    !exactKeys(jsonPolicy, ["guardPrecedence", "mode", "unsupported"]) ||
+    !text(jsonPolicy.guardPrecedence) ||
+    !text(jsonPolicy.mode) ||
+    jsonPolicy.unsupported !== true
+  )
+    return false;
+  if (
+    value.environment !== undefined &&
+    (!object(value.environment) ||
+      !exactKeys(value.environment, ["name", "nonEmptyAfterTrim"]) ||
+      !text(value.environment.name) ||
+      value.environment.nonEmptyAfterTrim !== true)
+  )
+    return false;
+  if (
+    value.dryRun !== undefined &&
+    (!object(value.dryRun) ||
+      !exactKeys(value.dryRun, [
+        "runtimeTargetEvidenceRequired",
+        "supported",
+      ]) ||
+      value.dryRun.supported !== true ||
+      typeof value.dryRun.runtimeTargetEvidenceRequired !== "boolean")
+  )
+    return false;
+  if (value.launcherSupport !== undefined) {
+    if (!object(value.launcherSupport)) return false;
+    const launcherSupport = value.launcherSupport;
+    const supported = launcherSupport.supported;
+    const unsupported = launcherSupport.unsupported;
+    if (
+      !exactKeys(launcherSupport, ["noFallback", "supported", "unsupported"]) ||
+      launcherSupport.noFallback !== true ||
+      !uniqueStrings(supported) ||
+      !uniqueStrings(unsupported)
+    )
+      return false;
+    if (supported.some((launcher) => unsupported.includes(launcher)))
+      return false;
+  }
+  return value.overrides === undefined || uniqueStrings(value.overrides);
 };
 const sameInitPolicy = (left: Obj, right: Obj): boolean =>
   left.option === right.option &&
@@ -300,6 +458,14 @@ const exists = async (path: string): Promise<boolean> => {
     return false;
   }
 };
+const commandOptionNames = (command: Obj): string[] =>
+  Array.isArray(command.options)
+    ? command.options
+        .filter(object)
+        .flatMap((option) =>
+          text(option.flags) ? (option.flags.match(/--[a-z0-9-]+/g) ?? []) : [],
+        )
+    : [];
 
 async function json(
   root: string,
@@ -480,6 +646,500 @@ async function checkKittyGuidance(
     }
   }
 }
+
+type CompanionKind = "docs" | "skills";
+type DefaultDisposition =
+  | "window"
+  | "managed-independent-session"
+  | "unrecognized";
+type TabClassification = "true-tab" | "managed-equivalent" | "unsupported";
+type LauncherProjection = {
+  defaultDisposition: DefaultDisposition;
+  tabClassification: TabClassification;
+};
+type TabProjection = {
+  commands: Record<
+    "create" | "switch",
+    {
+      conflicts: string[];
+      exit: number;
+      guard: string;
+      implies: string[];
+      mode: string;
+    }
+  >;
+  cliOnly: boolean;
+  launchers: Map<string, LauncherProjection>;
+  noFallback: boolean;
+};
+
+const launcherSemantics = new Map<string, LauncherProjection>([
+  [
+    "windows-terminal-with-session",
+    { defaultDisposition: "window", tabClassification: "true-tab" },
+  ],
+  [
+    "git-bash",
+    { defaultDisposition: "window", tabClassification: "unsupported" },
+  ],
+  [
+    "wezterm-with-pane",
+    { defaultDisposition: "window", tabClassification: "true-tab" },
+  ],
+  [
+    "managed-kitty",
+    {
+      defaultDisposition: "managed-independent-session",
+      tabClassification: "managed-equivalent",
+    },
+  ],
+  [
+    "unmanaged-kitty",
+    { defaultDisposition: "window", tabClassification: "unsupported" },
+  ],
+  [
+    "tmux",
+    {
+      defaultDisposition: "managed-independent-session",
+      tabClassification: "managed-equivalent",
+    },
+  ],
+  [
+    "sesh",
+    {
+      defaultDisposition: "managed-independent-session",
+      tabClassification: "managed-equivalent",
+    },
+  ],
+  [
+    "cmux",
+    {
+      defaultDisposition: "managed-independent-session",
+      tabClassification: "managed-equivalent",
+    },
+  ],
+  [
+    "herdr-with-workspace",
+    {
+      defaultDisposition: "managed-independent-session",
+      tabClassification: "true-tab",
+    },
+  ],
+  [
+    "available-ide",
+    { defaultDisposition: "window", tabClassification: "unsupported" },
+  ],
+  [
+    "linux-ghostty",
+    { defaultDisposition: "window", tabClassification: "unsupported" },
+  ],
+  [
+    "macos-ghostty-before-1.3",
+    { defaultDisposition: "window", tabClassification: "unsupported" },
+  ],
+  [
+    "macos-ghostty-1.3+",
+    { defaultDisposition: "window", tabClassification: "true-tab" },
+  ],
+  [
+    "macos-terminal",
+    { defaultDisposition: "window", tabClassification: "true-tab" },
+  ],
+  [
+    "macos-iterm2",
+    { defaultDisposition: "window", tabClassification: "true-tab" },
+  ],
+  [
+    "generic",
+    { defaultDisposition: "window", tabClassification: "unsupported" },
+  ],
+]);
+
+const companionLauncherIds = (label: string, kind: CompanionKind): string[] => {
+  const normalized = label.toLowerCase();
+  if (normalized.includes("automatically detected ide")) return [];
+  if (normalized.includes("windows terminal"))
+    return ["windows-terminal-with-session"];
+  if (normalized.includes("wezterm")) return ["wezterm-with-pane"];
+  if (normalized.includes("unmanaged kitty")) return ["unmanaged-kitty"];
+  if (normalized.includes("managed kitty")) return ["managed-kitty"];
+  if (normalized.includes("tmux") && normalized.includes("sesh"))
+    return ["tmux", "sesh"];
+  if (normalized === "cmux") return ["cmux"];
+  if (normalized.includes("herdr")) return ["herdr-with-workspace"];
+  if (
+    normalized.includes("vscode") ||
+    normalized.includes("vs code") ||
+    normalized.includes("ide workspace")
+  )
+    return ["available-ide"];
+  if (normalized.includes("linux ghostty")) return ["linux-ghostty"];
+  if (normalized.includes("ghostty older than"))
+    return ["macos-ghostty-before-1.3"];
+  if (normalized.includes("macos ghostty 1.3")) return ["macos-ghostty-1.3+"];
+  if (normalized.includes("terminal.app")) return ["macos-terminal"];
+  if (normalized.includes("iterm2")) return ["macos-iterm2"];
+  if (normalized.includes("git bash") || normalized.includes("mintty"))
+    return ["git-bash"];
+  if (normalized.includes("generic")) return ["generic"];
+  return [`unrecognized:${label}`];
+};
+
+const markdownTable = (content: string): string[][] => {
+  const lines = content.split(/\r?\n/);
+  const start = lines.findIndex(
+    (line) =>
+      /^\s*\|\s*launcher(?:\s+or)?(?:\/|\s|`)/i.test(line) &&
+      /explicit.*tab|`--tab` request/i.test(line),
+  );
+  if (start < 0) return [];
+  const rows: string[][] = [];
+  for (const line of lines.slice(start + 2)) {
+    if (!/^\s*\|/.test(line)) break;
+    rows.push(
+      line
+        .trim()
+        .slice(1, -1)
+        .split("|")
+        .map((cell) => cell.trim()),
+    );
+  }
+  return rows;
+};
+
+const managedLauncherIds = new Set([
+  "cmux",
+  "herdr-with-workspace",
+  "managed-kitty",
+  "sesh",
+  "tmux",
+]);
+
+const defaultDisposition = (
+  cell: string,
+  launcher: string,
+): DefaultDisposition => {
+  if (managedLauncherIds.has(launcher))
+    return /(?:workspace|managed (?:independent )?session|managed session|tmux window|tmux new-window|sesh-managed session|sesh connect|worktree session|exact managed session|herdr worktree open)/i.test(
+      cell,
+    )
+      ? "managed-independent-session"
+      : "unrecognized";
+  return /(?:\bnew(?:[- ][a-z]+)*[- ]window\b|-w new|independent window|new supported default path|existing editor behavior|--new-window|independent-process window|new window transaction|new terminal\/platform window|platform-specific independent process\/window|continue terminal resolution)/i.test(
+    cell,
+  )
+    ? "window"
+    : "unrecognized";
+};
+
+const tabClassification = (cell: string): TabClassification => {
+  if (/^(?:`)?(?:unsupported\b|TAB_DISPOSITION_UNSUPPORTED)/i.test(cell))
+    return "unsupported";
+  if (
+    /(?:managed tab|managed primitive|managed Kitty|managed tab equivalent|workspace\s*\/\s*vertical[- ]tab|same workspace|tmux\/sesh managed primitive)/i.test(
+      cell,
+    )
+  )
+    return "managed-equivalent";
+  return "true-tab";
+};
+
+const companionProjection = (
+  content: string,
+  kind: CompanionKind,
+): TabProjection | undefined => {
+  let scoped = content;
+  if (kind === "skills") {
+    const start = content.indexOf("### Launch disposition (`--tab`)");
+    if (start < 0) return undefined;
+    const end = content.indexOf("\n## ", start);
+    scoped = content.slice(start, end < 0 ? undefined : end);
+  }
+  const rows = markdownTable(scoped);
+  if (rows.length === 0) return undefined;
+  const launchers = new Map<string, LauncherProjection>();
+  for (const row of rows) {
+    if (row.length < 3) return undefined;
+    for (const id of companionLauncherIds(row[0], kind)) {
+      const projection = {
+        defaultDisposition: defaultDisposition(row[1], id),
+        tabClassification: tabClassification(row[2]),
+      };
+      if (launchers.has(id) && !samePolicyValue(launchers.get(id), projection))
+        return undefined;
+      launchers.set(id, projection);
+    }
+  }
+
+  const commands = {} as TabProjection["commands"];
+  for (const command of ["create", "switch"] as const) {
+    const commandPattern =
+      kind === "docs"
+        ? new RegExp(
+            String.raw`[^\n]*${command} --json --tab[^\n]*existing \x60([^\x60]+)\x60 mode and exit status \x60(\d+)\x60`,
+          )
+        : new RegExp(
+            String.raw`[^\n]*${command} --tab --json[^\n]*\x60details\.mode: "([^"]+)"\x60[^\n]*exits \x60(\d+)\x60`,
+          );
+    const match = scoped.match(commandPattern);
+    if (!match) return undefined;
+    commands[command] = {
+      conflicts:
+        command === "switch" &&
+        /conflicts only with explicit `--cd`/i.test(scoped)
+          ? ["--cd"]
+          : [],
+      exit: Number(match[2]),
+      guard:
+        kind === "docs"
+          ? /guards win before launcher conflicts or runtime-context validation/i.test(
+              scoped,
+            )
+            ? "before-option-validation"
+            : "missing"
+          : /before option or context validation/i.test(scoped)
+            ? "before-option-validation"
+            : "missing",
+      implies:
+        command === "create" &&
+        /(?:create tab|`create --tab`) implies (?:both )?launch and switch/i.test(
+          scoped,
+        )
+          ? ["launch", "switch"]
+          : command === "switch" &&
+              /(?:`switch --tab`[^.\n]*expresses explicit launch intent|explicit tab intent overrides configured|`switch --tab` implies launch)/i.test(
+                scoped,
+              )
+            ? ["launch"]
+            : [],
+      mode: match[1],
+    };
+  }
+
+  if (kind === "skills") {
+    const envelopes = [
+      ...scoped.matchAll(/```json\s*\n([\s\S]*?)\n```/g),
+    ].flatMap((match) => {
+      try {
+        return [JSON.parse(match[1]) as unknown];
+      } catch {
+        return [];
+      }
+    });
+    for (const command of ["create", "switch"] as const) {
+      const envelope = envelopes.find(
+        (value) => object(value) && value.command === command,
+      );
+      if (
+        !object(envelope) ||
+        !object(envelope.error) ||
+        !object(envelope.error.details) ||
+        envelope.error.code !== "JSON_UNSUPPORTED_FOR_MODE" ||
+        envelope.error.details.mode !== commands[command].mode
+      )
+        return undefined;
+    }
+  }
+
+  return {
+    commands,
+    cliOnly:
+      /(?:CLI-only, one-invocation (?:request|launch disposition)|one-shot CLI-only launch disposition)/i.test(
+        scoped,
+      ) &&
+      /(?:does not create a persistent preference|never persisted)/i.test(
+        scoped,
+      ),
+    launchers,
+    noFallback:
+      kind === "docs"
+        ? /Unsupported tab disposition never opens a window or falls through to another launcher\./i.test(
+            scoped,
+          )
+        : /never silently falls back/i.test(scoped),
+  };
+};
+
+const canonicalTabProjection = (
+  commands: Map<string, Obj>,
+): TabProjection | undefined => {
+  const projectedCommands = {} as TabProjection["commands"];
+  let launcherPolicy: Obj | undefined;
+  for (const command of ["create", "switch"] as const) {
+    const commandEntry = commands.get(command);
+    const semantics =
+      commandEntry && object(commandEntry.semantics)
+        ? commandEntry.semantics
+        : {};
+    const policies = object(semantics.optionPolicies)
+      ? semantics.optionPolicies
+      : {};
+    const tab = object(policies["--tab"]) ? policies["--tab"] : {};
+    const jsonPolicy = object(tab.json) ? tab.json : {};
+    if (
+      !text(jsonPolicy.guardPrecedence) ||
+      !text(jsonPolicy.mode) ||
+      !object(tab.launcherSupport)
+    )
+      return undefined;
+    projectedCommands[command] = {
+      conflicts: strings(tab.conflicts) ?? [],
+      exit: command === "switch" ? 2 : 1,
+      guard: jsonPolicy.guardPrecedence,
+      implies: strings(tab.implies) ?? [],
+      mode: jsonPolicy.mode,
+    };
+    launcherPolicy ??= tab.launcherSupport;
+  }
+  const supported = strings(launcherPolicy?.supported);
+  const unsupported = strings(launcherPolicy?.unsupported);
+  if (!supported || !unsupported) return undefined;
+  const launchers = new Map<string, LauncherProjection>();
+  for (const launcher of [...supported, ...unsupported]) {
+    const semantics = launcherSemantics.get(launcher);
+    if (!semantics) return undefined;
+    if (
+      (supported.includes(launcher) &&
+        semantics.tabClassification === "unsupported") ||
+      (unsupported.includes(launcher) &&
+        semantics.tabClassification !== "unsupported")
+    )
+      return undefined;
+    launchers.set(launcher, semantics);
+  }
+  return {
+    commands: projectedCommands,
+    cliOnly: ["create", "switch"].every((command) => {
+      const entry = commands.get(command);
+      const semantics = entry && object(entry.semantics) ? entry.semantics : {};
+      const policies = object(semantics.optionPolicies)
+        ? semantics.optionPolicies
+        : {};
+      const tab = object(policies["--tab"]) ? policies["--tab"] : {};
+      return tab.persisted === false;
+    }),
+    launchers,
+    noFallback: launcherPolicy?.noFallback === true,
+  };
+};
+
+async function checkTabCompanionSemantics(
+  root: string,
+  commands: Map<string, Obj>,
+  diagnostics: Diagnostic[],
+): Promise<void> {
+  const canonical = canonicalTabProjection(commands);
+  if (!canonical) return;
+  const companions: Array<{
+    category: CompanionKind;
+    code: string;
+    source: string;
+  }> = [
+    {
+      category: "docs",
+      code: "DOCS_TAB_POLICY_MISMATCH",
+      source: paths.docsTabPolicy,
+    },
+    {
+      category: "skills",
+      code: "SKILLS_TAB_POLICY_MISMATCH",
+      source: paths.skillsTabPolicy,
+    },
+  ];
+  for (const companion of companions) {
+    let projection: TabProjection | undefined;
+    try {
+      projection = companionProjection(
+        await readFile(join(root, companion.source), "utf8"),
+        companion.category,
+      );
+    } catch {
+      // Report the same owning-source mismatch below.
+    }
+    if (!projection) {
+      add(
+        diagnostics,
+        "error",
+        companion.category,
+        companion.code,
+        companion.source,
+        "projection",
+        "Structured launch-disposition policy could not be parsed.",
+      );
+      continue;
+    }
+    for (const command of ["create", "switch"] as const)
+      for (const field of [
+        "conflicts",
+        "exit",
+        "guard",
+        "implies",
+        "mode",
+      ] as const)
+        if (
+          !samePolicyValue(
+            projection.commands[command][field],
+            canonical.commands[command][field],
+          )
+        )
+          add(
+            diagnostics,
+            "error",
+            companion.category,
+            companion.code,
+            companion.source,
+            `${command}.json.${field}`,
+            `Companion ${command} JSON ${field} contradicts the canonical CLI tab policy.`,
+          );
+    if (projection.cliOnly !== canonical.cliOnly)
+      add(
+        diagnostics,
+        "error",
+        companion.category,
+        companion.code,
+        companion.source,
+        "persisted",
+        "Companion CLI-only status contradicts the canonical CLI tab policy.",
+      );
+    if (projection.noFallback !== canonical.noFallback)
+      add(
+        diagnostics,
+        "error",
+        companion.category,
+        companion.code,
+        companion.source,
+        "launcherSupport.noFallback",
+        "Companion fallback behavior contradicts the canonical CLI tab policy.",
+      );
+    for (const launcher of [...canonical.launchers.keys()].sort())
+      if (
+        !samePolicyValue(
+          projection.launchers.get(launcher),
+          canonical.launchers.get(launcher),
+        )
+      )
+        add(
+          diagnostics,
+          "error",
+          companion.category,
+          companion.code,
+          companion.source,
+          `launcherSupport.${launcher}`,
+          "Companion launcher mapping contradicts the canonical CLI tab support classification.",
+        );
+    for (const launcher of [...projection.launchers.keys()].sort())
+      if (!canonical.launchers.has(launcher))
+        add(
+          diagnostics,
+          "error",
+          companion.category,
+          companion.code,
+          companion.source,
+          `launcherSupport.${launcher}`,
+          "Companion launcher mapping is absent from the canonical CLI tab policy.",
+        );
+  }
+}
 const createUnorderedArraySubjects = [
   "modes",
   "editorHosts",
@@ -629,6 +1289,181 @@ async function markdownFiles(directory: string): Promise<string[]> {
     /* Missing tree is diagnosed through coverage/reference checks. */
   }
   return result.sort();
+}
+
+const workflowRunSteps = (workflow: string): string[] => {
+  const lines = workflow.split(/\r?\n/);
+  const steps: Array<{ run?: string; uses: boolean }> = [];
+  let jobsIndent = -1;
+  let jobIndent = -1;
+  let jobFieldIndent = -1;
+  let stepsIndent = -1;
+  let stepIndent = -1;
+  let current: { run?: string; uses: boolean } | undefined;
+  const finishStep = () => {
+    if (current) steps.push(current);
+    current = undefined;
+  };
+  for (let index = 0; index < lines.length; index += 1) {
+    const line = lines[index];
+    if (/^\s*(?:#.*)?$/.test(line)) continue;
+    const indent = line.match(/^\s*/)?.[0].length ?? 0;
+    if (/^\s*jobs:\s*(?:#.*)?$/.test(line)) {
+      finishStep();
+      jobsIndent = indent;
+      jobIndent = -1;
+      jobFieldIndent = -1;
+      stepsIndent = -1;
+      stepIndent = -1;
+      continue;
+    }
+    if (jobsIndent < 0) continue;
+    if (indent <= jobsIndent) {
+      finishStep();
+      jobsIndent = -1;
+      jobIndent = -1;
+      jobFieldIndent = -1;
+      stepsIndent = -1;
+      stepIndent = -1;
+      continue;
+    }
+    const mapping = line.match(/^\s*([^:#][^:]*):\s*(?:#.*)?$/);
+    if (jobIndent < 0 && mapping) {
+      jobIndent = indent;
+      continue;
+    }
+    if (jobIndent >= 0 && indent === jobIndent && mapping) {
+      finishStep();
+      jobFieldIndent = -1;
+      stepsIndent = -1;
+      stepIndent = -1;
+      continue;
+    }
+    if (jobIndent < 0 || indent <= jobIndent) continue;
+    if (jobFieldIndent < 0 && !/^\s*-\s+/.test(line)) jobFieldIndent = indent;
+    if (
+      jobFieldIndent >= 0 &&
+      indent === jobFieldIndent &&
+      /^\s*steps:\s*(?:#.*)?$/.test(line)
+    ) {
+      finishStep();
+      stepsIndent = indent;
+      stepIndent = -1;
+      continue;
+    }
+    if (stepsIndent >= 0 && indent <= stepsIndent) {
+      finishStep();
+      stepsIndent = -1;
+      stepIndent = -1;
+    }
+    if (stepsIndent < 0) continue;
+    const step = line.match(/^\s*-\s+(.*)$/);
+    if (step && indent > stepsIndent) {
+      if (stepIndent < 0) stepIndent = indent;
+      if (indent !== stepIndent) continue;
+      finishStep();
+      current = { uses: false };
+      stepIndent = indent;
+      const directField = step[1].match(/^(run|uses):\s*(.*)$/);
+      if (directField?.[1] === "uses") current.uses = true;
+      else if (directField?.[1] === "run") current.run = directField[2].trim();
+      continue;
+    }
+    if (!current || stepIndent < 0 || indent !== stepIndent + 2) continue;
+    const field = line.match(/^\s*(run|uses):\s*(.*)$/);
+    if (!field) continue;
+    if (field[1] === "uses") {
+      current.uses = true;
+      continue;
+    }
+    const run = field[2];
+    if (!["|", "|-", "|+", ">", ">-", ">+"].includes(run.trim())) {
+      current.run = run.trim();
+      continue;
+    }
+    const blockIndent = indent;
+    const block: string[] = [];
+    while (index + 1 < lines.length) {
+      const next = lines[index + 1];
+      const nextIndent = next.match(/^\s*/)?.[0].length ?? 0;
+      if (next.trim() && nextIndent <= blockIndent) break;
+      index += 1;
+      if (next.trim()) block.push(next.trim());
+    }
+    current.run = block.join("\n");
+  }
+  finishStep();
+  return steps.flatMap((step) =>
+    !step.uses && text(step.run) ? [step.run] : [],
+  );
+};
+
+const directlyRuns = (runs: string[], command: string): boolean =>
+  runs.some((run) =>
+    run
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .filter((line) => line.length > 0 && !line.startsWith("#"))
+      .some((line) => line === command),
+  );
+
+const executableCheckerSource = (content: string): boolean =>
+  content
+    .replace(/^#!.*$/gm, "")
+    .replace(/\/\/.*$/gm, "")
+    .replace(/\/\*[\s\S]*?\*\//g, "")
+    .trim().length > 0;
+
+async function runFocusedChecker(
+  root: string,
+  checker: {
+    category: "docs" | "skills";
+    checker: string;
+    code: string;
+    cwd: string;
+  },
+  diagnostics: Diagnostic[],
+): Promise<void> {
+  let source = "";
+  try {
+    source = await readFile(join(root, checker.checker), "utf8");
+  } catch {
+    return;
+  }
+  if (!executableCheckerSource(source)) {
+    add(
+      diagnostics,
+      "error",
+      checker.category,
+      checker.code,
+      checker.checker,
+      "checker",
+      "Focused checker is an empty or comment-only stub.",
+    );
+    return;
+  }
+  try {
+    await execFileAsync(
+      process.execPath,
+      [relative(checker.cwd, checker.checker)],
+      {
+        cwd: join(root, checker.cwd),
+        maxBuffer: 4 * 1024 * 1024,
+      },
+    );
+  } catch (error) {
+    const exitCode =
+      object(error) && "code" in error ? String(error.code) : "unknown";
+    add(
+      diagnostics,
+      "error",
+      checker.category,
+      checker.code,
+      checker.checker,
+      "checker",
+      `Focused checker subprocess failed with exit ${exitCode}.`,
+    );
+  }
 }
 
 export async function checkContracts(
@@ -904,13 +1739,13 @@ export async function checkContracts(
         "Each editor host must reference EditorCommandDefaults.",
       );
   }
-  version(contract, paths.contract, d, 3);
+  version(contract, paths.contract, d, 4);
   version(coverage, paths.coverage, d);
   version(policy, paths.policy, d);
   const commandEntries = Array.isArray(contract?.commands)
     ? contract.commands.filter(object)
     : [];
-  if (contract?.schemaVersion === 3 && "cliVersion" in contract)
+  if (contract?.schemaVersion === 4 && "cliVersion" in contract)
     add(
       d,
       "error",
@@ -918,7 +1753,7 @@ export async function checkContracts(
       "SCHEMA_INVALID",
       paths.contract,
       "cliVersion",
-      "Contract schema version 3 excludes package release metadata.",
+      "Contract schema version 4 excludes package release metadata.",
     );
   if (contract && !Array.isArray(contract.commands))
     add(
@@ -946,6 +1781,34 @@ export async function checkContracts(
     }
     commands.set(command.path, command);
     const semantics = object(command.semantics) ? command.semantics : {};
+    const commandOptionPolicies = object(semantics.optionPolicies)
+      ? semantics.optionPolicies
+      : {};
+    const commandOptions = commandOptionNames(command);
+    for (const [option, optionPolicy] of Object.entries(
+      commandOptionPolicies,
+    )) {
+      if (!validOptionPolicy(optionPolicy))
+        add(
+          d,
+          "error",
+          "schema",
+          "SCHEMA_INVALID",
+          paths.contract,
+          `${command.path}.${option}`,
+          "Schema-v4 option policies require typed conflict, implication, JSON, persistence, and optional prerequisite/support metadata.",
+        );
+      if (!commandOptions.includes(option))
+        add(
+          d,
+          "error",
+          "schema",
+          "OPTION_POLICY_OPTION_MISSING",
+          paths.contract,
+          `${command.path}.${option}`,
+          `Option policy key ${option} is not registered on the exact ${command.path} command.`,
+        );
+    }
     for (const surface of ["json", "docs", "skills", "standalone", "vscode"])
       if (!object(semantics[surface]))
         add(
@@ -1205,6 +2068,27 @@ export async function checkContracts(
     }
   }
 
+  for (const [name, command] of commands) {
+    const semantics = object(command.semantics) ? command.semantics : {};
+    const optionPolicies = object(semantics.optionPolicies)
+      ? semantics.optionPolicies
+      : {};
+    const coverageEntry = covered.get(name);
+    const coverageOptions = strings(coverageEntry?.requiredOptions) ?? [];
+    for (const option of Object.keys(optionPolicies).sort()) {
+      if (!coverageOptions.includes(option))
+        add(
+          d,
+          "error",
+          "skills",
+          "SKILLS_OPTION_POLICY_MISMATCH",
+          paths.coverage,
+          `${name}.${option}`,
+          `Skills coverage for ${name} must explicitly represent policy option ${option} in requiredOptions.`,
+        );
+    }
+  }
+
   const initCommand = commands.get("init");
   const initCoverage = covered.get("init");
   if (initCommand) {
@@ -1283,55 +2167,34 @@ export async function checkContracts(
   for (const commandName of ["create", "switch"] as const) {
     const command = commands.get(commandName);
     if (!command) continue;
-    const commandOptions = Array.isArray(command.options)
-      ? command.options
-          .filter(object)
-          .flatMap((option) =>
-            text(option.flags)
-              ? (option.flags.match(/--[a-z0-9-]+/g) ?? [])
-              : [],
-          )
-      : [];
+    const commandOptions = commandOptionNames(command);
     const semantics = object(command.semantics) ? command.semantics : {};
     const optionPolicies = object(semantics.optionPolicies)
       ? semantics.optionPolicies
       : {};
-    const tmuxPolicy = object(optionPolicies["--tmux"])
-      ? optionPolicies["--tmux"]
-      : {};
-    const expectedPolicy = tmuxOptionPolicies[commandName];
-    const requiredOptions = [
-      "--tmux",
-      ...(strings(expectedPolicy.compatibleOptions) ?? []),
-      ...(strings(expectedPolicy.conflicts) ?? []),
-    ];
-    if (
-      !sameTmuxPolicy(tmuxPolicy, expectedPolicy) ||
-      !requiredOptions.every((option) => commandOptions.includes(option))
-    )
-      add(
-        d,
-        "error",
-        "schema",
-        "TMUX_OPTION_POLICY_MISMATCH",
-        paths.contract,
-        `${commandName}.--tmux`,
-        `${commandName} --tmux requires the canonical conflict, prerequisite, implication, JSON-precedence, and non-persisted policy metadata.`,
-      );
-    const coverageEntry = covered.get(commandName);
-    if (
-      coverageEntry &&
-      !(strings(coverageEntry.requiredOptions) ?? []).includes("--tmux")
-    )
-      add(
-        d,
-        "error",
-        "skills",
-        "SKILLS_TMUX_POLICY_MISMATCH",
-        paths.coverage,
-        commandName,
-        `Skills coverage for ${commandName} must require --tmux.`,
-      );
+    for (const [option, expectedPolicy] of Object.entries(
+      canonicalOptionPolicies[commandName],
+    )) {
+      const actualPolicy = optionPolicies[option];
+      const policyOptions = [
+        option,
+        ...(strings(expectedPolicy.compatibleOptions) ?? []),
+        ...(strings(expectedPolicy.conflicts) ?? []),
+      ];
+      if (
+        !samePolicyValue(actualPolicy, expectedPolicy) ||
+        !policyOptions.every((candidate) => commandOptions.includes(candidate))
+      )
+        add(
+          d,
+          "error",
+          "schema",
+          "OPTION_POLICY_MISMATCH",
+          paths.contract,
+          `${commandName}.${option}`,
+          `${commandName} ${option} must match the canonical typed schema-v4 option policy.`,
+        );
+    }
   }
   for (const file of await markdownFiles(join(root, paths.skills))) {
     const content = await readFile(file, "utf8");
@@ -1506,6 +2369,64 @@ export async function checkContracts(
         id,
         "Contributed command is neither CLI-backed nor extension-only.",
       );
+
+  await checkTabCompanionSemantics(root, commands, d);
+
+  const focusedChecks = [
+    {
+      category: "docs" as const,
+      checker: paths.docsOptionPolicyCheck,
+      cwd: "repos/arashi-docs",
+      failureCode: "DOCS_OPTION_POLICY_CHECK_FAILED",
+      unreachableCode: "DOCS_OPTION_POLICY_CHECK_UNREACHABLE",
+      command: "pnpm --dir repos/arashi-docs validate:tab-launch-docs",
+    },
+    {
+      category: "skills" as const,
+      checker: paths.skillsOptionPolicyCheck,
+      cwd: "repos/arashi-skills",
+      failureCode: "SKILLS_OPTION_POLICY_CHECK_FAILED",
+      unreachableCode: "SKILLS_OPTION_POLICY_CHECK_UNREACHABLE",
+      command:
+        "node repos/arashi-skills/scripts/tab-launch-disposition-guidance-selftest.mjs",
+    },
+  ];
+  let workflow = "";
+  try {
+    workflow = await readFile(join(root, paths.workflow), "utf8");
+  } catch {
+    // Each focused check below reports the owning category and shared workflow source.
+  }
+  const workflowRuns = workflowRunSteps(workflow);
+  for (const focused of focusedChecks)
+    if (
+      !(await exists(join(root, focused.checker))) ||
+      !directlyRuns(workflowRuns, focused.command)
+    )
+      add(
+        d,
+        "error",
+        focused.category,
+        focused.unreachableCode,
+        paths.workflow,
+        focused.checker,
+        `Meta CI must directly run the owning focused checker: ${focused.command}.`,
+      );
+
+  await Promise.all(
+    focusedChecks.map((focused) =>
+      runFocusedChecker(
+        root,
+        {
+          category: focused.category,
+          checker: focused.checker,
+          code: focused.failureCode,
+          cwd: focused.cwd,
+        },
+        d,
+      ),
+    ),
+  );
 
   await checkKittyGuidance(root, d);
 
