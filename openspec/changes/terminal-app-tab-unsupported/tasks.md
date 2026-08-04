@@ -22,4 +22,4 @@
 
 - [x] 4.1 Run focused CLI, command-boundary, contract, docs, and packaged-skill tests after the final edits.
 - [x] 4.2 Run complete lint, typecheck, format, test, native build, Windows cross-build, generated-contract, and cross-repository semantic validation required by each affected repository.
-- [ ] 4.3 Perform an independent spec-compliance and code-quality review, reconcile blockers, and verify every related PR's current head and CI before merge.
+- [x] 4.3 Perform an independent spec-compliance and code-quality review, reconcile blockers, and verify every related PR's current head and CI before merge.
