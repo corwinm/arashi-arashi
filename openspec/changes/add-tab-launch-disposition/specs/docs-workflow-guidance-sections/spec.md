@@ -13,7 +13,8 @@ Canonical documentation SHALL explain that automatic launch defaults to a new wi
 
 #### Scenario: Launcher matrix is user-visible
 - **WHEN** a user consults terminal integration guidance
-- **THEN** it identifies true-tab mappings for Windows Terminal, WezTerm, Terminal.app, iTerm2, macOS Ghostty, and active-workspace Herdr; managed equivalents for Kitty and tmux/sesh; and unsupported mappings for Git Bash/MinTTY, cmux child tabs, IDE workspaces, Linux Ghostty, unmanaged Kitty tabs, and generic platform fallbacks
+- **THEN** it identifies true-tab mappings for Windows Terminal, WezTerm, Terminal.app, iTerm2, macOS Ghostty, and active-workspace Herdr; managed equivalents for Kitty, tmux/sesh, and cmux; and unsupported mappings for Git Bash/MinTTY, IDE workspaces, Linux Ghostty, unmanaged Kitty tabs, and generic platform fallbacks
+- **AND** it explains that a detected multiplexer receives the tab before its containing terminal application
 
 #### Scenario: Troubleshooting does not recommend silent fallback
 - **WHEN** documentation describes `TAB_DISPOSITION_UNSUPPORTED` or supported tab execution failure

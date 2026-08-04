@@ -123,7 +123,12 @@ The system SHALL preserve the strictly detected terminal application, active pro
 - **AND** passes the exact worktree path through argv-safe or static environment-backed operations
 
 ### Requirement: Define managed-context disposition equivalents
-The system SHALL document and enforce whether each managed launcher provides an independent-session equivalent, a tab-equivalent, or no tab mapping. An equivalent mapping MAY use the same underlying primitive for both dispositions only when the contract explicitly identifies it as both an independent session and a tab-equivalent.
+The system SHALL select a strict managed context before its containing terminal application, and SHALL document and enforce whether each managed launcher provides an independent-session equivalent, a tab-equivalent, or no tab mapping. An equivalent mapping MAY use the same underlying primitive for both dispositions only when the contract explicitly identifies it as both an independent session and an in-session tab-equivalent.
+
+#### Scenario: Managed multiplexer outranks containing terminal
+- **WHEN** `--tab` runs inside a strictly detected tmux, Herdr, or cmux context that is itself hosted by a tab-capable terminal such as Ghostty
+- **THEN** Arashi applies the selected multiplexer’s tab mapping
+- **AND** does not invoke the containing terminal’s native tab API
 
 #### Scenario: Managed Kitty preserves exact worktree session identity
 - **WHEN** managed Kitty is selected with either disposition
@@ -135,16 +140,11 @@ The system SHALL document and enforce whether each managed launcher provides an 
 - **THEN** Arashi creates the existing tmux window rooted at the exact worktree
 - **AND** identifies the tmux window as the managed independent-session and tab equivalent
 
-#### Scenario: cmux rejects explicit child-tab disposition
-- **WHEN** cmux is selected with disposition `tab`
-- **THEN** Arashi returns `TAB_DISPOSITION_UNSUPPORTED` before invoking `cmux workspace create`
-- **AND** does not silently treat a new top-level cmux workspace as a requested child tab
-- **AND** does not fall through to standalone Ghostty
-
-#### Scenario: cmux creates its independent workspace by default
-- **WHEN** cmux is selected with disposition `window`
+#### Scenario: cmux workspace is its in-session tab equivalent
+- **WHEN** cmux is selected with either disposition
 - **THEN** Arashi creates and focuses the exact worktree workspace through the existing structured cmux contract
-- **AND** validates the structured response before reporting its managed independent-session equivalent
+- **AND** validates the structured response before reporting the workspace as cmux's independent-session and in-session vertical-tab equivalent
+- **AND** does not fall through to standalone Ghostty
 
 #### Scenario: Herdr creates a tab in the active workspace
 - **WHEN** Herdr is selected with disposition `tab` and `HERDR_WORKSPACE_ID` is non-empty after trimming
