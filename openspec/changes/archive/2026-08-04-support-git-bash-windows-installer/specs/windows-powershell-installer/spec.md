@@ -1,23 +1,29 @@
-# windows-powershell-installer Specification
+## ADDED Requirements
 
-## Purpose
+### Requirement: Installed Windows shell wrapper parity
+The installed Windows payload MUST provide shell-appropriate `arashi` entry points for Git Bash, PowerShell, and Command Prompt that execute the same colocated `arashi.bin.exe`, forward the user's arguments, and preserve stdin for interactive commands.
 
-Define the Windows direct-binary installation and update behavior for Arashi, including the hosted PowerShell installer, release asset verification, user-level install layout, PATH handling, smoke testing, and deferred update flow.
-## Requirements
-### Requirement: Windows PowerShell installer availability
-Arashi SHALL provide a hosted Windows PowerShell installer for direct binary installs that do not require Node.js or npm.
+#### Scenario: Git Bash resolves the extensionless wrapper
+- **WHEN** the install directory is on PATH in a fresh process with `MINGW*`, `MSYS*`, or Cygwin shell evidence and the user invokes `arashi <arguments>`
+- **THEN** Git Bash executes the extensionless `arashi` wrapper, which forwards the arguments to the colocated `arashi.bin.exe`
 
-#### Scenario: User inspects the installer
-- **WHEN** a user opens the hosted PowerShell installer URL in a browser or downloads it directly
-- **THEN** they can inspect the script contents before executing it
+#### Scenario: POSIX shell has a stray Windows executable
+- **WHEN** the extensionless wrapper runs on macOS or Linux without `arashi.bin` but a colocated `arashi.bin.exe` exists
+- **THEN** it does not select the Windows executable and follows the existing supported-platform fallback or error behavior
 
-#### Scenario: User runs the documented one-line PowerShell installer
-- **WHEN** a Windows user runs the documented `powershell -c "irm https://arashi.haphazard.dev/install.ps1 | iex"` command
-- **THEN** the script downloads, verifies, installs, and smoke-tests the latest supported Arashi Windows release assets without requiring Node.js or npm
+#### Scenario: PowerShell resolves its existing wrapper
+- **WHEN** the install directory is on PATH in PowerShell and the user invokes `arashi <arguments>` through the installed PowerShell wrapper
+- **THEN** the wrapper forwards the arguments to the colocated `arashi.bin.exe`
 
-#### Scenario: Unsupported Windows platform attempts install
-- **WHEN** the installer runs on an unsupported operating system or CPU architecture
-- **THEN** it exits non-zero before downloading release assets and prints the direct GitHub Releases fallback URL
+#### Scenario: Command Prompt resolves its existing wrapper
+- **WHEN** the install directory is on PATH in Command Prompt and the user invokes `arashi <arguments>` through `arashi.bat`
+- **THEN** the wrapper forwards the arguments to the colocated `arashi.bin.exe`
+
+#### Scenario: Interactive command uses a Windows shell wrapper
+- **WHEN** a user runs an interactive Arashi command through the Git Bash, PowerShell, or Command Prompt entry point
+- **THEN** the wrapper leaves interactive stdin available to `arashi.bin.exe`
+
+## MODIFIED Requirements
 
 ### Requirement: Windows release asset resolution
 The Windows installer MUST resolve all installation assets from a single Arashi GitHub release.
@@ -164,27 +170,3 @@ The Windows installer implementation SHALL have automated coverage for determini
 #### Scenario: Documentation publish path is tested or smoke-checked
 - **WHEN** docs/build validation runs for the hosted installer endpoint
 - **THEN** it verifies that `install.ps1` is present at the published `/install.ps1` path
-
-### Requirement: Installed Windows shell wrapper parity
-The installed Windows payload MUST provide shell-appropriate `arashi` entry points for Git Bash, PowerShell, and Command Prompt that execute the same colocated `arashi.bin.exe`, forward the user's arguments, and preserve stdin for interactive commands.
-
-#### Scenario: Git Bash resolves the extensionless wrapper
-- **WHEN** the install directory is on PATH in a fresh process with `MINGW*`, `MSYS*`, or Cygwin shell evidence and the user invokes `arashi <arguments>`
-- **THEN** Git Bash executes the extensionless `arashi` wrapper, which forwards the arguments to the colocated `arashi.bin.exe`
-
-#### Scenario: POSIX shell has a stray Windows executable
-- **WHEN** the extensionless wrapper runs on macOS or Linux without `arashi.bin` but a colocated `arashi.bin.exe` exists
-- **THEN** it does not select the Windows executable and follows the existing supported-platform fallback or error behavior
-
-#### Scenario: PowerShell resolves its existing wrapper
-- **WHEN** the install directory is on PATH in PowerShell and the user invokes `arashi <arguments>` through the installed PowerShell wrapper
-- **THEN** the wrapper forwards the arguments to the colocated `arashi.bin.exe`
-
-#### Scenario: Command Prompt resolves its existing wrapper
-- **WHEN** the install directory is on PATH in Command Prompt and the user invokes `arashi <arguments>` through `arashi.bat`
-- **THEN** the wrapper forwards the arguments to the colocated `arashi.bin.exe`
-
-#### Scenario: Interactive command uses a Windows shell wrapper
-- **WHEN** a user runs an interactive Arashi command through the Git Bash, PowerShell, or Command Prompt entry point
-- **THEN** the wrapper leaves interactive stdin available to `arashi.bin.exe`
-
