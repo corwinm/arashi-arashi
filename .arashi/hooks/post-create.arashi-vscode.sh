@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
+set -euo pipefail
 
-echo "***"
-
-pnpm install --frozen-lockfile
-
-echo "***"
+printf '%s\n' '***'
+CI=true corepack pnpm --ignore-workspace install --frozen-lockfile
+printf '%s\n' '***'
