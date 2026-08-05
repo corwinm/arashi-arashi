@@ -187,7 +187,7 @@ const optionPolicies = {
         unsupported: true,
       },
       launcherSupport: tabLauncherSupport,
-      overrides: ["configured-cd", "contextual-cd"],
+      overrides: ["configured-cd", "configured-launcher", "contextual-cd"],
       persisted: false,
     },
     "--tmux": {
@@ -214,8 +214,8 @@ const optionPolicies = {
 const docsTabContract = `# Window and Tab Launching
 
 \`--tab\` is a CLI-only, one-invocation request and does not create a persistent preference.
-For \`switch\`, explicit tab intent overrides configured parent-shell cd and conflicts only with explicit \`--cd\`.
-For create, create tab implies launch and switch.
+For \`switch\`, explicit tab intent overrides configured parent-shell cd, bypasses configured launcher defaults, and conflicts only with explicit \`--cd\`.
+For create, create tab implies launch and switch and wins over \`--no-launch\` and \`--no-switch\`.
 
 | Launcher or context | Default independent launch | Explicit tab | Required target evidence |
 | --- | --- | --- | --- |
@@ -247,8 +247,8 @@ const skillsTabContract = `
 ### Launch disposition (\`--tab\`)
 
 \`--tab\` is a one-shot CLI-only launch disposition and is never persisted.
-A \`switch --tab\` request expresses explicit launch intent and conflicts only with explicit \`--cd\`.
-\`create --tab\` implies launch and switch.
+A \`switch --tab\` request expresses explicit launch intent, overrides configured or contextual parent-shell \`cd\`, bypasses configured launcher defaults, and conflicts only with explicit \`--cd\`.
+\`create --tab\` implies launch and switch and wins over \`--no-launch\` and \`--no-switch\`.
 A requested tab never silently falls back. Enforce each guard before option or context validation.
 
 \`switch --tab --json\` returns \`JSON_UNSUPPORTED_FOR_MODE\` with \`details.mode: "launch"\` and exits \`2\`.
@@ -957,6 +957,26 @@ describe("cross-repository command contracts", () => {
     expect(codes).toContain("SKILLS_OPTION_POLICY_CHECK_UNREACHABLE");
   });
   test.each([
+    [
+      "docs configured-launcher override drift",
+      "repos/arashi-docs/docs/workflows/launch-disposition.md",
+      (content: string) =>
+        content.replace(
+          "bypasses configured launcher defaults",
+          "retains configured launcher defaults",
+        ),
+      "DOCS_TAB_POLICY_MISMATCH",
+    ],
+    [
+      "skills configured-launcher override drift",
+      "repos/arashi-skills/skills/arashi/references/commands.md",
+      (content: string) =>
+        content.replace(
+          "bypasses configured launcher defaults",
+          "retains configured launcher defaults",
+        ),
+      "SKILLS_TAB_POLICY_MISMATCH",
+    ],
     [
       "docs Terminal.app capability drift",
       "repos/arashi-docs/docs/workflows/launch-disposition.md",

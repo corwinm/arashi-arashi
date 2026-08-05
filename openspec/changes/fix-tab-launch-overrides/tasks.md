@@ -1,24 +1,24 @@
 ## 1. Contract and RED Coverage
 
-- [ ] 1.1 Add switch resolver and command-contract tests proving `--tab` alone bypasses configured sesh/Herdr while explicit launcher composition remains authoritative.
-- [ ] 1.2 Add Windows environment-normalization tests for uppercase `PATH`, canonical `Path`, duplicate case variants, and non-Windows preservation.
-- [ ] 1.3 Run focused tests and record expected RED failures against current production behavior.
+- [x] 1.1 Add switch resolver and command-contract tests proving `--tab` alone bypasses configured sesh/Herdr while explicit launcher composition remains authoritative.
+- [x] 1.2 Add Windows environment-normalization tests for mixed-case `PATH` keys, duplicate path casing, and undefined values.
+- [x] 1.3 Extend cross-repository tab-policy fixtures with the configured-launcher override and prove missing docs/skills wording is diagnosed.
 
 ## 2. CLI Implementation
 
-- [ ] 2.1 Make tab disposition opt out of configured explicit launch defaults without mutating parsed options or changing direct-caller behavior.
-- [ ] 2.2 Canonicalize the Windows executable search path key at the shared child-process environment boundary.
-- [ ] 2.3 Update switch help and generated command policy semantics, then regenerate the CLI contract.
+- [x] 2.1 Make explicit `--tab` opt out of configured launch defaults without changing no-flag behavior.
+- [x] 2.2 Canonicalize Windows path-key casing in the shared spawn-environment normalizer before detached launcher processes run.
+- [x] 2.3 Update `--tab` help and CLI semantic metadata, then regenerate `contracts/cli-commands.json`.
 
-## 3. Companion Guidance
+## 3. Companion Surfaces
 
-- [ ] 3.1 Update canonical switch and launch-disposition docs to state that `--tab` alone bypasses configured explicit launcher defaults.
-- [ ] 3.2 Update packaged Arashi command guidance with the same standalone override and explicit-launcher composition contract.
-- [ ] 3.3 Run focused companion semantic checks and regenerate deterministic exports if required.
+- [x] 3.1 Update Arashi docs to state that `--tab` bypasses configured launch defaults and `--no-default-launch` is redundant.
+- [x] 3.2 Update the Arashi skill guidance with the same precedence and explicit-launcher composition rules.
+- [x] 3.3 Extend docs, skills, and meta-repository policy checks so the configured-launcher override cannot silently drift.
 
-## 4. Validation and Delivery
+## 4. Verification and Delivery
 
-- [ ] 4.1 Run focused CLI tests, full tests, typecheck, lint, formatting, contract freshness, native build, and Windows cross-build after the final source edit.
-- [ ] 4.2 Build the Windows artifact and verify executable resolution from real Git Bash on the Windows test PC while preserving Windows Terminal tab argv/lifecycle.
-- [ ] 4.3 Validate OpenSpec and coordinated cross-repository contracts, review diffs, and commit each owning repository separately.
-- [ ] 4.4 Open and cross-link child and meta PRs, verify current-head CI, then archive and close out only after child PRs merge.
+- [x] 4.1 Run focused and full CLI tests, typecheck, lint, formatting, contract checks, quality checks, and builds.
+- [x] 4.2 Build the Windows binary and verify `switch --tab` from Git Bash on `win-test` with configured sesh and an installed Windows Terminal profile.
+- [x] 4.3 Run full docs validation, all skill self-tests, strict OpenSpec validation, and meta-repository tests/typecheck/contracts.
+- [x] 4.4 Commit child repositories, open linked child PRs, update the coordination PR, and verify CI status.
