@@ -285,7 +285,7 @@ const canonicalOptionPolicies: Record<
         unsupported: true,
       },
       launcherSupport: tabLauncherSupport,
-      overrides: ["--no-launch", "--no-switch"],
+      overrides: ["--no-launch", "--no-switch", "configured-launcher"],
       persisted: false,
     },
     "--tmux": {
@@ -321,7 +321,7 @@ const canonicalOptionPolicies: Record<
         unsupported: true,
       },
       launcherSupport: tabLauncherSupport,
-      overrides: ["configured-cd", "contextual-cd"],
+      overrides: ["configured-cd", "configured-launcher", "contextual-cd"],
       persisted: false,
     },
     "--tmux": {
@@ -666,6 +666,7 @@ type TabProjection = {
       guard: string;
       implies: string[];
       mode: string;
+      overrides: string[];
     }
   >;
   cliOnly: boolean;
@@ -913,6 +914,32 @@ const companionProjection = (
             ? ["launch"]
             : [],
       mode: match[1],
+      overrides:
+        command === "create"
+          ? [
+              ...(/(?:wins over|overrides)[^.\n]*`--no-launch`[^.\n]*`--no-switch`/i.test(
+                scoped,
+              )
+                ? ["--no-launch", "--no-switch"]
+                : []),
+              ...(/(?:For (?:`create`|create)|`create --tab`)[^.\n]*bypasses configured(?: generic or editor-scoped)? launch(?:er)? defaults/i.test(
+                scoped,
+              )
+                ? ["configured-launcher"]
+                : []),
+            ]
+          : [
+              ...(/overrides configured or contextual parent-shell `cd`|overrides configured parent-shell cd/i.test(
+                scoped,
+              )
+                ? ["configured-cd", "contextual-cd"]
+                : []),
+              ...(/(?:For `switch`|`switch --tab`(?: request)? expresses)[^\n]*bypasses configured launcher defaults/i.test(
+                scoped,
+              )
+                ? ["configured-launcher"]
+                : []),
+            ].sort(),
     };
   }
 
@@ -988,6 +1015,7 @@ const canonicalTabProjection = (
       guard: jsonPolicy.guardPrecedence,
       implies: strings(tab.implies) ?? [],
       mode: jsonPolicy.mode,
+      overrides: strings(tab.overrides) ?? [],
     };
     launcherPolicy ??= tab.launcherSupport;
   }
@@ -1102,6 +1130,7 @@ async function checkTabCompanionSemantics(
         "guard",
         "implies",
         "mode",
+        "overrides",
       ] as const)
         if (
           !samePolicyValue(

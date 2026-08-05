@@ -3,7 +3,9 @@
 ## Purpose
 
 Define how `arashi switch` discovers and selects worktrees, resolves parent-shell or launcher behavior, and preserves deterministic launch semantics across configured and standalone repositories.
+
 ## Requirements
+
 ### Requirement: Discover switchable worktree targets
 
 The system SHALL discover existing git worktrees associated with the current Arashi workspace and expose each target with its branch reference and absolute worktree path.
@@ -701,108 +703,159 @@ The system SHALL preserve existing configured launch behavior and automatic tmux
 - **THEN** Arashi resolves Herdr, cmux, integrated IDE, parent-shell, terminal-app, and platform fallback exactly as specified by the existing automatic launch contract
 
 ### Requirement: Launch selected worktrees as managed Kitty sessions
+
 The system SHALL use the managed Kitty worktree-session contract when automatic launch behavior applies in a positively detected supported Kitty context, SHALL report launch mode `kitty`, and SHALL reuse the same live worktree window instead of creating duplicate tabs during ordinary repeated switches.
 
 #### Scenario: Switch creates a Kitty worktree session
+
 - **WHEN** automatic launch applies, no higher-precedence launcher is selected, the invocation is in supported Kitty, and no exact live worktree match exists
 - **THEN** `arashi switch <target>` creates and focuses a validated Kitty session-backed tab rooted at the exact selected worktree path
 - **AND** the switch result reports mode `kitty`
 
 #### Scenario: Repeated switch reuses Kitty
+
 - **WHEN** the selected worktree already has a valid exact Arashi-marked Kitty window
 - **THEN** `arashi switch <target>` focuses and validates that window
 - **AND** does not create another tab
 
 #### Scenario: Managed Kitty launch fails closed
+
 - **WHEN** Kitty is positively selected but version preflight, remote control, inspection, focus, launch, race reconciliation, or state validation fails
 - **THEN** switch returns actionable `LAUNCH_FAILED` detail
 - **AND** does not fall through to directory switching, an IDE, another terminal, generic Kitty startup, or platform fallback
 
 ### Requirement: Preserve launcher precedence when Kitty is active
+
 The system SHALL keep explicit launcher overrides and configured non-auto modes authoritative, SHALL preserve automatic tmux, Herdr, cmux, and strictly detected supported IDE precedence over managed Kitty, and SHALL select managed Kitty before generic terminal/platform fallback.
 
 #### Scenario: Tmux nested in Kitty remains tmux
+
 - **WHEN** automatic launch applies and both non-empty tmux and Kitty evidence are present
 - **THEN** Arashi uses the existing automatic tmux launcher rather than managed Kitty
 
 #### Scenario: Higher-precedence managed context appears with Kitty
+
 - **WHEN** automatic launch applies, Kitty evidence appears with Herdr, cmux, or strictly detected supported IDE evidence, and no higher explicit or configured selection exists
 - **THEN** Arashi preserves the existing Herdr-before-cmux-before-IDE order and does not select Kitty first
 
 #### Scenario: Configured behavior remains authoritative in Kitty
+
 - **WHEN** a configured non-auto `cd`, `sesh`, or `herdr` mode applies in a Kitty terminal
 - **THEN** Arashi follows that configured mode under the existing availability and opt-out rules instead of automatically selecting Kitty
 
 #### Scenario: Generic fallback is reached outside Kitty
+
 - **WHEN** automatic launch applies but no positive managed Kitty or higher-precedence context is detected
 - **THEN** Arashi preserves existing terminal-application and platform fallback behavior
 
 ### Requirement: Support explicit tab disposition when switching
+
 The system SHALL register `--tab` on `arashi switch`, SHALL treat it as CLI-only explicit launch intent with tab disposition, and SHALL propagate it through the same configured and standalone shared-launcher path after target selection. `--tab` SHALL override configured or contextual parent-shell directory switching for that invocation but SHALL NOT alter or persist `defaults.switch.mode`.
 
 #### Scenario: Switch help exposes tab disposition
+
 - **WHEN** a user runs `arashi switch --help`
 - **THEN** help states that the default is a new window or equivalent independent session
 - **AND** states that `--tab` requests a tab in the selected launcher and can fail when unsupported
 
 #### Scenario: Automatic switch launch receives tab disposition
+
 - **WHEN** the user runs `arashi switch --tab <target>` and behavior resolves to launch
 - **THEN** the selected target and disposition `tab` are passed to the shared launcher
 - **AND** automatic launcher precedence otherwise remains unchanged
 
 #### Scenario: Tab overrides configured directory switching
+
 - **WHEN** `defaults.switch.mode` is `cd` and the user passes `--tab`
 - **THEN** Arashi does not emit a parent-shell directory directive
 - **AND** resolves automatic launch with disposition `tab`
 
 #### Scenario: Tab overrides contextual auto directory switching
+
 - **WHEN** contextual `auto` would use shell integration to change the parent-shell directory and the user passes `--tab`
 - **THEN** Arashi does not emit a parent-shell directory directive
 - **AND** resolves automatic launch with disposition `tab`
 
 #### Scenario: Tab conflicts with parent-shell switching
+
 - **WHEN** the user combines `--tab` with `--cd`
 - **THEN** Arashi rejects the invocation before target launch or directory switching
 - **AND** instructs the user to choose either parent-shell switching or tab launch
 
 #### Scenario: No-cd remains compatible with tab
+
 - **WHEN** the user passes `--tab --no-cd`
 - **THEN** Arashi resolves launch behavior and applies tab disposition
 
 #### Scenario: Tab composes with explicit managed launcher selection
+
 - **WHEN** the user combines `--tab` with `--tmux`, `--sesh`, or `--herdr`
 - **THEN** Arashi preserves the explicit launcher selection
 - **AND** applies that launcher's normative tab or unsupported mapping rather than reporting a generic launcher conflict
 
 #### Scenario: Tab composes with explicit IDE workspace selection
+
 - **WHEN** the user combines `--tab` with `--vscode`, `--cursor`, or `--kiro`
 - **THEN** Arashi preserves the explicit IDE selection
 - **AND** returns that launcher's normative `TAB_DISPOSITION_UNSUPPORTED` result rather than a generic option conflict
 - **AND** does not reinterpret editor workspace reuse as a terminal tab
 
 #### Scenario: Configured launcher remains subject to tab support
+
 - **WHEN** `defaults.switch.mode` selects `sesh` or `herdr` and the user passes `--tab` without `--no-default-launch`
 - **THEN** Arashi retains the configured launcher
 - **AND** applies its normative tab or unsupported mapping
 
 #### Scenario: Default-launch opt-out retains explicit tab intent
+
 - **WHEN** the user passes `--tab --no-default-launch`
 - **THEN** Arashi bypasses a configured explicit launcher but still performs automatic launch resolution with disposition `tab`
 
 #### Scenario: Standalone switch has disposition parity
+
 - **WHEN** `arashi switch --tab` runs in an implicit standalone repository
 - **THEN** it uses the same support resolver and launcher mapping as configured mode
 - **AND** does not synthesize or persist Arashi configuration
 
 ### Requirement: Preserve structured switch rejection for tab disposition
+
 The system SHALL reject `switch --json` combined with `--tab` at both the Commander action and exported executor before workspace discovery, option-conflict validation, selection, or launch.
 
 #### Scenario: CLI JSON and tab are combined
+
 - **WHEN** a user invokes `arashi switch --json --tab` with or without another conflicting option
 - **THEN** stdout contains exactly one existing `JSON_UNSUPPORTED_FOR_MODE` envelope for switch launch mode
 - **AND** the process uses the existing switch JSON usage exit code
 
 #### Scenario: Direct executor JSON and tab are combined
+
 - **WHEN** a caller invokes the exported switch executor with `json: true` and `tab: true`
 - **THEN** the executor returns the existing numeric JSON usage result
 - **AND** performs no workspace discovery, target selection, directory directive, or launch
+
+### Requirement: Explicit tab disposition overrides configured launch defaults
+
+The system SHALL treat `--tab` as an explicit per-invocation launch override for `arashi switch`. When no launcher flag is supplied in the same invocation, `--tab` SHALL bypass a configured `sesh` or `herdr` launcher and use normal automatic launcher resolution with disposition `tab`; the user SHALL NOT need to also pass `--no-default-launch`.
+
+#### Scenario: Tab bypasses configured sesh
+
+- **WHEN** `defaults.switch.mode` is `sesh` and the user runs `arashi switch --tab` without an explicit launcher flag
+- **THEN** Arashi bypasses configured sesh
+- **AND** uses automatic launcher resolution with disposition `tab`
+
+#### Scenario: Tab bypasses configured Herdr
+
+- **WHEN** `defaults.switch.mode` is `herdr` and the user runs `arashi switch --tab` without an explicit launcher flag
+- **THEN** Arashi bypasses configured Herdr
+- **AND** uses automatic launcher resolution with disposition `tab`
+
+#### Scenario: Explicit launcher composes with tab
+
+- **WHEN** the user combines `--tab` with one supported explicit launcher flag
+- **THEN** Arashi preserves that explicit launcher as authoritative
+- **AND** passes disposition `tab` to that launcher
+
+#### Scenario: Redundant default-launch opt-out remains compatible
+
+- **WHEN** the user combines `--tab` with `--no-default-launch`
+- **THEN** Arashi produces the same launcher and disposition resolution as `--tab` alone
