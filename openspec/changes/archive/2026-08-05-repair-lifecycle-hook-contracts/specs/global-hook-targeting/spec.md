@@ -1,8 +1,5 @@
-# global-hook-targeting Specification
+## MODIFIED Requirements
 
-## Purpose
-TBD - created by archiving change expand-hooks-scope-and-options. Update Purpose after archive.
-## Requirements
 ### Requirement: User-global hook targeting by repository name
 The system SHALL support shared user-global hooks and repository-targeted user-global hooks beneath `~/.arashi/hooks/`. Shared hooks use `~/.arashi/hooks/<lifecycle><ext>` and targeted hooks use `~/.arashi/hooks/<repo>/<lifecycle><ext>`, where `<ext>` is platform-supported. If one logical location contains multiple supported native candidates, discovery MUST fail instead of selecting one.
 
@@ -51,4 +48,3 @@ Arashi SHALL use the resolved main repository root basename as the target direct
 #### Scenario: Targeted hook names another repository
 - **WHEN** a user-global target directory does not match the standalone main-root basename
 - **THEN** Arashi excludes that targeted hook from the lifecycle plan
-

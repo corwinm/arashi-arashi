@@ -11,6 +11,9 @@
       "mode": "sesh"
     }
   },
+  "hooks": {
+    "timeout": 300000
+  },
   "repos": {
     "arashi-docs": {
       "path": "repos/arashi-docs",

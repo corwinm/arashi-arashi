@@ -1,8 +1,5 @@
-# remove-lifecycle-hooks Specification
+## MODIFIED Requirements
 
-## Purpose
-TBD - created by archiving change add-pre-remove-and-post-remove-hooks. Update Purpose after archive.
-## Requirements
 ### Requirement: Remove command lifecycle hooks
 The system SHALL support remove lifecycle hooks named `pre-remove` and `post-remove` that are discovered for each target repository from repository-local (`repos/<repo>/.arashi/hooks/<hook-name><ext>`), workspace-root (`.arashi/hooks/<hook-name><ext>`), and user-global shared/targeted locations. `<ext>` SHALL be `.sh` on POSIX and `.ps1`, `.cmd`, or `.bat` on Windows; multiple supported candidates for one logical location MUST fail discovery before mutation.
 
@@ -17,17 +14,6 @@ The system SHALL support remove lifecycle hooks named `pre-remove` and `post-rem
 #### Scenario: Remove hook location is ambiguous on Windows
 - **WHEN** a Windows remove hook location contains more than one of `.ps1`, `.cmd`, or `.bat` for the same logical hook
 - **THEN** discovery fails before worktree or branch mutation and identifies every candidate
-
-### Requirement: Pre-remove hook gates destructive operations
-The system SHALL execute discovered `pre-remove` hooks after user confirmation and before any worktree removal or branch deletion, and the command MUST abort destructive operations when any `pre-remove` hook fails.
-
-#### Scenario: All pre-remove hooks succeed
-- **WHEN** all discovered `pre-remove` hooks exit successfully
-- **THEN** the command proceeds to worktree removal and branch deletion
-
-#### Scenario: A pre-remove hook fails
-- **WHEN** any discovered `pre-remove` hook exits non-zero or times out
-- **THEN** the command exits with failure and does not remove worktrees or delete branches
 
 ### Requirement: Post-remove hook finalization behavior
 The system SHALL execute discovered `post-remove` hooks after remove operations have been attempted, including runs where some remove operations fail. In configured multi-repository mode, each target repository SHALL evaluate its repository, workspace, global-targeted, and global-shared hooks with target-consistent context; workspace and shared hooks therefore execute once per target repository rather than once per command.
@@ -76,33 +62,7 @@ The 1.x compatibility aggregates SHALL be derived from the canonical records: `A
 - **THEN** those compatibility values remain available with the normative lifecycle mapping
 - **AND** removal is deferred to a separately approved 2.0-or-later breaking-change proposal
 
-### Requirement: Hook failures affect command result
-The system MUST treat remove lifecycle hook failures as command errors and SHALL report hook failure details in user-visible output.
-
-#### Scenario: Post-remove fails
-- **WHEN** any discovered `post-remove` hook exits non-zero or times out
-- **THEN** the command reports the hook failure and returns a non-zero exit status
-
-### Requirement: Standalone remove preserves user-global lifecycle hooks
-`arashi remove` in implicit standalone mode SHALL execute applicable user-global `pre-remove` and `post-remove` hooks with the existing destructive-operation gate, finalization, context, and failure-result contracts.
-
-#### Scenario: Standalone pre-remove hooks succeed
-- **WHEN** all applicable standalone user-global `pre-remove` hooks succeed after confirmation
-- **THEN** Arashi proceeds with the planned standalone worktree and branch removals
-
-#### Scenario: Standalone pre-remove hook fails
-- **WHEN** an applicable standalone user-global `pre-remove` hook fails or times out
-- **THEN** Arashi aborts before removing worktrees or deleting branches
-- **AND** reports the hook source and failure
-
-#### Scenario: Standalone removal partially fails
-- **WHEN** one or more standalone remove operations fail after successful pre-remove hooks
-- **THEN** applicable user-global `post-remove` hooks still run once after operation attempts complete
-- **AND** the final result preserves both removal and hook failures
-
-#### Scenario: Standalone remove hook receives context
-- **WHEN** a user-global remove hook runs for an implicit standalone workspace
-- **THEN** `ARASHI_*` context identifies standalone mode, main-root basename, main repository path, target branch/worktree, hook scope, and source path
+## ADDED Requirements
 
 ### Requirement: Remove lifecycle hooks use the shared timeout and outcome contract
 Configured and standalone remove hooks SHALL use the common lifecycle timeout contract and SHALL preserve timeout/nonzero/validation outcomes alongside remove-operation failures.
@@ -115,4 +75,3 @@ Configured and standalone remove hooks SHALL use the common lifecycle timeout co
 - **WHEN** remove operations and one or more post-remove hooks fail or time out
 - **THEN** the final result preserves each removal and hook outcome
 - **AND** timeout classification is not replaced merely by a later nonzero failure
-

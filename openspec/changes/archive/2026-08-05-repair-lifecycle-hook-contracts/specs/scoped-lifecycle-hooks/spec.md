@@ -1,8 +1,5 @@
-# scoped-lifecycle-hooks Specification
+## MODIFIED Requirements
 
-## Purpose
-TBD - created by archiving change expand-hooks-scope-and-options. Update Purpose after archive.
-## Requirements
 ### Requirement: Multi-scope lifecycle hook discovery
 For configured remove lifecycles, the system SHALL discover scripts for a target repository from repository-local (`repos/<repo>/.arashi/hooks/<lifecycle><ext>`), workspace-root (`.arashi/hooks/<lifecycle><ext>`), and user-global shared/targeted locations. Configured create instead SHALL use the workspace and repository-specific filename contract defined by `lifecycle-hook-contracts`; it SHALL NOT silently activate repository-local or user-global policy. Supported `<ext>` values SHALL be `.sh` on POSIX and `.ps1`, `.cmd`, or `.bat` on Windows. More than one supported candidate for one logical lifecycle/location MUST be treated as a pre-mutation configuration error.
 
@@ -22,13 +19,6 @@ For configured remove lifecycles, the system SHALL discover scripts for a target
 #### Scenario: One location is ambiguous
 - **WHEN** a lifecycle location contains multiple extensions supported on the current platform
 - **THEN** discovery fails before lifecycle mutation and reports all candidates
-
-### Requirement: Deterministic execution order across scopes
-The system MUST execute lifecycle hooks in deterministic order by scope: repository-local first, workspace-root second, and user-global last.
-
-#### Scenario: Scope ordering is enforced
-- **WHEN** lifecycle scripts are discovered in all three scopes
-- **THEN** execution occurs in the exact order repository-local, workspace-root, user-global
 
 ### Requirement: Scope-specific working directory behavior
 The system SHALL expose the exact normalized cwd as `ARASHI_HOOK_EXECUTION_PATH`. For configured remove, repository-local, global-repository, and global-shared hooks SHALL run from the current target repository's configured source checkout, while workspace hooks SHALL run from the configured workspace root. For every standalone pre/post-create and pre/post-remove global hook, cwd SHALL be the resolved standalone main repository root. Configured create cwd behavior SHALL follow `lifecycle-hook-contracts`.
@@ -66,4 +56,3 @@ When a lifecycle runs in an implicit standalone workspace, Arashi SHALL discover
 - **WHEN** a user-global hook executes for an implicit standalone repository
 - **THEN** its cwd and execution-path context are the resolved main repository root for every supported create/remove lifecycle
 - **AND** hook context identifies standalone mode and the exact target
-
