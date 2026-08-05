@@ -10,7 +10,7 @@ Arashi's lifecycle-hook runtime, generated `init` examples, documentation, agent
 - Include workspace-level create-hook success, skip, timeout, and failure records in human and JSON hook outcomes and recovery guidance.
 - Generate scope-correct create/remove/setup examples, valid one-to-one activation commands, and executable-permission guidance; remove the unrelated `core.hooksPath` recommendation.
 - Support native lifecycle scripts on Windows through deterministic PowerShell and command-script discovery, platform-matched generated examples, and real Windows lifecycle tests; POSIX discovery remains shell-script based.
-- Use one documented hook timeout default, with positive millisecond overrides through `hooks.timeout`.
+- Use one documented hook timeout default, with validated integer millisecond overrides through `hooks.timeout`.
 - Replace package-manager examples and Arashi dogfood hooks with pinned, lockfile-aware, ancestor-workspace-safe commands and fail-fast shell behavior; make presentation provisioning policy explicit and make tmux cleanup exact and idempotent.
 - Update CLI docs, website canonical pages, generated Markdown and LLM exports, and packaged skill references with source/export/package semantic checks.
 
@@ -30,11 +30,12 @@ Arashi's lifecycle-hook runtime, generated `init` examples, documentation, agent
 - `docs-workflow-guidance-sections`: Requires a canonical lifecycle/environment matrix, safe activation and package-manager examples, timeout configuration, Windows guidance, and generated-export parity.
 - `arashi-skill-guidance`: Requires packaged hook activation, scope, environment, package-manager, and standalone/configured guidance to match the canonical contract.
 - `project-package-management`: Requires coordinated post-create setup to honor each child repository's pinned pnpm version and avoid selecting the ancestor meta workspace.
+- `workspace-health-diagnostics`: Makes doctor discover, validate, and diagnose the same platform-native hook candidates as runtime discovery.
 
 ## Impact
 
 - Meta repository: OpenSpec artifacts, semantic cross-repository checks, tracked `.arashi/config.json` and lifecycle scripts.
-- CLI repository: hook discovery/execution/context, create/remove orchestration and JSON results, `init` templates/output, setup example placement, schema/default documentation, and macOS/Linux/Windows integration tests.
+- CLI repository: hook discovery/execution/context, create/remove orchestration and JSON results, `init` templates/output, setup example placement, doctor diagnostics, schema/default documentation, and macOS/Linux/Windows integration tests.
 - Docs repository: hooks/config/create/remove/init workflow pages, generated agent-readable exports, focused semantic checker, and CI wiring.
 - Skills repository: hook reference/tutorial guidance, packaged-artifact checks, and cross-repository semantic records.
 - Presentation repository: an explicit automatic or manual provisioning decision; no unrelated presentation behavior changes.

@@ -13,6 +13,11 @@ The Arashi skill package SHALL keep detailed hook guidance in its smallest linke
 - **THEN** the skill uses `ARASHI_BRANCH_NAME` and scope-valid target values
 - **AND** does not recommend `ARASHI_BRANCH` or `ARASHI_BASE_BRANCH`
 
+#### Scenario: Agent encounters a compatibility field
+- **WHEN** an agent maintains a hook using documented legacy repository/worktree or comma-separated remove fields
+- **THEN** the skill identifies the field as supported through 1.x but non-canonical
+- **AND** does not predict removal before a separately approved 2.0-or-later change
+
 #### Scenario: Agent manages a standalone hook
 - **WHEN** an agent operates in zero-config standalone mode
 - **THEN** guidance uses platform-supported targeted/shared user-global hooks

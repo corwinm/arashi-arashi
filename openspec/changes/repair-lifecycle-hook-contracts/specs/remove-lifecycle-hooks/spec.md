@@ -29,7 +29,9 @@ The system SHALL execute discovered `post-remove` hooks after remove operations 
 - **AND** each invocation identifies the repository target whose context it receives
 
 ### Requirement: Remove lifecycle hook context
-The system SHALL provide remove lifecycle hooks with executor-owned `ARASHI_*` values identifying workspace mode, logical hook name, hook scope, source path, exact execution cwd, canonical main root, and explicit current target repository/source/worktree identity. Per-target scalar branch/worktree values MUST come only from that repository and MUST be omitted when ambiguous. The command SHALL additionally expose `ARASHI_REMOVE_TARGETS_JSON` as a JSON array of `{repository, branchName, worktreePath}` records, using JSON `null` for absent branch/path, removing exact duplicate triples, and sorting by repository, normalized worktree path with null first, then branch with null first. Existing `ARASHI_REPO_*`, `ARASHI_WORKTREE_PATH`, comma-separated remove aggregates, and totals SHALL remain available with the compatibility mapping defined by `lifecycle-hook-contracts`.
+The system SHALL provide remove lifecycle hooks with executor-owned context defined by `lifecycle-hook-contracts` and `ARASHI_OPERATION=remove`. Per-target scalar branch/worktree values MUST come only from that repository and MUST be omitted when ambiguous. `ARASHI_REMOVE_TARGETS_JSON` SHALL be a JSON array of records shaped exactly as `{ "repository": string, "branchName": string|null, "worktreePath": string|null }`; keys are always present and absent branch/path values are JSON `null`. A worktree path SHALL be made absolute and lexically normalized without filesystem realpath/symlink resolution, use `/` separators on every platform, uppercase a Windows drive letter, preserve a UNC `//server/share` prefix, and omit a trailing separator except at a filesystem root. Exact duplicate triples SHALL be removed after normalization. Records SHALL be sorted by Unicode scalar value of repository name, then normalized worktree path with `null` before strings, then branch name with `null` before strings; locale collation and filesystem enumeration order MUST NOT affect the result.
+
+The 1.x compatibility aggregates SHALL be derived from the canonical records: `ARASHI_REMOVE_TARGET_BRANCHES` is the comma-joined ascending distinct non-null `branchName` values; `ARASHI_REMOVE_TARGET_WORKTREES` is the comma-joined ascending distinct non-null normalized `worktreePath` values; `ARASHI_REMOVE_TARGET_REPOSITORIES` is the comma-joined ascending distinct `repository` values; and `ARASHI_REMOVE_TOTAL_BRANCHES`, `ARASHI_REMOVE_TOTAL_WORKTREES`, and `ARASHI_REMOVE_TOTAL_REPOSITORIES` are base-10 counts of the corresponding distinct lists. Empty lists produce an empty string and count `0`. Because commas inside names/paths cannot be represented reversibly, these fields are lossy and non-canonical; new aggregate consumers MUST parse `ARASHI_REMOVE_TARGETS_JSON`. Existing `ARASHI_REPO_*` and `ARASHI_WORKTREE_PATH` aliases remain available with the mapping defined by `lifecycle-hook-contracts`.
 
 #### Scenario: Hook receives one remove target
 - **WHEN** a remove lifecycle hook runs for one repository/branch/worktree target
@@ -41,6 +43,11 @@ The system SHALL provide remove lifecycle hooks with executor-owned `ARASHI_*` v
 - **THEN** ambiguous scalar values are omitted
 - **AND** `ARASHI_REMOVE_TARGETS_JSON` preserves every structured target without comma parsing
 
+#### Scenario: Compatibility aggregates are derived
+- **WHEN** remove context contains duplicate, absent, or differently ordered target values
+- **THEN** each comma-separated aggregate contains its ascending distinct non-null canonical values
+- **AND** each `ARASHI_REMOVE_TOTAL_*` value equals the number of values in its corresponding aggregate list
+
 #### Scenario: Workspace hook runs for successive repositories
 - **WHEN** a configured workspace remove hook executes for two repository targets
 - **THEN** each invocation receives that invocation's target repository values
@@ -49,6 +56,11 @@ The system SHALL provide remove lifecycle hooks with executor-owned `ARASHI_*` v
 #### Scenario: Operation data conflicts with executor context
 - **WHEN** caller-provided operation data contains a reserved hook metadata key
 - **THEN** the executor-owned scope, source, name, cwd, and target identity remain authoritative
+
+#### Scenario: Compatibility fields are consumed during 1.x
+- **WHEN** a 1.x release executes a hook that reads documented legacy repository/worktree or comma-separated remove fields
+- **THEN** those compatibility values remain available with the normative lifecycle mapping
+- **AND** removal is deferred to a separately approved 2.0-or-later breaking-change proposal
 
 ## ADDED Requirements
 

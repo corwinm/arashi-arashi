@@ -30,6 +30,11 @@ Canonical documentation SHALL publish a scope-aware environment table separating
 - **THEN** guidance uses `ARASHI_REMOVE_TARGETS_JSON`
 - **AND** labels comma-separated compatibility aggregates as lossy and non-canonical
 
+#### Scenario: User relies on compatibility fields
+- **WHEN** documentation lists legacy repository/worktree or comma-separated remove fields
+- **THEN** it states they remain supported throughout 1.x
+- **AND** says removal can occur no earlier than 2.0 through a separately approved breaking-change proposal
+
 ### Requirement: Hook activation and setup examples are safe and executable
 Documentation SHALL show one-to-one lifecycle example activation, explicit POSIX executable mode, native Windows lifecycle activation, and the POSIX `.arashi/setup.sh.example` setup path. It SHALL state that this change does not introduce a native Windows setup example and SHALL NOT recommend copying multiple examples to one filename or setting Git `core.hooksPath` to the Arashi lifecycle directory.
 
