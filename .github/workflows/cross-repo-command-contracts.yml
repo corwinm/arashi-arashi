@@ -67,6 +67,8 @@ jobs:
           version: 11.20.0
           runtime: node@24.18.0
           cache: true
+          cache-dependency-path: meta/pnpm-lock.yaml
+          package-json-file: meta/package.json
           install: false
       - name: Report revisions
         working-directory: meta
