@@ -13,7 +13,7 @@ Implementation code changes belong in `repos/arashi/` (separate git repository w
 
 ## Meta-Repository Development Toolchain
 
-Root validation uses Node.js 22.13.0 or later and pnpm 11.20.0. The root `.nvmrc` pins the development Node.js version, and `package.json` pins pnpm; enable Corepack before installing dependencies:
+Root validation uses Node.js 24.18.0 or later and pnpm 11.20.0. The root `.nvmrc` pins the development Node.js version above pnpm 11's Node.js 22.13 minimum, and `package.json` pins pnpm; enable Corepack before installing dependencies:
 
 ```bash
 corepack enable
