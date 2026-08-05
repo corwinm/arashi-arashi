@@ -8,7 +8,7 @@ Windows Terminal commands use Bun's detached process runner. A real Bun 1.3.9 pr
 
 **Goals:**
 
-- Treat explicit `--tab` as sufficient to bypass configured explicit launch defaults.
+- Treat explicit `--tab` on switch and create as sufficient to bypass configured explicit launch defaults.
 - Preserve explicit launcher-plus-disposition combinations such as `--herdr --tab`.
 - Make all Bun child-process launches robust to case variants of the Windows path variable.
 - Preserve existing Windows Terminal argv and detached startup semantics.
@@ -24,11 +24,15 @@ Windows Terminal commands use Bun's detached process runner. A real Bun 1.3.9 pr
 
 ### Make disposition override participate in configured-launch opt-out
 
-`resolveLaunchOptions` will treat `options.tab === true` as an opt-out of `configLaunchMode` unless an explicit launcher flag is present. This keeps the current architecture—launcher and disposition remain separate—while making the explicit invocation authoritative. Passing a synthetic `defaultLaunch: false` through Commander or mutating options was rejected because it obscures the resolver contract and makes direct executor callers differ from CLI callers.
+`resolveLaunchOptions` will treat switch `options.tab === true` as an opt-out of `configLaunchMode` unless an explicit launcher flag is present. `resolveCreateDefaults` will likewise treat `--tab` as explicit automatic launch when `--tmux`, `--sesh`, and `--herdr` are absent. This also makes `create --tab` resolve consistently with the existing `create --launch --tab` combination. Passing synthetic negative flags through Commander or mutating options was rejected because it obscures resolver contracts and makes direct executor callers differ from CLI callers.
 
 ### Preserve explicit launcher composition
 
-Existing explicit launcher branches remain ahead of configured/default resolution. Therefore `--herdr --tab`, `--sesh --tab`, and other supported combinations still select that launcher and carry disposition `tab`; only implicit configured launchers are bypassed.
+Existing explicit launcher branches remain ahead of configured/default resolution. Therefore `--herdr --tab`, `--sesh --tab`, `--tmux --tab`, and other supported combinations still select that launcher and carry disposition `tab`; only implicit configured launchers are bypassed. Create's `--no-launch` and `--no-switch` remain compatible but overridden by tab's explicit launch-and-switch implications.
+
+### Preserve the existing explicit `--cd` override
+
+`switch --cd` is already resolved as explicit CLI behavior ahead of every configured `launch`, `sesh`, or `herdr` mode, so it needs no production or configuration change. It remains mutually exclusive with explicit launcher selectors and `--tab`; `--no-cd` intentionally differs because it disables only parent-shell directory change and may retain a configured launcher. Add focused coverage to keep that distinction explicit.
 
 ### Canonicalize the Windows path key at the shared spawn-environment boundary
 

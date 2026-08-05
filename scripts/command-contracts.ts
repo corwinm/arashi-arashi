@@ -285,7 +285,7 @@ const canonicalOptionPolicies: Record<
         unsupported: true,
       },
       launcherSupport: tabLauncherSupport,
-      overrides: ["--no-launch", "--no-switch"],
+      overrides: ["--no-launch", "--no-switch", "configured-launcher"],
       persisted: false,
     },
     "--tmux": {
@@ -916,18 +916,27 @@ const companionProjection = (
       mode: match[1],
       overrides:
         command === "create"
-          ? /(?:wins over|overrides)[^.\n]*`--no-launch`[^.\n]*`--no-switch`/i.test(
-              scoped,
-            )
-            ? ["--no-launch", "--no-switch"]
-            : []
+          ? [
+              ...(/(?:wins over|overrides)[^.\n]*`--no-launch`[^.\n]*`--no-switch`/i.test(
+                scoped,
+              )
+                ? ["--no-launch", "--no-switch"]
+                : []),
+              ...(/(?:For (?:`create`|create)|`create --tab`)[^.\n]*bypasses configured(?: generic or editor-scoped)? launch(?:er)? defaults/i.test(
+                scoped,
+              )
+                ? ["configured-launcher"]
+                : []),
+            ]
           : [
               ...(/overrides configured or contextual parent-shell `cd`|overrides configured parent-shell cd/i.test(
                 scoped,
               )
                 ? ["configured-cd", "contextual-cd"]
                 : []),
-              ...(/bypasses configured launcher defaults/i.test(scoped)
+              ...(/(?:For `switch`|`switch --tab`(?: request)? expresses)[^\n]*bypasses configured launcher defaults/i.test(
+                scoped,
+              )
                 ? ["configured-launcher"]
                 : []),
             ].sort(),

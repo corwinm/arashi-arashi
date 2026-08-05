@@ -22,3 +22,9 @@
 - [x] 4.2 Build the Windows binary and verify `switch --tab` from Git Bash on `win-test` with configured sesh and an installed Windows Terminal profile.
 - [x] 4.3 Run full docs validation, all skill self-tests, strict OpenSpec validation, and meta-repository tests/typecheck/contracts.
 - [x] 4.4 Commit child repositories, open linked child PRs, update the coordination PR, and verify CI status.
+
+## 5. Create Tab Consistency Follow-up
+
+- [x] 5.1 Add RED resolver and contract tests proving `create --tab` bypasses configured launchers while explicit create launcher selectors remain authoritative.
+- [x] 5.2 Update create resolution, help, generated metadata, docs, skill guidance, and cross-repository drift checks.
+- [ ] 5.3 Rerun complete child/meta validation, push the existing PRs, and verify replacement CI on every updated head.
