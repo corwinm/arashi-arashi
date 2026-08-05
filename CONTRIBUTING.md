@@ -11,6 +11,15 @@ This repository is for planning artifacts:
 
 Implementation code changes belong in `repos/arashi/` (separate git repository with its own commits and pull requests).
 
+## Meta-Repository Development Toolchain
+
+Root validation uses Node.js 22.13.0 or later and pnpm 11.20.0. The root `.nvmrc` pins the development Node.js version, and `package.json` pins pnpm; enable Corepack before installing dependencies:
+
+```bash
+corepack enable
+pnpm install --frozen-lockfile
+```
+
 ## Tooling Requirement: Arashi CLI
 
 This workflow assumes you use the Arashi CLI to create and manage feature worktrees.
