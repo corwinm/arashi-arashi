@@ -27,4 +27,4 @@
 
 - [x] 5.1 Add RED resolver and contract tests proving `create --tab` bypasses configured launchers while explicit create launcher selectors remain authoritative.
 - [x] 5.2 Update create resolution, help, generated metadata, docs, skill guidance, and cross-repository drift checks.
-- [ ] 5.3 Rerun complete child/meta validation, push the existing PRs, and verify replacement CI on every updated head.
+- [x] 5.3 Rerun complete child/meta validation, push the existing PRs, and verify replacement CI on every updated head.
