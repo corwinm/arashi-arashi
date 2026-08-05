@@ -58,20 +58,20 @@
 - [x] 6.3 Add an explicit automatic presentation provisioning hook and verify every configured pnpm child follows the same ready-after-create policy
 - [x] 6.4 Set an explicit configured hook timeout sufficient for dependency installation and CLI build
 - [x] 6.5 Rewrite pre-remove tmux cleanup to consume structured target JSON, match exact pane cwd paths, and remain idempotent across per-target invocations
-- [ ] 6.6 Run ShellCheck, semantic contract checks, JSON/config schema validation, and a disposable coordinated create/remove dogfood workflow proving failures are no longer masked
+- [x] 6.6 Run ShellCheck, semantic contract checks, JSON/config schema validation, and a disposable coordinated create/remove dogfood workflow proving failures are no longer masked
 
 ## 7. Native Platform and End-to-End Validation
 
 - [x] 7.1 Run focused and full CLI validation on macOS and Linux with POSIX hooks
 - [x] 7.2 Run native Windows create/remove/init/doctor hook integration tests for PowerShell and command scripts, mixed-case extensions, missing interpreters, and metacharacter paths on the Windows test host/CI
 - [x] 7.3 Verify conflicting Windows native extensions fail before Git/filesystem mutation and POSIX ignores unsupported extensions
-- [ ] 7.4 Verify init-generated examples activate and execute from clean configured workspaces and separately verify documentation-authored standalone global examples in isolated home directories
+- [x] 7.4 Verify init-generated examples activate and execute from clean configured workspaces and separately verify documentation-authored standalone global examples in isolated home directories
 - [x] 7.5 Verify timeout, nonzero, partial-remove, rollback-warning, human-output, JSON-output, and dry-run behavior end to end
 
 ## 8. Coordinated Delivery
 
 - [x] 8.1 Commit and open separate CLI, docs, skills, and any presentation child PRs linked to corwinm/arashi-arashi#253
 - [x] 8.2 Cross-link every child PR, wait for CI, and merge the CLI/docs/skills/presentation child PRs before the existing meta proposal PR without force-pushing
-- [ ] 8.3 Release the supporting CLI, install/resolve that released version for dogfood, and verify it exposes `ARASHI_REMOVE_TARGETS_JSON`, native discovery, timeout validation, and the outcome schema before meta hooks can reach `main`
-- [ ] 8.4 Update the existing meta PR branch to merged child SHAs; rerun semantic, ShellCheck, dogfood create/remove, platform, and clean/aligned-state checks; confirm every #253 acceptance criterion is represented
-- [ ] 8.5 Complete all remaining implementation tasks, archive/sync the OpenSpec change, and commit the archive plus final child pointers to the existing meta PR as its final pre-merge update
+- [x] 8.3 Release the supporting CLI, install/resolve that released version for dogfood, and verify it exposes `ARASHI_REMOVE_TARGETS_JSON`, native discovery, timeout validation, and the outcome schema before meta hooks can reach `main`
+- [x] 8.4 Update the existing meta PR branch to merged child SHAs; rerun semantic, ShellCheck, dogfood create/remove, platform, and clean/aligned-state checks; confirm every #253 acceptance criterion is represented
+- [x] 8.5 Complete all remaining implementation tasks, archive/sync the OpenSpec change, and commit the archive plus final child pointers to the existing meta PR as its final pre-merge update
