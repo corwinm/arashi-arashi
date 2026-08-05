@@ -1,5 +1,12 @@
 import { afterEach, describe, expect, test } from "vitest";
-import { mkdtemp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import {
+  copyFile,
+  mkdtemp,
+  mkdir,
+  readFile,
+  rm,
+  writeFile,
+} from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { checkContracts, formatHuman } from "../scripts/command-contracts";
@@ -580,6 +587,42 @@ async function fixture(): Promise<string> {
   return root;
 }
 
+async function schemaV5Fixture(): Promise<string> {
+  const root = await fixture();
+  for (const relativePath of [
+    "repos/arashi/contracts/cli-commands.json",
+    "repos/arashi-docs/contracts/cli-options.json",
+    "repos/arashi-docs/docs/workflows/launch-disposition.md",
+    "repos/arashi-skills/skills/arashi/references/commands.md",
+  ]) {
+    const target = join(root, relativePath);
+    await mkdir(join(target, ".."), { recursive: true });
+    await copyFile(join(process.cwd(), relativePath), target);
+  }
+  await mkdir(join(root, "repos/arashi-docs/scripts"), { recursive: true });
+  await mkdir(join(root, "repos/arashi-skills/scripts"), { recursive: true });
+  await writeFile(
+    join(root, "repos/arashi-docs/scripts/check-cli-option-docs.ts"),
+    "console.log('CLI option docs fixture passed');\n",
+  );
+  await writeFile(
+    join(
+      root,
+      "repos/arashi-skills/scripts/cli-flag-rationalization-guidance-selftest.mjs",
+    ),
+    "console.log('CLI flag skills fixture passed');\n",
+  );
+  const workflowPath = join(
+    root,
+    ".github/workflows/cross-repo-command-contracts.yml",
+  );
+  await writeFile(
+    workflowPath,
+    `${await readFile(workflowPath, "utf8")}      - name: docs option semantics\n        run: pnpm --dir repos/arashi-docs validate:cli-option-docs\n      - name: skills option semantics\n        run: node repos/arashi-skills/scripts/cli-flag-rationalization-guidance-selftest.mjs\n      - name: package skills\n        run: |\n          tar -czf arashi-skill-package.tar.gz -C repos/arashi-skills skills/\n          mkdir -p package-check\n          tar -xzf arashi-skill-package.tar.gz -C package-check\n          node repos/arashi-skills/scripts/cli-flag-rationalization-guidance-selftest.mjs --skill-root package-check/skills/arashi\n`,
+  );
+  return root;
+}
+
 describe("cross-repository command contracts", () => {
   test("accepts coverage and reports intentional exclusions as info", async () => {
     const result = await checkContracts(await fixture());
@@ -596,6 +639,386 @@ describe("cross-repository command contracts", () => {
       expect.objectContaining({ code: "OPTION_POLICY_MISMATCH" }),
     );
     expect(result.ok).toBe(true);
+  });
+  test("accepts the complete schema-v5 CLI option semantic contract", async () => {
+    const result = await checkContracts(await schemaV5Fixture());
+    expect(
+      result.diagnostics.filter((diagnostic) =>
+        [
+          "CLI_OPTION_SCHEMA_INVALID",
+          "CLI_ALIAS_MISMATCH",
+          "CLI_ALIAS_COLLISION",
+          "CLI_COMPATIBILITY_INVALID",
+          "CLI_POLICY_REFERENCE_INVALID",
+          "CLI_SELECTOR_POLICY_INVALID",
+          "CLI_SELECTOR_POLICY_MISSING",
+          "CLI_SWITCH_POLICY_INVALID",
+          "CLI_UPDATE_POLICY_INVALID",
+          "DOCS_CLI_OPTION_POLICY_MISMATCH",
+        ].includes(diagnostic.code),
+      ),
+    ).toEqual([]);
+    expect(result.diagnostics).not.toContainEqual(
+      expect.objectContaining({
+        code: "SCHEMA_VERSION_UNSUPPORTED",
+        source: "repos/arashi/contracts/cli-commands.json",
+      }),
+    );
+  });
+  test("rejects a string-valued schema version instead of bypassing schema-v5 checks", async () => {
+    const root = await schemaV5Fixture();
+    const path = join(root, "repos/arashi/contracts/cli-commands.json");
+    const data = JSON.parse(await readFile(path, "utf8"));
+    data.schemaVersion = "5";
+    await writeFile(path, JSON.stringify(data));
+
+    expect((await checkContracts(root)).diagnostics).toContainEqual(
+      expect.objectContaining({
+        code: "SCHEMA_VERSION_UNSUPPORTED",
+        source: "repos/arashi/contracts/cli-commands.json",
+      }),
+    );
+  });
+  test.each([
+    ["status selector", "status", "--only"],
+    ["canonical switch option", "switch", "--ignore-configured-launcher"],
+  ])("rejects a missing schema-v5 %s", async (_label, commandName, long) => {
+    const root = await schemaV5Fixture();
+    const path = join(root, "repos/arashi/contracts/cli-commands.json");
+    const data = JSON.parse(await readFile(path, "utf8"));
+    const command = data.commands.find(
+      (entry: any) => entry.path === commandName,
+    );
+    command.options = command.options.filter(
+      (option: any) => option.long !== long,
+    );
+    await writeFile(path, JSON.stringify(data));
+
+    expect((await checkContracts(root)).diagnostics).toContainEqual(
+      expect.objectContaining({
+        code: "CLI_OPTION_SURFACE_MISMATCH",
+        subject: `${commandName}.${long}`,
+      }),
+    );
+  });
+  test("rejects a missing audited zero-option command", async () => {
+    const root = await schemaV5Fixture();
+    const path = join(root, "repos/arashi/contracts/cli-commands.json");
+    const data = JSON.parse(await readFile(path, "utf8"));
+    data.commands = data.commands.filter(
+      (entry: any) => entry.path !== "shell install",
+    );
+    await writeFile(path, JSON.stringify(data));
+
+    expect((await checkContracts(root)).diagnostics).toContainEqual(
+      expect.objectContaining({
+        code: "CLI_OPTION_SURFACE_MISMATCH",
+        subject: "shell install",
+      }),
+    );
+  });
+  test.each([
+    [
+      "unknown command",
+      (data: any) => data.commands.push({ options: [], path: "future" }),
+      "future",
+    ],
+    [
+      "unknown option",
+      (data: any) =>
+        data.commands
+          .find((entry: any) => entry.path === "status")
+          .options.push({
+            deprecated: false,
+            description: "Future option",
+            flags: "--future",
+            hidden: false,
+            long: "--future",
+            optional: false,
+            required: false,
+            semanticPolicyOwner: "structural",
+            short: null,
+            valueShape: "boolean",
+            variadic: false,
+          }),
+      "status.--future",
+    ],
+  ])("rejects an %s", async (_label, mutate, subject) => {
+    const root = await schemaV5Fixture();
+    const path = join(root, "repos/arashi/contracts/cli-commands.json");
+    const data = JSON.parse(await readFile(path, "utf8"));
+    mutate(data);
+    await writeFile(path, JSON.stringify(data));
+
+    expect((await checkContracts(root)).diagnostics).toContainEqual(
+      expect.objectContaining({ code: "CLI_OPTION_SURFACE_MISMATCH", subject }),
+    );
+  });
+  test("rejects malformed schema-v5 option array entries", async () => {
+    const root = await schemaV5Fixture();
+    const path = join(root, "repos/arashi/contracts/cli-commands.json");
+    const data = JSON.parse(await readFile(path, "utf8"));
+    data.commands
+      .find((entry: any) => entry.path === "status")
+      .options.push(null);
+    await writeFile(path, JSON.stringify(data));
+
+    expect((await checkContracts(root)).diagnostics).toContainEqual(
+      expect.objectContaining({
+        code: "CLI_OPTION_SCHEMA_INVALID",
+        subject: "status.options[5]",
+      }),
+    );
+  });
+  test("rejects an unapproved specialized short alias", async () => {
+    const root = await schemaV5Fixture();
+    const path = join(root, "repos/arashi/contracts/cli-commands.json");
+    const data = JSON.parse(await readFile(path, "utf8"));
+    const check = data.commands
+      .find((entry: any) => entry.path === "update")
+      .options.find((option: any) => option.long === "--check");
+    check.short = "-x";
+    check.flags = "-x, --check";
+    await writeFile(path, JSON.stringify(data));
+
+    expect((await checkContracts(root)).diagnostics).toContainEqual(
+      expect.objectContaining({
+        code: "CLI_ALIAS_UNAPPROVED",
+        subject: "update.--check",
+      }),
+    );
+  });
+  test("rejects inconsistent option flags, long name, and short alias", async () => {
+    const root = await schemaV5Fixture();
+    const path = join(root, "repos/arashi/contracts/cli-commands.json");
+    const data = JSON.parse(await readFile(path, "utf8"));
+    data.commands
+      .find((entry: any) => entry.path === "status")
+      .options.find((option: any) => option.long === "--json").flags = "--json";
+    await writeFile(path, JSON.stringify(data));
+
+    expect((await checkContracts(root)).diagnostics).toContainEqual(
+      expect.objectContaining({
+        code: "CLI_OPTION_SCHEMA_INVALID",
+        subject: "status.--json",
+      }),
+    );
+  });
+  test.each(["hidden", "deprecated"])(
+    "rejects a canonical compatibility option that is %s",
+    async (field) => {
+      const root = await schemaV5Fixture();
+      const path = join(root, "repos/arashi/contracts/cli-commands.json");
+      const data = JSON.parse(await readFile(path, "utf8"));
+      data.commands
+        .find((entry: any) => entry.path === "switch")
+        .options.find((option: any) => option.long === "--launch")[field] =
+        true;
+      await writeFile(path, JSON.stringify(data));
+
+      expect((await checkContracts(root)).diagnostics).toContainEqual(
+        expect.objectContaining({
+          code: "CLI_COMPATIBILITY_INVALID",
+          subject: "switch.--launch",
+        }),
+      );
+    },
+  );
+  test.each([
+    ["missing", "create", "--json", null],
+    ["stale", "create", "--json", "-x"],
+    ["command-local add name exception", "add", "--name", "-o"],
+    ["long-only exec jobs exception", "exec", "--jobs", "-j"],
+  ])(
+    "rejects %s alias policy drift",
+    async (_label, commandName, long, short) => {
+      const root = await schemaV5Fixture();
+      const path = join(root, "repos/arashi/contracts/cli-commands.json");
+      const data = JSON.parse(await readFile(path, "utf8"));
+      const option = data.commands
+        .find((command: { path: string }) => command.path === commandName)
+        .options.find((entry: { long: string }) => entry.long === long);
+      option.short = short;
+      option.flags = option.flags.replace(/^-\w,\s*/, "");
+      if (short) option.flags = `${short}, ${option.flags}`;
+      await writeFile(path, JSON.stringify(data));
+
+      expect((await checkContracts(root)).diagnostics).toContainEqual(
+        expect.objectContaining({
+          code: "CLI_ALIAS_MISMATCH",
+          subject: `${commandName}.${long}`,
+        }),
+      );
+    },
+  );
+  test("rejects a command-local short alias collision", async () => {
+    const root = await schemaV5Fixture();
+    const path = join(root, "repos/arashi/contracts/cli-commands.json");
+    const data = JSON.parse(await readFile(path, "utf8"));
+    const create = data.commands.find(
+      (command: { path: string }) => command.path === "create",
+    );
+    const json = create.options.find(
+      (entry: { long: string }) => entry.long === "--json",
+    );
+    json.short = "-n";
+    json.flags = "-n, --json";
+    await writeFile(path, JSON.stringify(data));
+
+    expect((await checkContracts(root)).diagnostics).toContainEqual(
+      expect.objectContaining({
+        code: "CLI_ALIAS_COLLISION",
+        subject: "create.-n",
+      }),
+    );
+  });
+  test.each([
+    [
+      "compatibility mapping",
+      (data: any) =>
+        (data.commands
+          .find((command: any) => command.path === "switch")
+          .options.find(
+            (entry: any) => entry.long === "--launch",
+          ).semanticPolicy.compatibility.alternatives = ["--invented"]),
+      "CLI_COMPATIBILITY_INVALID",
+      "switch.--launch",
+    ],
+    [
+      "deprecation visibility",
+      (data: any) =>
+        (data.commands
+          .find((command: any) => command.path === "switch")
+          .options.find((entry: any) => entry.long === "--no-cd").hidden =
+          false),
+      "CLI_COMPATIBILITY_INVALID",
+      "switch.--launch",
+    ],
+    [
+      "removal boundary",
+      (data: any) =>
+        (data.commands
+          .find((command: any) => command.path === "handoff")
+          .options.find(
+            (entry: any) => entry.long === "--markdown",
+          ).semanticPolicy.compatibility.removal.earliestMajor = 1),
+      "CLI_COMPATIBILITY_INVALID",
+      "handoff.--markdown",
+    ],
+    [
+      "stale conflict reference",
+      (data: any) =>
+        data.commands
+          .find((command: any) => command.path === "switch")
+          .options.find((entry: any) => entry.long === "--launch")
+          .semanticPolicy.conflicts.push("--invented"),
+      "CLI_POLICY_REFERENCE_INVALID",
+      "switch.--launch",
+    ],
+    [
+      "wrong policy owner",
+      (data: any) =>
+        (data.commands
+          .find((command: any) => command.path === "switch")
+          .options.find(
+            (entry: any) => entry.long === "--launch",
+          ).semanticPolicy.ownership = "structural"),
+      "CLI_OPTION_SCHEMA_INVALID",
+      "switch.--launch",
+    ],
+  ])("rejects schema-v5 %s drift", async (_label, mutate, code, subject) => {
+    const root = await schemaV5Fixture();
+    const path = join(root, "repos/arashi/contracts/cli-commands.json");
+    const data = JSON.parse(await readFile(path, "utf8"));
+    mutate(data);
+    await writeFile(path, JSON.stringify(data));
+
+    expect((await checkContracts(root)).diagnostics).toContainEqual(
+      expect.objectContaining({ code, subject }),
+    );
+  });
+  test.each([
+    [
+      "malformed selector literal",
+      (option: any) => (option.semanticPolicy.selector.flatten = "sorted"),
+      "CLI_SELECTOR_POLICY_INVALID",
+    ],
+    [
+      "wrong selector owner",
+      (option: any) => (option.semanticPolicyOwner = "structural"),
+      "CLI_OPTION_SCHEMA_INVALID",
+    ],
+    [
+      "missing selector policy",
+      (option: any) => delete option.semanticPolicy,
+      "CLI_SELECTOR_POLICY_MISSING",
+    ],
+  ])("rejects %s", async (_label, mutate, code) => {
+    const root = await schemaV5Fixture();
+    const path = join(root, "repos/arashi/contracts/cli-commands.json");
+    const data = JSON.parse(await readFile(path, "utf8"));
+    const option = data.commands
+      .find((command: any) => command.path === "status")
+      .options.find((entry: any) => entry.long === "--only");
+    mutate(option);
+    await writeFile(path, JSON.stringify(data));
+
+    expect((await checkContracts(root)).diagnostics).toContainEqual(
+      expect.objectContaining({ code, subject: "status.--only" }),
+    );
+  });
+  test("rejects asymmetric update inspection conflicts", async () => {
+    const root = await schemaV5Fixture();
+    const path = join(root, "repos/arashi/contracts/cli-commands.json");
+    const data = JSON.parse(await readFile(path, "utf8"));
+    data.commands
+      .find((command: any) => command.path === "update")
+      .options.find(
+        (entry: any) => entry.long === "--dry-run",
+      ).semanticPolicy.conflicts = [];
+    await writeFile(path, JSON.stringify(data));
+
+    expect((await checkContracts(root)).diagnostics).toContainEqual(
+      expect.objectContaining({
+        code: "CLI_UPDATE_POLICY_INVALID",
+        subject: "update.--dry-run",
+      }),
+    );
+  });
+  test("rejects update JSON execution drift", async () => {
+    const root = await schemaV5Fixture();
+    const path = join(root, "repos/arashi/contracts/cli-commands.json");
+    const data = JSON.parse(await readFile(path, "utf8"));
+    data.commands
+      .find((command: any) => command.path === "update")
+      .options.find(
+        (entry: any) => entry.long === "--json",
+      ).semanticPolicy.jsonExecution.prompt = true;
+    await writeFile(path, JSON.stringify(data));
+
+    expect((await checkContracts(root)).diagnostics).toContainEqual(
+      expect.objectContaining({
+        code: "CLI_UPDATE_POLICY_INVALID",
+        subject: "update.--json",
+      }),
+    );
+  });
+  test("rejects normalized docs record drift instead of loose token parity", async () => {
+    const root = await schemaV5Fixture();
+    const path = join(root, "repos/arashi-docs/contracts/cli-options.json");
+    const data = JSON.parse(await readFile(path, "utf8"));
+    data.switch.ignoreConfiguredLauncher.preserveBehaviorModes = [
+      "auto",
+      "launch",
+    ];
+    await writeFile(path, JSON.stringify(data));
+
+    expect((await checkContracts(root)).diagnostics).toContainEqual(
+      expect.objectContaining({
+        code: "DOCS_CLI_OPTION_POLICY_MISMATCH",
+        subject: "switch.ignoreConfiguredLauncher.preserveBehaviorModes",
+      }),
+    );
   });
   test("accepts an arbitrary typed policy when its command option and skills coverage exist", async () => {
     const root = await fixture();
