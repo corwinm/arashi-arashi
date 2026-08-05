@@ -2,7 +2,7 @@
 
 echo "***"
 
-pnpm install --frozen-lockfile
-pnpm run build
+pnpm install --ignore-workspace --frozen-lockfile
+pnpm --ignore-workspace run build
 
 echo "***"
