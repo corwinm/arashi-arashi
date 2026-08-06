@@ -264,6 +264,13 @@ const completionHiddenOptions = new Set([
   "switch.--no-cd",
   "switch.--no-default-launch",
 ]);
+const completionRepeatableOptions = new Set([
+  "handoff.--link",
+  "handoff.--next-command",
+  "handoff.--risk",
+  "handoff.--todo",
+  "handoff.--validation",
+]);
 const cliStandaloneSupport = new Set([
   "full",
   "conditional",
@@ -1294,6 +1301,7 @@ function validateSchemaV6Completion(
       hidden: false,
       long: "--help",
       optional: false,
+      repeatable: false,
       required: false,
       semanticPolicyOwner: "structural",
       short: "-h",
@@ -1308,6 +1316,7 @@ function validateSchemaV6Completion(
       hidden: false,
       long: "--version",
       optional: false,
+      repeatable: false,
       required: false,
       semanticPolicyOwner: "structural",
       short: "-V",
@@ -1400,6 +1409,7 @@ function validateSchemaV6Completion(
         [];
       if (
         option.hidden !== completionHiddenOptions.has(subject) ||
+        option.repeatable !== completionRepeatableOptions.has(subject) ||
         option.candidateKind !== expected?.candidateKind ||
         (expectedChoices
           ? !sameStrings(actualChoices, expectedChoices)
@@ -1413,7 +1423,7 @@ function validateSchemaV6Completion(
           "CLI_COMPLETION_POLICY_INVALID",
           paths.contract,
           subject,
-          "Schema-v6 option visibility, candidate ownership, choices, and declared conflicts must match the audited command policy exactly.",
+          "Schema-v6 option visibility, repeatability, candidate ownership, choices, and declared conflicts must match the audited command policy exactly.",
         );
     }
   }

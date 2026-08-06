@@ -620,6 +620,7 @@ async function schemaV5Fixture(): Promise<string> {
         delete option.candidateKind;
         delete option.choices;
         delete option.conflicts;
+        delete option.repeatable;
       });
       return command;
     });
@@ -798,6 +799,17 @@ describe("cross-repository command contracts", () => {
       },
       "CLI_COMPLETION_POLICY_INVALID",
       "switch.--tab",
+    ],
+    [
+      "declared repeatability",
+      (data: any) => {
+        data.commands
+          .find((command: any) => command.path === "handoff")
+          .options.find((entry: any) => entry.long === "--risk").repeatable =
+          false;
+      },
+      "CLI_COMPLETION_POLICY_INVALID",
+      "handoff.--risk",
     ],
     [
       "hidden query exclusion",
