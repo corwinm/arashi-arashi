@@ -80,6 +80,18 @@ jobs:
       - name: Install pinned checker toolchain
         working-directory: meta
         run: pnpm install --frozen-lockfile
+      - name: Install CLI generation toolchain
+        working-directory: meta
+        run: pnpm --dir repos/arashi install --frozen-lockfile
+      - name: Generate native shell-completion artifacts
+        working-directory: meta
+        run: pnpm --dir repos/arashi completion:generate
+      - name: Check native shell-completion artifact freshness
+        working-directory: meta
+        run: |
+          pnpm --dir repos/arashi completion:check
+          pnpm --dir repos/arashi contract:check
+          git -C repos/arashi diff --exit-code -- src/generated/completions.ts
       - name: Test checker
         working-directory: meta
         run: pnpm test
@@ -97,12 +109,18 @@ jobs:
       - name: Check focused CLI option documentation semantics
         working-directory: meta
         run: pnpm --dir repos/arashi-docs validate:cli-option-docs
+      - name: Check focused shell-completion documentation semantics
+        working-directory: meta
+        run: pnpm --dir repos/arashi-docs validate:shell-completion-docs
       - name: Check focused packaged-skill tab launch-disposition semantics
         working-directory: meta
         run: node repos/arashi-skills/scripts/tab-launch-disposition-guidance-selftest.mjs
       - name: Check focused packaged-skill CLI option semantics
         working-directory: meta
         run: node repos/arashi-skills/scripts/cli-flag-rationalization-guidance-selftest.mjs
+      - name: Check focused packaged-skill shell-completion semantics
+        working-directory: meta
+        run: node repos/arashi-skills/scripts/shell-completion-guidance-selftest.mjs --meta-root .
       - name: Check release-shaped packaged-skill CLI option semantics
         working-directory: meta
         run: |
@@ -110,6 +128,7 @@ jobs:
           mkdir package-check
           tar -xzf arashi-skill-package.tar.gz -C package-check
           node repos/arashi-skills/scripts/cli-flag-rationalization-guidance-selftest.mjs --skill-root package-check/skills/arashi
+          node repos/arashi-skills/scripts/shell-completion-guidance-selftest.mjs --skill-root package-check/skills/arashi
       - name: Check cross-repository contracts
         working-directory: meta
         run: pnpm contracts:check

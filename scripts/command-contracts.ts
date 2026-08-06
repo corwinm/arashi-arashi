@@ -1,5 +1,6 @@
-import { access, readFile, readdir } from "node:fs/promises";
+import { access, cp, mkdtemp, readFile, readdir, rm } from "node:fs/promises";
 import { execFile } from "node:child_process";
+import { tmpdir } from "node:os";
 import { join, relative } from "node:path";
 import { promisify } from "node:util";
 
@@ -45,6 +46,10 @@ const paths = {
     "repos/arashi-skills/scripts/tab-launch-disposition-guidance-selftest.mjs",
   skillsCliOptionPolicyCheck:
     "repos/arashi-skills/scripts/cli-flag-rationalization-guidance-selftest.mjs",
+  docsCompletionCheck:
+    "repos/arashi-docs/scripts/check-shell-completion-docs.ts",
+  skillsCompletionCheck:
+    "repos/arashi-skills/scripts/shell-completion-guidance-selftest.mjs",
   skillsTabPolicy: "repos/arashi-skills/skills/arashi/references/commands.md",
 } as const;
 const execFileAsync = promisify(execFile);
@@ -219,6 +224,45 @@ const sameStrings = (left: string[] | undefined, right: string[]): boolean =>
   left !== undefined &&
   left.length === new Set(left).size &&
   JSON.stringify(sorted(left)) === JSON.stringify(sorted(right));
+const completionCandidates = new Map<string, Obj>([
+  [
+    "completion.shell",
+    { candidateKind: "shell", choices: ["bash", "fish", "zsh"] },
+  ],
+  [
+    "create.--conflict",
+    { candidateKind: "choice", choices: ["ABORT", "REUSE_EXISTING"] },
+  ],
+  ["create.--editor-host", { choices: ["cursor", "kiro", "vscode"] }],
+  ["create.--group", { candidateKind: "group" }],
+  ["create.--only", { candidateKind: "repository" }],
+  ["exec.--group", { candidateKind: "group" }],
+  ["exec.--only", { candidateKind: "repository" }],
+  ["move.--from", { candidateKind: "workspace" }],
+  ["move.--to", { candidateKind: "workspace" }],
+  ["pull.--group", { candidateKind: "group" }],
+  ["pull.--only", { candidateKind: "repository" }],
+  ["push.--group", { candidateKind: "group" }],
+  ["push.--only", { candidateKind: "repository" }],
+  ["remove.target", { candidateKind: "worktree" }],
+  ["setup.--group", { candidateKind: "group" }],
+  ["setup.--only", { candidateKind: "repository" }],
+  [
+    "shell init.shell",
+    { candidateKind: "shell", choices: ["bash", "fish", "zsh"] },
+  ],
+  ["status.--group", { candidateKind: "group" }],
+  ["status.--only", { candidateKind: "repository" }],
+  ["switch.filter", { candidateKind: "worktree" }],
+  ["sync.--group", { candidateKind: "group" }],
+  ["sync.--only", { candidateKind: "repository" }],
+]);
+const completionHiddenOptions = new Set([
+  "create.--editor-host",
+  "handoff.--markdown",
+  "switch.--no-cd",
+  "switch.--no-default-launch",
+]);
 const cliStandaloneSupport = new Set([
   "full",
   "conditional",
@@ -1233,6 +1277,190 @@ function validateSchemaV5Commands(
   }
 }
 
+function validateSchemaV6Completion(
+  contract: Obj,
+  commands: Map<string, Obj>,
+  diagnostics: Diagnostic[],
+): void {
+  const root = object(contract.root) ? contract.root : {};
+  const rootOptions = optionMap(root);
+  const expectedRootOptions: Record<string, Obj> = {
+    "--help": {
+      conflicts: [],
+      deprecated: false,
+      description: "display help for command",
+      flags: "-h, --help",
+      hidden: false,
+      long: "--help",
+      optional: false,
+      required: false,
+      semanticPolicyOwner: "structural",
+      short: "-h",
+      valueShape: "boolean",
+      variadic: false,
+    },
+    "--version": {
+      conflicts: [],
+      deprecated: false,
+      description: "output the version number",
+      flags: "-V, --version",
+      hidden: false,
+      long: "--version",
+      optional: false,
+      required: false,
+      semanticPolicyOwner: "structural",
+      short: "-V",
+      valueShape: "boolean",
+      variadic: false,
+    },
+  };
+  for (const [long, expected] of Object.entries(expectedRootOptions))
+    if (!samePolicyValue(rootOptions.get(long), expected))
+      add(
+        diagnostics,
+        "error",
+        "schema",
+        "CLI_COMPLETION_ROOT_INVALID",
+        paths.contract,
+        `root.${long}`,
+        "Schema-v6 root metadata must expose the exact Commander help and version options.",
+      );
+  if (
+    root.name !== "arashi" ||
+    !text(root.description) ||
+    !sameStrings(strings(root.aliases), []) ||
+    rootOptions.size !== 2
+  )
+    add(
+      diagnostics,
+      "error",
+      "schema",
+      "CLI_COMPLETION_ROOT_INVALID",
+      paths.contract,
+      "root",
+      "Schema-v6 root completion metadata must be exact and contain no unaudited options.",
+    );
+
+  const seenCandidates = new Set<string>();
+  for (const [commandPath, command] of commands) {
+    const hiddenCommand = commandPath === "completion __query";
+    if (command.hidden !== hiddenCommand)
+      add(
+        diagnostics,
+        "error",
+        "schema",
+        "CLI_COMPLETION_HIDDEN_INVALID",
+        paths.contract,
+        commandPath,
+        "Only the internal completion query may be hidden from interactive suggestions.",
+      );
+    const arguments_ = Array.isArray(command.arguments)
+      ? command.arguments.filter(object)
+      : [];
+    for (const argument of arguments_) {
+      const subject = `${commandPath}.${String(argument.name)}`;
+      const expected = completionCandidates.get(subject);
+      if (expected) seenCandidates.add(subject);
+      const actualChoices = strings(argument.choices);
+      const expectedChoices = strings(expected?.choices);
+      if (
+        argument.hidden !== false ||
+        argument.candidateKind !== expected?.candidateKind ||
+        (expectedChoices
+          ? !sameStrings(actualChoices, expectedChoices)
+          : actualChoices !== undefined)
+      )
+        add(
+          diagnostics,
+          "error",
+          "schema",
+          "CLI_COMPLETION_POLICY_INVALID",
+          paths.contract,
+          subject,
+          "Schema-v6 positional candidate ownership and finite choices must match the audited completion surface exactly.",
+        );
+    }
+    for (const option of commandOptions(command)) {
+      const long = optionLong(option) ?? String(option.flags);
+      const subject = `${commandPath}.${long}`;
+      const expected = completionCandidates.get(subject);
+      if (expected) seenCandidates.add(subject);
+      const actualChoices = strings(option.choices);
+      const expectedChoices = strings(expected?.choices);
+      const policy = object(option.semanticPolicy) ? option.semanticPolicy : {};
+      const canonicalCommandPolicy =
+        commandPath === "create" || commandPath === "switch"
+          ? canonicalOptionPolicies[commandPath][long]
+          : undefined;
+      const expectedConflicts =
+        strings(canonicalCommandPolicy?.conflicts) ??
+        strings(policy.conflicts) ??
+        strings(option.conflicts) ??
+        [];
+      if (
+        option.hidden !== completionHiddenOptions.has(subject) ||
+        option.candidateKind !== expected?.candidateKind ||
+        (expectedChoices
+          ? !sameStrings(actualChoices, expectedChoices)
+          : actualChoices !== undefined) ||
+        !sameStrings(strings(option.conflicts), expectedConflicts)
+      )
+        add(
+          diagnostics,
+          "error",
+          "schema",
+          "CLI_COMPLETION_POLICY_INVALID",
+          paths.contract,
+          subject,
+          "Schema-v6 option visibility, candidate ownership, choices, and declared conflicts must match the audited command policy exactly.",
+        );
+    }
+  }
+  for (const subject of completionCandidates.keys())
+    if (!seenCandidates.has(subject))
+      add(
+        diagnostics,
+        "error",
+        "schema",
+        "CLI_COMPLETION_POLICY_INVALID",
+        paths.contract,
+        subject,
+        "An audited schema-v6 completion candidate owner is missing.",
+      );
+
+  const companionExpectations: Array<[string, string, string]> = [
+    ["completion", "docs", "required"],
+    ["completion", "skills", "required"],
+    ["completion", "vscode", "excluded"],
+    ["completion __query", "docs", "excluded"],
+    ["completion __query", "skills", "excluded"],
+    ["completion __query", "vscode", "excluded"],
+  ];
+  for (const [commandPath, surface, expectation] of companionExpectations) {
+    const command = commands.get(commandPath);
+    const semantics =
+      command && object(command.semantics) ? command.semantics : {};
+    const companion = object(semantics[surface]) ? semantics[surface] : {};
+    if (
+      companion.expectation !== expectation ||
+      (expectation === "excluded" && !text(companion.reason))
+    )
+      add(
+        diagnostics,
+        "error",
+        surface === "docs"
+          ? "docs"
+          : surface === "skills"
+            ? "skills"
+            : "vscode",
+        "CLI_COMPLETION_COMPANION_INVALID",
+        paths.contract,
+        `${commandPath}.${surface}`,
+        "Completion commands must preserve their exact required or reasoned-exclusion companion semantics.",
+      );
+  }
+}
+
 async function json(
   root: string,
   path: string,
@@ -2188,7 +2416,22 @@ const workflowRunSteps = (workflow: string): string[] => {
       stepIndent = indent;
       const directField = step[1].match(/^(run|uses):\s*(.*)$/);
       if (directField?.[1] === "uses") current.uses = true;
-      else if (directField?.[1] === "run") current.run = directField[2].trim();
+      else if (directField?.[1] === "run") {
+        const run = directField[2].trim();
+        if (!["|", "|-", "|+", ">", ">-", ">+"].includes(run)) {
+          current.run = run;
+        } else {
+          const block: string[] = [];
+          while (index + 1 < lines.length) {
+            const next = lines[index + 1];
+            const nextIndent = next.match(/^\s*/)?.[0].length ?? 0;
+            if (next.trim() && nextIndent <= indent) break;
+            index += 1;
+            if (next.trim()) block.push(next.trim());
+          }
+          current.run = block.join("\n");
+        }
+      }
       continue;
     }
     if (!current || stepIndent < 0 || indent !== stepIndent + 2) continue;
@@ -2243,6 +2486,7 @@ async function runFocusedChecker(
     checker: string;
     code: string;
     cwd: string;
+    args?: string[];
   },
   diagnostics: Diagnostic[],
 ): Promise<void> {
@@ -2267,7 +2511,7 @@ async function runFocusedChecker(
   try {
     await execFileAsync(
       process.execPath,
-      [relative(checker.cwd, checker.checker)],
+      [relative(checker.cwd, checker.checker), ...(checker.args ?? [])],
       {
         cwd: join(root, checker.cwd),
         maxBuffer: 4 * 1024 * 1024,
@@ -2285,6 +2529,32 @@ async function runFocusedChecker(
       "checker",
       `Focused checker subprocess failed with exit ${exitCode}.`,
     );
+  }
+}
+
+async function runPackagedCompletionChecker(
+  root: string,
+  diagnostics: Diagnostic[],
+): Promise<void> {
+  const temporaryRoot = await mkdtemp(
+    join(tmpdir(), "arashi-skill-package-check-"),
+  );
+  const skillRoot = join(temporaryRoot, "skills/arashi");
+  try {
+    await cp(join(root, paths.skills), skillRoot, { recursive: true });
+    await runFocusedChecker(
+      root,
+      {
+        category: "skills",
+        checker: paths.skillsCompletionCheck,
+        code: "SKILLS_COMPLETION_PACKAGE_CHECK_FAILED",
+        cwd: "repos/arashi-skills",
+        args: ["--skill-root", skillRoot],
+      },
+      diagnostics,
+    );
+  } finally {
+    await rm(temporaryRoot, { force: true, recursive: true });
   }
 }
 
@@ -2565,7 +2835,7 @@ export async function checkContracts(
         "Each editor host must reference EditorCommandDefaults.",
       );
   }
-  if (contract && ![4, 5].includes(contract.schemaVersion as number))
+  if (contract && ![4, 5, 6].includes(contract.schemaVersion as number))
     add(
       d,
       "error",
@@ -2573,7 +2843,7 @@ export async function checkContracts(
       "SCHEMA_VERSION_UNSUPPORTED",
       paths.contract,
       String(contract.schemaVersion),
-      "Expected schemaVersion 4 or 5.",
+      "Expected schemaVersion 4, 5, or 6.",
     );
   version(coverage, paths.coverage, d);
   version(policy, paths.policy, d);
@@ -2705,6 +2975,8 @@ export async function checkContracts(
       d,
     );
   }
+  if (contract?.schemaVersion === 6)
+    validateSchemaV6Completion(contract, commands, d);
 
   let index = "";
   try {
@@ -2975,6 +3247,7 @@ export async function checkContracts(
         "--zero-config",
         ...initCompatibleOptions,
         ...initIncompatibleOptions,
+        ...(contract?.schemaVersion === 6 ? ["--help"] : []),
       ]);
     if (!validPolicy)
       add(
@@ -3259,6 +3532,28 @@ export async function checkContracts(
           },
         ]
       : []),
+    ...(contract?.schemaVersion === 6
+      ? [
+          {
+            category: "docs" as const,
+            checker: paths.docsCompletionCheck,
+            cwd: "repos/arashi-docs",
+            failureCode: "DOCS_COMPLETION_CHECK_FAILED",
+            unreachableCode: "DOCS_COMPLETION_CHECK_UNREACHABLE",
+            command:
+              "pnpm --dir repos/arashi-docs validate:shell-completion-docs",
+          },
+          {
+            category: "skills" as const,
+            checker: paths.skillsCompletionCheck,
+            cwd: "repos/arashi-skills",
+            failureCode: "SKILLS_COMPLETION_CHECK_FAILED",
+            unreachableCode: "SKILLS_COMPLETION_CHECK_UNREACHABLE",
+            command:
+              "node repos/arashi-skills/scripts/shell-completion-guidance-selftest.mjs --meta-root .",
+          },
+        ]
+      : []),
   ];
   let workflow = "";
   try {
@@ -3267,6 +3562,34 @@ export async function checkContracts(
     // Each focused check below reports the owning category and shared workflow source.
   }
   const workflowRuns = workflowRunSteps(workflow);
+  if (contract?.schemaVersion === 6) {
+    const cliCompletionGates = [
+      {
+        code: "CLI_COMPLETION_GENERATION_UNREACHABLE",
+        command: "pnpm --dir repos/arashi completion:generate",
+      },
+      {
+        code: "CLI_COMPLETION_FRESHNESS_UNREACHABLE",
+        command: "pnpm --dir repos/arashi completion:check",
+      },
+      {
+        code: "CLI_COMPLETION_FRESHNESS_UNREACHABLE",
+        command:
+          "git -C repos/arashi diff --exit-code -- src/generated/completions.ts",
+      },
+    ];
+    for (const gate of cliCompletionGates)
+      if (!directlyRuns(workflowRuns, gate.command))
+        add(
+          d,
+          "error",
+          "schema",
+          gate.code,
+          paths.workflow,
+          gate.command,
+          "Meta CI must generate completion artifacts, run freshness validation, and reject generated diffs.",
+        );
+  }
   for (const focused of focusedChecks)
     if (
       !(await exists(join(root, focused.checker))) ||
@@ -3299,6 +3622,24 @@ export async function checkContracts(
           "Meta CI must create, extract, and validate the release-shaped packaged skill.",
         );
   }
+  if (contract?.schemaVersion === 6) {
+    const packagedCompletionCommands = [
+      "tar -czf arashi-skill-package.tar.gz -C repos/arashi-skills skills/",
+      "tar -xzf arashi-skill-package.tar.gz -C package-check",
+      "node repos/arashi-skills/scripts/shell-completion-guidance-selftest.mjs --skill-root package-check/skills/arashi",
+    ];
+    for (const command of packagedCompletionCommands)
+      if (!directlyRuns(workflowRuns, command))
+        add(
+          d,
+          "error",
+          "skills",
+          "SKILLS_COMPLETION_PACKAGE_CHECK_UNREACHABLE",
+          paths.workflow,
+          command,
+          "Meta CI must create, extract, and validate completion guidance in the release-shaped packaged skill.",
+        );
+  }
 
   await Promise.all(
     focusedChecks.map((focused) =>
@@ -3314,6 +3655,9 @@ export async function checkContracts(
       ),
     ),
   );
+  if (contract?.schemaVersion === 6) {
+    await runPackagedCompletionChecker(root, d);
+  }
 
   await checkKittyGuidance(root, d);
 
