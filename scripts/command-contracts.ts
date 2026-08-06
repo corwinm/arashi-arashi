@@ -239,6 +239,7 @@ const completionCandidates = new Map<string, Obj>([
   ["create.--only", { candidateKind: "repository" }],
   ["exec.--group", { candidateKind: "group" }],
   ["exec.--only", { candidateKind: "repository" }],
+  ["init.--ignore-scope", { choices: ["local", "tracked", "none"] }],
   ["move.--from", { candidateKind: "workspace" }],
   ["move.--to", { candidateKind: "workspace" }],
   ["pull.--group", { candidateKind: "group" }],
