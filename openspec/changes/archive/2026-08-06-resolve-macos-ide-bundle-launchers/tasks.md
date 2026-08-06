@@ -16,4 +16,4 @@
 - [x] 3.2 Build the real CLI and perform a macOS acceptance switch with the canonical IDE command removed from PATH, verifying the requested installed app-bundle launcher opens the exact selected worktree.
 - [x] 3.3 Run the complete `repos/arashi` format check, lint, typecheck, test, build, schema check, generated command-contract check, and `git diff --check` gates.
 - [x] 3.4 Confirm companion extension/docs/skills contracts require no changes, then open the child implementation PR linked to project issue #259 and verify exact-head CI.
-- [ ] 3.5 After implementation approval and green child delivery, complete OpenSpec task evidence and prepare the change for archive/sync in the still-open meta proposal PR.
+- [x] 3.5 After implementation approval and green child delivery, complete OpenSpec task evidence and prepare the change for archive/sync in the still-open meta proposal PR.
