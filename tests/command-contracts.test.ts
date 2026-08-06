@@ -651,6 +651,7 @@ async function schemaV5Fixture(): Promise<string> {
 async function schemaV6Fixture(): Promise<string> {
   const root = await schemaV5Fixture();
   const copies = [
+    "repos/arashi/README.md",
     "repos/arashi/contracts/cli-commands.json",
     "repos/arashi-docs/docs/commands",
     "repos/arashi-docs/public",
@@ -746,6 +747,19 @@ describe("cross-repository command contracts", () => {
       ),
     ).toEqual([]);
     expect(result.ok, JSON.stringify(result.diagnostics, null, 2)).toBe(true);
+  });
+  test("rejects incomplete CLI README completion guidance", async () => {
+    const root = await schemaV6Fixture();
+    await writeFile(
+      join(root, "repos/arashi/README.md"),
+      "# Arashi\n\nRun `arashi completion bash`.\n",
+    );
+    expect((await checkContracts(root)).diagnostics).toContainEqual(
+      expect.objectContaining({
+        code: "CLI_README_COMPLETION_INVALID",
+        source: "repos/arashi/README.md",
+      }),
+    );
   });
   test.each([
     [

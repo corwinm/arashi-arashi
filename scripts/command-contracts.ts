@@ -21,6 +21,7 @@ type Obj = Record<string, unknown>;
 
 const paths = {
   contract: "repos/arashi/contracts/cli-commands.json",
+  cliReadme: "repos/arashi/README.md",
   cliCreateConfig: "repos/arashi/contracts/create-launch-config.json",
   cliKittySessions: "repos/arashi/contracts/kitty-worktree-sessions.json",
   configSchema: "repos/arashi/schema/config.schema.json",
@@ -3563,6 +3564,43 @@ export async function checkContracts(
   }
   const workflowRuns = workflowRunSteps(workflow);
   if (contract?.schemaVersion === 6) {
+    let cliReadme = "";
+    try {
+      cliReadme = await readFile(join(root, paths.cliReadme), "utf8");
+    } catch {
+      // The missing README is reported through the same semantic diagnostic below.
+    }
+    const normalizedReadme = cliReadme.toLowerCase();
+    const readmeRequirements = [
+      'eval "$(command arashi shell init bash)"',
+      "source <(command arashi completion bash)",
+      'eval "$(command arashi shell init zsh)"',
+      "source <(command arashi completion zsh)",
+      "command arashi shell init fish | source",
+      "command arashi completion fish | source",
+      "wrapper-only",
+      "local and read-only",
+      "200 ms whole-query budget",
+      "no network requests",
+      "hooks",
+      "prompts",
+      "workspace mutations",
+      "child operations",
+    ];
+    const missingReadmeRequirements = readmeRequirements.filter(
+      (requirement) => !normalizedReadme.includes(requirement.toLowerCase()),
+    );
+    if (missingReadmeRequirements.length > 0)
+      add(
+        d,
+        "error",
+        "docs",
+        "CLI_README_COMPLETION_INVALID",
+        paths.cliReadme,
+        "shell completion",
+        `CLI README completion guidance is missing: ${missingReadmeRequirements.join(", ")}.`,
+      );
+
     const cliCompletionGates = [
       {
         code: "CLI_COMPLETION_GENERATION_UNREACHABLE",
