@@ -26,6 +26,7 @@ const paths = {
   docs: "repos/arashi-docs/docs/commands",
   docsCreateConfig: "repos/arashi-docs/contracts/create-launch-config.json",
   docsKittySessions: "repos/arashi-docs/contracts/kitty-worktree-sessions.json",
+  docsCliOptions: "repos/arashi-docs/contracts/cli-options.json",
   docsSwitchConfig: "repos/arashi-docs/contracts/switch-config.json",
   skills: "repos/arashi-skills/skills/arashi",
   coverage: "repos/arashi-skills/contracts/command-coverage.json",
@@ -37,9 +38,13 @@ const paths = {
   manifest: "repos/arashi-vscode/package.json",
   workflow: ".github/workflows/cross-repo-command-contracts.yml",
   docsOptionPolicyCheck: "repos/arashi-docs/scripts/check-tab-launch-docs.ts",
+  docsCliOptionPolicyCheck:
+    "repos/arashi-docs/scripts/check-cli-option-docs.ts",
   docsTabPolicy: "repos/arashi-docs/docs/workflows/launch-disposition.md",
   skillsOptionPolicyCheck:
     "repos/arashi-skills/scripts/tab-launch-disposition-guidance-selftest.mjs",
+  skillsCliOptionPolicyCheck:
+    "repos/arashi-skills/scripts/cli-flag-rationalization-guidance-selftest.mjs",
   skillsTabPolicy: "repos/arashi-skills/skills/arashi/references/commands.md",
 } as const;
 const execFileAsync = promisify(execFile);
@@ -466,6 +471,767 @@ const commandOptionNames = (command: Obj): string[] =>
           text(option.flags) ? (option.flags.match(/--[a-z0-9-]+/g) ?? []) : [],
         )
     : [];
+const commandOptions = (command: Obj): Obj[] =>
+  Array.isArray(command.options) ? command.options.filter(object) : [];
+const optionLong = (option: Obj): string | undefined =>
+  text(option.long) ? option.long : undefined;
+const optionMap = (command: Obj): Map<string, Obj> =>
+  new Map(
+    commandOptions(command).flatMap((option) => {
+      const long = optionLong(option);
+      return long ? [[long, option] as const] : [];
+    }),
+  );
+const commonAliases = new Map([
+  ["--verbose", "-v"],
+  ["--force", "-f"],
+  ["--json", "-j"],
+  ["--only", "-o"],
+  ["--group", "-g"],
+  ["--dry-run", "-n"],
+]);
+const commandQualifiedAliases = new Map([
+  ["add.--name", "-n"],
+  ["create.--interactive", "-i"],
+  ["list.--table", "-t"],
+  ["status.--short", "-s"],
+  ["update.--yes", "-y"],
+]);
+const expectedSchemaV5OptionSurface = new Map<string, readonly string[]>([
+  ["add", ["--create-setup", "--force", "--json", "--name"]],
+  ["clone", ["--all", "--json"]],
+  [
+    "create",
+    [
+      "--conflict",
+      "--editor-host",
+      "--herdr",
+      "--launch",
+      "--move-changes",
+      "--no-hooks",
+      "--no-launch",
+      "--no-progress",
+      "--no-switch",
+      "--sesh",
+      "--switch",
+      "--tab",
+      "--tmux",
+      "--group",
+      "--interactive",
+      "--json",
+      "--dry-run",
+      "--only",
+    ],
+  ],
+  ["doctor", ["--json"]],
+  ["exec", ["--dirty", "--fail-fast", "--jobs", "--group", "--json", "--only"]],
+  [
+    "handoff",
+    [
+      "--link",
+      "--markdown",
+      "--next-command",
+      "--risk",
+      "--todo",
+      "--validation",
+      "--json",
+    ],
+  ],
+  [
+    "init",
+    [
+      "--ignore-scope",
+      "--no-discover",
+      "--repos-dir",
+      "--worktrees-dir",
+      "--zero-config",
+      "--force",
+      "--json",
+      "--dry-run",
+      "--verbose",
+    ],
+  ],
+  ["install", ["--json"]],
+  ["list", ["--max-depth", "--json", "--table", "--verbose"]],
+  ["move", ["--from", "--to", "--json"]],
+  ["prune", ["--expire", "--json", "--dry-run"]],
+  ["pull", ["--group", "--json", "--only", "--verbose"]],
+  ["push", ["--set-upstream", "--group", "--json", "--dry-run", "--only"]],
+  [
+    "remove",
+    [
+      "--keep-branches",
+      "--keep-worktrees",
+      "--no-check-dirty",
+      "--path",
+      "--force",
+      "--json",
+      "--dry-run",
+    ],
+  ],
+  ["setup", ["--group", "--json", "--only", "--verbose"]],
+  ["shell", []],
+  ["shell init", ["--json"]],
+  ["shell install", []],
+  ["status", ["--group", "--json", "--only", "--short", "--verbose"]],
+  [
+    "switch",
+    [
+      "--all",
+      "--cd",
+      "--cursor",
+      "--herdr",
+      "--ignore-configured-launcher",
+      "--kiro",
+      "--launch",
+      "--no-cd",
+      "--no-default-launch",
+      "--path",
+      "--repos",
+      "--sesh",
+      "--tab",
+      "--tmux",
+      "--vscode",
+      "--json",
+    ],
+  ],
+  ["sync", ["--group", "--json", "--only", "--verbose"]],
+  ["update", ["--check", "--json", "--dry-run", "--yes"]],
+]);
+const selectorPolicyBase: Obj = {
+  accepts: ["repeated", "comma-separated", "mixed"],
+  blankSegments: "ignored-beside-values",
+  deduplicate: "first-occurrence",
+  explicitEmpty: "error",
+  flatten: "encounter-order",
+  omitted: "default-selection",
+  supplied: "distinct-from-omitted",
+  trim: true,
+  unknown: "error",
+  validationPrecedence: "before-repository-work",
+};
+const compatibilityBoundary: Obj = {
+  earliestMajor: 2,
+  requiresApprovedBreakingChange: true,
+};
+const switchSharedPolicy: Obj = {
+  explicitLauncher: {
+    authoritative: true,
+    compatible: true,
+    noFallback: "preserved",
+  },
+  jsonGuardPrecedence: "before-option-and-conflict-validation",
+  tab: {
+    bypassesConfiguredDefaults: true,
+    compatible: true,
+    disposition: "tab",
+  },
+};
+const explicitSwitchOptions = [
+  "--cursor",
+  "--herdr",
+  "--kiro",
+  "--sesh",
+  "--tmux",
+  "--vscode",
+];
+const switchPolicyExpected = (long: string): Obj | undefined => {
+  const explicit = explicitSwitchOptions.includes(long);
+  if (long === "--cd")
+    return {
+      conflicts: [
+        "--cursor",
+        "--herdr",
+        "--kiro",
+        "--launch",
+        "--no-cd",
+        "--sesh",
+        "--tab",
+        "--tmux",
+        "--vscode",
+      ],
+      implies: ["cd"],
+      ownership: "command",
+      persisted: false,
+    };
+  if (explicit)
+    return {
+      conflicts: [
+        "--cd",
+        ...explicitSwitchOptions.filter((x) => x !== long),
+      ].sort(),
+      implies: ["launch"],
+      ownership: "command",
+      persisted: false,
+      switch: switchSharedPolicy,
+    };
+  if (["--launch", "--no-cd"].includes(long))
+    return {
+      ...(long === "--launch"
+        ? {
+            compatibility: {
+              alternatives: ["--no-cd"],
+              canonical: { option: "--launch" },
+              deprecatedAlternatives: true,
+              removal: compatibilityBoundary,
+            },
+          }
+        : {}),
+      conflicts: ["--cd"],
+      implies: ["launch"],
+      ownership: "command",
+      persisted: false,
+      switch: {
+        configuredModeEffects: {
+          auto: "launch",
+          cd: "launch",
+          herdr: "preserve-named-launcher",
+          launch: "launch",
+          sesh: "preserve-named-launcher",
+        },
+        ...switchSharedPolicy,
+      },
+    };
+  if (["--ignore-configured-launcher", "--no-default-launch"].includes(long))
+    return {
+      ...(long === "--ignore-configured-launcher"
+        ? {
+            compatibility: {
+              alternatives: ["--no-default-launch"],
+              canonical: { option: "--ignore-configured-launcher" },
+              deprecatedAlternatives: true,
+              removal: compatibilityBoundary,
+            },
+          }
+        : {}),
+      conflicts: [],
+      implies: [],
+      ownership: "command",
+      persisted: false,
+      switch: {
+        configuredModeEffects: {
+          auto: "preserve-configured-or-contextual-behavior",
+          cd: "preserve-configured-or-contextual-behavior",
+          herdr: "automatic-launch",
+          launch: "preserve-configured-or-contextual-behavior",
+          sesh: "automatic-launch",
+        },
+        ...switchSharedPolicy,
+      },
+    };
+  if (long === "--tab")
+    return {
+      conflicts: ["--cd"],
+      implies: ["launch"],
+      ownership: "command",
+      persisted: false,
+      switch: switchSharedPolicy,
+    };
+};
+
+function validateCompatibility(
+  commandPath: string,
+  owner: Obj,
+  options: Map<string, Obj>,
+  diagnostics: Diagnostic[],
+): void {
+  const long = optionLong(owner);
+  const policy = object(owner.semanticPolicy) ? owner.semanticPolicy : {};
+  const compatibility = object(policy.compatibility)
+    ? policy.compatibility
+    : undefined;
+  if (!long || !compatibility) return;
+  const alternatives = strings(compatibility.alternatives) ?? [];
+  const removal = object(compatibility.removal) ? compatibility.removal : {};
+  const canonical = object(compatibility.canonical)
+    ? compatibility.canonical
+    : {};
+  const canonicalValid =
+    canonical.option === long ||
+    (canonical.omittedDefault === true && text(canonical.behavior));
+  const canonicalVisible =
+    canonical.option !== long ||
+    (owner.hidden === false && owner.deprecated === false);
+  const valid =
+    alternatives.length > 0 &&
+    compatibility.deprecatedAlternatives === true &&
+    removal.earliestMajor === 2 &&
+    removal.requiresApprovedBreakingChange === true &&
+    canonicalValid &&
+    canonicalVisible &&
+    alternatives.every((alternative) => {
+      const option = options.get(alternative);
+      return option?.hidden === true && option.deprecated === true;
+    });
+  if (!valid)
+    add(
+      diagnostics,
+      "error",
+      "schema",
+      "CLI_COMPATIBILITY_INVALID",
+      paths.contract,
+      `${commandPath}.${long}`,
+      "Compatibility mappings require a registered hidden/deprecated alternative and the approved 2.0 removal boundary.",
+    );
+}
+
+function compareNormalizedRecord(
+  actual: unknown,
+  expected: unknown,
+  source: string,
+  subject: string,
+  diagnostics: Diagnostic[],
+): void {
+  if (object(expected)) {
+    if (!object(actual)) {
+      add(
+        diagnostics,
+        "error",
+        "docs",
+        "DOCS_CLI_OPTION_POLICY_MISMATCH",
+        source,
+        subject,
+        "Normalized documentation option policy differs from the CLI schema-v5 contract.",
+      );
+      return;
+    }
+    for (const key of [
+      ...new Set([...Object.keys(actual), ...Object.keys(expected)]),
+    ].sort())
+      compareNormalizedRecord(
+        actual[key],
+        expected[key],
+        source,
+        subject ? `${subject}.${key}` : key,
+        diagnostics,
+      );
+    return;
+  }
+  if (JSON.stringify(actual) !== JSON.stringify(expected))
+    add(
+      diagnostics,
+      "error",
+      "docs",
+      "DOCS_CLI_OPTION_POLICY_MISMATCH",
+      source,
+      subject,
+      "Normalized documentation option policy differs from the CLI schema-v5 contract.",
+    );
+}
+
+const normalizedDocsCliOptions: Obj = {
+  schemaVersion: 1,
+  aliases: {
+    verbose: "-v",
+    force: "-f",
+    json: "-j",
+    only: "-o",
+    group: "-g",
+    dryRun: "-n",
+    exceptions: { addName: "-n", execJobs: "long-only" },
+    npmWrapper: {
+      installJson: "-j",
+      updateJson: "-j",
+      updateDryRun: "-n",
+    },
+  },
+  switch: {
+    canonical: {
+      launch: "--launch",
+      ignoreConfiguredLauncher: "--ignore-configured-launcher",
+    },
+    compatibility: {
+      "--no-cd": "--launch",
+      "--no-default-launch": "--ignore-configured-launcher",
+    },
+    compatibilityBoundary: {
+      supportedThrough: "1.x",
+      earliestRemovalMajor: 2,
+      requiresApprovedBreakingChange: true,
+    },
+    persisted: false,
+    combinedCanonicalIntent: "generic-automatic-launch",
+    launchPreservesConfiguredLauncher: true,
+    ignoreConfiguredLauncher: {
+      preserveBehaviorModes: ["auto", "cd", "launch"],
+      namedLaunchModesBecomeAutomatic: ["sesh", "herdr"],
+    },
+    cdConflicts: ["launch", "tab", "explicit-launcher"],
+    explicitLauncherWithTabAuthoritative: true,
+    jsonGuardPrecedenceUnchanged: true,
+    noFallbackUnchanged: true,
+  },
+  selectors: {
+    options: ["--only", "--group"],
+    inputForms: ["repeated", "comma-separated", "mixed"],
+    flatten: "encounter-order",
+    trim: true,
+    blankSegments: "ignored-beside-values",
+    deduplicate: "first-occurrence",
+    omitted: "default-selection",
+    suppliedEmpty: "error",
+    unknown: "error",
+    combination: "intersection",
+    emptyIntersection: "error",
+    validationPrecedence: "before-repository-work",
+  },
+  status: {
+    only: "configured-child-selection",
+    standaloneSelectors: "unsupported",
+    parentReporting: "unchanged",
+    jsonSelection: {
+      repositories: "selected-children-plus-parent",
+      effectiveFilters: "normalized-only-and-groups",
+      agree: true,
+    },
+  },
+  handoff: {
+    defaultFormat: "markdown",
+    preferredMarkdownOption: "omitted",
+    compatibilityOption: "--markdown",
+    compatibilityBoundary: {
+      supportedThrough: "1.x",
+      earliestRemovalMajor: 2,
+      requiresApprovedBreakingChange: true,
+    },
+  },
+  update: {
+    conflict: ["--check", "--dry-run"],
+    dryRunAlias: "-n",
+    precedence: "before-lookup-or-mutation",
+    humanJsonParity: true,
+    bareJson: "inspection-only",
+    jsonApply: "unsupported",
+    jsonPrompt: false,
+    jsonMutation: false,
+  },
+  nativeCompletion: "out-of-scope",
+};
+
+function validateSchemaV5Commands(
+  commands: Map<string, Obj>,
+  diagnostics: Diagnostic[],
+): void {
+  for (const [commandPath, expectedLongs] of expectedSchemaV5OptionSurface) {
+    const command = commands.get(commandPath);
+    if (!command) {
+      add(
+        diagnostics,
+        "error",
+        "schema",
+        "CLI_OPTION_SURFACE_MISMATCH",
+        paths.contract,
+        commandPath,
+        "Schema-v5 command surface is missing an audited command path.",
+      );
+      continue;
+    }
+    const actualLongs = new Set(optionMap(command).keys());
+    for (const long of expectedLongs)
+      if (!actualLongs.has(long))
+        add(
+          diagnostics,
+          "error",
+          "schema",
+          "CLI_OPTION_SURFACE_MISMATCH",
+          paths.contract,
+          `${commandPath}.${long}`,
+          "Schema-v5 option surface is missing an audited command-local registration.",
+        );
+    for (const long of actualLongs)
+      if (!expectedLongs.includes(long))
+        add(
+          diagnostics,
+          "error",
+          "schema",
+          "CLI_OPTION_SURFACE_MISMATCH",
+          paths.contract,
+          `${commandPath}.${long}`,
+          "Schema-v5 option surface contains an unaudited command-local registration.",
+        );
+  }
+  for (const commandPath of commands.keys())
+    if (!expectedSchemaV5OptionSurface.has(commandPath))
+      add(
+        diagnostics,
+        "error",
+        "schema",
+        "CLI_OPTION_SURFACE_MISMATCH",
+        paths.contract,
+        commandPath,
+        "Schema-v5 command surface contains an unaudited command path.",
+      );
+
+  for (const [commandPath, command] of commands) {
+    const rawOptions = Array.isArray(command.options) ? command.options : [];
+    rawOptions.forEach((option, index) => {
+      if (!object(option))
+        add(
+          diagnostics,
+          "error",
+          "schema",
+          "CLI_OPTION_SCHEMA_INVALID",
+          paths.contract,
+          `${commandPath}.options[${index}]`,
+          "Schema-v5 option arrays may contain only complete option records.",
+        );
+    });
+    const options = optionMap(command);
+    const semantics = object(command.semantics) ? command.semantics : {};
+    const legacyPolicies = object(semantics.optionPolicies)
+      ? semantics.optionPolicies
+      : {};
+    const aliases = new Map<string, string[]>();
+    for (const option of commandOptions(command)) {
+      const long = optionLong(option);
+      if (!long) {
+        add(
+          diagnostics,
+          "error",
+          "schema",
+          "CLI_OPTION_SCHEMA_INVALID",
+          paths.contract,
+          `${commandPath}.${String(option.flags)}`,
+          "Schema-v5 options require an explicit long name.",
+        );
+        continue;
+      }
+      const policy = object(option.semanticPolicy)
+        ? option.semanticPolicy
+        : undefined;
+      const flags = text(option.flags) ? option.flags : "";
+      const flagLongs = flags.match(/--[a-z0-9-]+/g) ?? [];
+      const flagShorts =
+        flags
+          .match(/(?:^|[\s,])-[A-Za-z0-9](?=[\s,]|$)/g)
+          ?.map((value) => value.trim().replace(/^,/, "").trim()) ?? [];
+      const expectedShorts = text(option.short) ? [option.short] : [];
+      const structuralValid =
+        typeof option.flags === "string" &&
+        sameStrings(flagLongs, [long]) &&
+        sameStrings(flagShorts, expectedShorts) &&
+        typeof option.description === "string" &&
+        typeof option.hidden === "boolean" &&
+        typeof option.deprecated === "boolean" &&
+        typeof option.required === "boolean" &&
+        typeof option.optional === "boolean" &&
+        typeof option.variadic === "boolean" &&
+        ["boolean", "required", "optional", "variadic"].includes(
+          String(option.valueShape),
+        ) &&
+        ["structural", "command"].includes(
+          String(option.semanticPolicyOwner),
+        ) &&
+        (option.short === null ||
+          /^-[A-Za-z0-9]$/.test(String(option.short))) &&
+        ((option.semanticPolicyOwner === "command" &&
+          (policy?.ownership === "command" || object(legacyPolicies[long]))) ||
+          (option.semanticPolicyOwner === "structural" &&
+            policy === undefined));
+      if (!structuralValid)
+        add(
+          diagnostics,
+          "error",
+          "schema",
+          "CLI_OPTION_SCHEMA_INVALID",
+          paths.contract,
+          `${commandPath}.${long}`,
+          "Schema-v5 option metadata and semantic-policy ownership must be complete and coherent.",
+        );
+      if (text(option.short)) {
+        const owners = aliases.get(option.short) ?? [];
+        owners.push(long);
+        aliases.set(option.short, owners);
+      }
+      const expectedAlias =
+        commonAliases.get(long) ??
+        commandQualifiedAliases.get(`${commandPath}.${long}`);
+      if (
+        (expectedAlias !== undefined && option.short !== expectedAlias) ||
+        (commandPath === "exec" && long === "--jobs" && option.short !== null)
+      )
+        add(
+          diagnostics,
+          "error",
+          "schema",
+          "CLI_ALIAS_MISMATCH",
+          paths.contract,
+          `${commandPath}.${long}`,
+          `Expected command-local alias ${expectedAlias ?? "long-only"}.`,
+        );
+      if (text(option.short) && expectedAlias === undefined)
+        add(
+          diagnostics,
+          "error",
+          "schema",
+          "CLI_ALIAS_UNAPPROVED",
+          paths.contract,
+          `${commandPath}.${long}`,
+          "Specialized options may not claim an unaudited short alias.",
+        );
+
+      if (policy) {
+        const conflicts = strings(policy.conflicts) ?? [];
+        const implications = strings(policy.implies) ?? [];
+        for (const reference of [
+          ...conflicts,
+          ...implications.filter((value) => value.startsWith("--")),
+        ])
+          if (!options.has(reference))
+            add(
+              diagnostics,
+              "error",
+              "schema",
+              "CLI_POLICY_REFERENCE_INVALID",
+              paths.contract,
+              `${commandPath}.${long}`,
+              `Semantic policy references unregistered option ${reference}.`,
+            );
+        validateCompatibility(commandPath, option, options, diagnostics);
+      }
+
+      if (["--only", "--group"].includes(long)) {
+        if (!policy || !object(policy.selector))
+          add(
+            diagnostics,
+            "error",
+            "schema",
+            "CLI_SELECTOR_POLICY_MISSING",
+            paths.contract,
+            `${commandPath}.${long}`,
+            "Every selector registration requires a complete typed policy.",
+          );
+        else {
+          const expectedSelector: Obj = {
+            ...selectorPolicyBase,
+            combination: {
+              empty: "error",
+              mode: "intersection",
+              with: long === "--only" ? "--group" : "--only",
+            },
+            kind: long === "--only" ? "repository" : "group",
+            standalone: ["create", "status"].includes(commandPath)
+              ? "unsupported"
+              : "configured-only",
+          };
+          if (
+            policy.persisted !== false ||
+            !samePolicyValue(policy.selector, expectedSelector) ||
+            !options.has(long === "--only" ? "--group" : "--only")
+          )
+            add(
+              diagnostics,
+              "error",
+              "schema",
+              "CLI_SELECTOR_POLICY_INVALID",
+              paths.contract,
+              `${commandPath}.${long}`,
+              "Selector policy must fail closed with normalized repeated/comma input and a reciprocal intersection counterpart.",
+            );
+        }
+      }
+    }
+    for (const [short, owners] of aliases)
+      if (owners.length > 1)
+        add(
+          diagnostics,
+          "error",
+          "schema",
+          "CLI_ALIAS_COLLISION",
+          paths.contract,
+          `${commandPath}.${short}`,
+          `Short alias is shared by ${owners.join(", ")}.`,
+        );
+
+    if (commandPath === "switch")
+      for (const [long, option] of options) {
+        const expectedPolicy = switchPolicyExpected(long);
+        if (
+          expectedPolicy &&
+          !samePolicyValue(option.semanticPolicy, expectedPolicy)
+        )
+          add(
+            diagnostics,
+            "error",
+            "schema",
+            "CLI_SWITCH_POLICY_INVALID",
+            paths.contract,
+            `${commandPath}.${long}`,
+            "Switch policy must preserve canonical compatibility, conflicts, precedence, and launcher effects.",
+          );
+      }
+    if (commandPath === "handoff") {
+      const markdown = options.get("--markdown");
+      const expectedPolicy: Obj = {
+        compatibility: {
+          alternatives: ["--markdown"],
+          canonical: { behavior: "markdown", omittedDefault: true },
+          deprecatedAlternatives: true,
+          removal: compatibilityBoundary,
+        },
+        ownership: "command",
+        persisted: false,
+        role: "redundant-compatibility",
+      };
+      if (
+        !markdown ||
+        !samePolicyValue(markdown.semanticPolicy, expectedPolicy)
+      )
+        add(
+          diagnostics,
+          "error",
+          "schema",
+          "CLI_COMPATIBILITY_INVALID",
+          paths.contract,
+          "handoff.--markdown",
+          "Handoff Markdown must be a hidden deprecated redundant compatibility spelling for the omitted default.",
+        );
+    }
+    if (commandPath === "update") {
+      for (const [long, target] of [
+        ["--check", "--dry-run"],
+        ["--dry-run", "--check"],
+      ] as const) {
+        const option = options.get(long);
+        const expectedPolicy: Obj = {
+          conflicts: [target],
+          inspection: { executionPaths: ["human", "json"] },
+          ownership: "command",
+        };
+        if (!option || !samePolicyValue(option.semanticPolicy, expectedPolicy))
+          add(
+            diagnostics,
+            "error",
+            "schema",
+            "CLI_UPDATE_POLICY_INVALID",
+            paths.contract,
+            `update.${long}`,
+            "Update inspection modes must conflict reciprocally for human and JSON paths before lookup or mutation.",
+          );
+      }
+      const json = options.get("--json");
+      const expectedJsonPolicy: Obj = {
+        jsonExecution: {
+          apply: "unsupported",
+          bare: "inspection-only",
+          mutation: false,
+          prompt: false,
+        },
+        ownership: "command",
+      };
+      if (!json || !samePolicyValue(json.semanticPolicy, expectedJsonPolicy))
+        add(
+          diagnostics,
+          "error",
+          "schema",
+          "CLI_UPDATE_POLICY_INVALID",
+          paths.contract,
+          "update.--json",
+          "Bare update JSON must be inspection-only without prompt or mutation, while JSON apply remains unsupported.",
+        );
+    }
+  }
+}
 
 async function json(
   root: string,
@@ -934,7 +1700,7 @@ const companionProjection = (
               )
                 ? ["configured-cd", "contextual-cd"]
                 : []),
-              ...(/(?:For `switch`|`switch --tab`(?: request)? expresses)[^\n]*bypasses configured launcher defaults/i.test(
+              ...(/(?:For `switch`|`switch --tab`(?: request)? expresses)[^\n]*bypasses configured (?:launcher|behavior and named-launcher) defaults/i.test(
                 scoped,
               )
                 ? ["configured-launcher"]
@@ -1532,6 +2298,10 @@ export async function checkContracts(
   const configSchema = await json(root, paths.configSchema, d);
   const docsCreateConfig = await json(root, paths.docsCreateConfig, d);
   const docsKittySessions = await json(root, paths.docsKittySessions, d);
+  const docsCliOptions =
+    contract?.schemaVersion === 5
+      ? await json(root, paths.docsCliOptions, d)
+      : undefined;
   const docsSwitchConfig = await json(root, paths.docsSwitchConfig, d);
   const coverage = await json(root, paths.coverage, d);
   const skillsCreateConfig = await json(root, paths.skillsCreateConfig, d);
@@ -1795,7 +2565,16 @@ export async function checkContracts(
         "Each editor host must reference EditorCommandDefaults.",
       );
   }
-  version(contract, paths.contract, d, 4);
+  if (contract && ![4, 5].includes(contract.schemaVersion as number))
+    add(
+      d,
+      "error",
+      "schema",
+      "SCHEMA_VERSION_UNSUPPORTED",
+      paths.contract,
+      String(contract.schemaVersion),
+      "Expected schemaVersion 4 or 5.",
+    );
   version(coverage, paths.coverage, d);
   version(policy, paths.policy, d);
   const commandEntries = Array.isArray(contract?.commands)
@@ -1915,6 +2694,16 @@ export async function checkContracts(
         d,
       );
     }
+  }
+  if (contract?.schemaVersion === 5) {
+    validateSchemaV5Commands(commands, d);
+    compareNormalizedRecord(
+      docsCliOptions,
+      normalizedDocsCliOptions,
+      paths.docsCliOptions,
+      "",
+      d,
+    );
   }
 
   let index = "";
@@ -2220,38 +3009,41 @@ export async function checkContracts(
         );
     }
   }
-  for (const commandName of ["create", "switch"] as const) {
-    const command = commands.get(commandName);
-    if (!command) continue;
-    const commandOptions = commandOptionNames(command);
-    const semantics = object(command.semantics) ? command.semantics : {};
-    const optionPolicies = object(semantics.optionPolicies)
-      ? semantics.optionPolicies
-      : {};
-    for (const [option, expectedPolicy] of Object.entries(
-      canonicalOptionPolicies[commandName],
-    )) {
-      const actualPolicy = optionPolicies[option];
-      const policyOptions = [
-        option,
-        ...(strings(expectedPolicy.compatibleOptions) ?? []),
-        ...(strings(expectedPolicy.conflicts) ?? []),
-      ];
-      if (
-        !samePolicyValue(actualPolicy, expectedPolicy) ||
-        !policyOptions.every((candidate) => commandOptions.includes(candidate))
-      )
-        add(
-          d,
-          "error",
-          "schema",
-          "OPTION_POLICY_MISMATCH",
-          paths.contract,
-          `${commandName}.${option}`,
-          `${commandName} ${option} must match the canonical typed schema-v4 option policy.`,
-        );
+  if (contract?.schemaVersion === 4)
+    for (const commandName of ["create", "switch"] as const) {
+      const command = commands.get(commandName);
+      if (!command) continue;
+      const commandOptions = commandOptionNames(command);
+      const semantics = object(command.semantics) ? command.semantics : {};
+      const optionPolicies = object(semantics.optionPolicies)
+        ? semantics.optionPolicies
+        : {};
+      for (const [option, expectedPolicy] of Object.entries(
+        canonicalOptionPolicies[commandName],
+      )) {
+        const actualPolicy = optionPolicies[option];
+        const policyOptions = [
+          option,
+          ...(strings(expectedPolicy.compatibleOptions) ?? []),
+          ...(strings(expectedPolicy.conflicts) ?? []),
+        ];
+        if (
+          !samePolicyValue(actualPolicy, expectedPolicy) ||
+          !policyOptions.every((candidate) =>
+            commandOptions.includes(candidate),
+          )
+        )
+          add(
+            d,
+            "error",
+            "schema",
+            "OPTION_POLICY_MISMATCH",
+            paths.contract,
+            `${commandName}.${option}`,
+            `${commandName} ${option} must match the canonical typed schema-v4 option policy.`,
+          );
+      }
     }
-  }
   for (const file of await markdownFiles(join(root, paths.skills))) {
     const content = await readFile(file, "utf8");
     const regex = /`arashi\s+([a-z][a-z0-9-]*)(?=[\s`])/g;
@@ -2446,6 +3238,27 @@ export async function checkContracts(
       command:
         "node repos/arashi-skills/scripts/tab-launch-disposition-guidance-selftest.mjs",
     },
+    ...(contract?.schemaVersion === 5
+      ? [
+          {
+            category: "docs" as const,
+            checker: paths.docsCliOptionPolicyCheck,
+            cwd: "repos/arashi-docs",
+            failureCode: "DOCS_CLI_OPTION_POLICY_CHECK_FAILED",
+            unreachableCode: "DOCS_CLI_OPTION_POLICY_CHECK_UNREACHABLE",
+            command: "pnpm --dir repos/arashi-docs validate:cli-option-docs",
+          },
+          {
+            category: "skills" as const,
+            checker: paths.skillsCliOptionPolicyCheck,
+            cwd: "repos/arashi-skills",
+            failureCode: "SKILLS_CLI_OPTION_POLICY_CHECK_FAILED",
+            unreachableCode: "SKILLS_CLI_OPTION_POLICY_CHECK_UNREACHABLE",
+            command:
+              "node repos/arashi-skills/scripts/cli-flag-rationalization-guidance-selftest.mjs",
+          },
+        ]
+      : []),
   ];
   let workflow = "";
   try {
@@ -2468,6 +3281,24 @@ export async function checkContracts(
         focused.checker,
         `Meta CI must directly run the owning focused checker: ${focused.command}.`,
       );
+  if (contract?.schemaVersion === 5) {
+    const packagedSkillCommands = [
+      "tar -czf arashi-skill-package.tar.gz -C repos/arashi-skills skills/",
+      "tar -xzf arashi-skill-package.tar.gz -C package-check",
+      "node repos/arashi-skills/scripts/cli-flag-rationalization-guidance-selftest.mjs --skill-root package-check/skills/arashi",
+    ];
+    for (const command of packagedSkillCommands)
+      if (!directlyRuns(workflowRuns, command))
+        add(
+          d,
+          "error",
+          "skills",
+          "SKILLS_CLI_OPTION_PACKAGE_CHECK_UNREACHABLE",
+          paths.workflow,
+          command,
+          "Meta CI must create, extract, and validate the release-shaped packaged skill.",
+        );
+  }
 
   await Promise.all(
     focusedChecks.map((focused) =>

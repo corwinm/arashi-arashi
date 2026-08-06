@@ -3,9 +3,7 @@
 ## Purpose
 
 Define how Arashi resolves window versus tab launch intent across managed contexts, terminal adapters, command boundaries, and pre-mutation capability checks without silently falling back to a different disposition.
-
 ## Requirements
-
 ### Requirement: Resolve an explicit shared launch disposition
 
 The system SHALL resolve every shared worktree launch to exactly one disposition: `window` when no disposition override is present, or `tab` when the user passes `--tab`. The resolved disposition SHALL be carried through launcher selection and execution and SHALL NOT be inferred independently by terminal-specific fallback order.
@@ -111,7 +109,7 @@ The system SHALL preserve the strictly detected terminal application, active pro
 - **AND** switch does not execute a command in the existing selected tab or emit a directory directive
 - **AND** post-create flows reject before managed-ignore reconciliation, worktree creation, or hooks
 - **AND** human guidance says the user can press Command-T, then run `arashi switch --cd` in the new tab when shell integration is active
-- **AND** human guidance identifies `arashi switch --no-cd --no-default-launch` as the launch-forcing alternative and promises a new Terminal window only when automatic launcher resolution selects Terminal.app
+- **AND** human guidance identifies `arashi switch --launch --ignore-configured-launcher` as the launch-forcing alternative and promises a new Terminal window only when automatic launcher resolution selects Terminal.app
 
 #### Scenario: Terminal.app opens a new window by default
 

@@ -94,9 +94,22 @@ jobs:
       - name: Check focused tab launch-disposition documentation semantics
         working-directory: meta
         run: pnpm --dir repos/arashi-docs validate:tab-launch-docs
+      - name: Check focused CLI option documentation semantics
+        working-directory: meta
+        run: pnpm --dir repos/arashi-docs validate:cli-option-docs
       - name: Check focused packaged-skill tab launch-disposition semantics
         working-directory: meta
         run: node repos/arashi-skills/scripts/tab-launch-disposition-guidance-selftest.mjs
+      - name: Check focused packaged-skill CLI option semantics
+        working-directory: meta
+        run: node repos/arashi-skills/scripts/cli-flag-rationalization-guidance-selftest.mjs
+      - name: Check release-shaped packaged-skill CLI option semantics
+        working-directory: meta
+        run: |
+          tar -czf arashi-skill-package.tar.gz -C repos/arashi-skills skills/
+          mkdir package-check
+          tar -xzf arashi-skill-package.tar.gz -C package-check
+          node repos/arashi-skills/scripts/cli-flag-rationalization-guidance-selftest.mjs --skill-root package-check/skills/arashi
       - name: Check cross-repository contracts
         working-directory: meta
         run: pnpm contracts:check
