@@ -50,4 +50,4 @@
 - [x] 7.1 Run Arashi focused completion/shell/contract suites followed by format check, lint, typecheck, full tests, contract freshness, package inspection, and native plus cross-compiled standalone builds after the final CLI edit.
 - [x] 7.2 Run `pnpm validate` and completion-specific source/generated checks in `arashi-docs`, plus repository-local and extracted-package validation in `arashi-skills`, after their final edits.
 - [x] 7.3 Run meta formatting/diff checks, the focused completion contract suite, the complete command-contract suite, CI reachability self-tests, and strict `openspec validate add-shell-completions` after the final artifact edit.
-- [ ] 7.4 Open and cross-link the CLI, docs, skills, and meta PR set; verify each affected PR head and complete CI/review surfaces, with child PRs ready to merge before final OpenSpec archive and meta closeout.
+- [x] 7.4 Open and cross-link the CLI, docs, skills, and meta PR set; verify each affected PR head and complete CI/review surfaces, with child PRs ready to merge before final OpenSpec archive and meta closeout.
