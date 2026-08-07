@@ -26,4 +26,4 @@
 
 - [x] 5.1 Add focused failing tests for primary and secondary HTTP 429 responses, secondary 403/429 responses identified only by the JSON error message, and generic 429 responses remaining fail-closed.
 - [x] 5.2 Expand the typed classifier to preserve the actual 403/429 status and inspect the documented secondary-limit error message without broadening generic-error fallback behavior.
-- [ ] 5.3 Rerun focused and complete validation, update both PRs and issue scope, then reply to and resolve the handled Codex thread only after exact-head CI is green.
+- [x] 5.3 Rerun focused and complete validation, update both PRs and issue scope, then reply to and resolve the handled Codex thread only after exact-head CI is green.
