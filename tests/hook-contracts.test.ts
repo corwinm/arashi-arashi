@@ -8,47 +8,54 @@ import {
 } from "../scripts/hook-contracts.ts";
 
 const roots: string[] = [];
-const hookInputSemantics = (distinctFrom: string[]) => ({
-  option: "--no-hook-input",
-  invocationOnly: true,
-  persisted: false,
-  disablesHooks: false,
-  distinctFrom,
-  modes: ["tty", "disabled", "unavailable"],
-  precedence: ["json", "no-hook-input", "tty", "unavailable"],
-  stdin: {
-    tty: "inherit",
-    disabled: "immediate-eof",
-    unavailable: "immediate-eof",
+const hookInputSemanticPolicy = () => ({
+  hookInput: {
+    disabledMode: "disabled",
+    immediateEof: true,
+    jsonPrecedence: true,
+    modes: ["tty", "disabled", "unavailable"],
+    skipsHooks: false,
   },
-  nativeShells: ["bash", "powershell", "cmd"],
-  publicOutcomeSchema: "unchanged",
+  ownership: "command",
+  persisted: false,
 });
 const commandContract: {
   schemaVersion: number;
+  root: { name: string };
   commands: Array<{
     path: string;
-    options: Array<{ long: string }>;
-    semantics: { hookInput?: ReturnType<typeof hookInputSemantics> };
+    options: Array<{
+      long: string;
+      semanticPolicy?: ReturnType<typeof hookInputSemanticPolicy>;
+    }>;
+    semantics: Record<string, never>;
   }>;
 } = {
-  schemaVersion: 4,
+  schemaVersion: 6,
+  root: { name: "arashi" },
   commands: [
     {
       path: "create",
       options: [
-        { long: "--no-hook-input" },
+        {
+          long: "--no-hook-input",
+          semanticPolicy: hookInputSemanticPolicy(),
+        },
         { long: "--no-hooks" },
         { long: "--interactive" },
       ],
-      semantics: {
-        hookInput: hookInputSemantics(["--no-hooks", "--interactive"]),
-      },
+      semantics: {},
     },
     {
       path: "remove",
-      options: [{ long: "--no-hook-input" }, { long: "--no-hooks" }],
-      semantics: { hookInput: hookInputSemantics(["--no-hooks"]) },
+      options: [
+        {
+          long: "--no-hook-input",
+          semanticPolicy: hookInputSemanticPolicy(),
+        },
+        { long: "--no-hooks" },
+      ],
+      semantics: {},
     },
     { path: "status", options: [], semantics: {} },
   ],
@@ -56,12 +63,31 @@ const commandContract: {
 const hookInputGuidance = `
 --no-hook-input is invocation-only and distinct from --no-hooks and create --interactive.
 ARASHI_HOOK_INPUT uses exactly tty, disabled, or unavailable.
---json takes precedence and disabled or unavailable input receives immediate EOF.
+TTY mode inherits terminal stdin. --json takes precedence and disabled or unavailable input receives immediate EOF.
 Native examples use Bash read, PowerShell Read-Host, and cmd set /p.
 Lifecycle hooks are trusted executables, but do not enter passwords, tokens, or other secrets into prompts.
 `;
-const files = {
+const files: Record<string, string> = {
   "repos/arashi/contracts/cli-commands.json": JSON.stringify(commandContract),
+  "repos/arashi/schema/config.schema.json": JSON.stringify({
+    $ref: "#/definitions/Config",
+    definitions: {
+      Config: {
+        additionalProperties: false,
+        properties: {
+          hooks: {
+            additionalProperties: false,
+            properties: { timeout: { type: "number" } },
+            type: "object",
+          },
+          repos: { type: "object" },
+          reposDir: { type: "string" },
+          version: { type: "string" },
+        },
+        type: "object",
+      },
+    },
+  }),
   "repos/arashi/src/lib/hooks.ts": `export interface LifecycleHookOutcome { hookName: string; scope: HookScope; workspaceMode: "configured" | "standalone"; hookStatus: HookOutcomeStatus; reasonCode: HookOutcomeReasonCode; message: string; repositoryId: string; sourceScriptPath: string | null; executionPath: string | null; targetRepositoryName: string | null; targetRepositoryPath: string | null; targetWorktreePath: string | null; durationMs?: number; }`,
   "repos/arashi/src/commands/init.ts": `ARASHI_BRANCH_NAME ARASHI_REMOVE_TARGETS_JSON corepack pnpm --ignore-workspace install --frozen-lockfile ${hookInputGuidance}`,
   "repos/arashi/docs/hooks.md": `ARASHI_BRANCH_NAME ARASHI_REMOVE_TARGETS_JSON 300000 .ps1 .cmd .bat supported throughout 1.x ${hookInputGuidance}`,
@@ -76,13 +102,25 @@ path: meta/repos/arashi-presentation
 path: meta/repos/arashi-vscode
 pnpm contracts:hooks
 `,
-  "repos/arashi/.github/workflows/ci.yml": `
-hook-input-wrapper-acceptance:
-  runs-on: ubuntu-latest
-  run: pnpm exec vitest run tests/integration/hook-input-wrapper.test.ts
-hook-input-native-acceptance:
-  runs-on: windows-latest
-  run: pwsh -File tests/windows/hook-input-native.ps1
+  "repos/arashi/.github/workflows/ci.yml": `name: CI
+jobs:
+  hook-input-wrapper-acceptance:
+    runs-on: ubuntu-latest
+    steps:
+      - run: pnpm exec vitest run tests/integration/hook-input-wrapper.test.ts
+  hook-input-native-acceptance:
+    runs-on: windows-latest
+    steps:
+      - run: pwsh -File tests/windows/hook-input-native.ps1
+`,
+  "repos/arashi/tests/integration/hook-input-wrapper.test.ts": `
+const wrappers = ["bin/arashi", "bin/arashi.js", "bin/arashi.ps1", "bin/arashi.bat"];
+test("installed package wrappers preserve eligible hook input", () => wrappers);
+`,
+  "repos/arashi/tests/windows/hook-input-native.ps1": `
+$Binary = "bin/arashi-windows-x64.exe"
+# Native fixtures exercise PowerShell Read-Host and cmd set /p through the built CLI.
+# They also prove disabled and unavailable modes receive immediate EOF.
 `,
   ".arashi/hooks/post-create.arashi.sh": `set -euo pipefail\nCI=true corepack pnpm install --frozen-lockfile`,
   ".arashi/hooks/post-create.arashi-docs.sh": `set -euo pipefail\nCI=true corepack pnpm install --frozen-lockfile`,
@@ -256,15 +294,32 @@ path: meta/repos/arashi-vscode
       "persisted",
       "HOOK_INPUT_POLICY_INVALID",
     ],
+    [
+      "hook execution distinction",
+      "remove",
+      "skips-hooks",
+      "HOOK_INPUT_POLICY_INVALID",
+    ],
+    [
+      "interactive selection distinction",
+      "create",
+      "interactive",
+      "HOOK_INPUT_POLICY_INVALID",
+    ],
     ["mode vocabulary", "remove", "modes", "HOOK_INPUT_MODES_INVALID"],
     ["JSON precedence", "create", "precedence", "HOOK_INPUT_JSON_PRECEDENCE"],
     ["immediate EOF", "remove", "stdin", "HOOK_INPUT_STDIN_INVALID"],
-    ["native shells", "create", "shells", "HOOK_INPUT_NATIVE_SHELLS_INVALID"],
     [
-      "public outcome stability",
+      "exact typed policy",
+      "create",
+      "extra-policy-field",
+      "HOOK_INPUT_POLICY_INVALID",
+    ],
+    [
+      "single option registration",
       "remove",
-      "outcome",
-      "HOOK_INPUT_PUBLIC_OUTCOME_CHANGED",
+      "duplicate-option",
+      "HOOK_INPUT_OPTION_OWNERSHIP",
     ],
   ])(
     "rejects a controlled %s mismatch",
@@ -275,17 +330,26 @@ path: meta/repos/arashi-vscode
       )!;
       if (mismatch === "owner")
         command.options.push({ long: "--no-hook-input" });
-      const semantics = command.semantics.hookInput;
-      if (mismatch === "persisted" && semantics) semantics.persisted = true;
-      if (mismatch === "modes" && semantics)
-        semantics.modes = ["tty", "disabled", "closed"];
-      if (mismatch === "precedence" && semantics)
-        semantics.precedence = ["no-hook-input", "json", "tty", "unavailable"];
-      if (mismatch === "stdin" && semantics) semantics.stdin.disabled = "pipe";
-      if (mismatch === "shells" && semantics)
-        semantics.nativeShells = ["bash", "powershell"];
-      if (mismatch === "outcome" && semantics)
-        semantics.publicOutcomeSchema = "adds-captured-output";
+      if (mismatch === "interactive")
+        command.options = command.options.filter(
+          (option) => option.long !== "--interactive",
+        );
+      const option = command.options.find(
+        (candidate) => candidate.long === "--no-hook-input",
+      );
+      const policy = option?.semanticPolicy;
+      if (mismatch === "persisted" && policy) policy.persisted = true;
+      if (mismatch === "skips-hooks" && policy)
+        policy.hookInput.skipsHooks = true;
+      if (mismatch === "modes" && policy)
+        policy.hookInput.modes = ["tty", "disabled", "closed"];
+      if (mismatch === "precedence" && policy)
+        policy.hookInput.jsonPrecedence = false;
+      if (mismatch === "stdin" && policy) policy.hookInput.immediateEof = false;
+      if (mismatch === "extra-policy-field" && policy)
+        Object.assign(policy, { configurable: true });
+      if (mismatch === "duplicate-option" && option)
+        command.options.push(structuredClone(option));
       const root = await fixture({
         "repos/arashi/contracts/cli-commands.json": JSON.stringify(contract),
       });
@@ -295,6 +359,34 @@ path: meta/repos/arashi-vscode
       );
     },
   );
+
+  test("rejects guidance without native shell coverage", async () => {
+    const source = "repos/arashi-docs/docs/workflows/hooks.md";
+    const root = await fixture({
+      [source]: files[source].replace("cmd set /p", "cmd input"),
+    });
+    const result = await checkHookContracts(root);
+    expect(result.diagnostics).toContainEqual(
+      expect.objectContaining({
+        code: "HOOK_INPUT_NATIVE_GUIDANCE_MISSING",
+        source,
+      }),
+    );
+  });
+
+  test("rejects guidance that omits inherited TTY stdin from the availability matrix", async () => {
+    const source = "repos/arashi/docs/hooks.md";
+    const root = await fixture({
+      [source]: files[source].replace("TTY mode inherits terminal stdin. ", ""),
+    });
+    const result = await checkHookContracts(root);
+    expect(result.diagnostics).toContainEqual(
+      expect.objectContaining({
+        code: "HOOK_INPUT_GUIDANCE_STDIN_MATRIX_MISSING",
+        source,
+      }),
+    );
+  });
 
   test("rejects guidance without the no-secrets warning", async () => {
     const source = "repos/arashi-skills/skills/arashi/references/hooks.md";
@@ -323,6 +415,112 @@ path: meta/repos/arashi-vscode
       expect.objectContaining({
         code: "HOOK_INPUT_PUBLIC_OUTCOME_FIELDS_CHANGED",
       }),
+    );
+  });
+
+  test("rejects any added public lifecycle outcome field", async () => {
+    const source = "repos/arashi/src/lib/hooks.ts";
+    const root = await fixture({
+      [source]: files[source].replace(
+        "durationMs?: number;",
+        "durationMs?: number; answers?: string[];",
+      ),
+    });
+    const result = await checkHookContracts(root);
+    expect(result.diagnostics).toContainEqual(
+      expect.objectContaining({
+        code: "HOOK_INPUT_PUBLIC_OUTCOME_FIELDS_CHANGED",
+        source,
+      }),
+    );
+  });
+
+  test.each([
+    [
+      "generated schema",
+      "repos/arashi/schema/config.schema.json",
+      JSON.stringify({
+        definitions: {
+          Config: {
+            properties: {
+              hooks: { properties: { input: { enum: ["auto", "never"] } } },
+            },
+          },
+        },
+      }),
+    ],
+    [
+      "dogfood configuration",
+      ".arashi/config.json",
+      JSON.stringify({ hooks: { input: "auto", timeout: 300000 } }),
+    ],
+  ])("rejects persistent hooks.input in %s", async (_name, source, content) => {
+    const root = await fixture({ [source]: content });
+    const result = await checkHookContracts(root);
+    expect(result.diagnostics).toContainEqual(
+      expect.objectContaining({
+        code: "HOOK_INPUT_PERSISTENT_CONFIG_PUBLISHED",
+        source,
+      }),
+    );
+  });
+
+  test.each([
+    [
+      "PowerShell native input",
+      "repos/arashi/tests/windows/hook-input-native.ps1",
+      "PowerShell Read-Host",
+      "PowerShell input",
+      "HOOK_INPUT_WINDOWS_POWERSHELL_ACCEPTANCE_MISSING",
+    ],
+    [
+      "cmd native input",
+      "repos/arashi/tests/windows/hook-input-native.ps1",
+      "cmd set /p",
+      "cmd input",
+      "HOOK_INPUT_WINDOWS_CMD_ACCEPTANCE_MISSING",
+    ],
+    [
+      "PowerShell package wrapper",
+      "repos/arashi/tests/integration/hook-input-wrapper.test.ts",
+      "bin/arashi.ps1",
+      "bin/arashi",
+      "HOOK_INPUT_WRAPPER_SURFACE_MISSING",
+    ],
+  ])(
+    "rejects acceptance coverage without %s",
+    async (_name, source, required, replacement, code) => {
+      const root = await fixture({
+        [source]: files[source].replace(required, replacement),
+      });
+      const result = await checkHookContracts(root);
+      expect(result.diagnostics).toContainEqual(
+        expect.objectContaining({ code, source }),
+      );
+    },
+  );
+
+  test("rejects workflow tokens that are not reachable in the same platform job", async () => {
+    const source = "repos/arashi/.github/workflows/ci.yml";
+    const root = await fixture({
+      [source]: `name: CI
+jobs:
+  wrappers:
+    runs-on: windows-latest
+    steps:
+      - run: pnpm exec vitest run tests/integration/hook-input-wrapper.test.ts
+  native:
+    runs-on: ubuntu-latest
+    steps:
+      - run: pwsh -File tests/windows/hook-input-native.ps1
+`,
+    });
+    const result = await checkHookContracts(root);
+    expect(result.diagnostics.map(({ code }) => code)).toEqual(
+      expect.arrayContaining([
+        "HOOK_INPUT_WRAPPER_ACCEPTANCE_UNREACHABLE",
+        "HOOK_INPUT_WINDOWS_ACCEPTANCE_UNREACHABLE",
+      ]),
     );
   });
 
