@@ -571,6 +571,37 @@ jobs:
     },
   );
 
+  test("rejects packaged skill prerequisites isolated in a different workflow job", async () => {
+    const workflow =
+      files[".github/workflows/cross-repo-command-contracts.yml"];
+    const prerequisiteBlock = `      - run: |
+          tar -czf arashi-skill-package.tar.gz -C repos/arashi-skills skills/
+          mkdir package-check
+          tar -xzf arashi-skill-package.tar.gz -C package-check
+`;
+    const root = await fixture({
+      ".github/workflows/cross-repo-command-contracts.yml": workflow
+        .replace(prerequisiteBlock, "")
+        .replace(
+          "jobs:\n",
+          `jobs:
+  package-producer:
+    steps:
+${prerequisiteBlock}`,
+        ),
+    });
+
+    expect(
+      (await checkHookContracts(root)).diagnostics.map(({ code }) => code),
+    ).toEqual(
+      expect.arrayContaining([
+        "HOOK_INPUT_SKILLS_ARCHIVE_CREATION_UNREACHABLE",
+        "HOOK_INPUT_SKILLS_PACKAGE_DESTINATION_UNREACHABLE",
+        "HOOK_INPUT_SKILLS_PACKAGE_EXTRACTION_UNREACHABLE",
+      ]),
+    );
+  });
+
   test.each([
     [
       "docs source checker",

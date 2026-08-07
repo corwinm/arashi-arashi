@@ -271,8 +271,14 @@ export async function checkHookContracts(
 
   const packagedSkillCheck =
     "node repos/arashi-skills/scripts/lifecycle-hook-guidance-selftest.mjs --skill-root package-check/skills/arashi";
-  const workflowCommands = workflowCommandLines(workflowRuns);
-  const packagedSkillCheckIndex = workflowCommands.indexOf(packagedSkillCheck);
+  const packagedSkillJobRuns = workflowJobBlocks(workflowContent)
+    .map((job) => workflowRunSteps(`jobs:\n${job}`))
+    .find((runs) => directlyRuns(runs, packagedSkillCheck));
+  const packagedSkillCommands = workflowCommandLines(
+    packagedSkillJobRuns ?? [],
+  );
+  const packagedSkillCheckIndex =
+    packagedSkillCommands.indexOf(packagedSkillCheck);
   for (const prerequisite of [
     {
       code: "HOOK_INPUT_SKILLS_ARCHIVE_CREATION_UNREACHABLE",
@@ -294,7 +300,9 @@ export async function checkHookContracts(
         "The authoritative workflow must extract the release-shaped skill archive before packaged lifecycle-hook validation.",
     },
   ]) {
-    const prerequisiteIndex = workflowCommands.indexOf(prerequisite.command);
+    const prerequisiteIndex = packagedSkillCommands.indexOf(
+      prerequisite.command,
+    );
     if (
       prerequisiteIndex < 0 ||
       packagedSkillCheckIndex < 0 ||
