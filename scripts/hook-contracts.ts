@@ -52,6 +52,31 @@ export async function checkHookContracts(
   root: string,
 ): Promise<HookContractResult> {
   const diagnostics: HookContractDiagnostic[] = [];
+  const workflowSource = ".github/workflows/cross-repo-command-contracts.yml";
+  let workflowContent = "";
+  try {
+    workflowContent = await readFile(join(root, workflowSource), "utf8");
+  } catch (error) {
+    addMetaDiagnostic(
+      diagnostics,
+      "HOOK_DOGFOOD_WORKFLOW_MISSING",
+      workflowSource,
+      error instanceof Error ? error.message : String(error),
+    );
+  }
+  for (const hookSource of dogfoodPostCreateHooks) {
+    const repository = hookSource
+      .replace(".arashi/hooks/post-create.", "")
+      .replace(".sh", "");
+    if (!workflowContent.includes(`path: meta/repos/${repository}`)) {
+      addMetaDiagnostic(
+        diagnostics,
+        "HOOK_DOGFOOD_REPOSITORY_UNAVAILABLE",
+        workflowSource,
+        `Check out ${repository} so its local pnpm workspace policy is available to the contract checker.`,
+      );
+    }
+  }
 
   for (const surface of surfaces) {
     let content: string;

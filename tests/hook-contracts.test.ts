@@ -15,6 +15,12 @@ const files = {
   "repos/arashi-docs/public/llms-full.txt": `ARASHI_BRANCH_NAME ARASHI_REMOVE_TARGETS_JSON 300000 .ps1 .cmd .bat supported throughout 1.x`,
   "repos/arashi-skills/skills/arashi/references/hooks.md": `ARASHI_BRANCH_NAME ARASHI_REMOVE_TARGETS_JSON 300000 .ps1 .cmd .bat supported throughout 1.x`,
   ".arashi/config.json": JSON.stringify({ hooks: { timeout: 300000 } }),
+  ".github/workflows/cross-repo-command-contracts.yml": `
+path: meta/repos/arashi
+path: meta/repos/arashi-docs
+path: meta/repos/arashi-presentation
+path: meta/repos/arashi-vscode
+`,
   ".arashi/hooks/post-create.arashi.sh": `set -euo pipefail\nCI=true corepack pnpm install --frozen-lockfile`,
   ".arashi/hooks/post-create.arashi-docs.sh": `set -euo pipefail\nCI=true corepack pnpm install --frozen-lockfile`,
   ".arashi/hooks/post-create.arashi-presentation.sh": `set -euo pipefail\nCI=true corepack pnpm install --frozen-lockfile`,
@@ -126,6 +132,23 @@ describe("cross-repository lifecycle-hook contract", () => {
       expect.objectContaining({
         code: "HOOK_DOGFOOD_BUILD_POLICY_IGNORED",
         source: ".arashi/hooks/post-create.arashi.sh",
+      }),
+    );
+  });
+
+  test("rejects CI that omits a dogfood hook repository", async () => {
+    const root = await fixture({
+      ".github/workflows/cross-repo-command-contracts.yml": `
+path: meta/repos/arashi
+path: meta/repos/arashi-docs
+path: meta/repos/arashi-vscode
+`,
+    });
+    const result = await checkHookContracts(root);
+    expect(result.diagnostics).toContainEqual(
+      expect.objectContaining({
+        code: "HOOK_DOGFOOD_REPOSITORY_UNAVAILABLE",
+        source: ".github/workflows/cross-repo-command-contracts.yml",
       }),
     );
   });
