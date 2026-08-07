@@ -20,4 +20,4 @@
 - [x] 4.2 Run format check, lint, typecheck, full test suite, build, and `git diff --check` in the Arashi CLI repository.
 - [x] 4.3 Review companion documentation and generated CLI contract surfaces, updating only those whose maintained behavior contract requires it.
 - [x] 4.4 Validate the OpenSpec change and reconcile implementation evidence in this checklist.
-- [ ] 4.5 Open and cross-link the Arashi CLI implementation PR and meta/OpenSpec PR, then verify exact-head CI and review gates.
+- [x] 4.5 Open and cross-link the Arashi CLI implementation PR and meta/OpenSpec PR, then verify exact-head CI and review gates.
