@@ -5,6 +5,7 @@ on:
     paths:
       - "scripts/**"
       - "tests/**"
+      - ".arashi/hooks/**"
       - "package.json"
       - "pnpm-lock.yaml"
       - "tsconfig.json"
@@ -49,6 +50,12 @@ jobs:
           repository: corwinm/arashi-vscode
           ref: main
           path: meta/repos/arashi-vscode
+      - name: Check out Arashi presentation
+        uses: actions/checkout@v7
+        with:
+          repository: corwinm/arashi-presentation
+          ref: main
+          path: meta/repos/arashi-presentation
       - name: Use matching coordinated child branches when available
         shell: bash
         run: |
@@ -56,7 +63,7 @@ jobs:
           if [ -z "${GITHUB_HEAD_REF:-}" ]; then
             exit 0
           fi
-          for repo in arashi arashi-docs arashi-skills arashi-vscode; do
+          for repo in arashi arashi-docs arashi-skills arashi-vscode arashi-presentation; do
             if git -C "meta/repos/$repo" ls-remote --exit-code --heads origin "refs/heads/$GITHUB_HEAD_REF" >/dev/null 2>&1; then
               git -C "meta/repos/$repo" fetch --depth=1 origin "refs/heads/$GITHUB_HEAD_REF"
               git -C "meta/repos/$repo" checkout --detach FETCH_HEAD
@@ -73,7 +80,7 @@ jobs:
       - name: Report revisions
         working-directory: meta
         run: |
-          for repo in arashi arashi-docs arashi-skills arashi-vscode; do
+          for repo in arashi arashi-docs arashi-skills arashi-vscode arashi-presentation; do
             printf '%s: ' "$repo"
             git -C "repos/$repo" rev-parse HEAD
           done
