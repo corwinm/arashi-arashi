@@ -21,3 +21,9 @@
 - [x] 4.3 Review companion documentation and generated CLI contract surfaces, updating only those whose maintained behavior contract requires it.
 - [x] 4.4 Validate the OpenSpec change and reconcile implementation evidence in this checklist.
 - [x] 4.5 Open and cross-link the Arashi CLI implementation PR and meta/OpenSpec PR, then verify exact-head CI and review gates.
+
+## 5. Documented GitHub rate-limit coverage
+
+- [x] 5.1 Add focused failing tests for primary and secondary HTTP 429 responses, secondary 403/429 responses identified only by the JSON error message, and generic 429 responses remaining fail-closed.
+- [x] 5.2 Expand the typed classifier to preserve the actual 403/429 status and inspect the documented secondary-limit error message without broadening generic-error fallback behavior.
+- [ ] 5.3 Rerun focused and complete validation, update both PRs and issue scope, then reply to and resolve the handled Codex thread only after exact-head CI is green.

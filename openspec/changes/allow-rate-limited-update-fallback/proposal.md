@@ -1,14 +1,14 @@
 ## Why
 
-Direct-binary `arashi update` currently aborts when GitHub's latest-release API returns a rate-limited HTTP 403, even though the official installers can still target GitHub's unversioned latest-release download URLs. Users should be able to make an informed, explicitly confirmed attempt instead of being blocked by an availability check that cannot complete.
+Direct-binary `arashi update` currently aborts when GitHub's latest-release API returns a rate-limit response, even though the official installers can still target GitHub's unversioned latest-release download URLs. Users should be able to make an informed, explicitly confirmed attempt instead of being blocked by an availability check that cannot complete.
 
 ## What Changes
 
-- Classify a GitHub HTTP 403 as rate limiting only when response metadata indicates primary or secondary rate limiting.
+- Classify GitHub's documented HTTP 403 and 429 rate-limit responses only when headers or the response error message identify primary or secondary rate limiting.
 - Explain that the latest version could not be verified and offer direct-binary users an interactive fallback that runs the official installer against the latest release without a pinned version.
 - Treat `--yes` as approval for the same fallback without prompting.
 - Preserve non-mutation for declined/cancelled prompts, non-interactive invocations without `--yes`, `--check`, `--dry-run`, and `--json`.
-- Preserve existing failure behavior for generic 403 responses and unrelated release-check failures.
+- Preserve existing failure behavior for generic 403/429 responses and unrelated release-check failures.
 - Preserve the existing version-pinned installer path whenever the release check succeeds.
 
 ## Capabilities
