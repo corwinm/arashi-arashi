@@ -100,7 +100,13 @@ path: meta/repos/arashi
 path: meta/repos/arashi-docs
 path: meta/repos/arashi-presentation
 path: meta/repos/arashi-vscode
-pnpm contracts:hooks
+jobs:
+  contracts:
+    steps:
+      - run: pnpm contracts:hooks
+      - run: pnpm --dir repos/arashi-docs validate:lifecycle-hook-docs
+      - run: node repos/arashi-skills/scripts/lifecycle-hook-guidance-selftest.mjs
+      - run: node repos/arashi-skills/scripts/lifecycle-hook-guidance-selftest.mjs --skill-root package-check/skills/arashi
 `,
   "repos/arashi/.github/workflows/ci.yml": `name: CI
 jobs:
@@ -521,6 +527,37 @@ jobs:
         "HOOK_INPUT_WRAPPER_ACCEPTANCE_UNREACHABLE",
         "HOOK_INPUT_WINDOWS_ACCEPTANCE_UNREACHABLE",
       ]),
+    );
+  });
+
+  test.each([
+    [
+      "docs source checker",
+      "pnpm --dir repos/arashi-docs validate:lifecycle-hook-docs",
+      "HOOK_INPUT_DOCS_CHECK_UNREACHABLE",
+    ],
+    [
+      "skills source checker",
+      "node repos/arashi-skills/scripts/lifecycle-hook-guidance-selftest.mjs",
+      "HOOK_INPUT_SKILLS_SOURCE_CHECK_UNREACHABLE",
+    ],
+    [
+      "skills extracted-package checker",
+      "node repos/arashi-skills/scripts/lifecycle-hook-guidance-selftest.mjs --skill-root package-check/skills/arashi",
+      "HOOK_INPUT_SKILLS_PACKAGE_CHECK_UNREACHABLE",
+    ],
+  ])("rejects missing %s reachability", async (_label, command, code) => {
+    const root = await fixture({
+      ".github/workflows/cross-repo-command-contracts.yml": files[
+        ".github/workflows/cross-repo-command-contracts.yml"
+      ].replace(`${command}\n`, ""),
+    });
+
+    expect((await checkHookContracts(root)).diagnostics).toContainEqual(
+      expect.objectContaining({
+        code,
+        source: ".github/workflows/cross-repo-command-contracts.yml",
+      }),
     );
   });
 

@@ -110,6 +110,9 @@ jobs:
       - name: Type-check checker
         working-directory: meta
         run: pnpm typecheck
+      - name: Check focused lifecycle-hook documentation semantics
+        working-directory: meta
+        run: pnpm --dir repos/arashi-docs validate:lifecycle-hook-docs
       - name: Check focused tab launch-disposition documentation semantics
         working-directory: meta
         run: pnpm --dir repos/arashi-docs validate:tab-launch-docs
@@ -119,6 +122,9 @@ jobs:
       - name: Check focused shell-completion documentation semantics
         working-directory: meta
         run: pnpm --dir repos/arashi-docs validate:shell-completion-docs
+      - name: Check focused packaged-skill lifecycle-hook semantics
+        working-directory: meta
+        run: node repos/arashi-skills/scripts/lifecycle-hook-guidance-selftest.mjs
       - name: Check focused packaged-skill tab launch-disposition semantics
         working-directory: meta
         run: node repos/arashi-skills/scripts/tab-launch-disposition-guidance-selftest.mjs
@@ -128,12 +134,13 @@ jobs:
       - name: Check focused packaged-skill shell-completion semantics
         working-directory: meta
         run: node repos/arashi-skills/scripts/shell-completion-guidance-selftest.mjs --meta-root .
-      - name: Check release-shaped packaged-skill CLI option semantics
+      - name: Check release-shaped packaged-skill semantics
         working-directory: meta
         run: |
           tar -czf arashi-skill-package.tar.gz -C repos/arashi-skills skills/
           mkdir package-check
           tar -xzf arashi-skill-package.tar.gz -C package-check
+          node repos/arashi-skills/scripts/lifecycle-hook-guidance-selftest.mjs --skill-root package-check/skills/arashi
           node repos/arashi-skills/scripts/cli-flag-rationalization-guidance-selftest.mjs --skill-root package-check/skills/arashi
           node repos/arashi-skills/scripts/shell-completion-guidance-selftest.mjs --skill-root package-check/skills/arashi
       - name: Check focused lifecycle-hook contracts

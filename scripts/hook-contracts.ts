@@ -79,6 +79,99 @@ const workflowJobBlocks = (content: string): string[] => {
   if (current) blocks.push(current.join("\n"));
   return blocks;
 };
+const workflowRunSteps = (workflow: string): string[] => {
+  const lines = workflow.split(/\r?\n/);
+  const runs: string[] = [];
+  let jobsIndent = -1;
+  let jobIndent = -1;
+  let stepsIndent = -1;
+  let stepIndent = -1;
+  for (let index = 0; index < lines.length; index += 1) {
+    const line = lines[index];
+    if (/^\s*(?:#.*)?$/.test(line)) continue;
+    const indent = line.match(/^\s*/)?.[0].length ?? 0;
+    if (/^\s*jobs:\s*(?:#.*)?$/.test(line)) {
+      jobsIndent = indent;
+      jobIndent = -1;
+      stepsIndent = -1;
+      stepIndent = -1;
+      continue;
+    }
+    if (jobsIndent < 0) continue;
+    if (indent <= jobsIndent) {
+      jobsIndent = -1;
+      continue;
+    }
+    if (jobIndent < 0 && /^\s*[A-Za-z0-9_-]+:\s*(?:#.*)?$/.test(line)) {
+      jobIndent = indent;
+      continue;
+    }
+    if (
+      jobIndent >= 0 &&
+      indent === jobIndent &&
+      /^\s*[A-Za-z0-9_-]+:/.test(line)
+    ) {
+      stepsIndent = -1;
+      stepIndent = -1;
+      continue;
+    }
+    if (jobIndent < 0 || indent <= jobIndent) continue;
+    if (/^\s*steps:\s*(?:#.*)?$/.test(line)) {
+      stepsIndent = indent;
+      stepIndent = -1;
+      continue;
+    }
+    if (stepsIndent < 0 || indent <= stepsIndent) continue;
+    const step = line.match(/^\s*-\s+(.*)$/);
+    if (step) {
+      if (stepIndent < 0) stepIndent = indent;
+      if (indent !== stepIndent) continue;
+      const directRun = step[1].match(/^run:\s*(.*)$/);
+      if (!directRun) continue;
+      const value = directRun[1].trim();
+      if (!["|", "|-", "|+", ">", ">-", ">+"].includes(value)) {
+        runs.push(value);
+        continue;
+      }
+      const block: string[] = [];
+      while (index + 1 < lines.length) {
+        const next = lines[index + 1];
+        const nextIndent = next.match(/^\s*/)?.[0].length ?? 0;
+        if (next.trim() && nextIndent <= indent) break;
+        index += 1;
+        if (next.trim()) block.push(next.trim());
+      }
+      runs.push(block.join("\n"));
+      continue;
+    }
+    if (stepIndent < 0 || indent !== stepIndent + 2) continue;
+    const field = line.match(/^\s*run:\s*(.*)$/);
+    if (!field) continue;
+    const value = field[1].trim();
+    if (!["|", "|-", "|+", ">", ">-", ">+"].includes(value)) {
+      runs.push(value);
+      continue;
+    }
+    const block: string[] = [];
+    while (index + 1 < lines.length) {
+      const next = lines[index + 1];
+      const nextIndent = next.match(/^\s*/)?.[0].length ?? 0;
+      if (next.trim() && nextIndent <= indent) break;
+      index += 1;
+      if (next.trim()) block.push(next.trim());
+    }
+    runs.push(block.join("\n"));
+  }
+  return runs;
+};
+const directlyRuns = (runs: string[], command: string): boolean =>
+  runs.some((run) =>
+    run
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .filter((line) => line.length > 0 && !line.startsWith("#"))
+      .some((line) => line === command),
+  );
 const dogfoodPostCreateHooks = [
   ".arashi/hooks/post-create.arashi.sh",
   ".arashi/hooks/post-create.arashi-docs.sh",
@@ -140,13 +233,39 @@ export async function checkHookContracts(
       );
     }
   }
-  if (!workflowContent.includes("pnpm contracts:hooks")) {
-    addMetaDiagnostic(
-      diagnostics,
-      "HOOK_INPUT_CHECKER_UNREACHABLE",
-      workflowSource,
-      "The authoritative workflow must execute the focused hook semantic checker.",
-    );
+  const workflowRuns = workflowRunSteps(workflowContent);
+  const requiredWorkflowChecks = [
+    {
+      code: "HOOK_INPUT_CHECKER_UNREACHABLE",
+      command: "pnpm contracts:hooks",
+      message:
+        "The authoritative workflow must execute the focused hook semantic checker.",
+    },
+    {
+      code: "HOOK_INPUT_DOCS_CHECK_UNREACHABLE",
+      command: "pnpm --dir repos/arashi-docs validate:lifecycle-hook-docs",
+      message:
+        "The authoritative workflow must execute the lifecycle-hook docs checker.",
+    },
+    {
+      code: "HOOK_INPUT_SKILLS_SOURCE_CHECK_UNREACHABLE",
+      command:
+        "node repos/arashi-skills/scripts/lifecycle-hook-guidance-selftest.mjs",
+      message:
+        "The authoritative workflow must check lifecycle-hook guidance in the source skill.",
+    },
+    {
+      code: "HOOK_INPUT_SKILLS_PACKAGE_CHECK_UNREACHABLE",
+      command:
+        "node repos/arashi-skills/scripts/lifecycle-hook-guidance-selftest.mjs --skill-root package-check/skills/arashi",
+      message:
+        "The authoritative workflow must check lifecycle-hook guidance in the extracted skill archive.",
+    },
+  ];
+  for (const check of requiredWorkflowChecks) {
+    if (!directlyRuns(workflowRuns, check.command)) {
+      addMetaDiagnostic(diagnostics, check.code, workflowSource, check.message);
+    }
   }
 
   const cliWorkflowSource = "repos/arashi/.github/workflows/ci.yml";
