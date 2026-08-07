@@ -166,24 +166,46 @@ export async function checkHookContracts(
         "Required setup must fail fast and must not mask failures.",
       );
     }
+    const repository = source
+      .replace(".arashi/hooks/post-create.", "")
+      .replace(".sh", "");
+    const workspacePolicySource = `repos/${repository}/pnpm-workspace.yaml`;
+    let hasTrustedBuildPolicy = false;
+    try {
+      const workspacePolicy = await readFile(
+        join(root, workspacePolicySource),
+        "utf8",
+      );
+      hasTrustedBuildPolicy = workspacePolicy.includes("allowBuilds:");
+    } catch {
+      // A child without a local workspace policy still needs ancestor isolation.
+    }
+    const isolatedInstall =
+      "corepack pnpm --ignore-workspace install --frozen-lockfile";
+    const childWorkspaceInstall = "corepack pnpm install --frozen-lockfile";
     if (
-      !content.includes(
-        "corepack pnpm --ignore-workspace install --frozen-lockfile",
-      )
+      !content.includes(isolatedInstall) &&
+      !(hasTrustedBuildPolicy && content.includes(childWorkspaceInstall))
     ) {
       addMetaDiagnostic(
         diagnostics,
         "HOOK_DOGFOOD_PACKAGE_PROVENANCE",
         source,
-        "Use the child-pinned ancestor-workspace-safe install command.",
+        "Use an ancestor-isolated install or a child-local workspace boundary with reviewed build policy.",
+      );
+    }
+    if (hasTrustedBuildPolicy && content.includes(isolatedInstall)) {
+      addMetaDiagnostic(
+        diagnostics,
+        "HOOK_DOGFOOD_BUILD_POLICY_IGNORED",
+        source,
+        `Do not ignore ${workspacePolicySource}; it defines the child's trusted dependency builds.`,
       );
     }
     if (
       source === ".arashi/hooks/post-create.arashi-presentation.sh" &&
       content.includes("--config.strict-dep-builds=false") &&
-      !content.includes(
-        "corepack pnpm --ignore-workspace exec playwright install chromium",
-      )
+      !content.includes("corepack pnpm exec playwright install chromium")
     ) {
       addMetaDiagnostic(
         diagnostics,
