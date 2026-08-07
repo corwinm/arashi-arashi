@@ -602,6 +602,27 @@ ${prerequisiteBlock}`,
     );
   });
 
+  test("rejects packaged skill prerequisites in an unusable order", async () => {
+    const workflow =
+      files[".github/workflows/cross-repo-command-contracts.yml"];
+    const root = await fixture({
+      ".github/workflows/cross-repo-command-contracts.yml": workflow.replace(
+        `          tar -czf arashi-skill-package.tar.gz -C repos/arashi-skills skills/
+          mkdir package-check
+          tar -xzf arashi-skill-package.tar.gz -C package-check`,
+        `          tar -xzf arashi-skill-package.tar.gz -C package-check
+          mkdir package-check
+          tar -czf arashi-skill-package.tar.gz -C repos/arashi-skills skills/`,
+      ),
+    });
+
+    expect((await checkHookContracts(root)).diagnostics).toContainEqual(
+      expect.objectContaining({
+        code: "HOOK_INPUT_SKILLS_PACKAGE_PREREQUISITE_ORDER_INVALID",
+      }),
+    );
+  });
+
   test.each([
     [
       "docs source checker",

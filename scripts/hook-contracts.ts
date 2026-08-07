@@ -279,7 +279,7 @@ export async function checkHookContracts(
   );
   const packagedSkillCheckIndex =
     packagedSkillCommands.indexOf(packagedSkillCheck);
-  for (const prerequisite of [
+  const packagedSkillPrerequisites = [
     {
       code: "HOOK_INPUT_SKILLS_ARCHIVE_CREATION_UNREACHABLE",
       command:
@@ -299,7 +299,8 @@ export async function checkHookContracts(
       message:
         "The authoritative workflow must extract the release-shaped skill archive before packaged lifecycle-hook validation.",
     },
-  ]) {
+  ];
+  for (const prerequisite of packagedSkillPrerequisites) {
     const prerequisiteIndex = packagedSkillCommands.indexOf(
       prerequisite.command,
     );
@@ -315,6 +316,24 @@ export async function checkHookContracts(
         prerequisite.message,
       );
     }
+  }
+  const packagedSkillSequence = [
+    ...packagedSkillPrerequisites.map(({ command }) => command),
+    packagedSkillCheck,
+  ].map((command) => packagedSkillCommands.indexOf(command));
+  if (
+    packagedSkillSequence.every((index) => index >= 0) &&
+    packagedSkillSequence.some(
+      (index, position) =>
+        position > 0 && index <= packagedSkillSequence[position - 1],
+    )
+  ) {
+    addMetaDiagnostic(
+      diagnostics,
+      "HOOK_INPUT_SKILLS_PACKAGE_PREREQUISITE_ORDER_INVALID",
+      workflowSource,
+      "The authoritative workflow must create the release-shaped archive, create its destination, extract it, and then validate the extracted package in that order within one job.",
+    );
   }
 
   const cliWorkflowSource = "repos/arashi/.github/workflows/ci.yml";
