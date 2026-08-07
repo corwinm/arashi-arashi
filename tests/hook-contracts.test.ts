@@ -106,7 +106,11 @@ jobs:
       - run: pnpm contracts:hooks
       - run: pnpm --dir repos/arashi-docs validate:lifecycle-hook-docs
       - run: node repos/arashi-skills/scripts/lifecycle-hook-guidance-selftest.mjs
-      - run: node repos/arashi-skills/scripts/lifecycle-hook-guidance-selftest.mjs --skill-root package-check/skills/arashi
+      - run: |
+          tar -czf arashi-skill-package.tar.gz -C repos/arashi-skills skills/
+          mkdir package-check
+          tar -xzf arashi-skill-package.tar.gz -C package-check
+          node repos/arashi-skills/scripts/lifecycle-hook-guidance-selftest.mjs --skill-root package-check/skills/arashi
 `,
   "repos/arashi/.github/workflows/ci.yml": `name: CI
 jobs:
@@ -529,6 +533,43 @@ jobs:
       ]),
     );
   });
+
+  test.each([
+    [
+      "archive creation",
+      "tar -czf arashi-skill-package.tar.gz -C repos/arashi-skills skills/",
+      "HOOK_INPUT_SKILLS_ARCHIVE_CREATION_UNREACHABLE",
+    ],
+    [
+      "package-check destination creation",
+      "mkdir package-check",
+      "HOOK_INPUT_SKILLS_PACKAGE_DESTINATION_UNREACHABLE",
+    ],
+    [
+      "archive extraction",
+      "tar -xzf arashi-skill-package.tar.gz -C package-check",
+      "HOOK_INPUT_SKILLS_PACKAGE_EXTRACTION_UNREACHABLE",
+    ],
+  ])(
+    "rejects missing %s before packaged skill validation",
+    async (_label, command, code) => {
+      const workflow =
+        files[".github/workflows/cross-repo-command-contracts.yml"];
+      const root = await fixture({
+        ".github/workflows/cross-repo-command-contracts.yml": workflow.replace(
+          `${command}\n`,
+          "",
+        ),
+      });
+
+      expect((await checkHookContracts(root)).diagnostics).toContainEqual(
+        expect.objectContaining({
+          code,
+          source: ".github/workflows/cross-repo-command-contracts.yml",
+        }),
+      );
+    },
+  );
 
   test.each([
     [

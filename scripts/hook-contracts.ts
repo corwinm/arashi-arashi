@@ -164,14 +164,15 @@ const workflowRunSteps = (workflow: string): string[] => {
   }
   return runs;
 };
-const directlyRuns = (runs: string[], command: string): boolean =>
-  runs.some((run) =>
+const workflowCommandLines = (runs: string[]): string[] =>
+  runs.flatMap((run) =>
     run
       .split(/\r?\n/)
       .map((line) => line.trim())
-      .filter((line) => line.length > 0 && !line.startsWith("#"))
-      .some((line) => line === command),
+      .filter((line) => line.length > 0 && !line.startsWith("#")),
   );
+const directlyRuns = (runs: string[], command: string): boolean =>
+  workflowCommandLines(runs).includes(command);
 const dogfoodPostCreateHooks = [
   ".arashi/hooks/post-create.arashi.sh",
   ".arashi/hooks/post-create.arashi-docs.sh",
@@ -265,6 +266,46 @@ export async function checkHookContracts(
   for (const check of requiredWorkflowChecks) {
     if (!directlyRuns(workflowRuns, check.command)) {
       addMetaDiagnostic(diagnostics, check.code, workflowSource, check.message);
+    }
+  }
+
+  const packagedSkillCheck =
+    "node repos/arashi-skills/scripts/lifecycle-hook-guidance-selftest.mjs --skill-root package-check/skills/arashi";
+  const workflowCommands = workflowCommandLines(workflowRuns);
+  const packagedSkillCheckIndex = workflowCommands.indexOf(packagedSkillCheck);
+  for (const prerequisite of [
+    {
+      code: "HOOK_INPUT_SKILLS_ARCHIVE_CREATION_UNREACHABLE",
+      command:
+        "tar -czf arashi-skill-package.tar.gz -C repos/arashi-skills skills/",
+      message:
+        "The authoritative workflow must create the exact release-shaped skill archive before packaged lifecycle-hook validation.",
+    },
+    {
+      code: "HOOK_INPUT_SKILLS_PACKAGE_DESTINATION_UNREACHABLE",
+      command: "mkdir package-check",
+      message:
+        "The authoritative workflow must create the package-check extraction destination before packaged lifecycle-hook validation.",
+    },
+    {
+      code: "HOOK_INPUT_SKILLS_PACKAGE_EXTRACTION_UNREACHABLE",
+      command: "tar -xzf arashi-skill-package.tar.gz -C package-check",
+      message:
+        "The authoritative workflow must extract the release-shaped skill archive before packaged lifecycle-hook validation.",
+    },
+  ]) {
+    const prerequisiteIndex = workflowCommands.indexOf(prerequisite.command);
+    if (
+      prerequisiteIndex < 0 ||
+      packagedSkillCheckIndex < 0 ||
+      prerequisiteIndex >= packagedSkillCheckIndex
+    ) {
+      addMetaDiagnostic(
+        diagnostics,
+        prerequisite.code,
+        workflowSource,
+        prerequisite.message,
+      );
     }
   }
 
