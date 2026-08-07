@@ -3,7 +3,9 @@
 ## Purpose
 
 Define the canonical CLI-derived command contract and the deterministic checks that keep documentation, skills guidance, and VS Code command integrations aligned across Arashi repositories.
+
 ## Requirements
+
 ### Requirement: CLI-derived command contract
 
 The system SHALL derive canonical command paths and structural metadata from the same Commander program tree used for CLI execution, and SHALL supplement that structure with complete typed semantic metadata for companion-surface policy.
@@ -186,101 +188,172 @@ The system SHALL keep canonical CLI options, command help, user documentation, a
 - **THEN** meta-repository contract validation fails with a diagnostic identifying the owning source and mismatched tmux semantic
 
 ### Requirement: Kitty launch guidance remains synchronized across repositories
+
 The system SHALL keep canonical CLI behavior, maintained documentation, generated agent-readable guidance, and packaged Arashi skill guidance aligned for automatic managed Kitty sessions, and the meta-repository semantic checker SHALL enforce the key runtime and ownership boundaries.
 
 #### Scenario: Canonical Kitty guidance agrees
+
 - **WHEN** cross-repository contract validation runs
 - **THEN** canonical docs and packaged skill guidance agree that Kitty 0.43+ and permitted remote control are prerequisites
 - **AND** they describe exact worktree reuse, automatic precedence, live-only sessions, fail-closed managed errors, and no remove-time Kitty mutation consistently
 
 #### Scenario: Kitty remains auto-detected only
+
 - **WHEN** contract validation compares CLI options/configuration with companion guidance
 - **THEN** no canonical surface advertises an explicit `--kitty` flag or persistent `kitty` launch mode for this slice
 
 #### Scenario: Deliberate Kitty semantic drift fails validation
+
 - **WHEN** an out-of-repository fixture changes or removes one required Kitty version, remote-control, reuse, precedence, persistence, or remove-ownership semantic
 - **THEN** the checker exits unsuccessfully with a diagnostic naming the owning source and mismatched Kitty contract
 - **AND** the real coordinated worktrees remain unchanged
 
 ### Requirement: Publish launch-disposition option policy semantically
+
 The canonical CLI command contract SHALL publish typed `--tab` option policy for switch and create, and coordinated validation SHALL compare its normalized semantics with canonical docs, generated agent-readable exports, and packaged skill guidance rather than checking option presence alone.
 
 #### Scenario: Switch tab policy is generated
+
 - **WHEN** the CLI command contract is generated after registering `switch --tab`
 - **THEN** its option policy records non-persisted status, switch JSON mode and guard precedence, compatibility with `--no-cd`, `--no-default-launch`, and explicit launcher selectors, conflict with `--cd`, and launcher-matrix support resolution
 
 #### Scenario: Create tab policy is generated
+
 - **WHEN** the CLI command contract is generated after registering `create --tab`
 - **THEN** its option policy records non-persisted status, implication of launch and switch, compatibility and precedence with `--no-launch` and `--no-switch`, create JSON mode and guard precedence, dry-run preview behavior, and launcher-matrix support resolution
 
 #### Scenario: Configuration contracts remain unchanged
+
 - **WHEN** command and configuration contracts are validated together
 - **THEN** `--tab` exists only in command option policy
 - **AND** switch and create configuration contracts expose no persisted disposition field or `tab` mode
 
 #### Scenario: Command contract schema represents options without environment prerequisites
+
 - **WHEN** `--tab` semantic policy is serialized
 - **THEN** the command-contract schema version is incremented
 - **AND** the explicit-option policy shape allows an omitted environment prerequisite while preserving the existing non-empty environment contract for `--tmux`
 - **AND** no synthetic environment variable is assigned to `--tab`
 
 #### Scenario: Companion guidance agrees with canonical policy
+
 - **WHEN** the meta cross-repository checker validates launch-disposition guidance
 - **THEN** it compares the default disposition, CLI-only status, command-specific implications/conflicts, JSON restrictions, unsupported no-fallback behavior, and managed-equivalent vocabulary against the canonical command contract
 
 #### Scenario: Deliberate semantic mismatch is rejected
+
 - **WHEN** an out-of-repository fixture removes or contradicts one required `--tab` semantic field in docs or skills
 - **THEN** the focused checker exits unsuccessfully with an owning-source diagnostic
 - **AND** the real coordinated worktrees remain unchanged
 
 #### Scenario: Focused validation is reachable from CI
+
 - **WHEN** repository self-tests inspect the applicable workflow
 - **THEN** they confirm that CI invokes the focused launch-disposition checker rather than only an aggregate command that omits it
 
 ### Requirement: Command contracts publish normalized option conventions
+
 The canonical CLI command contract SHALL publish structural and typed semantic metadata for command-local aliases, selector input forms, canonical-to-compatibility mappings, deprecation state, conflicts, and implications introduced by CLI option rationalization.
 
 #### Scenario: Common aliases are generated
+
 - **WHEN** the command contract is generated
 - **THEN** every registered `--verbose`, `--force`, `--json`, `--only`, `--group`, and `--dry-run` option records the required command-local alias
 - **AND** validation rejects a missing, duplicate, stale, or conceptually conflicting alias
 
 #### Scenario: Switch policy is generated
+
 - **WHEN** switch option policy is generated
 - **THEN** it records canonical `--launch` and `--ignore-configured-launcher`, compatibility mappings from `--no-cd` and `--no-default-launch`, deprecation state, `--cd` conflicts, configured-launcher preservation/bypass, tab and explicit-launcher interactions, JSON guard precedence, and non-persisted status
 
 #### Scenario: Handoff compatibility policy is generated
+
 - **WHEN** handoff option policy is generated
 - **THEN** it records Markdown as omitted-option default and `--markdown` as a deprecated compatibility spelling rather than an independent format selector
 
 #### Scenario: Selector shape is generated
+
 - **WHEN** policy is generated for a command that registers `--only` or `--group`
 - **THEN** it records support for repeated and comma-separated values, explicit-empty distinction, and applicable standalone restrictions
 
 #### Scenario: Update conflict is generated
+
 - **WHEN** update policy is generated
 - **THEN** it records `--check` and `--dry-run` as conflicting inspection modes for both human and JSON execution paths
 
 ### Requirement: Coordinated validation enforces option convention semantics
+
 The meta-repository checker SHALL compare normalized option convention policy with canonical docs, generated agent-readable exports, and packaged skills, and SHALL fail on semantic disagreement rather than checking option presence alone.
 
 #### Scenario: Companion surfaces agree
+
 - **WHEN** canonical CLI policy, docs, exports, and skills use the same canonical aliases, switch names, migration spellings, conflicts, and selector forms
 - **THEN** coordinated validation exits successfully
 
 #### Scenario: Preferred guidance uses a deprecated spelling
+
 - **WHEN** a companion surface teaches `--no-cd`, `--no-default-launch`, or `handoff --markdown` as preferred current syntax outside migration guidance
 - **THEN** coordinated validation identifies the stale source and exits unsuccessfully
 
 #### Scenario: Deliberate alias drift fails validation
+
 - **WHEN** an out-of-repository fixture removes or changes one required alias or maps it to a different concept
 - **THEN** coordinated validation exits unsuccessfully with a stable semantic mismatch diagnostic
 - **AND** real worktrees remain unchanged
 
 #### Scenario: Deliberate switch-policy drift fails validation
+
 - **WHEN** an out-of-repository fixture changes one switch compatibility mapping, conflict, configured-launcher effect, or persistence rule
 - **THEN** coordinated validation exits unsuccessfully and names the owning source and mismatched semantic
 
 #### Scenario: Packaged artifacts are validated
+
 - **WHEN** docs or skills are packaged for release
 - **THEN** the same semantic checks run against extracted release artifacts rather than relying only on source-worktree files
+
+### Requirement: Command contracts publish completion policy
+
+The canonical CLI command contract SHALL publish enough typed policy to generate and validate shell completion without a handwritten command inventory, including argument choices, option conflicts, and dynamic candidate classifications that are not fully represented by Commander structure alone.
+
+#### Scenario: Completion policy is generated
+
+- **WHEN** the command contract is generated from the current Commander tree and typed semantic policy
+- **THEN** every command path, argument, option, alias, description, declared choice, conflict, and dynamic candidate classification required by completion is represented deterministically
+
+#### Scenario: Completion policy is incomplete
+
+- **WHEN** a registered argument or option requires dynamic or constrained completion but lacks required typed policy
+- **THEN** repository-local contract validation reports the command path and missing policy
+- **AND** exits unsuccessfully
+
+#### Scenario: Option rationalization changes an alias
+
+- **WHEN** a canonical or compatibility option spelling changes in Commander metadata or typed option policy
+- **THEN** completion generation consumes the updated contract automatically
+- **AND** no independent completion alias inventory requires editing
+
+### Requirement: Coordinated validation enforces completion synchronization
+
+The meta-repository checker SHALL compare canonical completion policy and generated artifacts with maintained README and shell-command documentation, generated agent-readable exports, and packaged Arashi skill guidance. The checker SHALL distinguish intentional VS Code exclusion from missing CLI, docs, or skill coverage for the `completion` command.
+
+#### Scenario: Completion surfaces agree
+
+- **WHEN** the CLI contract, generated shell artifacts, maintained docs, generated exports, and packaged skill guidance describe the same supported shells, command shape, activation syntax, wrapper separation, safety boundaries, and dynamic candidate classes
+- **THEN** coordinated validation exits successfully
+
+#### Scenario: Completion guidance drifts
+
+- **WHEN** a companion surface advertises a different shell set, public command path, installation behavior, candidate scope, or output/safety contract
+- **THEN** coordinated validation reports the owning source and semantic mismatch
+- **AND** exits unsuccessfully
+
+#### Scenario: Deliberate completion mismatch proves enforcement
+
+- **WHEN** an out-of-repository fixture removes or changes one required completion semantic or generated artifact identity
+- **THEN** the focused checker exits unsuccessfully for that mismatch
+- **AND** the real coordinated worktrees remain unchanged
+
+#### Scenario: Completion validation is reachable from CI
+
+- **WHEN** repository self-tests inspect the authoritative coordinated workflow
+- **THEN** they confirm CI generates or verifies the CLI completion artifacts and invokes the focused cross-repository completion checker

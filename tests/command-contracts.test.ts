@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, test } from "vitest";
 import {
+  cp,
   copyFile,
   mkdtemp,
   mkdir,
@@ -599,6 +600,31 @@ async function schemaV5Fixture(): Promise<string> {
     await mkdir(join(target, ".."), { recursive: true });
     await copyFile(join(process.cwd(), relativePath), target);
   }
+  const contractPath = join(root, "repos/arashi/contracts/cli-commands.json");
+  const contract = JSON.parse(await readFile(contractPath, "utf8"));
+  contract.schemaVersion = 5;
+  delete contract.root;
+  contract.commands = contract.commands
+    .filter((command: any) => !command.path.startsWith("completion"))
+    .map((command: any) => {
+      delete command.aliasPaths;
+      command.arguments.forEach((argument: any) => {
+        delete argument.candidateKind;
+        delete argument.choices;
+        delete argument.hidden;
+      });
+      command.options = command.options.filter(
+        (option: any) => option.long !== "--help",
+      );
+      command.options.forEach((option: any) => {
+        delete option.candidateKind;
+        delete option.choices;
+        delete option.conflicts;
+        delete option.repeatable;
+      });
+      return command;
+    });
+  await writeFile(contractPath, JSON.stringify(contract));
   await mkdir(join(root, "repos/arashi-docs/scripts"), { recursive: true });
   await mkdir(join(root, "repos/arashi-skills/scripts"), { recursive: true });
   await writeFile(
@@ -619,6 +645,53 @@ async function schemaV5Fixture(): Promise<string> {
   await writeFile(
     workflowPath,
     `${await readFile(workflowPath, "utf8")}      - name: docs option semantics\n        run: pnpm --dir repos/arashi-docs validate:cli-option-docs\n      - name: skills option semantics\n        run: node repos/arashi-skills/scripts/cli-flag-rationalization-guidance-selftest.mjs\n      - name: package skills\n        run: |\n          tar -czf arashi-skill-package.tar.gz -C repos/arashi-skills skills/\n          mkdir -p package-check\n          tar -xzf arashi-skill-package.tar.gz -C package-check\n          node repos/arashi-skills/scripts/cli-flag-rationalization-guidance-selftest.mjs --skill-root package-check/skills/arashi\n`,
+  );
+  return root;
+}
+
+async function schemaV6Fixture(): Promise<string> {
+  const root = await schemaV5Fixture();
+  const copies = [
+    "repos/arashi/README.md",
+    "repos/arashi/contracts/cli-commands.json",
+    "repos/arashi-docs/docs/commands",
+    "repos/arashi-docs/public",
+    "repos/arashi-docs/package.json",
+    "repos/arashi-docs/scripts/check-shell-completion-docs.ts",
+    "repos/arashi-skills/contracts/command-coverage.json",
+    "repos/arashi-skills/skills/arashi",
+    "repos/arashi-skills/scripts/shell-completion-guidance-selftest.mjs",
+    "repos/arashi-skills/.github/workflows/security-audit.yml",
+    "repos/arashi-skills/.github/workflows/release-security-gate.yml",
+    "repos/arashi-vscode/contracts/command-policy.json",
+    "repos/arashi-vscode/package.json",
+  ];
+  for (const relativePath of copies) {
+    const target = join(root, relativePath);
+    await mkdir(join(target, ".."), { recursive: true });
+    await cp(join(process.cwd(), relativePath), target, { recursive: true });
+  }
+  await writeFile(
+    join(root, ".github/workflows/cross-repo-command-contracts.yml"),
+    `jobs:
+  contracts:
+    steps:
+      - run: pnpm --dir repos/arashi completion:generate
+      - run: pnpm --dir repos/arashi completion:check
+      - run: git -C repos/arashi diff --exit-code -- src/generated/completions.ts
+      - run: pnpm --dir repos/arashi-docs validate:tab-launch-docs
+      - run: pnpm --dir repos/arashi-docs validate:cli-option-docs
+      - run: pnpm --dir repos/arashi-docs validate:shell-completion-docs
+      - run: node repos/arashi-skills/scripts/tab-launch-disposition-guidance-selftest.mjs
+      - run: node repos/arashi-skills/scripts/cli-flag-rationalization-guidance-selftest.mjs
+      - run: node repos/arashi-skills/scripts/shell-completion-guidance-selftest.mjs --meta-root .
+      - run: |
+          tar -czf arashi-skill-package.tar.gz -C repos/arashi-skills skills/
+          mkdir package-check
+          tar -xzf arashi-skill-package.tar.gz -C package-check
+          node repos/arashi-skills/scripts/cli-flag-rationalization-guidance-selftest.mjs --skill-root package-check/skills/arashi
+          node repos/arashi-skills/scripts/shell-completion-guidance-selftest.mjs --skill-root package-check/skills/arashi
+`,
   );
   return root;
 }
@@ -665,6 +738,186 @@ describe("cross-repository command contracts", () => {
       }),
     );
   });
+  test("accepts schema v6 completion metadata and coordinated companion semantics", async () => {
+    const result = await checkContracts(await schemaV6Fixture());
+    expect(
+      result.diagnostics.filter(
+        (diagnostic) =>
+          diagnostic.code.includes("COMPLETION") ||
+          diagnostic.code === "SCHEMA_VERSION_UNSUPPORTED",
+      ),
+    ).toEqual([]);
+    expect(result.ok, JSON.stringify(result.diagnostics, null, 2)).toBe(true);
+  });
+  test("rejects incomplete CLI README completion guidance", async () => {
+    const root = await schemaV6Fixture();
+    await writeFile(
+      join(root, "repos/arashi/README.md"),
+      "# Arashi\n\nRun `arashi completion bash`.\n",
+    );
+    expect((await checkContracts(root)).diagnostics).toContainEqual(
+      expect.objectContaining({
+        code: "CLI_README_COMPLETION_INVALID",
+        source: "repos/arashi/README.md",
+      }),
+    );
+  });
+  test.each([
+    [
+      "root help/version metadata",
+      (data: any) => data.root.options.pop(),
+      "CLI_COMPLETION_ROOT_INVALID",
+      "root.--version",
+    ],
+    [
+      "exact dynamic ownership",
+      (data: any) => {
+        data.commands
+          .find((command: any) => command.path === "status")
+          .options.find((entry: any) => entry.long === "--only").candidateKind =
+          "worktree";
+      },
+      "CLI_COMPLETION_POLICY_INVALID",
+      "status.--only",
+    ],
+    [
+      "declared choices",
+      (data: any) => {
+        data.commands.find(
+          (command: any) => command.path === "completion",
+        ).arguments[0].choices = ["bash", "zsh"];
+      },
+      "CLI_COMPLETION_POLICY_INVALID",
+      "completion.shell",
+    ],
+    [
+      "declared conflicts",
+      (data: any) => {
+        data.commands
+          .find((command: any) => command.path === "switch")
+          .options.find((entry: any) => entry.long === "--tab").conflicts = [];
+      },
+      "CLI_COMPLETION_POLICY_INVALID",
+      "switch.--tab",
+    ],
+    [
+      "declared repeatability",
+      (data: any) => {
+        data.commands
+          .find((command: any) => command.path === "handoff")
+          .options.find((entry: any) => entry.long === "--risk").repeatable =
+          false;
+      },
+      "CLI_COMPLETION_POLICY_INVALID",
+      "handoff.--risk",
+    ],
+    [
+      "hidden query exclusion",
+      (data: any) => {
+        data.commands.find(
+          (command: any) => command.path === "completion __query",
+        ).hidden = false;
+      },
+      "CLI_COMPLETION_HIDDEN_INVALID",
+      "completion __query",
+    ],
+    [
+      "completion companion policy",
+      (data: any) => {
+        data.commands.find(
+          (command: any) => command.path === "completion",
+        ).semantics.vscode.expectation = "required";
+      },
+      "CLI_COMPLETION_COMPANION_INVALID",
+      "completion.vscode",
+    ],
+  ])("rejects schema-v6 %s drift", async (_label, mutate, code, subject) => {
+    const root = await schemaV6Fixture();
+    const path = join(root, "repos/arashi/contracts/cli-commands.json");
+    const data = JSON.parse(await readFile(path, "utf8"));
+    mutate(data);
+    await writeFile(path, JSON.stringify(data));
+    expect((await checkContracts(root)).diagnostics).toContainEqual(
+      expect.objectContaining({ code, subject }),
+    );
+  });
+  test.each([
+    [
+      "CLI generation",
+      "pnpm --dir repos/arashi completion:generate",
+      "CLI_COMPLETION_GENERATION_UNREACHABLE",
+    ],
+    [
+      "CLI freshness",
+      "pnpm --dir repos/arashi completion:check",
+      "CLI_COMPLETION_FRESHNESS_UNREACHABLE",
+    ],
+    [
+      "generated artifact diff",
+      "git -C repos/arashi diff --exit-code -- src/generated/completions.ts",
+      "CLI_COMPLETION_FRESHNESS_UNREACHABLE",
+    ],
+    [
+      "focused docs",
+      "pnpm --dir repos/arashi-docs validate:shell-completion-docs",
+      "DOCS_COMPLETION_CHECK_UNREACHABLE",
+    ],
+    [
+      "focused skills source",
+      "node repos/arashi-skills/scripts/shell-completion-guidance-selftest.mjs --meta-root .",
+      "SKILLS_COMPLETION_CHECK_UNREACHABLE",
+    ],
+    [
+      "focused skills package",
+      "node repos/arashi-skills/scripts/shell-completion-guidance-selftest.mjs --skill-root package-check/skills/arashi",
+      "SKILLS_COMPLETION_PACKAGE_CHECK_UNREACHABLE",
+    ],
+  ])("rejects missing %s CI reachability", async (_label, command, code) => {
+    const root = await schemaV6Fixture();
+    const path = join(
+      root,
+      ".github/workflows/cross-repo-command-contracts.yml",
+    );
+    await writeFile(
+      path,
+      (await readFile(path, "utf8")).replace(`${command}\n`, ""),
+    );
+    expect((await checkContracts(root)).diagnostics).toContainEqual(
+      expect.objectContaining({
+        code,
+        source: ".github/workflows/cross-repo-command-contracts.yml",
+      }),
+    );
+  });
+  test.each([
+    [
+      "docs",
+      "repos/arashi-docs/scripts/check-shell-completion-docs.ts",
+      "DOCS_COMPLETION_CHECK_FAILED",
+      "process.exit(7);\n",
+    ],
+    [
+      "skills source",
+      "repos/arashi-skills/scripts/shell-completion-guidance-selftest.mjs",
+      "SKILLS_COMPLETION_CHECK_FAILED",
+      "if (!process.argv.includes('--skill-root')) process.exit(7);\n",
+    ],
+    [
+      "skills extracted package",
+      "repos/arashi-skills/scripts/shell-completion-guidance-selftest.mjs",
+      "SKILLS_COMPLETION_PACKAGE_CHECK_FAILED",
+      "if (process.argv.includes('--skill-root')) process.exit(7);\n",
+    ],
+  ])(
+    "runs the focused %s completion checker",
+    async (_label, relativePath, code, source) => {
+      const root = await schemaV6Fixture();
+      await writeFile(join(root, relativePath), source);
+      expect((await checkContracts(root)).diagnostics).toContainEqual(
+        expect.objectContaining({ code }),
+      );
+    },
+  );
   test("rejects a string-valued schema version instead of bypassing schema-v5 checks", async () => {
     const root = await schemaV5Fixture();
     const path = join(root, "repos/arashi/contracts/cli-commands.json");
