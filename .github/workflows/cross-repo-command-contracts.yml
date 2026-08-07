@@ -136,6 +136,9 @@ jobs:
           tar -xzf arashi-skill-package.tar.gz -C package-check
           node repos/arashi-skills/scripts/cli-flag-rationalization-guidance-selftest.mjs --skill-root package-check/skills/arashi
           node repos/arashi-skills/scripts/shell-completion-guidance-selftest.mjs --skill-root package-check/skills/arashi
+      - name: Check focused lifecycle-hook contracts
+        working-directory: meta
+        run: pnpm contracts:hooks
       - name: Check cross-repository contracts
         working-directory: meta
         run: pnpm contracts:check
