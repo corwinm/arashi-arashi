@@ -53,6 +53,6 @@
 - [x] 6.2 Run final docs and skills formatting/lint/build/package gates plus the authoritative cross-repository semantic checker from a clean generated state.
 - [x] 6.3 Perform an independent read-only implementation review against every normative scenario; reconcile only approved-contract blockers and rerun affected final gates.
 - [x] 6.4 Commit and open affected child PRs with non-closing `Tracks corwinm/arashi-arashi#261` references and complete cross-links; require exact-head green CI and resolved review threads.
-- [ ] 6.5 Merge CLI and any concrete child companion PRs in dependency order, release and verify the installed CLI supports the new option/environment/input behavior, then prove docs/skills claims against that released contract.
-- [ ] 6.6 Mark all pre-archive tasks complete, archive and sync `interactive-hook-input`, replace generated Purpose placeholders, validate synced specs directly, and update the existing meta PR from `Tracks #261` to the sole `Closes #261` reference.
+- [x] 6.5 Merge CLI and any concrete child companion PRs in dependency order, release and verify the installed CLI supports the new option/environment/input behavior, then prove docs/skills claims against that released contract.
+- [x] 6.6 Mark all pre-archive tasks complete, archive and sync `interactive-hook-input`, replace generated Purpose placeholders, validate synced specs directly, and update the existing meta PR from `Tracks #261` to the sole `Closes #261` reference.
 - [ ] 6.7 Merge the meta PR last, verify issue #261 closed, remove remote/local coordinated feature branches and worktrees, and confirm clean `main`/`origin/main` alignment across the configured workspace.

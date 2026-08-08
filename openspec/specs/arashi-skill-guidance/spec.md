@@ -137,7 +137,7 @@ The packaged Arashi skill SHALL teach agents to use the default independent cont
 - **AND** package-boundary and cross-repository checks reject stale or missing guidance
 
 ### Requirement: Packaged Arashi skill teaches the canonical hook contract
-The Arashi skill package SHALL keep detailed hook guidance in its smallest linked reference/tutorial files and SHALL align activation, scope, lifecycle timing, cwd, environment, timeout, failure, standalone/configured, platform, and package-manager behavior with the installed CLI and canonical website guidance.
+The Arashi skill package SHALL keep detailed hook guidance in its smallest linked reference/tutorial files and SHALL align activation, scope, lifecycle timing, cwd, environment, terminal-input availability, timeout, failure, standalone/configured, platform, and package-manager behavior with the installed CLI and canonical website guidance. It SHALL teach `ARASHI_HOOK_INPUT=tty|disabled|unavailable`, `--no-hook-input`, JSON precedence, immediate EOF, native Bash/PowerShell/cmd reads, invocation-only policy, and the prohibition on entering secrets without claiming that answers or persistent input policy are stored.
 
 #### Scenario: Agent activates a POSIX hook
 - **WHEN** an agent follows packaged hook activation guidance
@@ -163,6 +163,11 @@ The Arashi skill package SHALL keep detailed hook guidance in its smallest linke
 - **WHEN** an agent recommends dependency setup for a nested coordinated pnpm worktree
 - **THEN** guidance honors the package's pinned Corepack pnpm and committed lockfile
 - **AND** prevents accidental selection of the ancestor workspace
+
+#### Scenario: Agent writes an interactive lifecycle hook
+- **WHEN** an agent follows packaged guidance for a native shell read
+- **THEN** it checks the effective input mode, preserves JSON and EOF safety, and uses the correct native primitive
+- **AND** it does not request secrets, claim answer persistence, or invent a `hooks.input` configuration field
 
 ### Requirement: Authored and packaged hook guidance is contract-checked
 The skill repository SHALL validate hook guidance in authored sources and an extracted installable package against one maintained semantic contract. Maintainer-only semantic fixtures SHALL remain outside the installable skill directory.
