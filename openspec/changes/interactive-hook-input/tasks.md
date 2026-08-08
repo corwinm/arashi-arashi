@@ -49,7 +49,7 @@
 
 ## 6. Validation, Delivery, and Closeout
 
-- [ ] 6.1 Run final post-edit CLI formatting, lint, typecheck, complete tests, build, contract/schema/completion freshness, package smoke, POSIX PTY acceptance, and native Windows acceptance.
+- [x] 6.1 Run final post-edit CLI formatting, lint, typecheck, complete tests, build, contract/schema/completion freshness, package smoke, POSIX PTY acceptance, and native Windows acceptance.
 - [x] 6.2 Run final docs and skills formatting/lint/build/package gates plus the authoritative cross-repository semantic checker from a clean generated state.
 - [ ] 6.3 Perform an independent read-only implementation review against every normative scenario; reconcile only approved-contract blockers and rerun affected final gates.
 - [ ] 6.4 Commit and open affected child PRs with non-closing `Tracks corwinm/arashi-arashi#261` references and complete cross-links; require exact-head green CI and resolved review threads.
