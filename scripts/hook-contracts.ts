@@ -26,12 +26,169 @@ const surfaces = [
 ] as const;
 
 const guidanceSurfaces = new Set(surfaces.slice(1).map(({ source }) => source));
+const hookInputGuidanceSurfaces = new Set(surfaces.map(({ source }) => source));
+const hookInputModes = ["tty", "disabled", "unavailable"] as const;
+const publicOutcomeFields = [
+  "hookName",
+  "scope",
+  "workspaceMode",
+  "hookStatus",
+  "reasonCode",
+  "message",
+  "repositoryId",
+  "sourceScriptPath",
+  "executionPath",
+  "targetRepositoryName",
+  "targetRepositoryPath",
+  "targetWorktreePath",
+  "durationMs",
+] as const;
+type Obj = Record<string, unknown>;
+const object = (value: unknown): value is Obj =>
+  typeof value === "object" && value !== null && !Array.isArray(value);
+const strings = (value: unknown): string[] | undefined =>
+  Array.isArray(value) && value.every((item) => typeof item === "string")
+    ? value
+    : undefined;
+const sameStrings = (actual: unknown, expected: readonly string[]): boolean => {
+  const values = strings(actual);
+  return (
+    values !== undefined && JSON.stringify(values) === JSON.stringify(expected)
+  );
+};
+const sameKeys = (actual: Obj, expected: readonly string[]): boolean =>
+  sameStrings(Object.keys(actual).sort(), [...expected].sort());
+const workflowJobBlocks = (content: string): string[] => {
+  const blocks: string[] = [];
+  let current: string[] | undefined;
+  let inJobs = false;
+  for (const line of content.split("\n")) {
+    if (line === "jobs:") {
+      inJobs = true;
+      continue;
+    }
+    if (!inJobs) continue;
+    if (/^\S/.test(line)) break;
+    if (/^  [A-Za-z0-9_-]+:\s*$/.test(line)) {
+      if (current) blocks.push(current.join("\n"));
+      current = [line];
+    } else if (current) {
+      current.push(line);
+    }
+  }
+  if (current) blocks.push(current.join("\n"));
+  return blocks;
+};
+const workflowRunSteps = (workflow: string): string[] => {
+  const lines = workflow.split(/\r?\n/);
+  const runs: string[] = [];
+  let jobsIndent = -1;
+  let jobIndent = -1;
+  let stepsIndent = -1;
+  let stepIndent = -1;
+  for (let index = 0; index < lines.length; index += 1) {
+    const line = lines[index];
+    if (/^\s*(?:#.*)?$/.test(line)) continue;
+    const indent = line.match(/^\s*/)?.[0].length ?? 0;
+    if (/^\s*jobs:\s*(?:#.*)?$/.test(line)) {
+      jobsIndent = indent;
+      jobIndent = -1;
+      stepsIndent = -1;
+      stepIndent = -1;
+      continue;
+    }
+    if (jobsIndent < 0) continue;
+    if (indent <= jobsIndent) {
+      jobsIndent = -1;
+      continue;
+    }
+    if (jobIndent < 0 && /^\s*[A-Za-z0-9_-]+:\s*(?:#.*)?$/.test(line)) {
+      jobIndent = indent;
+      continue;
+    }
+    if (
+      jobIndent >= 0 &&
+      indent === jobIndent &&
+      /^\s*[A-Za-z0-9_-]+:/.test(line)
+    ) {
+      stepsIndent = -1;
+      stepIndent = -1;
+      continue;
+    }
+    if (jobIndent < 0 || indent <= jobIndent) continue;
+    if (/^\s*steps:\s*(?:#.*)?$/.test(line)) {
+      stepsIndent = indent;
+      stepIndent = -1;
+      continue;
+    }
+    if (stepsIndent < 0 || indent <= stepsIndent) continue;
+    const step = line.match(/^\s*-\s+(.*)$/);
+    if (step) {
+      if (stepIndent < 0) stepIndent = indent;
+      if (indent !== stepIndent) continue;
+      const directRun = step[1].match(/^run:\s*(.*)$/);
+      if (!directRun) continue;
+      const value = directRun[1].trim();
+      if (!["|", "|-", "|+", ">", ">-", ">+"].includes(value)) {
+        runs.push(value);
+        continue;
+      }
+      const block: string[] = [];
+      while (index + 1 < lines.length) {
+        const next = lines[index + 1];
+        const nextIndent = next.match(/^\s*/)?.[0].length ?? 0;
+        if (next.trim() && nextIndent <= indent) break;
+        index += 1;
+        if (next.trim()) block.push(next.trim());
+      }
+      runs.push(block.join("\n"));
+      continue;
+    }
+    if (stepIndent < 0 || indent !== stepIndent + 2) continue;
+    const field = line.match(/^\s*run:\s*(.*)$/);
+    if (!field) continue;
+    const value = field[1].trim();
+    if (!["|", "|-", "|+", ">", ">-", ">+"].includes(value)) {
+      runs.push(value);
+      continue;
+    }
+    const block: string[] = [];
+    while (index + 1 < lines.length) {
+      const next = lines[index + 1];
+      const nextIndent = next.match(/^\s*/)?.[0].length ?? 0;
+      if (next.trim() && nextIndent <= indent) break;
+      index += 1;
+      if (next.trim()) block.push(next.trim());
+    }
+    runs.push(block.join("\n"));
+  }
+  return runs;
+};
+const workflowCommandLines = (runs: string[]): string[] =>
+  runs.flatMap((run) =>
+    run
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .filter((line) => line.length > 0 && !line.startsWith("#")),
+  );
+const directlyRuns = (runs: string[], command: string): boolean =>
+  workflowCommandLines(runs).includes(command);
 const dogfoodPostCreateHooks = [
   ".arashi/hooks/post-create.arashi.sh",
   ".arashi/hooks/post-create.arashi-docs.sh",
   ".arashi/hooks/post-create.arashi-presentation.sh",
   ".arashi/hooks/post-create.arashi-vscode.sh",
 ] as const;
+
+function addDiagnostic(
+  diagnostics: HookContractDiagnostic[],
+  category: HookContractDiagnostic["category"],
+  code: string,
+  source: string,
+  message: string,
+) {
+  diagnostics.push({ category, code, message, severity: "error", source });
+}
 
 function addMetaDiagnostic(
   diagnostics: HookContractDiagnostic[],
@@ -77,6 +234,353 @@ export async function checkHookContracts(
       );
     }
   }
+  const workflowRuns = workflowRunSteps(workflowContent);
+  const requiredWorkflowChecks = [
+    {
+      code: "HOOK_INPUT_CHECKER_UNREACHABLE",
+      command: "pnpm contracts:hooks",
+      message:
+        "The authoritative workflow must execute the focused hook semantic checker.",
+    },
+    {
+      code: "HOOK_INPUT_DOCS_CHECK_UNREACHABLE",
+      command: "pnpm --dir repos/arashi-docs validate:lifecycle-hook-docs",
+      message:
+        "The authoritative workflow must execute the lifecycle-hook docs checker.",
+    },
+    {
+      code: "HOOK_INPUT_SKILLS_SOURCE_CHECK_UNREACHABLE",
+      command:
+        "node repos/arashi-skills/scripts/lifecycle-hook-guidance-selftest.mjs",
+      message:
+        "The authoritative workflow must check lifecycle-hook guidance in the source skill.",
+    },
+    {
+      code: "HOOK_INPUT_SKILLS_PACKAGE_CHECK_UNREACHABLE",
+      command:
+        "node repos/arashi-skills/scripts/lifecycle-hook-guidance-selftest.mjs --skill-root package-check/skills/arashi",
+      message:
+        "The authoritative workflow must check lifecycle-hook guidance in the extracted skill archive.",
+    },
+  ];
+  for (const check of requiredWorkflowChecks) {
+    if (!directlyRuns(workflowRuns, check.command)) {
+      addMetaDiagnostic(diagnostics, check.code, workflowSource, check.message);
+    }
+  }
+
+  const packagedSkillCheck =
+    "node repos/arashi-skills/scripts/lifecycle-hook-guidance-selftest.mjs --skill-root package-check/skills/arashi";
+  const packagedSkillJobRuns = workflowJobBlocks(workflowContent)
+    .map((job) => workflowRunSteps(`jobs:\n${job}`))
+    .find((runs) => directlyRuns(runs, packagedSkillCheck));
+  const packagedSkillCommands = workflowCommandLines(
+    packagedSkillJobRuns ?? [],
+  );
+  const packagedSkillCheckIndex =
+    packagedSkillCommands.indexOf(packagedSkillCheck);
+  const packagedSkillPrerequisites = [
+    {
+      code: "HOOK_INPUT_SKILLS_ARCHIVE_CREATION_UNREACHABLE",
+      command:
+        "tar -czf arashi-skill-package.tar.gz -C repos/arashi-skills skills/",
+      message:
+        "The authoritative workflow must create the exact release-shaped skill archive before packaged lifecycle-hook validation.",
+    },
+    {
+      code: "HOOK_INPUT_SKILLS_PACKAGE_DESTINATION_UNREACHABLE",
+      command: "mkdir package-check",
+      message:
+        "The authoritative workflow must create the package-check extraction destination before packaged lifecycle-hook validation.",
+    },
+    {
+      code: "HOOK_INPUT_SKILLS_PACKAGE_EXTRACTION_UNREACHABLE",
+      command: "tar -xzf arashi-skill-package.tar.gz -C package-check",
+      message:
+        "The authoritative workflow must extract the release-shaped skill archive before packaged lifecycle-hook validation.",
+    },
+  ];
+  for (const prerequisite of packagedSkillPrerequisites) {
+    const prerequisiteIndex = packagedSkillCommands.indexOf(
+      prerequisite.command,
+    );
+    if (
+      prerequisiteIndex < 0 ||
+      packagedSkillCheckIndex < 0 ||
+      prerequisiteIndex >= packagedSkillCheckIndex
+    ) {
+      addMetaDiagnostic(
+        diagnostics,
+        prerequisite.code,
+        workflowSource,
+        prerequisite.message,
+      );
+    }
+  }
+  const packagedSkillSequence = [
+    ...packagedSkillPrerequisites.map(({ command }) => command),
+    packagedSkillCheck,
+  ].map((command) => packagedSkillCommands.indexOf(command));
+  if (
+    packagedSkillSequence.every((index) => index >= 0) &&
+    packagedSkillSequence.some(
+      (index, position) =>
+        position > 0 && index <= packagedSkillSequence[position - 1],
+    )
+  ) {
+    addMetaDiagnostic(
+      diagnostics,
+      "HOOK_INPUT_SKILLS_PACKAGE_PREREQUISITE_ORDER_INVALID",
+      workflowSource,
+      "The authoritative workflow must create the release-shaped archive, create its destination, extract it, and then validate the extracted package in that order within one job.",
+    );
+  }
+
+  const cliWorkflowSource = "repos/arashi/.github/workflows/ci.yml";
+  try {
+    const cliWorkflow = await readFile(join(root, cliWorkflowSource), "utf8");
+    const jobs = workflowJobBlocks(cliWorkflow);
+    if (
+      !jobs.some(
+        (job) =>
+          job.includes("hook-input-wrapper") && job.includes("ubuntu-latest"),
+      )
+    ) {
+      addMetaDiagnostic(
+        diagnostics,
+        "HOOK_INPUT_WRAPPER_ACCEPTANCE_UNREACHABLE",
+        cliWorkflowSource,
+        "Installed wrapper hook-input acceptance must run on a POSIX CI host.",
+      );
+    }
+    if (
+      !jobs.some(
+        (job) =>
+          job.includes("hook-input-native") &&
+          job.includes("windows-latest") &&
+          /hook-input[^\n]*\.ps1/i.test(job),
+      )
+    ) {
+      addMetaDiagnostic(
+        diagnostics,
+        "HOOK_INPUT_WINDOWS_ACCEPTANCE_UNREACHABLE",
+        cliWorkflowSource,
+        "A terminal-capable native PowerShell/cmd hook-input fixture must run on windows-latest.",
+      );
+    }
+  } catch (error) {
+    addMetaDiagnostic(
+      diagnostics,
+      "HOOK_INPUT_WINDOWS_ACCEPTANCE_UNREACHABLE",
+      cliWorkflowSource,
+      error instanceof Error ? error.message : String(error),
+    );
+    addMetaDiagnostic(
+      diagnostics,
+      "HOOK_INPUT_WRAPPER_ACCEPTANCE_UNREACHABLE",
+      cliWorkflowSource,
+      error instanceof Error ? error.message : String(error),
+    );
+  }
+
+  const wrapperAcceptanceSource =
+    "repos/arashi/tests/integration/hook-input-wrapper.test.ts";
+  try {
+    const content = await readFile(join(root, wrapperAcceptanceSource), "utf8");
+    const wrapperEntrypoints = [
+      "bin/arashi",
+      "bin/arashi.js",
+      "bin/arashi.ps1",
+      "bin/arashi.bat",
+    ];
+    if (
+      !wrapperEntrypoints.every((entrypoint) => content.includes(entrypoint))
+    ) {
+      addDiagnostic(
+        diagnostics,
+        "cli",
+        "HOOK_INPUT_WRAPPER_SURFACE_MISSING",
+        wrapperAcceptanceSource,
+        "Wrapper acceptance must cover POSIX, JavaScript, PowerShell, and batch package entrypoints.",
+      );
+    }
+  } catch (error) {
+    addDiagnostic(
+      diagnostics,
+      "cli",
+      "HOOK_INPUT_WRAPPER_SURFACE_MISSING",
+      wrapperAcceptanceSource,
+      error instanceof Error ? error.message : String(error),
+    );
+  }
+
+  const windowsAcceptanceSource =
+    "repos/arashi/tests/windows/hook-input-native.ps1";
+  try {
+    const content = await readFile(join(root, windowsAcceptanceSource), "utf8");
+    const lower = content.toLowerCase();
+    if (!lower.includes("read-host")) {
+      addDiagnostic(
+        diagnostics,
+        "cli",
+        "HOOK_INPUT_WINDOWS_POWERSHELL_ACCEPTANCE_MISSING",
+        windowsAcceptanceSource,
+        "Native Windows acceptance must exercise PowerShell Read-Host.",
+      );
+    }
+    if (!lower.includes("set /p")) {
+      addDiagnostic(
+        diagnostics,
+        "cli",
+        "HOOK_INPUT_WINDOWS_CMD_ACCEPTANCE_MISSING",
+        windowsAcceptanceSource,
+        "Native Windows acceptance must exercise cmd set /p.",
+      );
+    }
+    if (
+      !lower.includes("arashi-windows-x64.exe") ||
+      !lower.includes("disabled") ||
+      !lower.includes("unavailable") ||
+      !lower.includes("immediate eof")
+    ) {
+      addDiagnostic(
+        diagnostics,
+        "cli",
+        "HOOK_INPUT_WINDOWS_BUILT_EOF_ACCEPTANCE_MISSING",
+        windowsAcceptanceSource,
+        "Native Windows acceptance must use the built CLI and cover disabled/unavailable immediate EOF.",
+      );
+    }
+  } catch (error) {
+    addDiagnostic(
+      diagnostics,
+      "cli",
+      "HOOK_INPUT_WINDOWS_BUILT_EOF_ACCEPTANCE_MISSING",
+      windowsAcceptanceSource,
+      error instanceof Error ? error.message : String(error),
+    );
+  }
+
+  const commandContractSource = "repos/arashi/contracts/cli-commands.json";
+  try {
+    const contract = JSON.parse(
+      await readFile(join(root, commandContractSource), "utf8"),
+    ) as unknown;
+    const commands =
+      object(contract) && Array.isArray(contract.commands)
+        ? contract.commands.filter(object)
+        : [];
+    const owners = commands
+      .flatMap((command) => {
+        const options = Array.isArray(command.options)
+          ? command.options.filter(object)
+          : [];
+        return options
+          .filter(
+            (option) =>
+              option.long === "--no-hook-input" ||
+              (typeof option.flags === "string" &&
+                option.flags.includes("--no-hook-input")),
+          )
+          .map(() => command.path);
+      })
+      .filter((path): path is string => typeof path === "string")
+      .sort();
+    if (!sameStrings(owners, ["create", "remove"])) {
+      addDiagnostic(
+        diagnostics,
+        "cli",
+        "HOOK_INPUT_OPTION_OWNERSHIP",
+        commandContractSource,
+        "--no-hook-input must be owned by exactly create and remove.",
+      );
+    }
+    for (const commandName of ["create", "remove"] as const) {
+      const command = commands.find(
+        (candidate) => candidate.path === commandName,
+      );
+      const options =
+        command && Array.isArray(command.options)
+          ? command.options.filter(object)
+          : [];
+      const option = options.find(
+        (candidate) => candidate.long === "--no-hook-input",
+      );
+      const policy =
+        option && object(option.semanticPolicy)
+          ? option.semanticPolicy
+          : undefined;
+      const hookInput =
+        policy && object(policy.hookInput) ? policy.hookInput : undefined;
+      const longs = options
+        .map((candidate) => candidate.long)
+        .filter((value): value is string => typeof value === "string");
+      if (
+        !policy ||
+        !sameKeys(policy, ["hookInput", "ownership", "persisted"]) ||
+        policy.ownership !== "command" ||
+        policy.persisted !== false ||
+        !hookInput ||
+        !sameKeys(hookInput, [
+          "disabledMode",
+          "immediateEof",
+          "jsonPrecedence",
+          "modes",
+          "skipsHooks",
+        ]) ||
+        hookInput.skipsHooks !== false ||
+        (commandName === "create" &&
+          (!longs.includes("--no-hooks") || !longs.includes("--interactive")))
+      ) {
+        addDiagnostic(
+          diagnostics,
+          "cli",
+          "HOOK_INPUT_POLICY_INVALID",
+          commandContractSource,
+          `${commandName} must publish command-owned, invocation-only semantics that neither skip hooks nor replace create selection.`,
+        );
+      }
+      if (!hookInput || !sameStrings(hookInput.modes, hookInputModes)) {
+        addDiagnostic(
+          diagnostics,
+          "cli",
+          "HOOK_INPUT_MODES_INVALID",
+          commandContractSource,
+          `${commandName} must publish exactly tty, disabled, and unavailable.`,
+        );
+      }
+      if (!hookInput || hookInput.jsonPrecedence !== true) {
+        addDiagnostic(
+          diagnostics,
+          "cli",
+          "HOOK_INPUT_JSON_PRECEDENCE",
+          commandContractSource,
+          `${commandName} must publish JSON-first hook-input precedence.`,
+        );
+      }
+      if (
+        !hookInput ||
+        hookInput.disabledMode !== "disabled" ||
+        hookInput.immediateEof !== true
+      ) {
+        addDiagnostic(
+          diagnostics,
+          "cli",
+          "HOOK_INPUT_STDIN_INVALID",
+          commandContractSource,
+          `${commandName} must publish disabled mode and immediate EOF outside TTY input.`,
+        );
+      }
+    }
+  } catch (error) {
+    addDiagnostic(
+      diagnostics,
+      "cli",
+      "HOOK_INPUT_COMMAND_CONTRACT_INVALID",
+      commandContractSource,
+      error instanceof Error ? error.message : String(error),
+    );
+  }
 
   for (const surface of surfaces) {
     let content: string;
@@ -117,6 +621,96 @@ export async function checkHookContracts(
         source: surface.source,
         message: "Structured multi-target remove guidance is missing.",
       });
+    }
+
+    if (hookInputGuidanceSurfaces.has(surface.source)) {
+      const lower = content.toLowerCase();
+      if (
+        !content.includes("--no-hook-input") ||
+        !/(?:invocation-(?:only|scoped)|for (?:that|the current) invocation)/i.test(
+          content,
+        ) ||
+        !content.includes("--no-hooks") ||
+        !content.includes("--interactive")
+      ) {
+        addDiagnostic(
+          diagnostics,
+          surface.category,
+          "HOOK_INPUT_GUIDANCE_POLICY_MISSING",
+          surface.source,
+          "Guidance must distinguish the invocation-only input opt-out from hook execution and create selection.",
+        );
+      }
+      if (
+        !content.includes("ARASHI_HOOK_INPUT") ||
+        !hookInputModes.every((mode) => lower.includes(mode))
+      ) {
+        addDiagnostic(
+          diagnostics,
+          surface.category,
+          "HOOK_INPUT_GUIDANCE_MODES_MISSING",
+          surface.source,
+          "Guidance must publish ARASHI_HOOK_INPUT=tty|disabled|unavailable.",
+        );
+      }
+      if (
+        !content.includes("--json") ||
+        !lower.includes("precedence") ||
+        !lower.includes("immediate eof")
+      ) {
+        addDiagnostic(
+          diagnostics,
+          surface.category,
+          "HOOK_INPUT_GUIDANCE_AUTOMATION_MISSING",
+          surface.source,
+          "Guidance must publish JSON precedence and immediate EOF outside TTY mode.",
+        );
+      }
+      if (
+        !/tty.{0,160}inherit.{0,160}(?:(?:terminal\s+)?stdin|the terminal)/is.test(
+          content,
+        ) &&
+        !/inherit.{0,160}(?:(?:terminal\s+)?stdin|the terminal).{0,160}tty/is.test(
+          content,
+        )
+      ) {
+        addDiagnostic(
+          diagnostics,
+          surface.category,
+          "HOOK_INPUT_GUIDANCE_STDIN_MATRIX_MISSING",
+          surface.source,
+          "Guidance must state that TTY mode inherits terminal stdin while disabled and unavailable modes receive immediate EOF.",
+        );
+      }
+      if (
+        !lower.includes("bash") ||
+        !/\bread(?:\s+-r)?\b/i.test(content) ||
+        !lower.includes("powershell") ||
+        !lower.includes("read-host") ||
+        !lower.includes("cmd") ||
+        !lower.includes("set /p")
+      ) {
+        addDiagnostic(
+          diagnostics,
+          surface.category,
+          "HOOK_INPUT_NATIVE_GUIDANCE_MISSING",
+          surface.source,
+          "Guidance must cover native Bash read, PowerShell Read-Host, and cmd set /p.",
+        );
+      }
+      if (
+        !lower.includes("password") ||
+        !lower.includes("token") ||
+        !lower.includes("secret")
+      ) {
+        addDiagnostic(
+          diagnostics,
+          surface.category,
+          "HOOK_INPUT_NO_SECRETS_WARNING_MISSING",
+          surface.source,
+          "Guidance must warn users not to enter passwords, tokens, or other secrets into hook prompts.",
+        );
+      }
     }
 
     if (guidanceSurfaces.has(surface.source)) {
@@ -168,6 +762,77 @@ export async function checkHookContracts(
         message: "Generated setup guidance is not child-workspace-safe.",
       });
     }
+  }
+
+  const configSchemaSource = "repos/arashi/schema/config.schema.json";
+  try {
+    const schema = JSON.parse(
+      await readFile(join(root, configSchemaSource), "utf8"),
+    ) as unknown;
+    const definitions =
+      object(schema) && object(schema.definitions)
+        ? schema.definitions
+        : undefined;
+    const config =
+      definitions && object(definitions.Config)
+        ? definitions.Config
+        : undefined;
+    const properties =
+      config && object(config.properties) ? config.properties : undefined;
+    const hooks =
+      properties && object(properties.hooks) ? properties.hooks : undefined;
+    const hookProperties =
+      hooks && object(hooks.properties) ? hooks.properties : undefined;
+    if (hookProperties && Object.hasOwn(hookProperties, "input")) {
+      addDiagnostic(
+        diagnostics,
+        "cli",
+        "HOOK_INPUT_PERSISTENT_CONFIG_PUBLISHED",
+        configSchemaSource,
+        "Hook input is invocation-only; the generated schema must not publish hooks.input.",
+      );
+    }
+  } catch (error) {
+    addDiagnostic(
+      diagnostics,
+      "cli",
+      "HOOK_INPUT_CONFIG_SCHEMA_INVALID",
+      configSchemaSource,
+      error instanceof Error ? error.message : String(error),
+    );
+  }
+
+  const hookRuntimeSource = "repos/arashi/src/lib/hooks.ts";
+  try {
+    const content = await readFile(join(root, hookRuntimeSource), "utf8");
+    const outcome = content.match(
+      /export interface LifecycleHookOutcome\s*\{([\s\S]*?)\n?\}/,
+    )?.[1];
+    const outcomeFields = outcome
+      ? [...outcome.matchAll(/(?:^|;)\s*([A-Za-z_$][\w$]*)\??\s*:/g)].map(
+          (match) => match[1],
+        )
+      : undefined;
+    if (
+      !outcomeFields ||
+      !sameStrings([...outcomeFields].sort(), [...publicOutcomeFields].sort())
+    ) {
+      addDiagnostic(
+        diagnostics,
+        "cli",
+        "HOOK_INPUT_PUBLIC_OUTCOME_FIELDS_CHANGED",
+        hookRuntimeSource,
+        "LifecycleHookOutcome must retain its existing fields and must not publish captured stdout or stderr.",
+      );
+    }
+  } catch (error) {
+    addDiagnostic(
+      diagnostics,
+      "cli",
+      "HOOK_INPUT_PUBLIC_OUTCOME_FIELDS_CHANGED",
+      hookRuntimeSource,
+      error instanceof Error ? error.message : String(error),
+    );
   }
 
   for (const source of dogfoodPostCreateHooks) {
@@ -276,13 +941,22 @@ export async function checkHookContracts(
   try {
     const config = JSON.parse(
       await readFile(join(root, configSource), "utf8"),
-    ) as {
-      hooks?: { timeout?: unknown };
-    };
+    ) as unknown;
+    const hooks =
+      object(config) && object(config.hooks) ? config.hooks : undefined;
+    if (hooks && Object.hasOwn(hooks, "input")) {
+      addMetaDiagnostic(
+        diagnostics,
+        "HOOK_INPUT_PERSISTENT_CONFIG_PUBLISHED",
+        configSource,
+        "Hook input is invocation-only; dogfood configuration must not persist hooks.input.",
+      );
+    }
     if (
-      typeof config.hooks?.timeout !== "number" ||
-      !Number.isInteger(config.hooks.timeout) ||
-      config.hooks.timeout < 300_000
+      !hooks ||
+      typeof hooks.timeout !== "number" ||
+      !Number.isInteger(hooks.timeout) ||
+      hooks.timeout < 300_000
     ) {
       addMetaDiagnostic(
         diagnostics,

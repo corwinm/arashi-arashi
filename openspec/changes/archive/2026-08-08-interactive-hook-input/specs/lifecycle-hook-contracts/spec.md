@@ -1,29 +1,4 @@
-# lifecycle-hook-contracts Specification
-
-## Purpose
-Define lifecycle-hook discovery, ordering, execution context, timeout, failure, rollback, structured outcomes, generated examples, and platform-native behavior across configured and standalone Arashi workflows.
-## Requirements
-### Requirement: Configured create hooks have deterministic lifecycle points
-Configured create SHALL execute active hooks in this order: workspace `pre-create` once before branch or worktree mutation; repository-specific `pre-create.<repo>` after that repository's worktree is materialized; repository-specific `post-create.<repo>` after its pre hook; and workspace `post-create` once after coordinated Git creation and before move-changes or switch/launch handling. Workspace hooks SHALL run with the configured workspace root as cwd; repository-specific hooks SHALL run with that repository's new worktree as cwd. Any validation failure, timeout, or nonzero create-hook exit MUST fail create and enter the existing owned Git rollback boundary.
-
-#### Scenario: Workspace pre-create rejects the operation
-- **WHEN** configured workspace `pre-create` fails
-- **THEN** Arashi creates no branch or worktree
-- **AND** reports the workspace hook failure
-
-#### Scenario: Workspace create hook cwd
-- **WHEN** configured workspace `pre-create` or `post-create` executes
-- **THEN** its cwd and `ARASHI_HOOK_EXECUTION_PATH` are the configured workspace root
-
-#### Scenario: Repository pre-create runs after materialization
-- **WHEN** `pre-create.<repo>` executes
-- **THEN** the repository worktree already exists
-- **AND** the hook cwd and target worktree context identify that new worktree
-
-#### Scenario: Repository or workspace post-create fails
-- **WHEN** a repository-specific or workspace post-create hook fails after worktrees were created
-- **THEN** create exits nonzero and rolls back Git mutations owned by the invocation
-- **AND** reports both the hook failure and any rollback warning
+## MODIFIED Requirements
 
 ### Requirement: Hook context separates execution, target, and aggregate identity
 Every executed lifecycle hook SHALL receive executor-owned `ARASHI_HOOK_NAME`, `ARASHI_HOOK_SCOPE`, `ARASHI_HOOK_SOURCE_PATH`, `ARASHI_HOOK_EXECUTION_PATH`, `ARASHI_HOOK_WORKSPACE_MODE`, `ARASHI_HOOK_INPUT`, and `ARASHI_MAIN_REPO_PATH` context for its logical hook name, scope, absolute source path, exact absolute execution cwd, `configured`/`standalone` mode, effective `tty`/`disabled`/`unavailable` input mode, and canonical absolute main root. Targeted invocations SHALL expose explicit `ARASHI_HOOK_TARGET_REPOSITORY`, `ARASHI_HOOK_TARGET_REPO_PATH`, and unambiguous `ARASHI_HOOK_TARGET_WORKTREE_PATH` values plus applicable branch context, and operation data MUST NOT overwrite executor-owned fields. `ARASHI_PARENT_REPO_PATH` SHALL be set only for configured repository-specific create and identify the absolute coordinated parent worktree; all other invocations SHALL omit it. Historical `ARASHI_REPO_NAME`, `ARASHI_REPO_PATH`, and `ARASHI_WORKTREE_PATH` SHALL remain compatibility aliases with the exact mode/scope mapping below. Untargeted configured workspace create MUST omit target fields and `ARASHI_REPO_NAME`, retain workspace root as the historical `ARASHI_REPO_PATH`, and omit worktree aliases.
@@ -140,39 +115,6 @@ Configured `arashi init` SHALL generate non-active examples whose filenames, com
 - **THEN** the inert example checks for `ARASHI_HOOK_INPUT=tty` before using the native read primitive
 - **AND** documents immediate EOF, invocation-only disablement, and the no-secrets rule without inventing persisted answers
 
-### Requirement: Lifecycle hooks share one timeout contract
-Configured create, configured remove, and standalone lifecycle hooks SHALL use a default timeout of `300000` milliseconds. A configured `hooks.timeout` integer from 1 through 2147483647 milliseconds SHALL override that default for every configured lifecycle hook. The timeout SHALL include all time spent waiting for inherited terminal input. Zero, negative, fractional, non-numeric, or out-of-range values MUST fail schema/configuration validation before hook discovery or lifecycle mutation and use the canonical structured configuration error in JSON mode.
-
-#### Scenario: No timeout override exists
-- **WHEN** any lifecycle hook runs without a configured timeout
-- **THEN** the effective timeout is 300000 milliseconds
-
-#### Scenario: Timeout override exists
-- **WHEN** configured hooks set a valid `hooks.timeout`
-- **THEN** workspace, repository, and user-global hooks in that configured lifecycle use the same override
-
-#### Scenario: Hook times out
-- **WHEN** a lifecycle hook exceeds its effective timeout while executing or waiting for input
-- **THEN** the outcome identifies timeout rather than a generic exit failure
-- **AND** lifecycle failure and rollback/finalization follow the applicable command contract
-
-#### Scenario: Hook timeout configuration is invalid
-- **WHEN** configured `hooks.timeout` is zero, negative, fractional, non-numeric, or greater than 2147483647
-- **THEN** configuration validation fails before hook discovery or lifecycle mutation
-- **AND** JSON mode emits the canonical structured configuration failure envelope
-
-### Requirement: Configured create reports a complete hook outcome ledger
-Configured create SHALL record workspace and repository-specific hook skips, successes, validation failures, timeouts, and nonzero exits in one deterministic outcome ledger used by human and JSON results.
-
-#### Scenario: Workspace and repository hooks succeed
-- **WHEN** configured create runs active workspace and repository-specific hooks successfully
-- **THEN** its result includes an ordered outcome for every evaluated hook location
-
-#### Scenario: Workspace hook fails
-- **WHEN** a workspace create hook fails
-- **THEN** failure output identifies its logical name, scope, source, status, and available diagnostics
-- **AND** recovery guidance is derived from the same ledger
-
 ### Requirement: Generated template behavior is command-tested
 Arashi SHALL test init-generated hook examples and activation instructions through real temporary configured command workflows rather than validating only file existence or manually injected operation keys. Input-capable Bash, PowerShell, and cmd derivatives SHALL be activated and exercised through the real built CLI with eligible terminal input and with disabled or unavailable immediate EOF. Standalone user-global examples are documentation-authored, not init-generated, and SHALL be exercised separately through temporary documented global-hook workflows.
 
@@ -195,3 +137,23 @@ Arashi SHALL test init-generated hook examples and activation instructions throu
 - **THEN** a terminal-capable run proves the native read receives an answer
 - **AND** disabled and unavailable runs prove immediate EOF without waiting for timeout
 
+### Requirement: Lifecycle hooks share one timeout contract
+Configured create, configured remove, and standalone lifecycle hooks SHALL use a default timeout of `300000` milliseconds. A configured `hooks.timeout` integer from 1 through 2147483647 milliseconds SHALL override that default for every configured lifecycle hook. The timeout SHALL include all time spent waiting for inherited terminal input. Zero, negative, fractional, non-numeric, or out-of-range values MUST fail schema/configuration validation before hook discovery or lifecycle mutation and use the canonical structured configuration error in JSON mode.
+
+#### Scenario: No timeout override exists
+- **WHEN** any lifecycle hook runs without a configured timeout
+- **THEN** the effective timeout is 300000 milliseconds
+
+#### Scenario: Timeout override exists
+- **WHEN** configured hooks set a valid `hooks.timeout`
+- **THEN** workspace, repository, and user-global hooks in that configured lifecycle use the same override
+
+#### Scenario: Hook times out
+- **WHEN** a lifecycle hook exceeds its effective timeout while executing or waiting for input
+- **THEN** the outcome identifies timeout rather than a generic exit failure
+- **AND** lifecycle failure and rollback/finalization follow the applicable command contract
+
+#### Scenario: Hook timeout configuration is invalid
+- **WHEN** configured `hooks.timeout` is zero, negative, fractional, non-numeric, or greater than 2147483647
+- **THEN** configuration validation fails before hook discovery or lifecycle mutation
+- **AND** JSON mode emits the canonical structured configuration failure envelope
