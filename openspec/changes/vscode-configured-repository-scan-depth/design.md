@@ -29,11 +29,11 @@ Add a focused configuration reader that returns a discriminated result for unava
 
 This avoids inferring configuration validity from the worktree panel's filtered repository list. Reusing only `resolveArashiWorkspaceContext` was rejected because it silently collapses parse failures, invalid entries, and valid-but-not-yet-created paths into an empty list.
 
-### Rebase relative paths onto the active checkout
+### Rebase relative paths onto the applicable checkout
 
-Resolve the configuration owner with the existing sibling-worktree discovery. Resolve relative `repos.<name>.path` values against the active Arashi checkout root, not necessarily the configuration owner's main-checkout root. Preserve absolute configured paths as absolute.
+Resolve the configuration owner with the existing workspace discovery. When the active root and configuration owner are linked worktrees of the same Git repository, resolve relative `repos.<name>.path` values against the active linked-worktree root. Otherwise, including when a normal child repository finds configuration in an ancestor, resolve relative paths against the configuration owner. Preserve absolute configured paths as absolute.
 
-This makes a default `repos/app` entry calculate as `<active-linked-worktree>/repos/app` when the user opens a coordinated feature worktree. Resolving all entries against the sibling main root was rejected because it would incorrectly classify every linked-worktree child as outside the opened feature workspace.
+This makes a default `repos/app` entry calculate as `<active-linked-worktree>/repos/app` when the user opens a coordinated feature worktree, while opening the configured child repository directly still resolves that entry to the child root owned by the parent configuration and excludes it from scan-depth recommendations. Resolving every entry against either the config owner or the active folder was rejected because neither rule handles both relationships correctly.
 
 ### Calculate depth from opened workspace folders
 
@@ -70,7 +70,7 @@ The feature does not invoke a private Git command or promise that discovery refr
 
 ### Trigger after usable workspace resolution without prompt spam
 
-Run the recommendation after successful startup and initial panel refresh, and after relevant Arashi extension configuration changes that cause a refresh. Track every normalized recommendation snapshot shown during the activation. The snapshot key contains each affected workspace-folder identity, its required depth, and its current insufficient effective depth, sorted deterministically. Focus and visibility refreshes therefore do not repeat an unchanged prompt. A changed Arashi root or configured path set produces a new prompt only when it changes the affected folder or required depth, while a changed effective Git setting produces a new prompt only when it changes an affected folder's insufficient effective depth. Returning to any snapshot already shown during the same activation remains suppressed.
+Run the recommendation after successful startup and initial panel refresh, after relevant Arashi extension configuration changes, and after opened workspace folders change. Workspace-folder changes reset the associated-root tracker, replace the exact config watcher, refresh the panel, and reevaluate repository depth. Track every normalized recommendation snapshot shown during the activation. The snapshot key contains each affected workspace-folder identity, its required depth, and its current insufficient effective depth, sorted deterministically. Focus and visibility refreshes therefore do not repeat an unchanged prompt. A changed Arashi root, configured path set, workspace-folder set, or effective Git setting produces a new prompt only when it changes the normalized snapshot. Returning to any snapshot already shown during the same activation remains suppressed, except when a settings write fails and the same recommendation must remain retryable.
 
 ## Risks / Trade-offs
 

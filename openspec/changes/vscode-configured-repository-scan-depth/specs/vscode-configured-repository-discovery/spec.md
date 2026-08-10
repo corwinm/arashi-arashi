@@ -20,6 +20,12 @@ The extension SHALL evaluate repository scan depth only after it resolves a read
 - **WHEN** an opened coordinated linked worktree resolves an associated sibling main-worktree Arashi configuration
 - **THEN** relative configured repository paths are interpreted from the active linked-worktree root for repository-depth calculation
 
+#### Scenario: Directly opened child repository finds ancestor-owned configuration
+
+- **WHEN** an opened child repository resolves Arashi configuration owned by an ancestor workspace that is not a linked worktree of the child
+- **THEN** relative configured repository paths are interpreted from the configuration owner's root
+- **AND** the configured child that equals the opened workspace folder does not contribute to a scan-depth recommendation
+
 ### Requirement: Required depth derives from configured repository paths
 
 The extension SHALL normalize each usable configured `repos.<name>.path`, map it to the deepest opened workspace folder that contains it, and calculate its depth as the number of relative path segments from that folder to the configured repository root. The required depth for each applicable workspace folder SHALL be the maximum calculated depth among its applicable configured repositories.
@@ -130,6 +136,7 @@ When one or more applicable workspace folders have insufficient effective depth,
 - **WHEN** persisting an accepted scan-depth update fails or the resulting effective value remains insufficient for any affected folder
 - **THEN** the extension surfaces and logs the failure
 - **AND** does not offer to reload as though the update succeeded
+- **AND** allows the same recommendation to be presented again after the user corrects the update failure
 
 ### Requirement: Reload is a separate optional action
 
@@ -168,3 +175,13 @@ The extension SHALL suppress a repository-scan recommendation snapshot after it 
 
 - **WHEN** the effective depth later returns to an insufficient folder/required/current snapshot already presented during the activation
 - **THEN** the extension does not present that snapshot again
+
+### Requirement: Recommendation follows opened workspace-folder changes
+
+The extension SHALL reevaluate repository discovery when opened workspace folders are added, removed, or reordered without reloading the extension host. It SHALL reset the remembered associated configuration root, replace the configuration watcher, refresh the Arashi panel, and evaluate the new workspace-folder set.
+
+#### Scenario: Multi-root workspace folders change after activation
+
+- **WHEN** the user adds, removes, or reorders an opened workspace folder after successful extension activation
+- **THEN** the extension re-resolves the associated Arashi configuration and replaces its watcher
+- **AND** recalculates the repository scan-depth recommendation for the current workspace-folder set
