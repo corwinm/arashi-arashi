@@ -27,4 +27,4 @@
 - [x] 4.2 Package a smoke-test VSIX with `pnpm exec vsce package --no-dependencies --out /tmp/arashi-vscode-configured-scan-depth.vsix` and verify the bundled extension contains the recommendation path.
 - [x] 4.3 Run `openspec validate vscode-configured-repository-scan-depth --strict` plus meta-repository tests and type checks, and reconcile every normative scenario against a passing test.
 - [x] 4.4 Perform independent spec-compliance review followed by code-quality review on the final child commit, resolve only concrete findings, and rerun affected verification.
-- [ ] 4.5 Commit and push the `arashi-vscode` implementation, open a focused child PR linked to issue #269 and the OpenSpec proposal, and verify remote CI is green before requesting merge approval.
+- [x] 4.5 Commit and push the `arashi-vscode` implementation, open a focused child PR linked to issue #269 and the OpenSpec proposal, and verify remote CI is green before requesting merge approval.
