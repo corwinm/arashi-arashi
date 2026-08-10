@@ -49,16 +49,18 @@ Group applicable repositories by containing workspace folder and take the maximu
 
 Grouping was chosen over one process-global maximum because VS Code configuration is resource-scoped in multi-root workspaces. Lexical normalized containment is sufficient: this recommendation predicts traversal from configured paths and must not require the repository directory to exist.
 
-### Evaluate and update each applicable resource scope
+### Evaluate each resource and let the user select persistence scope
 
 Read `workspace.getConfiguration("git", folder.uri)` for each applicable folder. Treat `-1` or any value greater than or equal to the group's required depth as sufficient. Ignore malformed effective values defensively and log them without mutation.
 
-Aggregate all insufficient groups into one prompt per activation/check cycle. The action names the exact depth for the common single-group case. On acceptance, update:
+Aggregate all insufficient groups into one prompt per activation/check cycle. The prompt names the exact depth for the common single-group case and provides two explicit actions:
 
-- `ConfigurationTarget.Workspace` for a single-folder workspace; or
-- `ConfigurationTarget.WorkspaceFolder` for each affected folder in a multi-root workspace.
+- **Update Workspace Setting** persists one value at `ConfigurationTarget.Workspace` for the current workspace.
+- **Update User Setting** persists one value at `ConfigurationTarget.Global` for the user's editor profile and warns that it applies to unrelated workspaces.
 
-The prompt discloses that the action persists workspace configuration. Updating the user's global setting was rejected because an Arashi workspace should not broaden Git scanning for unrelated projects.
+For either choice, the target value is the maximum required depth across all affected resource groups. Do not lower an existing value at the selected target: preserve `-1`, and otherwise write the greater of the existing finite nonnegative target value and the required maximum. Recompute before mutation and verify every affected resource's effective value afterward. A higher-precedence override can prevent a global or workspace update from becoming effective; report that result without offering reload rather than silently modifying a higher-precedence folder setting.
+
+Offering only a workspace update was rejected because users may prefer one global editor preference across all Arashi workspaces. Silently choosing global was also rejected because deeper Git scanning can affect unrelated projects. `ConfigurationTarget.WorkspaceFolder` is not offered or mutated by this feature; the two choices remain the current workspace or the user profile.
 
 ### Separate update and reload consent
 
@@ -74,13 +76,13 @@ Run the recommendation after successful startup and initial panel refresh, and a
 
 - **[Risk] A custom relative path contains `..` and leaves the active checkout.** → Normalize first and exclude it unless another opened workspace folder contains the resulting path.
 - **[Risk] A linked checkout borrows the wrong sibling configuration.** → Reuse the extension's existing common-Git-dir relationship and require the active root to resolve to that configured context before rebasing relative paths.
-- **[Risk] Folder-level overrides remain lower than a workspace update.** → Use workspace-folder scope in multi-root workspaces and verify the effective value after every update.
+- **[Risk] A higher-precedence workspace or folder override makes the selected scope ineffective.** → Preserve the user's chosen scope, verify every affected resource after the update, explain the overriding scope on failure, and do not offer reload or silently mutate another scope.
 - **[Risk] A configuration changes while a prompt is open.** → Recompute before applying; if the recommendation no longer matches, abort the mutation and rerun the check.
 - **[Risk] Deep scans can cost more on large trees.** → Calculate the minimum maximum required by configured paths and never raise a setting already sufficient or unlimited.
 
 ## Migration Plan
 
-Ship as additive extension behavior with no stored extension migration. Users who accept receive standard VS Code workspace settings that remain understandable without the extension. Rollback consists of removing the recommendation code; existing user-approved settings are left intact rather than silently reverted.
+Ship as additive extension behavior with no stored extension migration. Users who accept receive a standard VS Code workspace or user setting that remains understandable without the extension. Rollback consists of removing the recommendation code; existing user-approved settings are left intact rather than silently reverted.
 
 ## Open Questions
 

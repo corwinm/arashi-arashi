@@ -6,7 +6,7 @@ VS Code scans one directory below an opened workspace for Git repositories by de
 
 - Derive the required VS Code repository scan depth from configured `repos.<name>.path` values that are reachable beneath opened workspace folders.
 - Check the effective `git.repositoryScanMaxDepth` only when a readable, usable Arashi configuration is available.
-- Prompt only when the effective depth is insufficient, and offer to persist the exact computed value at the applicable workspace scope.
+- Prompt only when the effective depth is insufficient, and let the user choose whether to persist the computed value for the current workspace or globally for their user profile.
 - Require separate explicit actions for the settings update and for reloading the editor window.
 - Treat explicit workspace-folder repositories and paths outside opened workspace folders accurately rather than claiming scan depth can discover them.
 - Limit the feature to `git.repositoryScanMaxDepth`; do not inspect or modify other VS Code Git settings.

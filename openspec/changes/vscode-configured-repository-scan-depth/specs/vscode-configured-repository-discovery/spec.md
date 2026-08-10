@@ -84,28 +84,40 @@ For each applicable workspace folder, the extension SHALL read the effective res
 - **WHEN** the effective setting cannot be interpreted as `-1` or a finite nonnegative number
 - **THEN** the extension logs a diagnostic and does not mutate the setting automatically
 
-### Requirement: Updating scan depth requires explicit workspace-scoped consent
+### Requirement: Updating scan depth requires explicit user-selected scope
 
-When one or more applicable workspace folders have insufficient effective depth, the extension SHALL present one explicit recommendation describing the exact calculated value for a single affected scope or the affected values for multiple scopes. It SHALL persist no setting unless the user chooses the update action, and SHALL update only the applicable workspace or workspace-folder configuration targets.
+When one or more applicable workspace folders have insufficient effective depth, the extension SHALL present one explicit recommendation describing the exact calculated value for a single affected scope or the affected values for multiple scopes. The recommendation SHALL offer **Update Workspace Setting** and **Update User Setting** as separate actions, disclose that the user setting applies to unrelated workspaces, and persist no setting unless the user chooses one action. The selected target value SHALL be the maximum required depth across affected folders without lowering an existing sufficient or unlimited value at that target.
 
 #### Scenario: User dismisses the recommendation
 
 - **WHEN** the user dismisses the repository-scan recommendation or chooses not to update
 - **THEN** the extension does not mutate any VS Code setting
 
-#### Scenario: User accepts in a single-folder workspace
+#### Scenario: User chooses the current workspace
 
-- **WHEN** one folder requires depth `3`, the effective value is insufficient, and the user chooses **Update Workspace Setting**
+- **WHEN** one or more applicable folders require a maximum depth of `3`, the effective value and existing workspace-target value are below `3`, and the user chooses **Update Workspace Setting**
 - **THEN** the extension recomputes and confirms the recommendation is still current
 - **AND** writes `git.repositoryScanMaxDepth` as `3` at `ConfigurationTarget.Workspace`
-- **AND** does not modify the user's global setting or any other Git setting
+- **AND** does not modify the user's global setting, any workspace-folder setting, or any other Git setting
 
-#### Scenario: User accepts in a multi-root workspace
+#### Scenario: User chooses the global user setting
 
-- **WHEN** one or more folders in a multi-root workspace have insufficient calculated depths and the user accepts the update
+- **WHEN** one or more applicable folders require a maximum depth of `3`, the effective value and existing global-target value are below `3`, and the user chooses **Update User Setting**
 - **THEN** the extension recomputes and confirms the recommendations are still current
-- **AND** writes each exact calculated depth at `ConfigurationTarget.WorkspaceFolder` for only the affected folders
-- **AND** verifies the resulting effective values are sufficient
+- **AND** writes `git.repositoryScanMaxDepth` as `3` at `ConfigurationTarget.Global`
+- **AND** does not modify the current workspace, any workspace folder, or any other Git setting
+
+#### Scenario: Existing selected-scope value is higher or unlimited
+
+- **WHEN** the user selects a persistence scope whose existing value is greater than the required maximum or is `-1`
+- **THEN** the extension does not lower or replace that selected-scope value
+- **AND** still verifies whether the effective value is sufficient for every affected folder
+
+#### Scenario: Higher-precedence override defeats the selected scope
+
+- **WHEN** the selected global or workspace target is updated or already sufficient but a higher-precedence setting leaves an affected folder's effective value insufficient
+- **THEN** the extension explains and logs that the selected scope is overridden
+- **AND** does not mutate the higher-precedence scope or offer to reload as though the update succeeded
 
 #### Scenario: Recommendation changes before acceptance is applied
 
@@ -115,7 +127,7 @@ When one or more applicable workspace folders have insufficient effective depth,
 
 #### Scenario: Settings update fails
 
-- **WHEN** persisting any accepted scan-depth update fails or the resulting effective value remains insufficient
+- **WHEN** persisting an accepted scan-depth update fails or the resulting effective value remains insufficient for any affected folder
 - **THEN** the extension surfaces and logs the failure
 - **AND** does not offer to reload as though the update succeeded
 
