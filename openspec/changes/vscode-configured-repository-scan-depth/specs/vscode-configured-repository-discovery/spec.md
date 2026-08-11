@@ -131,6 +131,12 @@ When one or more applicable workspace folders have insufficient effective depth,
 - **THEN** the extension does not apply the stale recommendation
 - **AND** reevaluates the current workspace state
 
+#### Scenario: Recommendation becomes invalid before acceptance is applied
+
+- **WHEN** the Arashi configuration or effective Git setting becomes invalid while the recommendation is pending
+- **THEN** the extension logs the invalid state without applying the accepted update
+- **AND** allows the same recommendation to be presented again after the user corrects the invalid state
+
 #### Scenario: Settings update fails
 
 - **WHEN** persisting an accepted scan-depth update fails or the resulting effective value remains insufficient for any affected folder
