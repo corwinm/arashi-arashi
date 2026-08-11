@@ -138,6 +138,12 @@ When one or more applicable workspace folders have insufficient effective depth,
 - **AND** does not offer to reload as though the update succeeded
 - **AND** allows the same recommendation to be presented again after the user corrects the update failure
 
+#### Scenario: Selected target value is invalid
+
+- **WHEN** the chosen workspace or user target contains an invalid value while a higher-precedence scope supplies a valid insufficient effective value
+- **THEN** the extension logs the invalid selected-target diagnostic without mutating settings
+- **AND** allows the same recommendation to be presented again after the user corrects the selected-target value
+
 ### Requirement: Reload is a separate optional action
 
 After every accepted scan-depth update succeeds, the extension SHALL report success and SHALL offer a separate action to reload the editor window. It SHALL reload only when the user explicitly chooses that action.
@@ -154,7 +160,7 @@ After every accepted scan-depth update succeeds, the extension SHALL report succ
 
 ### Requirement: Recommendation does not spam repeated refreshes
 
-The extension SHALL suppress a repository-scan recommendation snapshot after it has been presented during the current extension activation. The normalized snapshot identity SHALL contain each affected workspace-folder identity, its required depth, and its current insufficient effective depth in deterministic order. Reevaluation SHALL create a new actionable snapshot only when one of those values changes, and returning to a snapshot already presented during the activation SHALL remain suppressed.
+The extension SHALL suppress a repository-scan recommendation snapshot after it has been presented during the current extension activation. The normalized snapshot identity SHALL contain each affected workspace-folder identity, its required depth, and its current insufficient effective depth in deterministic order. Reevaluation SHALL create a new actionable snapshot only when one of those values changes, and returning to a snapshot already presented during the activation SHALL remain suppressed unless selected-target validation, persistence, or post-write effective verification failed and requires a retry.
 
 #### Scenario: Visibility and focus refreshes repeat unchanged state
 
@@ -185,3 +191,9 @@ The extension SHALL reevaluate repository discovery when opened workspace folder
 - **WHEN** the user adds, removes, or reorders an opened workspace folder after successful extension activation
 - **THEN** the extension re-resolves the associated Arashi configuration and replaces its watcher
 - **AND** recalculates the repository scan-depth recommendation for the current workspace-folder set
+
+#### Scenario: Startup validation recovers after configuration changes
+
+- **WHEN** initial startup validation disables repository discovery and the user corrects the relevant Arashi configuration without reloading the extension host
+- **THEN** the extension revalidates startup and refreshes the Arashi panel
+- **AND** restarts repository discovery, its configuration watcher, and recommendation evaluation when validation succeeds
