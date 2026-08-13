@@ -2,14 +2,15 @@
 
 - [ ] 1.1 Add focused failing tests for descendant target closure across exact-parent-path and mixed-branch parent selection, transitive nesting, normalized descendant-before-ancestor ordering, unrelated stable order, sibling-prefix paths, platform path semantics, and no closure under `--keep-worktrees`.
 - [ ] 1.2 Implement the smallest typed configured worktree-plan helper that expands selected ancestors over the complete configured inventory and satisfies the ordering tests without changing standalone behavior.
-- [ ] 1.3 Add failing configured dry-run tests proving human and JSON operation arrays expose the complete expanded child-first plan and remain non-mutating.
-- [ ] 1.4 Route configured confirmation, hook targets, previews, and execution through the shared ordered plan; make the focused dry-run tests pass.
+- [ ] 1.3 Add failing configured dry-run tests proving human and JSON operation arrays expose the complete expanded child-first plan and remain non-mutating, including mixed-branch descendant branch actions and `--keep-worktrees` preservation.
+- [ ] 1.4 Add failing orchestration tests proving auto-included descendants participate in dirty resolution and confirmation before mutation, pre/post-remove hook target/context data, branch-deletion planning, human/JSON results, and force/no-dirty-check behavior.
+- [ ] 1.5 Route configured dirty resolution, confirmation, hook targets/context, branch actions, previews, and execution through the shared ordered plan; make the focused orchestration and dry-run tests pass.
 
 ## 2. Failure Safety TDD
 
-- [ ] 2.1 Add failing tests that inject a nested child removal failure and prove its containing parent removal is not invoked, both repository/path failures are recorded, and the result is non-zero.
+- [ ] 2.1 Add failing tests that inject a nested child removal failure and prove its containing parent removal is not invoked, both repository/path failures are recorded, independent targets continue, post-remove finalization still runs with complete context, and the result is non-zero.
 - [ ] 2.2 Implement dependency-aware failure blocking while continuing unrelated removals and preserving existing operation, branch-deletion, and post-remove finalization ledgers.
-- [ ] 2.3 Add JSON failure-path assertions proving one standard error envelope preserves successful, failed, and dependency-blocked operation details without human stdout leakage.
+- [ ] 2.3 Add human and JSON failure-path assertions proving partial-success summaries and one standard error envelope preserve successful, failed, dependency-blocked, branch, and hook operation details without false complete-success wording or human stdout leakage.
 
 ## 3. Real-Git Acceptance
 
