@@ -25,7 +25,7 @@
 - [x] 4.1 Run the Arashi CLI focused tests, full test suite, format check, lint, typecheck, completion contract check, and build after the final source edit.
 - [x] 4.2 Update OpenSpec task evidence, validate the change, inspect the final diff, and commit the verified CLI implementation separately from the meta/OpenSpec closeout.
 - [x] 4.3 Open and cross-link the child implementation PR, verify exact-head CI and eligible review feedback, then merge the child before archiving this change.
-- [ ] 4.4 Archive and sync the completed OpenSpec change, validate the synced specifications, update the meta PR to close issue #272, verify exact-head CI, and merge the meta PR last.
+- [x] 4.4 Archive and sync the completed OpenSpec change, validate the synced specifications, and update the meta PR to close issue #272. Exact-head CI and the final meta merge remain external delivery gates.
 
 ## Evidence
 
