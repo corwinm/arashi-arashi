@@ -32,8 +32,9 @@ The system SHALL accept Git SSH remotes in `ssh://[user@]host/path` and `[user@]
 The system MUST require a non-empty SCP host and path and MUST NOT classify Windows drive syntax, whitespace-bearing values, or malformed colon strings as SSH remotes.
 
 #### Scenario: Windows drive path is not treated as an alias remote
-- **WHEN** URL validation receives a value such as `C:\work\api.git`
-- **THEN** Arashi does not classify it as an SCP-style SSH remote
+- **WHEN** URL validation receives either `C:\work\api.git` or `C:/work/api.git`
+- **THEN** Arashi does not classify either Windows drive form as an SCP-style SSH remote
+- **AND** platform-independent parser tests enforce both cases
 
 #### Scenario: Alias remote uses a single repository segment
 - **WHEN** URL validation receives `work-github:api.git`

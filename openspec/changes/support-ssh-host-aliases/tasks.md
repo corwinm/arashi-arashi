@@ -1,8 +1,8 @@
 ## 1. CLI RED Coverage
 
-- [ ] 1.1 Add focused URL-validation, parsing, name-derivation, Commander-help, and generated-contract tests for explicit-user SCP aliases, omitted-user SCP aliases with single- and multi-segment paths, `ssh://` aliases with and without users, `--name`, malformed values, whitespace, and Windows drive syntax; record the expected RED before implementation.
+- [ ] 1.1 Add focused URL-validation, parsing, name-derivation, Commander-help, and generated-contract tests for explicit-user SCP aliases, omitted-user SCP aliases with single- and multi-segment paths, `ssh://` aliases with and without users, `--name`, malformed values, whitespace, and both `C:\...` and `C:/...` Windows drive forms on every test platform; record the expected RED before implementation.
 - [ ] 1.2 Add focused clone-discovery tests proving omitted-user SCP aliases participate in SSH inference, already-SSH configured values remain byte-for-byte exact, HTTPS-to-SSH conversion remains supported, and selected/inferred HTTPS never converts an SSH URL; record the expected RED.
-- [ ] 1.3 Add real temporary-workspace/process-level tests proving `add` passes and persists the exact alias URL, unavailable aliases retain existing rollback/non-mutation behavior, and `clone` preserves exact alias argv plus per-repository partial-success human/JSON envelopes; record the expected RED without using real user SSH configuration or external network.
+- [ ] 1.3 Add real temporary-workspace/process-level tests proving `add` passes and persists the exact alias URL, unavailable aliases retain existing rollback/non-mutation behavior, and `clone` preserves exact alias argv plus per-repository partial-success human/JSON envelopes; include a coordinated worktree whose canonical local child source is unavailable so the remote-fallback branch is exercised with an exact SSH alias; record the expected RED without using real user SSH configuration or external network.
 
 ## 2. CLI Implementation
 
