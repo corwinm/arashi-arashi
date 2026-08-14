@@ -51,6 +51,9 @@ const paths = {
     "repos/arashi-docs/scripts/check-shell-completion-docs.ts",
   skillsCompletionCheck:
     "repos/arashi-skills/scripts/shell-completion-guidance-selftest.mjs",
+  docsSshAliasCheck: "repos/arashi-docs/scripts/check-ssh-host-alias-docs.ts",
+  skillsSshAliasCheck:
+    "repos/arashi-skills/scripts/ssh-host-alias-guidance-selftest.mjs",
   skillsTabPolicy: "repos/arashi-skills/skills/arashi/references/commands.md",
 } as const;
 const execFileAsync = promisify(execFile);
@@ -1786,6 +1789,77 @@ async function checkAddMaterializationGuidance(
   }
 }
 
+function checkSshAliasCliContract(
+  command: Obj | undefined,
+  diagnostics: Diagnostic[],
+): void {
+  const argumentsList =
+    command && Array.isArray(command.arguments)
+      ? command.arguments.filter(object)
+      : [];
+  const descriptions = argumentsList
+    .map((argument) => argument.description)
+    .filter(text)
+    .join("\n");
+  for (const syntax of ["[user@]host:path", "ssh://[user@]host/path"])
+    if (!descriptions.includes(syntax))
+      add(
+        diagnostics,
+        "error",
+        "schema",
+        "SSH_ALIAS_CLI_CONTRACT_MISMATCH",
+        paths.contract,
+        syntax,
+        "The add positional argument must expose optional-user SCP and ssh:// alias syntax in the generated CLI contract.",
+      );
+}
+
+async function checkSshAliasDirectGuidance(
+  root: string,
+  diagnostics: Diagnostic[],
+): Promise<void> {
+  const requirements: Array<{
+    category: "docs" | "skills";
+    phrases: string[];
+    source: string;
+  }> = [
+    {
+      category: "docs",
+      source: "repos/arashi-docs/docs/commands/add.md",
+      phrases: ["`[user@]host:path`", "`ssh://[user@]host/path`"],
+    },
+    {
+      category: "skills",
+      source: "repos/arashi-skills/skills/arashi/references/commands.md",
+      phrases: [
+        "SSH Remote Aliases for Add and Clone",
+        "arashi add work-github:acme/api.git",
+        "preserves every configured SSH URL byte-for-byte",
+        "local Git `url.<base>.insteadOf` rule",
+      ],
+    },
+  ];
+  for (const requirement of requirements) {
+    let content = "";
+    try {
+      content = await readFile(join(root, requirement.source), "utf8");
+    } catch {
+      // Report the missing file through the same semantic diagnostic below.
+    }
+    for (const phrase of requirement.phrases)
+      if (!content.includes(phrase))
+        add(
+          diagnostics,
+          "error",
+          requirement.category,
+          "SSH_ALIAS_GUIDANCE_MISMATCH",
+          requirement.source,
+          phrase,
+          "SSH alias guidance must preserve the optional-user syntax, opaque-host ownership, exact URL policy, and machine-local portability contract.",
+        );
+  }
+}
+
 type CompanionKind = "docs" | "skills";
 type DefaultDisposition =
   | "window"
@@ -3111,6 +3185,8 @@ export async function checkContracts(
     }
   }
   checkAddMaterializationContract(commands.get("add"), d);
+  if (contract?.schemaVersion === 6)
+    checkSshAliasCliContract(commands.get("add"), d);
   if (contract?.schemaVersion === 5) {
     validateSchemaV5Commands(commands, d);
     compareNormalizedRecord(
@@ -3682,6 +3758,24 @@ export async function checkContracts(
       ? [
           {
             category: "docs" as const,
+            checker: paths.docsSshAliasCheck,
+            cwd: "repos/arashi-docs",
+            failureCode: "SSH_ALIAS_GUIDANCE_MISMATCH",
+            unreachableCode: "SSH_ALIAS_WORKFLOW_UNWIRED",
+            command:
+              "pnpm --dir repos/arashi-docs validate:ssh-host-alias-docs",
+          },
+          {
+            category: "skills" as const,
+            checker: paths.skillsSshAliasCheck,
+            cwd: "repos/arashi-skills",
+            failureCode: "SSH_ALIAS_GUIDANCE_MISMATCH",
+            unreachableCode: "SSH_ALIAS_WORKFLOW_UNWIRED",
+            command:
+              "node repos/arashi-skills/scripts/ssh-host-alias-guidance-selftest.mjs",
+          },
+          {
+            category: "docs" as const,
             checker: paths.docsCompletionCheck,
             cwd: "repos/arashi-docs",
             failureCode: "DOCS_COMPLETION_CHECK_FAILED",
@@ -3823,6 +3917,22 @@ export async function checkContracts(
           "Meta CI must create, extract, and validate completion guidance in the release-shaped packaged skill.",
         );
   }
+  if (contract?.schemaVersion === 6)
+    for (const command of [
+      "tar -czf arashi-skill-package.tar.gz -C repos/arashi-skills skills/",
+      "tar -xzf arashi-skill-package.tar.gz -C package-check",
+      "node repos/arashi-skills/scripts/ssh-host-alias-guidance-selftest.mjs --skill-root package-check/skills/arashi",
+    ])
+      if (!directlyRuns(workflowRuns, command))
+        add(
+          d,
+          "error",
+          "skills",
+          "SSH_ALIAS_PACKAGE_CHECK_UNWIRED",
+          paths.workflow,
+          command,
+          "Meta CI must validate SSH alias guidance in the release-shaped packaged skill.",
+        );
 
   await Promise.all(
     focusedChecks.map((focused) =>
@@ -3844,6 +3954,7 @@ export async function checkContracts(
 
   await checkKittyGuidance(root, d);
   await checkAddMaterializationGuidance(root, d);
+  if (contract?.schemaVersion === 6) await checkSshAliasDirectGuidance(root, d);
 
   d.sort((a, b) =>
     [
