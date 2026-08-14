@@ -108,6 +108,48 @@ const kittyWorktreeSessionContract = {
     failurePreservesCreatedWorktrees: true,
   },
 };
+const addMaterializationContract = {
+  activeConfigOwnership: true,
+  canonicalCloneDefaultBranch: true,
+  coordinatedBranch: "active-parent-branch",
+  linkedMode: "git-topology",
+  resultRoles: [
+    "path",
+    "materialization",
+    "canonicalPath",
+    "worktreePath",
+    "defaultBranch",
+    "coordinatedBranch",
+    "setupScript",
+    "setupScriptCreated",
+  ],
+};
+const addMaterializationGuidance = [
+  "canonical clone",
+  "child's default branch",
+  "child default branch",
+  "active linked parent worktree",
+  "linked parent worktree",
+  "active child worktree",
+  "active child path",
+  "coordinated branch",
+  "active parent branch",
+  "active parent configuration",
+  "active parent's `.arashi/config.json`",
+  "linked checkout's `.arashi/config.json`",
+  "Only the active parent worktree's `.arashi/config.json`",
+  "remote-tracking ref",
+  "creates it from the detected default branch",
+  "creates it from the detected child default branch",
+  "`local`",
+  "`local` scope",
+  "`tracked`",
+  "`tracked` scope",
+  "`none`",
+  "retains the canonical clone",
+  "`canonicalPath`",
+  "`worktreePath`",
+].join("\n");
 const option = (flags: string) => ({
   flags,
   description: flags,
@@ -377,6 +419,7 @@ async function fixture(): Promise<string> {
           arguments: [],
           options: [],
           semantics: {
+            addMaterialization: addMaterializationContract,
             json: { support: "full" },
             docs: { expectation: "required" },
             skills: { expectation: "required" },
@@ -479,7 +522,8 @@ async function fixture(): Promise<string> {
         },
       ],
     },
-    "repos/arashi-docs/docs/commands/add.md": "# Add\n",
+    "repos/arashi/README.md": addMaterializationGuidance,
+    "repos/arashi-docs/docs/commands/add.md": `# Add\n${addMaterializationGuidance}\n`,
     "repos/arashi-docs/docs/commands/create.md": "# Create\n`--tab`\n",
     "repos/arashi-docs/docs/commands/init.md": "# Init\n",
     "repos/arashi-docs/docs/commands/switch.md": "# Switch\n`--tab`\n",
@@ -497,8 +541,10 @@ async function fixture(): Promise<string> {
       "Kitty 0.43 or newer\n`allow_remote_control`\nexact Arashi worktree identity\nafter integrated IDE detection and before parent-shell `cd`\nlive only\n`.kitty-session`\n`arashi remove` does not close Kitty windows or sessions\nno `--kitty` flag\ndoes not add Kitty to persistent Arashi launch configuration\n`LAUNCH_FAILED`\ndoes not fall back\ncreated worktrees remain available\ncross-process identity lock\n10 seconds\nlive owner\ndead owner\n30 seconds\nownership-safe release\n",
     "repos/arashi-docs/public/workflows/kitty.md":
       "Kitty 0.43 or newer\n`allow_remote_control`\nexact Arashi worktree identity\nafter integrated IDE detection and before parent-shell `cd`\nlive only\n`.kitty-session`\n`arashi remove` does not close Kitty windows or sessions\nno `--kitty` flag\ndoes not add Kitty to persistent Arashi launch configuration\n`LAUNCH_FAILED`\ndoes not fall back\ncreated worktrees remain available\ncross-process identity lock\n10 seconds\nlive owner\ndead owner\n30 seconds\nownership-safe release\n",
+    "repos/arashi-docs/public/commands/add.md": addMaterializationGuidance,
     "repos/arashi-docs/public/llms-full.txt":
-      "Kitty 0.43 or newer\n`allow_remote_control`\nexact Arashi worktree identity\nafter integrated IDE detection and before parent-shell `cd`\nlive only\n`.kitty-session`\n`arashi remove` does not close Kitty windows or sessions\nno `--kitty` flag\ndoes not add Kitty to persistent Arashi launch configuration\n`LAUNCH_FAILED`\ndoes not fall back\ncreated worktrees remain available\ncross-process identity lock\n10 seconds\nlive owner\ndead owner\n30 seconds\nownership-safe release\n",
+      "Kitty 0.43 or newer\n`allow_remote_control`\nexact Arashi worktree identity\nafter integrated IDE detection and before parent-shell `cd`\nlive only\n`.kitty-session`\n`arashi remove` does not close Kitty windows or sessions\nno `--kitty` flag\ndoes not add Kitty to persistent Arashi launch configuration\n`LAUNCH_FAILED`\ndoes not fall back\ncreated worktrees remain available\ncross-process identity lock\n10 seconds\nlive owner\ndead owner\n30 seconds\nownership-safe release\n" +
+      addMaterializationGuidance,
     "repos/arashi-skills/contracts/command-coverage.json": {
       schemaVersion: 1,
       commands: [
@@ -549,6 +595,7 @@ async function fixture(): Promise<string> {
     },
     "repos/arashi-skills/skills/arashi/references/commands.md":
       'Use `arashi add`.\nUse `arashi create feature --tab`.\nUse `arashi switch --tab feature`.\ntmux → Herdr → cmux → integrated IDE → Kitty → parent-shell `cd` → terminal application/platform fallback\n`mode: "kitty"`\nno explicit Kitty launcher flag\nnot a persisted create or switch mode\ndoes not fall back\n' +
+      addMaterializationGuidance +
       skillsTabContract,
     "repos/arashi-skills/scripts/tab-launch-disposition-guidance-selftest.mjs":
       "console.log('tab launch skill checker passed');\n",
@@ -705,6 +752,37 @@ describe("cross-repository command contracts", () => {
       "SKILLS_EXCLUDED",
       "VSCODE_EXCLUDED",
     ]);
+  });
+  test("rejects a controlled linked-add materialization contract mismatch", async () => {
+    const root = await fixture();
+    const contractPath = join(root, "repos/arashi/contracts/cli-commands.json");
+    const contract = JSON.parse(await readFile(contractPath, "utf8"));
+    contract.commands.find(
+      (command: { path: string }) => command.path === "add",
+    ).semantics.addMaterialization.activeConfigOwnership = false;
+    await writeFile(contractPath, JSON.stringify(contract));
+
+    expect((await checkContracts(root)).diagnostics).toContainEqual(
+      expect.objectContaining({
+        code: "ADD_MATERIALIZATION_MISMATCH",
+        source: "repos/arashi/contracts/cli-commands.json",
+      }),
+    );
+  });
+  test("rejects a controlled out-of-repository linked-add guidance mismatch", async () => {
+    const root = await fixture();
+    await writeFile(
+      join(root, "repos/arashi-docs/docs/commands/add.md"),
+      "# Add\nClone a repository.\n",
+    );
+
+    expect((await checkContracts(root)).diagnostics).toContainEqual(
+      expect.objectContaining({
+        category: "docs",
+        code: "ADD_MATERIALIZATION_GUIDANCE_MISMATCH",
+        source: "repos/arashi-docs/docs/commands/add.md",
+      }),
+    );
   });
   test("accepts schema v4 generic typed option policies for create and switch", async () => {
     const result = await checkContracts(await fixture());
