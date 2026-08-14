@@ -214,6 +214,90 @@ const kittyGuidanceRequirements: Array<{
     ],
   },
 ];
+const addMaterializationContract: Obj = {
+  activeConfigOwnership: true,
+  canonicalCloneDefaultBranch: true,
+  coordinatedBranch: "active-parent-branch",
+  linkedMode: "git-topology",
+  resultRoles: [
+    "path",
+    "materialization",
+    "canonicalPath",
+    "worktreePath",
+    "defaultBranch",
+    "coordinatedBranch",
+    "setupScript",
+    "setupScriptCreated",
+  ],
+};
+const addMaterializationGuidanceRequirements: Array<{
+  category: "docs" | "skills";
+  phrases: readonly string[];
+  source: string;
+}> = [
+  {
+    category: "docs",
+    source: paths.cliReadme,
+    phrases: [
+      "canonical clone",
+      "active linked parent worktree",
+      "coordinated branch",
+    ],
+  },
+  {
+    category: "docs",
+    source: "repos/arashi-docs/docs/commands/add.md",
+    phrases: [
+      "canonical clone",
+      "child's default branch",
+      "active child worktree",
+      "active parent's `.arashi/config.json`",
+      "remote-tracking ref",
+      "creates it from the detected default branch",
+      "`local`",
+      "`tracked`",
+      "`none`",
+      "retains the canonical clone",
+      "`canonicalPath`",
+      "`worktreePath`",
+    ],
+  },
+  {
+    category: "docs",
+    source: "repos/arashi-docs/public/commands/add.md",
+    phrases: [
+      "canonical clone",
+      "active child worktree",
+      "active parent's `.arashi/config.json`",
+    ],
+  },
+  {
+    category: "docs",
+    source: "repos/arashi-docs/public/llms-full.txt",
+    phrases: [
+      "canonical clone",
+      "active child worktree",
+      "active parent's `.arashi/config.json`",
+    ],
+  },
+  {
+    category: "skills",
+    source: "repos/arashi-skills/skills/arashi/references/commands.md",
+    phrases: [
+      "canonical clone",
+      "child default branch",
+      "active child path",
+      "active parent branch",
+      "Only the active parent worktree's `.arashi/config.json`",
+      "remote-tracking ref",
+      "creates it from the detected child default branch",
+      "`local` scope",
+      "`tracked` scope",
+      "`none`",
+      "retains the canonical clone",
+    ],
+  },
+];
 const object = (value: unknown): value is Obj =>
   typeof value === "object" && value !== null && !Array.isArray(value);
 const text = (value: unknown): value is string =>
@@ -1653,6 +1737,61 @@ async function checkKittyGuidance(
   }
 }
 
+function checkAddMaterializationContract(
+  command: Obj | undefined,
+  diagnostics: Diagnostic[],
+): void {
+  const semantics =
+    command && object(command.semantics) ? command.semantics : {};
+  if (
+    !samePolicyValue(semantics.addMaterialization, addMaterializationContract)
+  )
+    add(
+      diagnostics,
+      "error",
+      "schema",
+      "ADD_MATERIALIZATION_MISMATCH",
+      paths.contract,
+      "add.addMaterialization",
+      "Linked-add materialization and result-role semantics must match the CLI-owned contract.",
+    );
+}
+
+async function checkAddMaterializationGuidance(
+  root: string,
+  diagnostics: Diagnostic[],
+): Promise<void> {
+  for (const requirement of addMaterializationGuidanceRequirements) {
+    let content: string;
+    try {
+      content = await readFile(join(root, requirement.source), "utf8");
+    } catch {
+      add(
+        diagnostics,
+        "error",
+        requirement.category,
+        "ADD_MATERIALIZATION_GUIDANCE_MISMATCH",
+        requirement.source,
+        "file",
+        "Linked-add human guidance is missing.",
+      );
+      continue;
+    }
+    for (const phrase of requirement.phrases) {
+      if (content.includes(phrase)) continue;
+      add(
+        diagnostics,
+        "error",
+        requirement.category,
+        "ADD_MATERIALIZATION_GUIDANCE_MISMATCH",
+        requirement.source,
+        phrase,
+        "Linked-add human guidance must match the normalized cross-repository contract.",
+      );
+    }
+  }
+}
+
 type CompanionKind = "docs" | "skills";
 type DefaultDisposition =
   | "window"
@@ -2977,6 +3116,7 @@ export async function checkContracts(
       );
     }
   }
+  checkAddMaterializationContract(commands.get("add"), d);
   if (contract?.schemaVersion === 5) {
     validateSchemaV5Commands(commands, d);
     compareNormalizedRecord(
@@ -3709,6 +3849,7 @@ export async function checkContracts(
   }
 
   await checkKittyGuidance(root, d);
+  await checkAddMaterializationGuidance(root, d);
 
   d.sort((a, b) =>
     [
