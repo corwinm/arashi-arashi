@@ -1,9 +1,11 @@
 ## ADDED Requirements
 
 ### Requirement: Add JSON results identify canonical and active materialization roles
+
 `arashi add --json` SHALL preserve the standard single-document JSON envelope and existing config-relative repository path while reporting deterministic canonical clone, linked worktree, default branch, and coordinated branch roles.
 
 #### Scenario: Coordinated linked add JSON succeeds
+
 - **WHEN** `arashi add --json` succeeds from a configured non-bare linked parent worktree
 - **THEN** stdout contains exactly one valid envelope with `ok: true` and `command: "add"`
 - **AND** `data.repository.path` contains the config-relative child repository path
@@ -16,6 +18,7 @@
 - **AND** stdout contains no spinner, prompt, warning prose, or human summary
 
 #### Scenario: Direct add JSON succeeds
+
 - **WHEN** `arashi add --json` succeeds without creating a linked child worktree
 - **THEN** `data.repository.materialization` is `"clone"`
 - **AND** `data.repository.canonicalPath` contains the normalized absolute clone path
@@ -24,6 +27,7 @@
 - **AND** the existing repository name, Git URL, config-relative `path`, default branch, setup script, setup-created, and managed-ignore fields remain available
 
 #### Scenario: Coordinated add JSON fails and rolls back completely
+
 - **WHEN** coordinated `arashi add --json` fails after one or more mutations and rollback completes
 - **THEN** stdout contains exactly one valid envelope with `ok: false` and `command: "add"`
 - **AND** `error.details.phase` is the original failing phase, one of `"clone"`, `"branch"`, `"worktree"`, or `"config"`
@@ -37,6 +41,7 @@
 - **AND** no human cleanup guidance is written to stdout
 
 #### Scenario: Coordinated add JSON reports incomplete rollback
+
 - **WHEN** coordinated `arashi add --json` cannot remove or restore one or more invocation-owned resources
 - **THEN** the same error envelope preserves the original failing `error.details.phase` and sets `error.details.rollback.complete` to `false`
 - **AND** `error.details.rollback.failures` contains ordered `{ phase, message }` records for every failed cleanup/restoration/observation operation, where `phase` is one of `"worktree-remove"`, `"branch-delete"`, `"clone-remove"`, `"config-restore"`, `"managed-ignore-restore"`, or `"final-state-observe"`

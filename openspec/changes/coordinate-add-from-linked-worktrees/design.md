@@ -54,7 +54,7 @@ After loading and validating active configuration and checking duplicate names, 
 Managed-ignore handling remains before filesystem materialization, but coordinated mode must account for the selected scope before any write:
 
 - `local` resolves the common repository exclude authority, so one reconciliation can cover both canonical and active destinations;
-- `tracked` may write only the active branch's `.gitignore`; therefore the canonical destination must already be effectively ignored from the canonical checkout before active reconciliation. If it is not, `add` fails before mutation with guidance to reconcile and commit the managed rule on the parent main branch first. The command never edits the canonical checkout's tracked `.gitignore`;
+- `tracked` may write only the active branch's `.gitignore`; therefore the canonical destination must already be effectively ignored from the canonical checkout before active reconciliation. If it is not, `add` fails before mutation with guidance to reconcile and commit the managed rule on the branch checked out in the canonical parent checkout first. The command never edits the canonical checkout's tracked `.gitignore`;
 - `none` preserves the user's explicit opt-out, performs no ignore-file writes, reports both destinations as unignored when applicable, and may continue under the existing policy;
 - an existing effective user/global rule may satisfy either destination without an Arashi-owned write.
 
@@ -89,7 +89,9 @@ Direct-main and configured-bare modes retain one clone at their current destinat
 
 The config entry remains the existing relative `repos.<name>.path` plus `gitUrl`; no schema change is needed. In coordinated mode, `saveConfig` targets the active configuration root only after the canonical clone and active child worktree both succeed. The canonical parent checkout's tracked config is not edited.
 
-Setup-script detection runs against the canonical clone because it is always present and on the detected default branch. The returned setup path is reported independently from the active worktree path. Future #274 onboarding must collect values in memory and join the same final config write.
+Setup-script detection runs against the checkout configured for the invoking workspace: the active child worktree in coordinated mode and the clone in single-placement mode. A requested setup template is created in that same checkout, while the returned setup path remains config-relative. Future #274 onboarding must collect values in memory and join the same final config write.
+
+An absolute `reposDir` is already a shared, single destination and cannot represent distinct canonical and active locations. Linked-parent invocation therefore retains the existing single-placement clone behavior for that configuration instead of requiring repository-relative managed-ignore coverage or attempting to create a worktree at the same absolute path.
 
 **Alternative considered:** Update main config and rely on merge/cherry-pick. Rejected because it dirties the user's main checkout and removes the configuration change from the feature branch where the new child is being introduced.
 
