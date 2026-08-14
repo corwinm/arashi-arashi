@@ -32,12 +32,12 @@
 
 For a configured non-bare linked parent, `arashi add` SHALL clone the new child beneath the canonical parent's configured `reposDir`, SHALL retain that clone on the detected child default branch, and SHALL create a linked child worktree beneath the active parent's equivalent configured path on the active parent branch.
 
-#### Scenario: Absolute repositories directory retains single placement
+#### Scenario: Managed-ignore-unsafe repositories directory retains single placement
 
-- **WHEN** a linked parent workspace has an absolute `reposDir`
-- **THEN** `add` retains the existing single-placement clone behavior at that absolute destination
+- **WHEN** a linked parent workspace has an absolute or otherwise managed-ignore-unsafe `reposDir`
+- **THEN** `add` retains the existing single-placement clone behavior in the active workspace
 - **AND** does not attempt to create distinct canonical and active materializations at the same path
-- **AND** persists the existing absolute repository path semantics
+- **AND** persists the existing configured repository path semantics
 
 #### Scenario: Coordinated branch does not exist in the new child
 

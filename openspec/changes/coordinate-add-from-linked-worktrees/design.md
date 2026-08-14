@@ -91,7 +91,7 @@ The config entry remains the existing relative `repos.<name>.path` plus `gitUrl`
 
 Setup-script detection runs against the checkout configured for the invoking workspace: the active child worktree in coordinated mode and the clone in single-placement mode. A requested setup template is created in that same checkout, while the returned setup path remains config-relative. Future #274 onboarding must collect values in memory and join the same final config write.
 
-An absolute `reposDir` is already a shared, single destination and cannot represent distinct canonical and active locations. Linked-parent invocation therefore retains the existing single-placement clone behavior for that configuration instead of requiring repository-relative managed-ignore coverage or attempting to create a worktree at the same absolute path.
+A managed-ignore-unsafe `reposDir` (including absolute paths and repository-root relative values such as `.`) cannot safely represent two independently ignored canonical and active locations. Linked-parent invocation therefore retains the existing single-placement clone behavior in the active workspace for that configuration instead of requiring repository-relative managed-ignore coverage or attempting two coordinated materializations.
 
 **Alternative considered:** Update main config and rely on merge/cherry-pick. Rejected because it dirties the user's main checkout and removes the configuration change from the feature branch where the new child is being introduced.
 
