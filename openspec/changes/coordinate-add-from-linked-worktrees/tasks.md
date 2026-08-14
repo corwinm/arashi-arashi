@@ -22,7 +22,7 @@
 - [x] 3.1 Add a failing generated-command/semantic-contract assertion for the new add materialization/result policy before changing contract metadata or generated artifacts
 - [x] 3.2 Update typed CLI contract metadata and regenerate deterministic command artifacts; prove a second generation is byte-stable
 - [x] 3.3 Run CLI format check, lint, typecheck, build, completion check, schema check/no-schema-drift proof, contract check, focused tests, and the complete test suite from the stable tree
-- [ ] 3.4 Commit the CLI implementation, push normally, open the child PR with `Tracks corwinm/arashi-arashi#276`, and verify exact-head CI plus eligible review feedback
+- [x] 3.4 Commit the CLI implementation, push normally, open the child PR with `Tracks corwinm/arashi-arashi#276`, and verify exact-head CI plus eligible review feedback
 
 ## 4. Canonical documentation and agent guidance
 
@@ -31,11 +31,11 @@
 - [x] 4.3 Update the website add/workflow guidance and regenerate agent-readable exports through the canonical docs pipeline without duplicating the workflow across unrelated pages
 - [x] 4.4 Update the smallest owning packaged Arashi skill reference with deterministic linked-worktree add guidance while keeping `skills/arashi/SKILL.md` minimal
 - [x] 4.5 Run each companion repository's canonical format/lint/type/build/package/export checks and the real meta cross-repository contract checker, including one controlled out-of-repository mismatch that must fail
-- [ ] 4.6 Commit, push, and open separate docs and skills child PRs as required, cross-link the complete PR set with non-closing issue references, and verify exact-head CI plus eligible feedback
+- [x] 4.6 Commit, push, and open separate docs and skills child PRs as required, cross-link the complete PR set with non-closing issue references, and verify exact-head CI plus eligible feedback
 
 ## 5. Coordinated acceptance and closeout preparation
 
 - [x] 5.1 Reproduce direct-main, linked-parent, nested-child, remote-branch, detached/conflict, JSON, and rollback acceptance with the built CLI in disposable real-Git workspaces after all child changes are stable
 - [x] 5.2 Run a final independent compliance review against current OpenSpec requirements, source, tests, generated contracts, docs, packaged skill artifacts, and complete exact artifact/source hashes; reconcile every blocker without discretionary scope expansion
-- [ ] 5.3 Verify every child PR is open, non-draft, mergeable, exact-head green, fully cross-linked, and uses only non-closing issue references before requesting child-first merge approval
-- [ ] 5.4 After approved child PRs merge, verify their reviewed trees on child `main`, rerun the meta contract checker against actual child default branches, complete all pre-archive evidence, and prepare the archive/sync plus sole `Closes #276` meta-PR update for execution after every checklist item is complete
+- [x] 5.3 Verify every child PR is open, non-draft, mergeable, exact-head green, fully cross-linked, and uses only non-closing issue references before requesting child-first merge approval
+- [x] 5.4 After approved child PRs merge, verify their reviewed trees on child `main`, rerun the meta contract checker against actual child default branches, complete all pre-archive evidence, and prepare the archive/sync plus sole `Closes #276` meta-PR update for execution after every checklist item is complete
