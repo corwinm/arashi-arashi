@@ -119,6 +119,23 @@ In coordinated linked mode, `arashi add` SHALL persist the new repository entry 
 - **THEN** the underlying clone/ref/worktree operation fails closed
 - **AND** rollback removes only state proven to have been created by this invocation
 
+### Requirement: Concurrent adds share one parent transaction boundary
+
+Cooperating `arashi add` invocations associated with the same parent Git common directory SHALL serialize managed-ignore reconciliation, repository materialization, configuration persistence, and rollback as one transaction across canonical and linked parent checkouts.
+
+#### Scenario: Canonical and linked invocations overlap
+
+- **WHEN** one add runs from the canonical parent checkout while another runs from a linked parent worktree
+- **THEN** both use the same Git-common-directory transaction lock
+- **AND** the waiting invocation does not time out within an ordinary remote clone duration
+- **AND** a failed invocation cannot restore config or managed-ignore state over a successful invocation
+
+#### Scenario: A previous add was terminated while holding the lock
+
+- **WHEN** owner metadata proves the transaction lock belongs to a process that no longer exists
+- **THEN** a later add safely reclaims the abandoned lock
+- **AND** a lock owned by a live process is not stolen
+
 ### Requirement: Add rollback owns both repository locations and final state
 
 Coordinated `arashi add` SHALL track invocation-owned clone, branch, worktree, config, and managed-ignore mutations and SHALL roll them back in reverse dependency order without deleting pre-existing state.

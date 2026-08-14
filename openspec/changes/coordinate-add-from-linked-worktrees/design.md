@@ -93,6 +93,8 @@ Setup-script detection runs against the checkout configured for the invoking wor
 
 A managed-ignore-unsafe `reposDir` (including absolute paths and repository-root relative values such as `.`) cannot safely represent two independently ignored canonical and active locations. Linked-parent invocation therefore retains the existing single-placement clone behavior in the active workspace for that configuration instead of requiring repository-relative managed-ignore coverage or attempting two coordinated materializations.
 
+Cooperating `add` invocations that belong to the same parent repository serialize the complete mutation transaction through a lock in the parent's Git common directory. The lock spans managed-ignore reconciliation, materialization, config persistence, and rollback, so canonical and linked parent checkouts cannot restore over one another. Owner metadata permits abandoned-lock recovery without stealing a live lock, and the transaction wait budget accommodates ordinary remote clone duration rather than reusing the short config-write budget.
+
 **Alternative considered:** Update main config and rely on merge/cherry-pick. Rejected because it dirties the user's main checkout and removes the configuration change from the feature branch where the new child is being introduced.
 
 ### 5. Use an ownership ledger for reverse-order rollback
