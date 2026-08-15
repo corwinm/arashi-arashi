@@ -60,11 +60,6 @@ The system SHALL validate the requested base in every selected repository but SH
 - **THEN** Arashi requires the requested base in both repositories and uses it only for the newly created target
 - **AND** reports which repository reused an existing branch
 
-#### Scenario: Conflict creates an alternate target
-- **WHEN** existing conflict handling selects `CREATE_ALTERNATE`
-- **THEN** the alternate target branch is created from the captured requested-base OID
-- **AND** existing conflict naming and confirmation behavior otherwise remains unchanged
-
 ### Requirement: Roll back only invocation-owned base-driven mutations
 Base-driven create SHALL retain the existing ownership-aware rollback boundary. If failure occurs after preflight and partial mutation, Arashi SHALL remove only target branches and worktrees created by that invocation and MUST preserve requested base refs, captured base objects, reused target branches, and pre-existing worktrees.
 
