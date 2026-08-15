@@ -195,6 +195,16 @@ describe("cross-repository lifecycle-hook contract", () => {
     });
   });
 
+  test("allows create-base guidance to state that no base hook variable exists", async () => {
+    const root = await fixture({
+      "repos/arashi-docs/public/llms-full.txt": `${files["repos/arashi-docs/public/llms-full.txt"]} Arashi keeps \`ARASHI_BRANCH_NAME\` target-oriented and deliberately does not provide an \`ARASHI_BASE_BRANCH\` hook or environment variable.`,
+    });
+    expect(await checkHookContracts(root)).toEqual({
+      diagnostics: [],
+      ok: true,
+    });
+  });
+
   test("rejects missing structured targets or platform guidance in generated output", async () => {
     const root = await fixture({
       "repos/arashi-docs/public/llms-full.txt":

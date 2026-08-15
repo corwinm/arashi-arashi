@@ -597,13 +597,20 @@ export async function checkHookContracts(
       continue;
     }
 
-    const mentionsStaleBranchAlias =
-      /\bARASHI_BRANCH\b/.test(content) ||
-      content.includes("ARASHI_BASE_BRANCH");
-    const explicitlyRejectsStaleBranchAliases = content.includes(
+    const mentionsStaleBranchAlias = /\bARASHI_BRANCH\b/.test(content);
+    const mentionsBaseBranchAlias = content.includes("ARASHI_BASE_BRANCH");
+    const explicitlyRejectsStaleBranchAlias = content.includes(
       "`ARASHI_BRANCH` and `ARASHI_BASE_BRANCH` are not compatibility aliases",
     );
-    if (mentionsStaleBranchAlias && !explicitlyRejectsStaleBranchAliases) {
+    const explicitlyRejectsBaseBranchAlias =
+      explicitlyRejectsStaleBranchAlias ||
+      /(?:does not|doesn't|must not|never)\s+(?:provide|expose|set)[^.!?\n]*`?ARASHI_BASE_BRANCH`?[^.!?\n]*(?:hook|environment variable)/i.test(
+        content,
+      );
+    if (
+      (mentionsStaleBranchAlias && !explicitlyRejectsStaleBranchAlias) ||
+      (mentionsBaseBranchAlias && !explicitlyRejectsBaseBranchAlias)
+    ) {
       diagnostics.push({
         severity: "error",
         category: surface.category,

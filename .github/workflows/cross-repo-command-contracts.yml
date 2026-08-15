@@ -11,6 +11,18 @@ on:
       - "tsconfig.json"
       - "vitest.config.ts"
       - ".github/workflows/cross-repo-command-contracts.yml"
+      - "repos/arashi/src/**"
+      - "repos/arashi/schema/**"
+      - "repos/arashi/contracts/**"
+      - "repos/arashi/.github/workflows/**"
+      - "repos/arashi-docs/docs/**"
+      - "repos/arashi-docs/scripts/**"
+      - "repos/arashi-docs/contracts/**"
+      - "repos/arashi-docs/.github/workflows/**"
+      - "repos/arashi-skills/skills/**"
+      - "repos/arashi-skills/scripts/**"
+      - "repos/arashi-skills/contracts/**"
+      - "repos/arashi-skills/.github/workflows/**"
   push:
     branches: [main]
   workflow_dispatch:
@@ -90,18 +102,33 @@ jobs:
       - name: Install CLI generation toolchain
         working-directory: meta
         run: pnpm --dir repos/arashi install --frozen-lockfile
+      - name: Generate CLI configuration schema
+        working-directory: meta
+        run: pnpm --dir repos/arashi schema:publish
+      - name: Check CLI configuration schema freshness
+        working-directory: meta
+        run: pnpm --dir repos/arashi schema:check
+      - name: Generate CLI command contract
+        working-directory: meta
+        run: pnpm --dir repos/arashi contract:generate
+      - name: Check CLI command contract freshness
+        working-directory: meta
+        run: pnpm --dir repos/arashi contract:check
       - name: Generate native shell-completion artifacts
         working-directory: meta
         run: pnpm --dir repos/arashi completion:generate
-      - name: Check native shell-completion artifact freshness
+      - name: Check native shell-completion freshness
         working-directory: meta
-        run: |
-          pnpm --dir repos/arashi completion:check
-          pnpm --dir repos/arashi contract:check
-          git -C repos/arashi diff --exit-code -- src/generated/completions.ts
-      - name: Install documentation checker toolchain
+        run: pnpm --dir repos/arashi completion:check
+      - name: Reject generated CLI contract diffs
+        working-directory: meta
+        run: git -C repos/arashi diff --exit-code -- schema/config.schema.json contracts/cli-commands.json src/generated/completions.ts
+      - name: Install documentation generation toolchain
         working-directory: meta
         run: pnpm --dir repos/arashi-docs install --frozen-lockfile
+      - name: Generate documentation contract exports
+        working-directory: meta
+        run: pnpm --dir repos/arashi-docs sync:content
       - name: Test checker
         working-directory: meta
         run: pnpm test
@@ -126,6 +153,9 @@ jobs:
       - name: Check focused packaged-skill SSH host-alias semantics
         working-directory: meta
         run: node repos/arashi-skills/scripts/ssh-host-alias-guidance-selftest.mjs
+      - name: Check focused packaged-skill create-base semantics
+        working-directory: meta
+        run: node repos/arashi-skills/scripts/create-base-guidance-selftest.mjs
       - name: Check release-shaped packaged-skill semantics
         working-directory: meta
         run: |
@@ -136,6 +166,7 @@ jobs:
           node repos/arashi-skills/scripts/cli-flag-rationalization-guidance-selftest.mjs --skill-root package-check/skills/arashi
           node repos/arashi-skills/scripts/shell-completion-guidance-selftest.mjs --skill-root package-check/skills/arashi
           node repos/arashi-skills/scripts/ssh-host-alias-guidance-selftest.mjs --skill-root package-check/skills/arashi
+          node repos/arashi-skills/scripts/create-base-guidance-selftest.mjs --skill-root package-check/skills/arashi
       - name: Check cross-repository contracts
         working-directory: meta
         run: pnpm contracts:check:ci

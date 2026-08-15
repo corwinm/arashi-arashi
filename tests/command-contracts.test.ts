@@ -728,6 +728,19 @@ async function schemaV6Fixture(): Promise<string> {
     await mkdir(join(target, ".."), { recursive: true });
     await cp(join(process.cwd(), relativePath), target, { recursive: true });
   }
+  const cliContractPath = join(
+    root,
+    "repos/arashi/contracts/cli-commands.json",
+  );
+  const cliContract = JSON.parse(await readFile(cliContractPath, "utf8"));
+  cliContract.schemaVersion = 6;
+  const create = cliContract.commands.find(
+    (command: { path: string }) => command.path === "create",
+  );
+  create.options = create.options.filter(
+    (entry: { long?: string }) => entry.long !== "--base",
+  );
+  await writeFile(cliContractPath, JSON.stringify(cliContract));
   await writeFile(
     join(root, ".github/workflows/cross-repo-command-contracts.yml"),
     `jobs:
@@ -749,6 +762,38 @@ async function schemaV6Fixture(): Promise<string> {
           node repos/arashi-skills/scripts/shell-completion-guidance-selftest.mjs --skill-root package-check/skills/arashi
           node repos/arashi-skills/scripts/ssh-host-alias-guidance-selftest.mjs --skill-root package-check/skills/arashi
 `,
+  );
+  return root;
+}
+
+async function schemaV7Fixture(): Promise<string> {
+  const root = await schemaV6Fixture();
+  const copies = [
+    "repos/arashi/contracts/cli-commands.json",
+    "repos/arashi/schema/config.schema.json",
+    "repos/arashi-docs/docs/workflows/standalone.md",
+    "repos/arashi-docs/docs/workflows/json-automation.md",
+    "repos/arashi-docs/scripts/check-create-base-docs.ts",
+    "repos/arashi-docs/scripts/generate-agent-exports.ts",
+    "repos/arashi-docs/scripts/semantic-doc-checks.json",
+    "repos/arashi-docs/.github/workflows/docs-validate.yml",
+    "repos/arashi-skills/contracts/create-base-branch.json",
+    "repos/arashi-skills/scripts/create-base-guidance-selftest.mjs",
+    "repos/arashi-skills/.github/workflows/security-audit.yml",
+    "repos/arashi-skills/.github/workflows/release-security-gate.yml",
+  ];
+  for (const relativePath of copies) {
+    const target = join(root, relativePath);
+    await mkdir(join(target, ".."), { recursive: true });
+    await cp(join(process.cwd(), relativePath), target, { recursive: true });
+  }
+  const workflowPath = join(
+    root,
+    ".github/workflows/cross-repo-command-contracts.yml",
+  );
+  await writeFile(
+    workflowPath,
+    `on:\n  pull_request:\n    paths:\n      - "repos/arashi/src/**"\n      - "repos/arashi/schema/**"\n      - "repos/arashi/contracts/**"\n      - "repos/arashi/.github/workflows/**"\n      - "repos/arashi-docs/docs/**"\n      - "repos/arashi-docs/scripts/**"\n      - "repos/arashi-docs/contracts/**"\n      - "repos/arashi-docs/.github/workflows/**"\n      - "repos/arashi-skills/skills/**"\n      - "repos/arashi-skills/scripts/**"\n      - "repos/arashi-skills/contracts/**"\n      - "repos/arashi-skills/.github/workflows/**"\njobs:\n  contracts:\n    steps:\n      - run: pnpm --dir repos/arashi install --frozen-lockfile\n      - run: pnpm --dir repos/arashi schema:publish\n      - run: pnpm --dir repos/arashi schema:check\n      - run: pnpm --dir repos/arashi contract:generate\n      - run: pnpm --dir repos/arashi contract:check\n      - run: pnpm --dir repos/arashi completion:generate\n      - run: pnpm --dir repos/arashi completion:check\n      - run: git -C repos/arashi diff --exit-code -- schema/config.schema.json contracts/cli-commands.json src/generated/completions.ts\n      - run: pnpm --dir repos/arashi-docs install --frozen-lockfile\n      - run: pnpm --dir repos/arashi-docs sync:content\n      - run: pnpm --dir repos/arashi-docs validate:tab-launch-docs\n      - run: pnpm --dir repos/arashi-docs validate:cli-option-docs\n      - run: pnpm --dir repos/arashi-docs validate:shell-completion-docs\n      - run: pnpm --dir repos/arashi-docs validate:ssh-host-alias-docs\n      - run: pnpm --dir repos/arashi-docs validate:semantic-docs\n      - run: node repos/arashi-skills/scripts/tab-launch-disposition-guidance-selftest.mjs\n      - run: node repos/arashi-skills/scripts/cli-flag-rationalization-guidance-selftest.mjs\n      - run: node repos/arashi-skills/scripts/shell-completion-guidance-selftest.mjs --meta-root .\n      - run: node repos/arashi-skills/scripts/ssh-host-alias-guidance-selftest.mjs\n      - run: node repos/arashi-skills/scripts/create-base-guidance-selftest.mjs\n      - run: |\n          tar -czf arashi-skill-package.tar.gz -C repos/arashi-skills skills/\n          mkdir package-check\n          tar -xzf arashi-skill-package.tar.gz -C package-check\n          node repos/arashi-skills/scripts/cli-flag-rationalization-guidance-selftest.mjs --skill-root package-check/skills/arashi\n          node repos/arashi-skills/scripts/shell-completion-guidance-selftest.mjs --skill-root package-check/skills/arashi\n          node repos/arashi-skills/scripts/ssh-host-alias-guidance-selftest.mjs --skill-root package-check/skills/arashi\n          node repos/arashi-skills/scripts/create-base-guidance-selftest.mjs --skill-root package-check/skills/arashi\n      - run: pnpm contracts:check\n`,
   );
   return root;
 }
@@ -836,6 +881,303 @@ describe("cross-repository command contracts", () => {
       ),
     ).toEqual([]);
     expect(result.ok, JSON.stringify(result.diagnostics, null, 2)).toBe(true);
+  });
+  test("accepts normalized schema-v7 create-base semantics", async () => {
+    const result = await checkContracts(await schemaV7Fixture());
+    expect(
+      result.diagnostics.filter(
+        (diagnostic) =>
+          diagnostic.code.includes("CREATE_BASE") ||
+          diagnostic.code === "SCHEMA_VERSION_UNSUPPORTED",
+      ),
+    ).toEqual([]);
+    expect(result.ok, JSON.stringify(result.diagnostics, null, 2)).toBe(true);
+  });
+  test.each([
+    [
+      "missing policy",
+      (policy: any) => delete policy.createBase,
+      "create.--base.semanticPolicy.createBase",
+    ],
+    [
+      "extra policy field",
+      (policy: any) => (policy.createBase.extra = true),
+      "create.--base.semanticPolicy.createBase.extra",
+    ],
+    [
+      "wrong precedence",
+      (policy: any) => policy.createBase.precedence.reverse(),
+      "create.--base.semanticPolicy.createBase.precedence.0",
+    ],
+    [
+      "wrong ref order",
+      (policy: any) => policy.createBase.resolution.refs.reverse(),
+      "create.--base.semanticPolicy.createBase.resolution.refs.0",
+    ],
+    [
+      "wrong reuse ancestry",
+      (policy: any) =>
+        (policy.createBase.mutation.reusedTarget.ancestry = "must-descend"),
+      "create.--base.semanticPolicy.createBase.mutation.reusedTarget.ancestry",
+    ],
+    [
+      "wrong output fields",
+      (policy: any) =>
+        policy.createBase.output.json.failure.fields.splice(2, 1, "failures"),
+      "create.--base.semanticPolicy.createBase.output.json.failure.fields.2",
+    ],
+    [
+      "invented environment variable",
+      (policy: any) =>
+        (policy.createBase.environmentVariables.ARASHI_BASE_BRANCH =
+          "provided"),
+      "create.--base.semanticPolicy.createBase.environmentVariables.ARASHI_BASE_BRANCH",
+    ],
+  ])("rejects schema-v7 create-base %s", async (_label, mutate, subject) => {
+    const root = await schemaV7Fixture();
+    const path = join(root, "repos/arashi/contracts/cli-commands.json");
+    const data = JSON.parse(await readFile(path, "utf8"));
+    const base = data.commands
+      .find((command: any) => command.path === "create")
+      .options.find((entry: any) => entry.long === "--base");
+    mutate(base.semanticPolicy);
+    await writeFile(path, JSON.stringify(data));
+
+    expect((await checkContracts(root)).diagnostics).toContainEqual(
+      expect.objectContaining({
+        code: "CREATE_BASE_CLI_POLICY_MISMATCH",
+        source: "repos/arashi/contracts/cli-commands.json",
+        subject,
+      }),
+    );
+  });
+  test("rejects create-base policy on the wrong command option", async () => {
+    const root = await schemaV7Fixture();
+    const path = join(root, "repos/arashi/contracts/cli-commands.json");
+    const data = JSON.parse(await readFile(path, "utf8"));
+    const create = data.commands.find(
+      (command: any) => command.path === "create",
+    );
+    const base = create.options.find((entry: any) => entry.long === "--base");
+    create.options.find(
+      (entry: any) => entry.long === "--dry-run",
+    ).semanticPolicy = structuredClone(base.semanticPolicy);
+    await writeFile(path, JSON.stringify(data));
+
+    expect((await checkContracts(root)).diagnostics).toContainEqual(
+      expect.objectContaining({
+        code: "CREATE_BASE_POLICY_WRONG_OWNER",
+        subject: "create.--dry-run",
+      }),
+    );
+  });
+  test("rejects packaged skill create-base policy drift", async () => {
+    const root = await schemaV7Fixture();
+    const path = join(
+      root,
+      "repos/arashi-skills/contracts/create-base-branch.json",
+    );
+    const data = JSON.parse(await readFile(path, "utf8"));
+    data.semanticPolicy.createBase.output.json.success.repositories =
+      "affected-only-selected-set";
+    await writeFile(path, JSON.stringify(data));
+
+    expect((await checkContracts(root)).diagnostics).toContainEqual(
+      expect.objectContaining({
+        code: "CREATE_BASE_SKILLS_POLICY_MISMATCH",
+        source: "repos/arashi-skills/contracts/create-base-branch.json",
+        subject: "semanticPolicy.createBase.output.json.success.repositories",
+      }),
+    );
+  });
+  test.each([
+    [
+      "missing generic field",
+      (schema: any) =>
+        delete schema.definitions.CreateCommandDefaults.properties.baseBranch,
+      "defaults.create.baseBranch",
+    ],
+    [
+      "editor-scoped field",
+      (schema: any) =>
+        (schema.definitions.EditorCreateCommandDefaults.properties.baseBranch =
+          { type: "string" }),
+      "defaults.editors.<host>.create.baseBranch",
+    ],
+    [
+      "weakened pattern",
+      (schema: any) =>
+        (schema.definitions.CreateCommandDefaults.properties.baseBranch.pattern =
+          ".+"),
+      "defaults.create.baseBranch.pattern",
+    ],
+  ])(
+    "rejects create-base config schema %s",
+    async (_label, mutate, subject) => {
+      const root = await schemaV7Fixture();
+      const path = join(root, "repos/arashi/schema/config.schema.json");
+      const data = JSON.parse(await readFile(path, "utf8"));
+      mutate(data);
+      await writeFile(path, JSON.stringify(data));
+
+      expect((await checkContracts(root)).diagnostics).toContainEqual(
+        expect.objectContaining({
+          code: "CREATE_BASE_CONFIG_SCHEMA_MISMATCH",
+          source: "repos/arashi/schema/config.schema.json",
+          subject,
+        }),
+      );
+    },
+  );
+  test.each([
+    [
+      "docs focused checker",
+      "pnpm --dir repos/arashi-docs validate:semantic-docs",
+      "DOCS_CREATE_BASE_CHECK_UNREACHABLE",
+    ],
+    [
+      "docs generation",
+      "pnpm --dir repos/arashi-docs sync:content",
+      "DOCS_CREATE_BASE_GENERATION_UNREACHABLE",
+    ],
+    [
+      "docs dependencies",
+      "pnpm --dir repos/arashi-docs install --frozen-lockfile",
+      "DOCS_CREATE_BASE_INSTALL_UNREACHABLE",
+    ],
+    [
+      "skills source checker",
+      "node repos/arashi-skills/scripts/create-base-guidance-selftest.mjs",
+      "SKILLS_CREATE_BASE_CHECK_UNREACHABLE",
+    ],
+    [
+      "skills package checker",
+      "node repos/arashi-skills/scripts/create-base-guidance-selftest.mjs --skill-root package-check/skills/arashi",
+      "SKILLS_CREATE_BASE_PACKAGE_CHECK_UNREACHABLE",
+    ],
+  ])(
+    "rejects missing schema-v7 %s CI reachability",
+    async (_label, command, code) => {
+      const root = await schemaV7Fixture();
+      const path = join(
+        root,
+        ".github/workflows/cross-repo-command-contracts.yml",
+      );
+      const workflow = await readFile(path, "utf8");
+      await writeFile(path, workflow.replace(command, `# ${command}`));
+
+      expect((await checkContracts(root)).diagnostics).toContainEqual(
+        expect.objectContaining({
+          code,
+          source: ".github/workflows/cross-repo-command-contracts.yml",
+        }),
+      );
+    },
+  );
+  test("rejects schema-v7 create-base prerequisites in a sibling CI job", async () => {
+    const root = await schemaV7Fixture();
+    await writeFile(
+      join(root, ".github/workflows/cross-repo-command-contracts.yml"),
+      `jobs:\n  prepare:\n    steps:\n      - run: pnpm --dir repos/arashi-docs install --frozen-lockfile\n      - run: pnpm --dir repos/arashi-docs sync:content\n  contracts:\n    steps:\n      - run: pnpm --dir repos/arashi-docs validate:semantic-docs\n      - run: node repos/arashi-skills/scripts/create-base-guidance-selftest.mjs\n      - run: node repos/arashi-skills/scripts/create-base-guidance-selftest.mjs --skill-root package-check/skills/arashi\n      - run: pnpm contracts:check\n`,
+    );
+
+    const codes = (await checkContracts(root)).diagnostics.map(
+      (diagnostic) => diagnostic.code,
+    );
+    expect(codes).toContain("DOCS_CREATE_BASE_INSTALL_UNREACHABLE");
+    expect(codes).toContain("DOCS_CREATE_BASE_GENERATION_UNREACHABLE");
+  });
+  test("rejects commented and out-of-order schema-v7 CI commands", async () => {
+    const root = await schemaV7Fixture();
+    const path = join(
+      root,
+      ".github/workflows/cross-repo-command-contracts.yml",
+    );
+    const workflow = await readFile(path, "utf8");
+    await writeFile(
+      path,
+      workflow
+        .replace(
+          "      - run: pnpm --dir repos/arashi schema:publish\n",
+          "      # - run: pnpm --dir repos/arashi schema:publish\n",
+        )
+        .replace(
+          "      - run: pnpm --dir repos/arashi-docs sync:content\n",
+          "      - run: __CREATE_BASE_DOCS_SWAP__\n",
+        )
+        .replace(
+          "      - run: pnpm --dir repos/arashi-docs validate:semantic-docs\n",
+          "      - run: pnpm --dir repos/arashi-docs sync:content\n",
+        )
+        .replace(
+          "      - run: __CREATE_BASE_DOCS_SWAP__\n",
+          "      - run: pnpm --dir repos/arashi-docs validate:semantic-docs\n",
+        ),
+    );
+
+    const codes = (await checkContracts(root)).diagnostics.map(
+      (diagnostic) => diagnostic.code,
+    );
+    expect(codes).toContain("CLI_CREATE_BASE_SCHEMA_GENERATION_UNREACHABLE");
+    expect(codes).toContain("DOCS_CREATE_BASE_SEQUENCE_UNREACHABLE");
+  });
+  test("rejects missing create-base child source, workflow, and contract trigger paths", async () => {
+    const root = await schemaV7Fixture();
+    const path = join(
+      root,
+      ".github/workflows/cross-repo-command-contracts.yml",
+    );
+    const workflow = await readFile(path, "utf8");
+    await writeFile(
+      path,
+      workflow
+        .replace('      - "repos/arashi/src/**"\n', "")
+        .replace('      - "repos/arashi-docs/.github/workflows/**"\n', "")
+        .replace('      - "repos/arashi-skills/contracts/**"\n', ""),
+    );
+
+    expect((await checkContracts(root)).diagnostics).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          code: "CREATE_BASE_TRIGGER_PATH_UNREACHABLE",
+          subject: "repos/arashi/src/**",
+        }),
+        expect.objectContaining({
+          code: "CREATE_BASE_TRIGGER_PATH_UNREACHABLE",
+          subject: "repos/arashi-docs/.github/workflows/**",
+        }),
+        expect.objectContaining({
+          code: "CREATE_BASE_TRIGGER_PATH_UNREACHABLE",
+          subject: "repos/arashi-skills/contracts/**",
+        }),
+      ]),
+    );
+  });
+  test.each([
+    [
+      "canonical docs contradiction",
+      "repos/arashi-docs/docs/commands/create.md",
+      (content: string) => `${content}\nConfiguration overrides CLI --base.\n`,
+    ],
+    [
+      "generated curated export drift",
+      "repos/arashi-docs/public/llms.txt",
+      (content: string) =>
+        content.replace(
+          "Standalone create base selection is CLI-only and invocation-only",
+          "Standalone create base selection reads workspace configuration",
+        ),
+    ],
+  ])("rejects %s", async (_label, relativePath, mutate) => {
+    const root = await schemaV7Fixture();
+    const path = join(root, relativePath);
+    await writeFile(path, mutate(await readFile(path, "utf8")));
+
+    expect(
+      (await checkContractsWithFocusedAcceptance(root)).diagnostics,
+    ).toContainEqual(
+      expect.objectContaining({ code: "DOCS_CREATE_BASE_CHECK_FAILED" }),
+    );
   });
   test("rejects CLI contract drift from optional-user SSH alias syntax", async () => {
     const root = await schemaV6Fixture();
