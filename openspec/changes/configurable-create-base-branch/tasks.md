@@ -8,10 +8,10 @@
 
 ## 2. Strict base-resolution planning
 
-- [ ] 2.1 Add focused real-Git RED tests for local-first resolution, `origin/<branch>` fallback, one-prefix normalization, invalid names, and complete missing-base diagnostics.
-- [ ] 2.2 Add RED tests proving filters and interactive selection validate only the effective selected set, mixed new/reused targets all remain in that preflight set, and every selected repository failure is aggregated before conflict handling.
-- [ ] 2.3 Implement a read-only strict base resolver that captures commit OIDs in a canonical-path-keyed per-repository plan without legacy default-ref fallback.
-- [ ] 2.4 Build the configured preflight plan for every effective selected repository after final selection but before managed-ignore reconciliation, conflict handling, hook preflight/execution, branches, worktrees, setup, or launch.
+- [x] 2.1 Add focused real-Git RED tests for local-first resolution, `origin/<branch>` fallback, one-prefix normalization, invalid names, and complete missing-base diagnostics.
+- [x] 2.2 Add RED tests proving filters and interactive selection validate only the effective selected set, mixed new/reused targets all remain in that preflight set, and every selected repository failure is aggregated before conflict handling.
+- [x] 2.3 Implement a read-only strict base resolver that captures commit OIDs in a canonical-path-keyed per-repository plan without legacy default-ref fallback.
+- [x] 2.4 Build the configured preflight plan for every effective selected repository after final selection but before managed-ignore reconciliation, conflict handling, hook preflight/execution, branches, worktrees, setup, or launch.
 
 ## 3. Coordinated create execution and reuse
 
