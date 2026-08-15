@@ -49,6 +49,6 @@
 
 ## 7. Archive, Merge, and Cleanup
 
-- [ ] 7.1 Archive and sync `centralize-semantic-validation-entrypoints`, replace generated placeholder purpose text, validate the archived change and synced canonical specifications directly, and commit the archive separately.
+- [x] 7.1 Archive and sync `centralize-semantic-validation-entrypoints`, replace generated placeholder purpose text, validate the archived change and synced canonical specifications directly, and commit the archive separately.
 - [ ] 7.2 Update the meta PR to be the sole `Closes #283` owner with archive paths, exact validation evidence, and related PR links; obtain exact-head green CI and merge it last.
 - [ ] 7.3 Verify issue #283 is closed, synchronize the base coordinated workspace, remove coordinated worktrees/branches, verify remote feature branches are absent, and confirm final verbose status is clean on `main`.
