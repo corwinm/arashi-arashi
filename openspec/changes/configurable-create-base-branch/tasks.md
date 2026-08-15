@@ -23,8 +23,8 @@
 
 ## 4. Standalone create parity
 
-- [ ] 4.1 Add standalone RED tests for explicit local and origin bases, missing-base failure before global hooks/mutation, existing-target reuse, and omitted-option compatibility.
-- [ ] 4.2 Implement invocation-only standalone `--base` resolution without loading or persisting workspace defaults.
+- [x] 4.1 Add standalone RED tests for explicit local and origin bases, missing-base failure before global hooks/mutation, existing-target reuse, and omitted-option compatibility.
+- [x] 4.2 Implement invocation-only standalone `--base` resolution without loading or persisting workspace defaults.
 
 ## 5. Human, dry-run, and JSON results
 
