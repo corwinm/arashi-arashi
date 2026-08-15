@@ -68,13 +68,13 @@ Tests will inject or use local Git boundaries so they can prove exact argv/url p
 
 ### 6. Enforce guidance semantically across maintained surfaces
 
-Canonical add/clone/configuration guidance will show supported forms, state that aliases are machine-local, and recommend canonical committed remotes with local Git `url.<base>.insteadOf` rewriting when portability matters. Generated agent-readable exports and packaged skill guidance must carry the same ownership and portability boundaries. The coordinated checker will use positive and negative semantic assertions so stale guidance or claims that Arashi manages SSH configuration fail deterministically.
+Canonical add/clone/configuration guidance will show supported forms, state that aliases are machine-local, and recommend canonical committed remotes with machine-global Git `url.<base>.insteadOf` rewriting when portability matters. Generated agent-readable exports and packaged skill guidance must carry the same ownership and portability boundaries. The coordinated checker will use positive and negative semantic assertions so stale guidance or claims that Arashi manages SSH configuration fail deterministically.
 
 The VS Code extension is not an owning behavior surface for this slice: it delegates add/clone behavior to the CLI and introduces no parser or stored URL policy. Presentation content is also excluded unless source inspection finds maintained alias-specific guidance.
 
 ## Risks / Trade-offs
 
-- [A shared config may contain a machine-local alias unavailable to collaborators] → Document the boundary prominently and recommend canonical remotes plus local Git `insteadOf` rules.
+- [A shared config may contain a machine-local alias unavailable to collaborators] → Document the boundary prominently and recommend canonical remotes plus machine-global Git `insteadOf` rules.
 - [Best-effort HTTPS preference can leave a mixed-protocol clone run] → Make preservation precedence explicit in prompt/help/docs and test it; never claim strict conversion when SSH sources are present.
 - [Broader SCP syntax could misclassify local paths] → Use a constrained grammar, preserve existing absolute/file handling, and add Windows-drive and malformed-input negative tests.
 - [Underlying Git errors vary by platform and Git version] → Assert stable Arashi context and mutation outcomes rather than exact external stderr wording.

@@ -882,6 +882,34 @@ describe("cross-repository command contracts", () => {
       }),
     );
   });
+  test("rejects repository-local insteadOf guidance for future clones", async () => {
+    const root = await schemaV6Fixture();
+    const guidancePath = join(
+      root,
+      "repos/arashi-skills/skills/arashi/references/commands.md",
+    );
+    const guidance = await readFile(guidancePath, "utf8");
+    await writeFile(
+      guidancePath,
+      guidance
+        .replace(
+          "machine-global Git `url.<base>.insteadOf` rule",
+          "local Git `url.<base>.insteadOf` rule",
+        )
+        .replace(
+          'git config --global url."git@work-github:".insteadOf git@github.com:',
+          "configure the rewrite in this repository",
+        ),
+    );
+
+    expect((await checkContracts(root)).diagnostics).toContainEqual(
+      expect.objectContaining({
+        category: "skills",
+        code: "SSH_ALIAS_GUIDANCE_MISMATCH",
+        source: "repos/arashi-skills/skills/arashi/references/commands.md",
+      }),
+    );
+  });
   test("requires focused SSH alias checks in coordinated CI", async () => {
     const root = await schemaV6Fixture();
     await writeFile(

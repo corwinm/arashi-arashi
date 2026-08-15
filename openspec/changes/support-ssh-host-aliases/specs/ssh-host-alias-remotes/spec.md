@@ -112,7 +112,7 @@ The system SHALL report the affected repository and underlying Git failure when 
 - **AND** preserves the existing human and JSON output envelopes
 
 ### Requirement: Guidance explains portability and Git-native rewriting
-Canonical user and agent guidance SHALL explain that SSH aliases are machine-local, that every machine using a stored alias must define compatible SSH routing, and that portable shared configuration SHOULD use canonical remotes with local Git `url.<base>.insteadOf` rewriting when per-developer routing is required.
+Canonical user and agent guidance SHALL explain that SSH aliases are machine-local, that every machine using a stored alias must define compatible SSH routing, and that portable shared configuration SHOULD use canonical remotes with machine-global Git `url.<base>.insteadOf` rewriting (for example, `git config --global` or `~/.gitconfig`) when per-developer routing is required. Repository-local `.git/config` MUST NOT be presented as sufficient because it is unavailable before the repository is cloned.
 
 #### Scenario: User reviews add or clone guidance
 - **WHEN** maintained documentation describes SSH alias support
@@ -121,7 +121,7 @@ Canonical user and agent guidance SHALL explain that SSH aliases are machine-loc
 
 #### Scenario: Team needs portable committed configuration
 - **WHEN** maintained guidance discusses shared Arashi configuration
-- **THEN** it recommends a canonical committed remote plus a local Git `insteadOf` rule as the portable alternative
+- **THEN** it recommends a canonical committed remote plus a machine-global Git `insteadOf` rule as the portable alternative
 - **AND** does not imply that Arashi synchronizes aliases, keys, or SSH settings
 
 ### Requirement: CLI help and generated command contracts identify alias syntax

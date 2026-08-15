@@ -38,7 +38,7 @@ The meta-repository SHALL provide one deterministic validation command that comp
 - **WHEN** cross-repository validation inspects CLI help, the generated CLI command contract, canonical add and clone docs, generated agent-readable exports, and packaged skill guidance
 - **THEN** each owning surface recognizes `[user@]host:path` with an optional user and `ssh://[user@]host/path`
 - **AND** each states that configured SSH URLs remain exact, SSH-to-HTTPS conversion is not automatic, and Arashi does not manage SSH configuration
-- **AND** each identifies aliases as machine-local and recommends canonical remotes with local Git `insteadOf` rules when portability matters
+- **AND** each identifies aliases as machine-local and recommends canonical remotes with machine-global Git `insteadOf` rules when portability matters
 
 #### Scenario: SSH alias semantic drift is rejected
 - **WHEN** an out-of-repository checker fixture removes or contradicts one required SSH alias form, preservation rule, ownership boundary, conversion boundary, or portability rule

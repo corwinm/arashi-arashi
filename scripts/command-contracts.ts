@@ -1835,7 +1835,8 @@ async function checkSshAliasDirectGuidance(
         "SSH Remote Aliases for Add and Clone",
         "arashi add work-github:acme/api.git",
         "preserves every configured SSH URL byte-for-byte",
-        "local Git `url.<base>.insteadOf` rule",
+        "machine-global Git `url.<base>.insteadOf` rule",
+        'git config --global url."git@work-github:".insteadOf git@github.com:',
       ],
     },
   ];
