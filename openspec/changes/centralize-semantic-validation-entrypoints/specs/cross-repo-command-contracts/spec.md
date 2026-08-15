@@ -11,7 +11,7 @@ The meta-repository SHALL compose stable repository-owned semantic validation en
 #### Scenario: Coordinated validation runs locally and in CI
 - **WHEN** maintainers run the documented coordinated validation path or authoritative CI executes it
 - **THEN** both paths use the stable docs semantic aggregate, skills source aggregate, skills extracted-package aggregate, and coordinated contract aggregate
-- **AND** CI reports the exact checked child revisions
+- **AND** CI owns each child stage exactly once, uses explicit skip mode only to avoid rerunning those already-proven stages inside the meta aggregate, and reports the exact checked child revisions
 
 #### Scenario: Stable child stage is omitted
 - **WHEN** workflow-composition validation removes or bypasses one required stable child aggregate or the coordinated aggregate
@@ -22,6 +22,24 @@ The meta-repository SHALL compose stable repository-owned semantic validation en
 - **WHEN** the authoritative meta workflow is migrated to stable child aggregates
 - **THEN** its pull-request path filters continue to include meta checker/test/config/workflow inputs
 - **AND** include each child repository's checker, manifest or runner, canonical guidance, generated-contract, package-boundary, and workflow inputs used by coordinated validation
+
+### Requirement: Coordinated contract checkers use fail-closed registration
+The meta-repository SHALL register every maintained coordinated checker as a unique repository-relative identity matching `scripts/check-<basename>-contracts.ts`, with lowercase ASCII alphanumeric basenames and internal hyphens in ascending bytewise UTF-8 order. The registry SHALL reject omitted, stale, duplicate, malformed, escaping, symlinked, or unsorted entries. Both `contracts:check` and `contracts:check:ci` SHALL execute the same registry-backed meta aggregate and SHALL run registration before any coordinated checker; CI skip mode SHALL NOT bypass registration.
+
+#### Scenario: Maintained coordinated checker is omitted
+- **WHEN** a maintained `scripts/check-*-contracts.ts` entrypoint exists outside the explicit registry
+- **THEN** local and CI meta aggregates identify the omitted checker during preflight
+- **AND** exit unsuccessfully before executing coordinated checkers
+
+#### Scenario: Coordinated registry is invalid
+- **WHEN** the registry contains a missing, duplicate, malformed, escaping, symlinked, or noncanonically ordered identity
+- **THEN** local and CI meta aggregates report every registration defect
+- **AND** exit unsuccessfully before coordinated checker execution
+
+#### Scenario: Local and CI modes consume one registry
+- **WHEN** maintainers run `contracts:check` or CI runs `contracts:check:ci`
+- **THEN** both modes execute the same registered coordinated checker set in deterministic order
+- **AND** only child-aggregate execution policy differs between full local and prevalidated CI modes
 
 ### Requirement: Aggregate reachability is proven executably without repeated fixture fan-out
 The meta-repository SHALL include dedicated acceptance tests proving that registered focused docs and skills checkers execute through their stable aggregates and that child failures propagate. Ordinary coordinated semantic mutation fixtures MAY skip repeated focused subprocess execution only after those dedicated acceptance tests and authoritative child aggregate stages remain reachable.
@@ -42,6 +60,24 @@ The meta-repository SHALL include dedicated acceptance tests proving that regist
 - **AND** the coordinated gate cannot pass
 
 ## MODIFIED Requirements
+
+### Requirement: Reproducible local and CI execution
+The meta-repository SHALL document how to regenerate contract inputs and execute a complete coordinated validation path locally. The documented local path and authoritative CI SHALL contain the same semantic stage set: docs aggregate, skills source aggregate, canonical extracted-package aggregate, and registry-backed meta aggregate. CI SHALL check out all required child repositories at explicit revisions, execute each child aggregate once, and use the meta aggregate's explicit prevalidated-child mode only to avoid duplicate execution. Automated alignment validation SHALL fail if documentation, package scripts or coordinator, and authoritative workflow omit, duplicate, or rename a stable stage inconsistently.
+
+#### Scenario: Maintainer updates a command
+- **WHEN** a maintainer follows the documented update workflow
+- **THEN** the documentation identifies how to regenerate CLI metadata, update companion policy or coverage, create the canonical skills archive, and run repository-local and complete cross-repository checks
+- **AND** the documented semantic stage set matches authoritative CI
+
+#### Scenario: Cross-repository CI runs
+- **WHEN** the authoritative workflow validates the contract
+- **THEN** it reports checked repository revisions and executes the same deterministic semantic stage set available locally
+- **AND** docs generation occurs only inside the docs aggregate while child aggregates and the meta aggregate each execute exactly once
+
+#### Scenario: Local and CI stage sets drift
+- **WHEN** documentation, a package script or coordinator, or authoritative workflow omits, duplicates, or changes one stable semantic stage without updating the others
+- **THEN** alignment validation reports the differing owner and stage
+- **AND** exits unsuccessfully
 
 ### Requirement: Publish launch-disposition option policy semantically
 The canonical CLI command contract SHALL publish typed `--tab` option policy for switch and create, and coordinated validation SHALL compare its normalized semantics with canonical docs, generated agent-readable exports, and packaged skill guidance rather than checking option presence alone.
