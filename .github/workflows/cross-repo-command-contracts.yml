@@ -122,6 +122,9 @@ jobs:
       - name: Check focused shell-completion documentation semantics
         working-directory: meta
         run: pnpm --dir repos/arashi-docs validate:shell-completion-docs
+      - name: Check focused SSH host-alias documentation semantics
+        working-directory: meta
+        run: pnpm --dir repos/arashi-docs validate:ssh-host-alias-docs
       - name: Check focused packaged-skill lifecycle-hook semantics
         working-directory: meta
         run: node repos/arashi-skills/scripts/lifecycle-hook-guidance-selftest.mjs
@@ -134,6 +137,9 @@ jobs:
       - name: Check focused packaged-skill shell-completion semantics
         working-directory: meta
         run: node repos/arashi-skills/scripts/shell-completion-guidance-selftest.mjs --meta-root .
+      - name: Check focused packaged-skill SSH host-alias semantics
+        working-directory: meta
+        run: node repos/arashi-skills/scripts/ssh-host-alias-guidance-selftest.mjs
       - name: Check release-shaped packaged-skill semantics
         working-directory: meta
         run: |
@@ -143,6 +149,7 @@ jobs:
           node repos/arashi-skills/scripts/lifecycle-hook-guidance-selftest.mjs --skill-root package-check/skills/arashi
           node repos/arashi-skills/scripts/cli-flag-rationalization-guidance-selftest.mjs --skill-root package-check/skills/arashi
           node repos/arashi-skills/scripts/shell-completion-guidance-selftest.mjs --skill-root package-check/skills/arashi
+          node repos/arashi-skills/scripts/ssh-host-alias-guidance-selftest.mjs --skill-root package-check/skills/arashi
       - name: Check focused lifecycle-hook contracts
         working-directory: meta
         run: pnpm contracts:hooks

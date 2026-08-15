@@ -702,12 +702,16 @@ async function schemaV6Fixture(): Promise<string> {
     "repos/arashi/README.md",
     "repos/arashi/contracts/cli-commands.json",
     "repos/arashi-docs/docs/commands",
+    "repos/arashi-docs/docs/workflows/config.md",
     "repos/arashi-docs/public",
     "repos/arashi-docs/package.json",
+    "repos/arashi-docs/.github/workflows/docs-validate.yml",
     "repos/arashi-docs/scripts/check-shell-completion-docs.ts",
+    "repos/arashi-docs/scripts/check-ssh-host-alias-docs.ts",
     "repos/arashi-skills/contracts/command-coverage.json",
     "repos/arashi-skills/skills/arashi",
     "repos/arashi-skills/scripts/shell-completion-guidance-selftest.mjs",
+    "repos/arashi-skills/scripts/ssh-host-alias-guidance-selftest.mjs",
     "repos/arashi-skills/.github/workflows/security-audit.yml",
     "repos/arashi-skills/.github/workflows/release-security-gate.yml",
     "repos/arashi-vscode/contracts/command-policy.json",
@@ -729,15 +733,18 @@ async function schemaV6Fixture(): Promise<string> {
       - run: pnpm --dir repos/arashi-docs validate:tab-launch-docs
       - run: pnpm --dir repos/arashi-docs validate:cli-option-docs
       - run: pnpm --dir repos/arashi-docs validate:shell-completion-docs
+      - run: pnpm --dir repos/arashi-docs validate:ssh-host-alias-docs
       - run: node repos/arashi-skills/scripts/tab-launch-disposition-guidance-selftest.mjs
       - run: node repos/arashi-skills/scripts/cli-flag-rationalization-guidance-selftest.mjs
       - run: node repos/arashi-skills/scripts/shell-completion-guidance-selftest.mjs --meta-root .
+      - run: node repos/arashi-skills/scripts/ssh-host-alias-guidance-selftest.mjs
       - run: |
           tar -czf arashi-skill-package.tar.gz -C repos/arashi-skills skills/
           mkdir package-check
           tar -xzf arashi-skill-package.tar.gz -C package-check
           node repos/arashi-skills/scripts/cli-flag-rationalization-guidance-selftest.mjs --skill-root package-check/skills/arashi
           node repos/arashi-skills/scripts/shell-completion-guidance-selftest.mjs --skill-root package-check/skills/arashi
+          node repos/arashi-skills/scripts/ssh-host-alias-guidance-selftest.mjs --skill-root package-check/skills/arashi
 `,
   );
   return root;
@@ -826,6 +833,97 @@ describe("cross-repository command contracts", () => {
       ),
     ).toEqual([]);
     expect(result.ok, JSON.stringify(result.diagnostics, null, 2)).toBe(true);
+  });
+  test("rejects CLI contract drift from optional-user SSH alias syntax", async () => {
+    const root = await schemaV6Fixture();
+    const contractPath = join(root, "repos/arashi/contracts/cli-commands.json");
+    const contract = JSON.parse(await readFile(contractPath, "utf8"));
+    const add = contract.commands.find(
+      (command: { path: string }) => command.path === "add",
+    );
+    add.arguments[0].description = "Git repository URL";
+    await writeFile(contractPath, JSON.stringify(contract));
+
+    expect((await checkContracts(root)).diagnostics).toContainEqual(
+      expect.objectContaining({
+        category: "schema",
+        code: "SSH_ALIAS_CLI_CONTRACT_MISMATCH",
+        source: "repos/arashi/contracts/cli-commands.json",
+      }),
+    );
+  });
+  test("rejects missing canonical and generated SSH alias guidance", async () => {
+    const root = await schemaV6Fixture();
+    await writeFile(
+      join(root, "repos/arashi-docs/docs/commands/add.md"),
+      "# add\n\nAdd a repository.\n",
+    );
+
+    expect((await checkContracts(root)).diagnostics).toContainEqual(
+      expect.objectContaining({
+        category: "docs",
+        code: "SSH_ALIAS_GUIDANCE_MISMATCH",
+        source: "repos/arashi-docs/docs/commands/add.md",
+      }),
+    );
+  });
+  test("rejects missing packaged SSH alias guidance", async () => {
+    const root = await schemaV6Fixture();
+    await writeFile(
+      join(root, "repos/arashi-skills/skills/arashi/references/commands.md"),
+      "# Commands\n\nRun Arashi commands.\n",
+    );
+
+    expect((await checkContracts(root)).diagnostics).toContainEqual(
+      expect.objectContaining({
+        category: "skills",
+        code: "SSH_ALIAS_GUIDANCE_MISMATCH",
+        source: "repos/arashi-skills/skills/arashi/references/commands.md",
+      }),
+    );
+  });
+  test("rejects repository-local insteadOf guidance for future clones", async () => {
+    const root = await schemaV6Fixture();
+    const guidancePath = join(
+      root,
+      "repos/arashi-skills/skills/arashi/references/commands.md",
+    );
+    const guidance = await readFile(guidancePath, "utf8");
+    await writeFile(
+      guidancePath,
+      guidance
+        .replace(
+          "machine-global Git `url.<base>.insteadOf` rule",
+          "local Git `url.<base>.insteadOf` rule",
+        )
+        .replace(
+          'git config --global url."git@work-github:".insteadOf git@github.com:',
+          "configure the rewrite in this repository",
+        ),
+    );
+
+    expect((await checkContracts(root)).diagnostics).toContainEqual(
+      expect.objectContaining({
+        category: "skills",
+        code: "SSH_ALIAS_GUIDANCE_MISMATCH",
+        source: "repos/arashi-skills/skills/arashi/references/commands.md",
+      }),
+    );
+  });
+  test("requires focused SSH alias checks in coordinated CI", async () => {
+    const root = await schemaV6Fixture();
+    await writeFile(
+      join(root, ".github/workflows/cross-repo-command-contracts.yml"),
+      "jobs: {}\n",
+    );
+
+    expect((await checkContracts(root)).diagnostics).toContainEqual(
+      expect.objectContaining({
+        category: "docs",
+        code: "SSH_ALIAS_WORKFLOW_UNWIRED",
+        source: ".github/workflows/cross-repo-command-contracts.yml",
+      }),
+    );
   });
   test("rejects incomplete CLI README completion guidance", async () => {
     const root = await schemaV6Fixture();
