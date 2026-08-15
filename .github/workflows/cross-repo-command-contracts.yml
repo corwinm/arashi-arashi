@@ -69,7 +69,7 @@ jobs:
               git -C "meta/repos/$repo" checkout --detach FETCH_HEAD
             fi
           done
-      - uses: pnpm/setup@v1
+      - uses: pnpm/setup@v2
         with:
           version: 11.20.0
           runtime: node@24.18.0
