@@ -238,15 +238,15 @@ export async function checkHookContracts(
   const requiredWorkflowChecks = [
     {
       code: "HOOK_INPUT_CHECKER_UNREACHABLE",
-      command: "pnpm contracts:hooks",
+      command: "pnpm contracts:check:ci",
       message:
-        "The authoritative workflow must execute the focused hook semantic checker.",
+        "The authoritative workflow must execute the aggregate contract checker that includes hook semantics.",
     },
     {
       code: "HOOK_INPUT_DOCS_CHECK_UNREACHABLE",
-      command: "pnpm --dir repos/arashi-docs validate:lifecycle-hook-docs",
+      command: "pnpm --dir repos/arashi-docs validate:semantic-docs",
       message:
-        "The authoritative workflow must execute the lifecycle-hook docs checker.",
+        "The authoritative workflow must execute the stable docs semantic aggregate that includes lifecycle hooks.",
     },
     {
       code: "HOOK_INPUT_SKILLS_SOURCE_CHECK_UNREACHABLE",

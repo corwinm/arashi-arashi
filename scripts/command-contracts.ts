@@ -17,6 +17,9 @@ export interface CheckResult {
   ok: boolean;
   diagnostics: Diagnostic[];
 }
+export interface CheckContractsOptions {
+  runFocusedCheckers?: boolean;
+}
 type Obj = Record<string, unknown>;
 
 const paths = {
@@ -2709,6 +2712,7 @@ async function runFocusedChecker(
     args?: string[];
   },
   diagnostics: Diagnostic[],
+  execute: boolean,
 ): Promise<void> {
   let source = "";
   try {
@@ -2728,6 +2732,7 @@ async function runFocusedChecker(
     );
     return;
   }
+  if (!execute) return;
   try {
     await execFileAsync(
       process.execPath,
@@ -2772,6 +2777,7 @@ async function runPackagedCompletionChecker(
         args: ["--skill-root", skillRoot],
       },
       diagnostics,
+      true,
     );
   } finally {
     await rm(temporaryRoot, { force: true, recursive: true });
@@ -2780,6 +2786,7 @@ async function runPackagedCompletionChecker(
 
 export async function checkContracts(
   root = process.cwd(),
+  options: CheckContractsOptions = {},
 ): Promise<CheckResult> {
   const d: Diagnostic[] = [];
   const contract = await json(root, paths.contract, d);
@@ -3723,7 +3730,7 @@ export async function checkContracts(
       cwd: "repos/arashi-docs",
       failureCode: "DOCS_OPTION_POLICY_CHECK_FAILED",
       unreachableCode: "DOCS_OPTION_POLICY_CHECK_UNREACHABLE",
-      command: "pnpm --dir repos/arashi-docs validate:tab-launch-docs",
+      command: "pnpm --dir repos/arashi-docs validate:semantic-docs",
     },
     {
       category: "skills" as const,
@@ -3742,7 +3749,7 @@ export async function checkContracts(
             cwd: "repos/arashi-docs",
             failureCode: "DOCS_CLI_OPTION_POLICY_CHECK_FAILED",
             unreachableCode: "DOCS_CLI_OPTION_POLICY_CHECK_UNREACHABLE",
-            command: "pnpm --dir repos/arashi-docs validate:cli-option-docs",
+            command: "pnpm --dir repos/arashi-docs validate:semantic-docs",
           },
           {
             category: "skills" as const,
@@ -3763,8 +3770,7 @@ export async function checkContracts(
             cwd: "repos/arashi-docs",
             failureCode: "SSH_ALIAS_GUIDANCE_MISMATCH",
             unreachableCode: "SSH_ALIAS_WORKFLOW_UNWIRED",
-            command:
-              "pnpm --dir repos/arashi-docs validate:ssh-host-alias-docs",
+            command: "pnpm --dir repos/arashi-docs validate:semantic-docs",
           },
           {
             category: "skills" as const,
@@ -3781,8 +3787,7 @@ export async function checkContracts(
             cwd: "repos/arashi-docs",
             failureCode: "DOCS_COMPLETION_CHECK_FAILED",
             unreachableCode: "DOCS_COMPLETION_CHECK_UNREACHABLE",
-            command:
-              "pnpm --dir repos/arashi-docs validate:shell-completion-docs",
+            command: "pnpm --dir repos/arashi-docs validate:semantic-docs",
           },
           {
             category: "skills" as const,
@@ -3880,7 +3885,7 @@ export async function checkContracts(
         focused.unreachableCode,
         paths.workflow,
         focused.checker,
-        `Meta CI must directly run the owning focused checker: ${focused.command}.`,
+        `Meta CI must run the owning stable checker aggregate: ${focused.command}.`,
       );
   if (contract?.schemaVersion === 5) {
     const packagedSkillCommands = [
@@ -3946,10 +3951,11 @@ export async function checkContracts(
           cwd: focused.cwd,
         },
         d,
+        options.runFocusedCheckers !== false,
       ),
     ),
   );
-  if (contract?.schemaVersion === 6) {
+  if (contract?.schemaVersion === 6 && options.runFocusedCheckers !== false) {
     await runPackagedCompletionChecker(root, d);
   }
 

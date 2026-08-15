@@ -103,8 +103,8 @@ path: meta/repos/arashi-vscode
 jobs:
   contracts:
     steps:
-      - run: pnpm contracts:hooks
-      - run: pnpm --dir repos/arashi-docs validate:lifecycle-hook-docs
+      - run: pnpm contracts:check:ci
+      - run: pnpm --dir repos/arashi-docs validate:semantic-docs
       - run: node repos/arashi-skills/scripts/lifecycle-hook-guidance-selftest.mjs
       - run: |
           tar -czf arashi-skill-package.tar.gz -C repos/arashi-skills skills/
@@ -626,7 +626,7 @@ ${prerequisiteBlock}`,
   test.each([
     [
       "docs source checker",
-      "pnpm --dir repos/arashi-docs validate:lifecycle-hook-docs",
+      "pnpm --dir repos/arashi-docs validate:semantic-docs",
       "HOOK_INPUT_DOCS_CHECK_UNREACHABLE",
     ],
     [
@@ -659,7 +659,7 @@ ${prerequisiteBlock}`,
       "repos/arashi/.github/workflows/ci.yml": "runs-on: ubuntu-latest",
       ".github/workflows/cross-repo-command-contracts.yml": files[
         ".github/workflows/cross-repo-command-contracts.yml"
-      ].replace("pnpm contracts:hooks", "pnpm test"),
+      ].replace("pnpm contracts:check:ci", "pnpm test"),
     });
     const result = await checkHookContracts(root);
     expect(result.diagnostics.map(({ code }) => code)).toEqual(

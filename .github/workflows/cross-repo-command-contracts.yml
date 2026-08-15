@@ -99,32 +99,18 @@ jobs:
           pnpm --dir repos/arashi completion:check
           pnpm --dir repos/arashi contract:check
           git -C repos/arashi diff --exit-code -- src/generated/completions.ts
-      - name: Generate documentation contract exports
-        working-directory: meta/repos/arashi-docs
-        run: |
-          pnpm install --frozen-lockfile
-          pnpm sync:content
+      - name: Install documentation checker toolchain
+        working-directory: meta
+        run: pnpm --dir repos/arashi-docs install --frozen-lockfile
       - name: Test checker
         working-directory: meta
         run: pnpm test
       - name: Type-check checker
         working-directory: meta
         run: pnpm typecheck
-      - name: Check focused lifecycle-hook documentation semantics
+      - name: Check documentation semantics
         working-directory: meta
-        run: pnpm --dir repos/arashi-docs validate:lifecycle-hook-docs
-      - name: Check focused tab launch-disposition documentation semantics
-        working-directory: meta
-        run: pnpm --dir repos/arashi-docs validate:tab-launch-docs
-      - name: Check focused CLI option documentation semantics
-        working-directory: meta
-        run: pnpm --dir repos/arashi-docs validate:cli-option-docs
-      - name: Check focused shell-completion documentation semantics
-        working-directory: meta
-        run: pnpm --dir repos/arashi-docs validate:shell-completion-docs
-      - name: Check focused SSH host-alias documentation semantics
-        working-directory: meta
-        run: pnpm --dir repos/arashi-docs validate:ssh-host-alias-docs
+        run: pnpm --dir repos/arashi-docs validate:semantic-docs
       - name: Check focused packaged-skill lifecycle-hook semantics
         working-directory: meta
         run: node repos/arashi-skills/scripts/lifecycle-hook-guidance-selftest.mjs
@@ -150,9 +136,6 @@ jobs:
           node repos/arashi-skills/scripts/cli-flag-rationalization-guidance-selftest.mjs --skill-root package-check/skills/arashi
           node repos/arashi-skills/scripts/shell-completion-guidance-selftest.mjs --skill-root package-check/skills/arashi
           node repos/arashi-skills/scripts/ssh-host-alias-guidance-selftest.mjs --skill-root package-check/skills/arashi
-      - name: Check focused lifecycle-hook contracts
-        working-directory: meta
-        run: pnpm contracts:hooks
       - name: Check cross-repository contracts
         working-directory: meta
-        run: pnpm contracts:check
+        run: pnpm contracts:check:ci
