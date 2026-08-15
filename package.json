@@ -5,8 +5,8 @@
   "version": "0.0.0",
   "packageManager": "pnpm@11.20.0",
   "scripts": {
-    "contracts:check": "node --experimental-strip-types scripts/check-command-contracts.ts && node --experimental-strip-types scripts/check-hook-contracts.ts",
-    "contracts:check:ci": "node --experimental-strip-types scripts/check-command-contracts.ts --skip-focused-checkers && node --experimental-strip-types scripts/check-hook-contracts.ts",
+    "contracts:check": "node --experimental-strip-types scripts/run-contract-checks.ts",
+    "contracts:check:ci": "node --experimental-strip-types scripts/run-contract-checks.ts --prevalidated-children",
     "contracts:hooks": "node --experimental-strip-types scripts/check-hook-contracts.ts",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",

@@ -28,6 +28,15 @@ const surfaces = [
 const guidanceSurfaces = new Set(surfaces.slice(1).map(({ source }) => source));
 const hookInputGuidanceSurfaces = new Set(surfaces.map(({ source }) => source));
 const hookInputModes = ["tty", "disabled", "unavailable"] as const;
+const docsAggregate = "pnpm --dir repos/arashi-docs validate:semantic-docs";
+const skillsSourceAggregate =
+  "node repos/arashi-skills/scripts/validate-guidance.mjs";
+const skillsArchiveCreate =
+  "node repos/arashi-skills/scripts/create-release-archive.mjs --root repos/arashi-skills --output arashi-skill-package.tar.gz";
+const skillsArchiveVerify =
+  "node repos/arashi-skills/scripts/create-release-archive.mjs --verify arashi-skill-package.tar.gz";
+const skillsPackageAggregate =
+  "node repos/arashi-skills/scripts/validate-guidance.mjs --skill-root package-check/skills/arashi";
 const publicOutcomeFields = [
   "hookName",
   "scope",
@@ -244,23 +253,21 @@ export async function checkHookContracts(
     },
     {
       code: "HOOK_INPUT_DOCS_CHECK_UNREACHABLE",
-      command: "pnpm --dir repos/arashi-docs validate:semantic-docs",
+      command: docsAggregate,
       message:
         "The authoritative workflow must execute the stable docs semantic aggregate that includes lifecycle hooks.",
     },
     {
       code: "HOOK_INPUT_SKILLS_SOURCE_CHECK_UNREACHABLE",
-      command:
-        "node repos/arashi-skills/scripts/lifecycle-hook-guidance-selftest.mjs",
+      command: skillsSourceAggregate,
       message:
-        "The authoritative workflow must check lifecycle-hook guidance in the source skill.",
+        "The authoritative workflow must check lifecycle-hook guidance through the source skills aggregate.",
     },
     {
       code: "HOOK_INPUT_SKILLS_PACKAGE_CHECK_UNREACHABLE",
-      command:
-        "node repos/arashi-skills/scripts/lifecycle-hook-guidance-selftest.mjs --skill-root package-check/skills/arashi",
+      command: skillsPackageAggregate,
       message:
-        "The authoritative workflow must check lifecycle-hook guidance in the extracted skill archive.",
+        "The authoritative workflow must check lifecycle-hook guidance through the extracted-package skills aggregate.",
     },
   ];
   for (const check of requiredWorkflowChecks) {
@@ -269,8 +276,7 @@ export async function checkHookContracts(
     }
   }
 
-  const packagedSkillCheck =
-    "node repos/arashi-skills/scripts/lifecycle-hook-guidance-selftest.mjs --skill-root package-check/skills/arashi";
+  const packagedSkillCheck = skillsPackageAggregate;
   const packagedSkillJobRuns = workflowJobBlocks(workflowContent)
     .map((job) => workflowRunSteps(`jobs:\n${job}`))
     .find((runs) => directlyRuns(runs, packagedSkillCheck));
@@ -282,10 +288,15 @@ export async function checkHookContracts(
   const packagedSkillPrerequisites = [
     {
       code: "HOOK_INPUT_SKILLS_ARCHIVE_CREATION_UNREACHABLE",
-      command:
-        "tar -czf arashi-skill-package.tar.gz -C repos/arashi-skills skills/",
+      command: skillsArchiveCreate,
       message:
-        "The authoritative workflow must create the exact release-shaped skill archive before packaged lifecycle-hook validation.",
+        "The authoritative workflow must create the canonical release archive before packaged lifecycle-hook validation.",
+    },
+    {
+      code: "HOOK_INPUT_SKILLS_ARCHIVE_VERIFICATION_UNREACHABLE",
+      command: skillsArchiveVerify,
+      message:
+        "The authoritative workflow must verify the canonical release archive before packaged lifecycle-hook validation.",
     },
     {
       code: "HOOK_INPUT_SKILLS_PACKAGE_DESTINATION_UNREACHABLE",
@@ -332,7 +343,7 @@ export async function checkHookContracts(
       diagnostics,
       "HOOK_INPUT_SKILLS_PACKAGE_PREREQUISITE_ORDER_INVALID",
       workflowSource,
-      "The authoritative workflow must create the release-shaped archive, create its destination, extract it, and then validate the extracted package in that order within one job.",
+      "The authoritative workflow must create and verify the release-shaped archive, create its destination, extract it, and then validate the extracted package in that order within one job.",
     );
   }
 

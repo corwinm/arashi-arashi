@@ -105,12 +105,13 @@ jobs:
     steps:
       - run: pnpm contracts:check:ci
       - run: pnpm --dir repos/arashi-docs validate:semantic-docs
-      - run: node repos/arashi-skills/scripts/lifecycle-hook-guidance-selftest.mjs
+      - run: node repos/arashi-skills/scripts/validate-guidance.mjs
       - run: |
-          tar -czf arashi-skill-package.tar.gz -C repos/arashi-skills skills/
+          node repos/arashi-skills/scripts/create-release-archive.mjs --root repos/arashi-skills --output arashi-skill-package.tar.gz
+          node repos/arashi-skills/scripts/create-release-archive.mjs --verify arashi-skill-package.tar.gz
           mkdir package-check
           tar -xzf arashi-skill-package.tar.gz -C package-check
-          node repos/arashi-skills/scripts/lifecycle-hook-guidance-selftest.mjs --skill-root package-check/skills/arashi
+          node repos/arashi-skills/scripts/validate-guidance.mjs --skill-root package-check/skills/arashi
 `,
   "repos/arashi/.github/workflows/ci.yml": `name: CI
 jobs:
@@ -547,8 +548,13 @@ jobs:
   test.each([
     [
       "archive creation",
-      "tar -czf arashi-skill-package.tar.gz -C repos/arashi-skills skills/",
+      "node repos/arashi-skills/scripts/create-release-archive.mjs --root repos/arashi-skills --output arashi-skill-package.tar.gz",
       "HOOK_INPUT_SKILLS_ARCHIVE_CREATION_UNREACHABLE",
+    ],
+    [
+      "archive verification",
+      "node repos/arashi-skills/scripts/create-release-archive.mjs --verify arashi-skill-package.tar.gz",
+      "HOOK_INPUT_SKILLS_ARCHIVE_VERIFICATION_UNREACHABLE",
     ],
     [
       "package-check destination creation",
@@ -585,7 +591,8 @@ jobs:
     const workflow =
       files[".github/workflows/cross-repo-command-contracts.yml"];
     const prerequisiteBlock = `      - run: |
-          tar -czf arashi-skill-package.tar.gz -C repos/arashi-skills skills/
+          node repos/arashi-skills/scripts/create-release-archive.mjs --root repos/arashi-skills --output arashi-skill-package.tar.gz
+          node repos/arashi-skills/scripts/create-release-archive.mjs --verify arashi-skill-package.tar.gz
           mkdir package-check
           tar -xzf arashi-skill-package.tar.gz -C package-check
 `;
@@ -617,12 +624,14 @@ ${prerequisiteBlock}`,
       files[".github/workflows/cross-repo-command-contracts.yml"];
     const root = await fixture({
       ".github/workflows/cross-repo-command-contracts.yml": workflow.replace(
-        `          tar -czf arashi-skill-package.tar.gz -C repos/arashi-skills skills/
+        `          node repos/arashi-skills/scripts/create-release-archive.mjs --root repos/arashi-skills --output arashi-skill-package.tar.gz
+          node repos/arashi-skills/scripts/create-release-archive.mjs --verify arashi-skill-package.tar.gz
           mkdir package-check
           tar -xzf arashi-skill-package.tar.gz -C package-check`,
         `          tar -xzf arashi-skill-package.tar.gz -C package-check
           mkdir package-check
-          tar -czf arashi-skill-package.tar.gz -C repos/arashi-skills skills/`,
+          node repos/arashi-skills/scripts/create-release-archive.mjs --verify arashi-skill-package.tar.gz
+          node repos/arashi-skills/scripts/create-release-archive.mjs --root repos/arashi-skills --output arashi-skill-package.tar.gz`,
       ),
     });
 
@@ -641,12 +650,12 @@ ${prerequisiteBlock}`,
     ],
     [
       "skills source checker",
-      "node repos/arashi-skills/scripts/lifecycle-hook-guidance-selftest.mjs",
+      "node repos/arashi-skills/scripts/validate-guidance.mjs",
       "HOOK_INPUT_SKILLS_SOURCE_CHECK_UNREACHABLE",
     ],
     [
       "skills extracted-package checker",
-      "node repos/arashi-skills/scripts/lifecycle-hook-guidance-selftest.mjs --skill-root package-check/skills/arashi",
+      "node repos/arashi-skills/scripts/validate-guidance.mjs --skill-root package-check/skills/arashi",
       "HOOK_INPUT_SKILLS_PACKAGE_CHECK_UNREACHABLE",
     ],
   ])("rejects missing %s reachability", async (_label, command, code) => {

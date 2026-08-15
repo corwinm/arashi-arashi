@@ -64,6 +64,17 @@ const paths = {
     "repos/arashi-skills/scripts/create-base-guidance-selftest.mjs",
   skillsTabPolicy: "repos/arashi-skills/skills/arashi/references/commands.md",
 } as const;
+const docsAggregate = "pnpm --dir repos/arashi-docs validate:semantic-docs";
+const skillsSourceAggregate =
+  "node repos/arashi-skills/scripts/validate-guidance.mjs";
+const skillsArchiveCreate =
+  "node repos/arashi-skills/scripts/create-release-archive.mjs --root repos/arashi-skills --output arashi-skill-package.tar.gz";
+const skillsArchiveVerify =
+  "node repos/arashi-skills/scripts/create-release-archive.mjs --verify arashi-skill-package.tar.gz";
+const skillsArchiveExtract =
+  "tar -xzf arashi-skill-package.tar.gz -C package-check";
+const skillsPackageAggregate =
+  "node repos/arashi-skills/scripts/validate-guidance.mjs --skill-root package-check/skills/arashi";
 const createBaseBranchPattern = String.raw`^(?!HEAD$)(?!origin/(?:HEAD$|-))(?![-/.])(?!.*(?:/\.|//|\.\.|@\{))(?!.*\.lock(?:/|$))(?!.*[/.]$)[^\u0000-\u0020\u007F~^:?*\[\\]+$`;
 const createBaseSemanticPolicy: Obj = {
   ownership: "command",
@@ -4113,7 +4124,7 @@ export async function checkContracts(
       cwd: "repos/arashi-docs",
       failureCode: "DOCS_OPTION_POLICY_CHECK_FAILED",
       unreachableCode: "DOCS_OPTION_POLICY_CHECK_UNREACHABLE",
-      command: "pnpm --dir repos/arashi-docs validate:semantic-docs",
+      command: docsAggregate,
     },
     {
       category: "skills" as const,
@@ -4121,8 +4132,7 @@ export async function checkContracts(
       cwd: "repos/arashi-skills",
       failureCode: "SKILLS_OPTION_POLICY_CHECK_FAILED",
       unreachableCode: "SKILLS_OPTION_POLICY_CHECK_UNREACHABLE",
-      command:
-        "node repos/arashi-skills/scripts/tab-launch-disposition-guidance-selftest.mjs",
+      command: skillsSourceAggregate,
     },
     ...(contract?.schemaVersion === 5
       ? [
@@ -4132,7 +4142,7 @@ export async function checkContracts(
             cwd: "repos/arashi-docs",
             failureCode: "DOCS_CLI_OPTION_POLICY_CHECK_FAILED",
             unreachableCode: "DOCS_CLI_OPTION_POLICY_CHECK_UNREACHABLE",
-            command: "pnpm --dir repos/arashi-docs validate:semantic-docs",
+            command: docsAggregate,
           },
           {
             category: "skills" as const,
@@ -4140,8 +4150,7 @@ export async function checkContracts(
             cwd: "repos/arashi-skills",
             failureCode: "SKILLS_CLI_OPTION_POLICY_CHECK_FAILED",
             unreachableCode: "SKILLS_CLI_OPTION_POLICY_CHECK_UNREACHABLE",
-            command:
-              "node repos/arashi-skills/scripts/cli-flag-rationalization-guidance-selftest.mjs",
+            command: skillsSourceAggregate,
           },
         ]
       : []),
@@ -4154,7 +4163,7 @@ export async function checkContracts(
             cwd: "repos/arashi-docs",
             failureCode: "SSH_ALIAS_GUIDANCE_MISMATCH",
             unreachableCode: "SSH_ALIAS_WORKFLOW_UNWIRED",
-            command: "pnpm --dir repos/arashi-docs validate:semantic-docs",
+            command: docsAggregate,
           },
           {
             category: "skills" as const,
@@ -4162,8 +4171,7 @@ export async function checkContracts(
             cwd: "repos/arashi-skills",
             failureCode: "SSH_ALIAS_GUIDANCE_MISMATCH",
             unreachableCode: "SSH_ALIAS_WORKFLOW_UNWIRED",
-            command:
-              "node repos/arashi-skills/scripts/ssh-host-alias-guidance-selftest.mjs",
+            command: skillsSourceAggregate,
           },
           {
             category: "docs" as const,
@@ -4171,7 +4179,7 @@ export async function checkContracts(
             cwd: "repos/arashi-docs",
             failureCode: "DOCS_COMPLETION_CHECK_FAILED",
             unreachableCode: "DOCS_COMPLETION_CHECK_UNREACHABLE",
-            command: "pnpm --dir repos/arashi-docs validate:semantic-docs",
+            command: docsAggregate,
           },
           {
             category: "skills" as const,
@@ -4179,8 +4187,7 @@ export async function checkContracts(
             cwd: "repos/arashi-skills",
             failureCode: "SKILLS_COMPLETION_CHECK_FAILED",
             unreachableCode: "SKILLS_COMPLETION_CHECK_UNREACHABLE",
-            command:
-              "node repos/arashi-skills/scripts/shell-completion-guidance-selftest.mjs --meta-root .",
+            command: skillsSourceAggregate,
           },
         ]
       : []),
@@ -4192,7 +4199,7 @@ export async function checkContracts(
             cwd: "repos/arashi-docs",
             failureCode: "DOCS_CREATE_BASE_CHECK_FAILED",
             unreachableCode: "DOCS_CREATE_BASE_CHECK_UNREACHABLE",
-            command: "pnpm --dir repos/arashi-docs validate:semantic-docs",
+            command: docsAggregate,
           },
           {
             category: "skills" as const,
@@ -4200,8 +4207,7 @@ export async function checkContracts(
             cwd: "repos/arashi-skills",
             failureCode: "SKILLS_CREATE_BASE_CHECK_FAILED",
             unreachableCode: "SKILLS_CREATE_BASE_CHECK_UNREACHABLE",
-            command:
-              "node repos/arashi-skills/scripts/create-base-guidance-selftest.mjs",
+            command: skillsSourceAggregate,
           },
         ]
       : []),
@@ -4284,8 +4290,7 @@ export async function checkContracts(
 
     const docsSequence = [
       "pnpm --dir repos/arashi-docs install --frozen-lockfile",
-      "pnpm --dir repos/arashi-docs sync:content",
-      "pnpm --dir repos/arashi-docs validate:semantic-docs",
+      docsAggregate,
     ];
     for (const gate of [
       {
@@ -4294,15 +4299,9 @@ export async function checkContracts(
         command: docsSequence[0],
       },
       {
-        category: "docs" as const,
-        code: "DOCS_CREATE_BASE_GENERATION_UNREACHABLE",
-        command: docsSequence[1],
-      },
-      {
         category: "skills" as const,
         code: "SKILLS_CREATE_BASE_PACKAGE_CHECK_UNREACHABLE",
-        command:
-          "node repos/arashi-skills/scripts/create-base-guidance-selftest.mjs --skill-root package-check/skills/arashi",
+        command: skillsPackageAggregate,
       },
     ])
       if (!directlyRuns(contractJobRuns, gate.command))
@@ -4313,7 +4312,7 @@ export async function checkContracts(
           gate.code,
           paths.workflow,
           gate.command,
-          "Meta CI must install pinned docs dependencies, regenerate ignored exports, and validate source plus release-shaped create-base guidance in the checker job.",
+          "Meta CI must install pinned docs dependencies and run the docs, source-skills, and canonical release-package aggregates in the checker job.",
         );
     if (!runsInOrder(contractJobRuns, docsSequence))
       add(
@@ -4323,14 +4322,15 @@ export async function checkContracts(
         "DOCS_CREATE_BASE_SEQUENCE_UNREACHABLE",
         paths.workflow,
         "create-base docs",
-        "Docs install, ignored-export generation, and the fail-closed semantic aggregate must execute in dependency order in the checker job.",
+        "Docs install and the generation-owning fail-closed semantic aggregate must execute in dependency order in the checker job.",
       );
     const skillsSequence = [
-      "node repos/arashi-skills/scripts/create-base-guidance-selftest.mjs",
-      "tar -czf arashi-skill-package.tar.gz -C repos/arashi-skills skills/",
+      skillsSourceAggregate,
+      skillsArchiveCreate,
+      skillsArchiveVerify,
       "mkdir package-check",
-      "tar -xzf arashi-skill-package.tar.gz -C package-check",
-      "node repos/arashi-skills/scripts/create-base-guidance-selftest.mjs --skill-root package-check/skills/arashi",
+      skillsArchiveExtract,
+      skillsPackageAggregate,
     ];
     if (!runsInOrder(contractJobRuns, skillsSequence))
       add(
@@ -4458,9 +4458,10 @@ export async function checkContracts(
       );
   if (contract?.schemaVersion === 5) {
     const packagedSkillCommands = [
-      "tar -czf arashi-skill-package.tar.gz -C repos/arashi-skills skills/",
-      "tar -xzf arashi-skill-package.tar.gz -C package-check",
-      "node repos/arashi-skills/scripts/cli-flag-rationalization-guidance-selftest.mjs --skill-root package-check/skills/arashi",
+      skillsArchiveCreate,
+      skillsArchiveVerify,
+      skillsArchiveExtract,
+      skillsPackageAggregate,
     ];
     for (const command of packagedSkillCommands)
       if (!directlyRuns(workflowRuns, command))
@@ -4479,9 +4480,10 @@ export async function checkContracts(
     contract.schemaVersion >= 6
   ) {
     const packagedCompletionCommands = [
-      "tar -czf arashi-skill-package.tar.gz -C repos/arashi-skills skills/",
-      "tar -xzf arashi-skill-package.tar.gz -C package-check",
-      "node repos/arashi-skills/scripts/shell-completion-guidance-selftest.mjs --skill-root package-check/skills/arashi",
+      skillsArchiveCreate,
+      skillsArchiveVerify,
+      skillsArchiveExtract,
+      skillsPackageAggregate,
     ];
     for (const command of packagedCompletionCommands)
       if (!directlyRuns(workflowRuns, command))
@@ -4500,9 +4502,10 @@ export async function checkContracts(
     contract.schemaVersion >= 6
   )
     for (const command of [
-      "tar -czf arashi-skill-package.tar.gz -C repos/arashi-skills skills/",
-      "tar -xzf arashi-skill-package.tar.gz -C package-check",
-      "node repos/arashi-skills/scripts/ssh-host-alias-guidance-selftest.mjs --skill-root package-check/skills/arashi",
+      skillsArchiveCreate,
+      skillsArchiveVerify,
+      skillsArchiveExtract,
+      skillsPackageAggregate,
     ])
       if (!directlyRuns(workflowRuns, command))
         add(
