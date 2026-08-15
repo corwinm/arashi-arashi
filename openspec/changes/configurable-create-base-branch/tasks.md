@@ -34,26 +34,26 @@
 
 ## 6. CLI-generated and cross-repository contracts
 
-- [ ] 6.1 Add CLI contract RED tests for `--base` precedence, generic-only persistence, standalone support, resolution order, reuse semantics, dry-run/JSON fields, and pre-mutation failure.
-- [ ] 6.2 Update typed semantic policy, increment the generated command-contract schema version for the serialized create-base policy shape, regenerate deterministic artifacts, and run schema/completion/contract freshness checks.
-- [ ] 6.3 Add meta-checker RED fixtures for missing or contradictory create-base semantics and CI reachability.
-- [ ] 6.4 Implement normalized create-base comparison across CLI schema/contract, docs exports, and packaged skill records.
+- [x] 6.1 Add CLI contract RED tests for `--base` precedence, generic-only persistence, standalone support, resolution order, reuse semantics, dry-run/JSON fields, and pre-mutation failure.
+- [x] 6.2 Update typed semantic policy, increment the generated command-contract schema version for the serialized create-base policy shape, regenerate deterministic artifacts, and run schema/completion/contract freshness checks.
+- [x] 6.3 Add meta-checker RED fixtures for missing or contradictory create-base semantics and CI reachability.
+- [x] 6.4 Implement normalized create-base comparison across CLI schema/contract, docs exports, and packaged skill records.
 
 ## 7. Canonical documentation and exports
 
-- [ ] 7.1 Strengthen docs semantic checks first and record RED for missing config, CLI override, precedence, resolution, selected-set, reuse, dry-run/JSON, standalone, no-`ARASHI_BASE_BRANCH`, and workaround guidance.
-- [ ] 7.2 Update the create command and configuration/workflow documentation with concise long-running-feature examples and the pre-created-branch workaround boundary.
-- [ ] 7.3 Regenerate agent-readable Markdown routes/exports and run full docs validation.
+- [x] 7.1 Strengthen docs semantic checks first and record RED for missing config, CLI override, precedence, resolution, selected-set, reuse, dry-run/JSON, standalone, no-`ARASHI_BASE_BRANCH`, and workaround guidance.
+- [x] 7.2 Update the create command and configuration/workflow documentation with concise long-running-feature examples and the pre-created-branch workaround boundary.
+- [x] 7.3 Regenerate agent-readable Markdown routes/exports and run full docs validation.
 
 ## 8. Packaged skill guidance
 
-- [ ] 8.1 Add skill-package RED checks for generic configuration, one-off override, fail-before-mutation handling, existing-target reuse, and standalone invocation-only scope.
-- [ ] 8.2 Update the smallest owning Arashi skill references and semantic contract records, then verify source and packaged-artifact checks.
+- [x] 8.1 Add skill-package RED checks for generic configuration, one-off override, fail-before-mutation handling, existing-target reuse, and standalone invocation-only scope.
+- [x] 8.2 Update the smallest owning Arashi skill references and semantic contract records, then verify source and packaged-artifact checks.
 
 ## 9. Final coordinated delivery
 
-- [ ] 9.1 Run post-final-edit format, lint, typecheck, build, focused integration, full CLI, docs, skills, schema/completion/contract, and meta cross-repository gates.
-- [ ] 9.2 Perform an exact staged-diff self-review against issue #281 and this approved contract before every repository commit.
-- [ ] 9.3 Commit and open cross-linked CLI, docs, and skills child PRs with exact validation evidence; update this checklist only from verified milestones.
+- [x] 9.1 Run post-final-edit format, lint, typecheck, build, focused integration, full CLI, docs, skills, schema/completion/contract, and meta cross-repository gates.
+- [x] 9.2 Perform an exact staged-diff self-review against issue #281 and this approved contract before every repository commit.
+- [x] 9.3 Commit and open cross-linked CLI, docs, and skills child PRs with exact validation evidence; update this checklist only from verified milestones.
 - [ ] 9.4 Re-run meta validation against the published child heads, commit the completed OpenSpec/checker state, and open the tracking meta PR without an issue-closing keyword until archive.
 - [ ] 9.5 Verify every related PR's exact-head CI, mergeability, and eligible review threads before requesting merge approval.

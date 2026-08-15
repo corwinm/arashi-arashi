@@ -54,8 +54,85 @@ const paths = {
   docsSshAliasCheck: "repos/arashi-docs/scripts/check-ssh-host-alias-docs.ts",
   skillsSshAliasCheck:
     "repos/arashi-skills/scripts/ssh-host-alias-guidance-selftest.mjs",
+  docsCreateBaseCheck: "repos/arashi-docs/scripts/check-create-base-docs.ts",
+  skillsCreateBaseContract:
+    "repos/arashi-skills/contracts/create-base-branch.json",
+  skillsCreateBaseCheck:
+    "repos/arashi-skills/scripts/create-base-guidance-selftest.mjs",
   skillsTabPolicy: "repos/arashi-skills/skills/arashi/references/commands.md",
 } as const;
+const createBaseBranchPattern = String.raw`^(?!HEAD$)(?!origin/(?:HEAD$|-))(?![-/.])(?!.*(?:/\.|//|\.\.|@\{))(?!.*\.lock(?:/|$))(?!.*[/.]$)[^\u0000-\u0020\u007F~^:?*\[\\]+$`;
+const createBaseSemanticPolicy: Obj = {
+  ownership: "command",
+  persisted: false,
+  createBase: {
+    scope: {
+      cli: "invocation-only",
+      workspaceDefault: "defaults.create.baseBranch",
+      workspaceDefaultScope: "generic-only",
+      editorScopedDefault: "rejected",
+    },
+    precedence: ["cli", "defaults.create.baseBranch", "legacy-omitted"],
+    normalization: { originPrefix: "remove-at-most-one" },
+    standalone: {
+      cli: "invocation-only",
+      workspaceDefault: "ignored",
+      omitted: "legacy-current-head",
+    },
+    resolution: {
+      repositories: "every-effective-selected-including-reused",
+      refs: ["refs/heads/<branch>", "refs/remotes/origin/<branch>"],
+    },
+    mutation: {
+      preflight: "all-before-any",
+      executionStartPoint: "immutable-resolved-oid",
+      reusedTarget: {
+        ancestry: "not-asserted-checked-or-derived",
+        baseResolution: "required",
+        mutation: "none",
+      },
+    },
+    output: {
+      humanDryRun: { baseResolution: true },
+      json: {
+        base: "optional",
+        baseFields: ["requestedBranch", "source", "repositories"],
+        requestedBranch: "normalized-logical-branch",
+        sources: ["cli", "config"],
+        targetActions: ["created", "reused"],
+        success: {
+          ordering: "effective-selected-repository-order",
+          repositories: "complete-selected-set",
+          repositoryFields: [
+            "repositoryName",
+            "repositoryPath",
+            "resolvedRef",
+            "resolvedOid",
+            "targetAction",
+          ],
+          repositoryPath: "canonical-absolute",
+        },
+        failure: {
+          attemptedRefs: [
+            "refs/heads/<branch>",
+            "refs/remotes/origin/<branch>",
+          ],
+          code: "CREATE_BASE_RESOLUTION_FAILED",
+          fields: ["requestedBranch", "source", "repositories"],
+          ordering: "effective-selected-repository-order",
+          repositories: "affected-only-selected-set",
+          repositoryFields: [
+            "repositoryName",
+            "repositoryPath",
+            "attemptedRefs",
+          ],
+          repositoryPath: "canonical-absolute",
+        },
+      },
+    },
+    environmentVariables: { ARASHI_BASE_BRANCH: "forbidden" },
+  },
+};
 const execFileAsync = promisify(execFile);
 const switchModes = ["auto", "cd", "launch", "sesh", "herdr"];
 const switchAutoOrder = [
@@ -907,6 +984,59 @@ function validateCompatibility(
       `${commandPath}.${long}`,
       "Compatibility mappings require a registered hidden/deprecated alternative and the approved 2.0 removal boundary.",
     );
+}
+
+function compareExactRecord(
+  actual: unknown,
+  expected: unknown,
+  source: string,
+  subject: string,
+  category: Diagnostic["category"],
+  code: string,
+  message: string,
+  diagnostics: Diagnostic[],
+): void {
+  if (object(expected)) {
+    if (!object(actual)) {
+      add(diagnostics, "error", category, code, source, subject, message);
+      return;
+    }
+    for (const key of [
+      ...new Set([...Object.keys(actual), ...Object.keys(expected)]),
+    ].sort())
+      compareExactRecord(
+        actual[key],
+        expected[key],
+        source,
+        subject ? `${subject}.${key}` : key,
+        category,
+        code,
+        message,
+        diagnostics,
+      );
+    return;
+  }
+  if (Array.isArray(expected)) {
+    if (!Array.isArray(actual)) {
+      add(diagnostics, "error", category, code, source, subject, message);
+      return;
+    }
+    const length = Math.max(actual.length, expected.length);
+    for (let index = 0; index < length; index += 1)
+      compareExactRecord(
+        actual[index],
+        expected[index],
+        source,
+        `${subject}.${index}`,
+        category,
+        code,
+        message,
+        diagnostics,
+      );
+    return;
+  }
+  if (actual !== expected)
+    add(diagnostics, "error", category, code, source, subject, message);
 }
 
 function compareNormalizedRecord(
@@ -2683,6 +2813,31 @@ const workflowRunSteps = (workflow: string): string[] => {
   );
 };
 
+const workflowJobRunSteps = (workflow: string): string[][] => {
+  const lines = workflow.split(/\r?\n/);
+  const jobsLine = lines.findIndex((line) =>
+    /^\s*jobs:\s*(?:#.*)?$/.test(line),
+  );
+  if (jobsLine < 0) return [];
+  const jobsIndent = lines[jobsLine].match(/^\s*/)?.[0].length ?? 0;
+  const starts: number[] = [];
+  let jobIndent = -1;
+  for (let index = jobsLine + 1; index < lines.length; index += 1) {
+    const line = lines[index];
+    if (/^\s*(?:#.*)?$/.test(line)) continue;
+    const indent = line.match(/^\s*/)?.[0].length ?? 0;
+    if (indent <= jobsIndent) break;
+    if (/^\s*[^:#][^:]*:\s*(?:#.*)?$/.test(line)) {
+      if (jobIndent < 0) jobIndent = indent;
+      if (indent === jobIndent) starts.push(index);
+    }
+  }
+  return starts.map((start, position) => {
+    const end = starts[position + 1] ?? lines.length;
+    return workflowRunSteps(["jobs:", ...lines.slice(start, end)].join("\n"));
+  });
+};
+
 const directlyRuns = (runs: string[], command: string): boolean =>
   runs.some((run) =>
     run
@@ -2691,6 +2846,59 @@ const directlyRuns = (runs: string[], command: string): boolean =>
       .filter((line) => line.length > 0 && !line.startsWith("#"))
       .some((line) => line === command),
   );
+
+const executableRunLines = (runs: string[]): string[] =>
+  runs.flatMap((run) =>
+    run
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .filter((line) => line.length > 0 && !line.startsWith("#")),
+  );
+
+const runsInOrder = (runs: string[], commands: string[]): boolean => {
+  const lines = executableRunLines(runs);
+  let previous = -1;
+  for (const command of commands) {
+    const index = lines.indexOf(command, previous + 1);
+    if (index < 0) return false;
+    previous = index;
+  }
+  return true;
+};
+
+const workflowPullRequestPaths = (workflow: string): Set<string> => {
+  const lines = workflow.split(/\r?\n/);
+  let onIndent = -1;
+  let pullRequestIndent = -1;
+  let pathsIndent = -1;
+  const result = new Set<string>();
+  for (const line of lines) {
+    if (/^\s*(?:#.*)?$/.test(line)) continue;
+    const indent = line.match(/^\s*/)?.[0].length ?? 0;
+    if (/^\s*["']?on["']?:\s*(?:#.*)?$/.test(line)) {
+      onIndent = indent;
+      pullRequestIndent = -1;
+      pathsIndent = -1;
+      continue;
+    }
+    if (onIndent < 0) continue;
+    if (indent <= onIndent) break;
+    if (/^\s*pull_request:\s*(?:#.*)?$/.test(line)) {
+      pullRequestIndent = indent;
+      pathsIndent = -1;
+      continue;
+    }
+    if (pullRequestIndent < 0 || indent <= pullRequestIndent) continue;
+    if (/^\s*paths:\s*(?:#.*)?$/.test(line)) {
+      pathsIndent = indent;
+      continue;
+    }
+    if (pathsIndent < 0 || indent <= pathsIndent) continue;
+    const item = line.match(/^\s*-\s*(["']?)(.*?)\1\s*(?:#.*)?$/);
+    if (item) result.add(item[2]);
+  }
+  return result;
+};
 
 const executableCheckerSource = (content: string): boolean =>
   content
@@ -2752,6 +2960,32 @@ async function runFocusedChecker(
   }
 }
 
+async function runPackagedCreateBaseChecker(
+  root: string,
+  diagnostics: Diagnostic[],
+): Promise<void> {
+  const temporaryRoot = await mkdtemp(
+    join(tmpdir(), "arashi-create-base-package-check-"),
+  );
+  const skillRoot = join(temporaryRoot, "skills/arashi");
+  try {
+    await cp(join(root, paths.skills), skillRoot, { recursive: true });
+    await runFocusedChecker(
+      root,
+      {
+        category: "skills",
+        checker: paths.skillsCreateBaseCheck,
+        code: "SKILLS_CREATE_BASE_PACKAGE_CHECK_FAILED",
+        cwd: "repos/arashi-skills",
+        args: ["--skill-root", skillRoot],
+      },
+      diagnostics,
+    );
+  } finally {
+    await rm(temporaryRoot, { force: true, recursive: true });
+  }
+}
+
 async function runPackagedCompletionChecker(
   root: string,
   diagnostics: Diagnostic[],
@@ -2783,6 +3017,10 @@ export async function checkContracts(
 ): Promise<CheckResult> {
   const d: Diagnostic[] = [];
   const contract = await json(root, paths.contract, d);
+  const skillsCreateBaseContract =
+    contract?.schemaVersion === 7
+      ? await json(root, paths.skillsCreateBaseContract, d)
+      : undefined;
   const cliCreateConfig = await json(root, paths.cliCreateConfig, d);
   const cliKittySessions = await json(root, paths.cliKittySessions, d);
   const configSchema = await json(root, paths.configSchema, d);
@@ -3013,7 +3251,11 @@ export async function checkContracts(
   const editorCreate = object(editorCommandProperties.create)
     ? editorCommandProperties.create
     : {};
-  if (editorCreate.$ref !== "#/definitions/CreateCommandDefaults")
+  const expectedEditorCreateRef =
+    contract?.schemaVersion === 7
+      ? "#/definitions/EditorCreateCommandDefaults"
+      : "#/definitions/CreateCommandDefaults";
+  if (editorCreate.$ref !== expectedEditorCreateRef)
     add(
       d,
       "error",
@@ -3021,7 +3263,7 @@ export async function checkContracts(
       "CREATE_CONFIG_MISMATCH",
       paths.configSchema,
       "editorCreate",
-      "EditorCommandDefaults.create must reference CreateCommandDefaults.",
+      `EditorCommandDefaults.create must reference ${expectedEditorCreateRef.split("/").at(-1)}.`,
     );
   const editorDefaults = object(definitions.EditorDefaultsConfig)
     ? definitions.EditorDefaultsConfig
@@ -3055,7 +3297,7 @@ export async function checkContracts(
         "Each editor host must reference EditorCommandDefaults.",
       );
   }
-  if (contract && ![4, 5, 6].includes(contract.schemaVersion as number))
+  if (contract && ![4, 5, 6, 7].includes(contract.schemaVersion as number))
     add(
       d,
       "error",
@@ -3063,7 +3305,7 @@ export async function checkContracts(
       "SCHEMA_VERSION_UNSUPPORTED",
       paths.contract,
       String(contract.schemaVersion),
-      "Expected schemaVersion 4, 5, or 6.",
+      "Expected schemaVersion 4, 5, 6, or 7.",
     );
   version(coverage, paths.coverage, d);
   version(policy, paths.policy, d);
@@ -3186,7 +3428,10 @@ export async function checkContracts(
     }
   }
   checkAddMaterializationContract(commands.get("add"), d);
-  if (contract?.schemaVersion === 6)
+  if (
+    typeof contract?.schemaVersion === "number" &&
+    contract.schemaVersion >= 6
+  )
     checkSshAliasCliContract(commands.get("add"), d);
   if (contract?.schemaVersion === 5) {
     validateSchemaV5Commands(commands, d);
@@ -3198,8 +3443,142 @@ export async function checkContracts(
       d,
     );
   }
-  if (contract?.schemaVersion === 6)
+  if (
+    typeof contract?.schemaVersion === "number" &&
+    contract.schemaVersion >= 6
+  )
     validateSchemaV6Completion(contract, commands, d);
+  if (contract?.schemaVersion === 7) {
+    const create = commands.get("create");
+    const createOptions = create ? commandOptions(create) : [];
+    const baseOption = createOptions.find(
+      (option) => optionLong(option) === "--base",
+    );
+    if (!baseOption) {
+      add(
+        d,
+        "error",
+        "schema",
+        "CREATE_BASE_CLI_POLICY_MISMATCH",
+        paths.contract,
+        "create.--base",
+        "Schema v7 requires the owning create --base option and exact create-base semantic policy.",
+      );
+    } else {
+      compareExactRecord(
+        baseOption.semanticPolicy,
+        createBaseSemanticPolicy,
+        paths.contract,
+        "create.--base.semanticPolicy",
+        "schema",
+        "CREATE_BASE_CLI_POLICY_MISMATCH",
+        "Schema-v7 create --base semantics differ from the normalized create-base contract.",
+        d,
+      );
+      if (
+        baseOption.semanticPolicyOwner !== "command" ||
+        baseOption.required !== true ||
+        baseOption.valueShape !== "required"
+      )
+        add(
+          d,
+          "error",
+          "schema",
+          "CREATE_BASE_CLI_POLICY_MISMATCH",
+          paths.contract,
+          "create.--base",
+          "Schema v7 requires command-owned create --base with a required branch value.",
+        );
+    }
+    for (const [commandPath, command] of commands)
+      for (const option of commandOptions(command)) {
+        const long = optionLong(option);
+        if (commandPath === "create" && long === "--base") continue;
+        const semanticPolicy = object(option.semanticPolicy)
+          ? option.semanticPolicy
+          : undefined;
+        if (semanticPolicy && "createBase" in semanticPolicy)
+          add(
+            d,
+            "error",
+            "schema",
+            "CREATE_BASE_POLICY_WRONG_OWNER",
+            paths.contract,
+            `${commandPath}.${long ?? String(option.flags)}`,
+            "Only the exact create --base option may own createBase semantic policy.",
+          );
+      }
+
+    const expectedSkillsContract = {
+      schemaVersion: 7,
+      command: "create",
+      option: "--base",
+      semanticPolicy: createBaseSemanticPolicy,
+      compatibilityWorkaround: "precreate-targets-and-reuse-existing",
+    };
+    compareExactRecord(
+      skillsCreateBaseContract,
+      expectedSkillsContract,
+      paths.skillsCreateBaseContract,
+      "",
+      "skills",
+      "CREATE_BASE_SKILLS_POLICY_MISMATCH",
+      "Packaged-skill create-base record must exactly match the CLI create --base policy.",
+      d,
+    );
+
+    const baseBranch = object(createProperties.baseBranch)
+      ? createProperties.baseBranch
+      : undefined;
+    if (!baseBranch)
+      add(
+        d,
+        "error",
+        "schema",
+        "CREATE_BASE_CONFIG_SCHEMA_MISMATCH",
+        paths.configSchema,
+        "defaults.create.baseBranch",
+        "The generic create defaults must expose baseBranch.",
+      );
+    else {
+      if (baseBranch.type !== "string" || baseBranch.minLength !== 1)
+        add(
+          d,
+          "error",
+          "schema",
+          "CREATE_BASE_CONFIG_SCHEMA_MISMATCH",
+          paths.configSchema,
+          "defaults.create.baseBranch",
+          "baseBranch must be a non-empty string.",
+        );
+      if (baseBranch.pattern !== createBaseBranchPattern)
+        add(
+          d,
+          "error",
+          "schema",
+          "CREATE_BASE_CONFIG_SCHEMA_MISMATCH",
+          paths.configSchema,
+          "defaults.create.baseBranch.pattern",
+          "baseBranch must retain the generated Git branch-name syntax pattern.",
+        );
+    }
+    const editorCreateDefaults = object(definitions.EditorCreateCommandDefaults)
+      ? definitions.EditorCreateCommandDefaults
+      : {};
+    const editorCreateProperties = object(editorCreateDefaults.properties)
+      ? editorCreateDefaults.properties
+      : {};
+    if ("baseBranch" in editorCreateProperties)
+      add(
+        d,
+        "error",
+        "schema",
+        "CREATE_BASE_CONFIG_SCHEMA_MISMATCH",
+        paths.configSchema,
+        "defaults.editors.<host>.create.baseBranch",
+        "Create baseBranch is workspace-generic and must not be editor-scoped.",
+      );
+  }
 
   let index = "";
   try {
@@ -3470,7 +3849,10 @@ export async function checkContracts(
         "--zero-config",
         ...initCompatibleOptions,
         ...initIncompatibleOptions,
-        ...(contract?.schemaVersion === 6 ? ["--help"] : []),
+        ...(typeof contract?.schemaVersion === "number" &&
+        contract.schemaVersion >= 6
+          ? ["--help"]
+          : []),
       ]);
     if (!validPolicy)
       add(
@@ -3755,7 +4137,8 @@ export async function checkContracts(
           },
         ]
       : []),
-    ...(contract?.schemaVersion === 6
+    ...(typeof contract?.schemaVersion === "number" &&
+    contract.schemaVersion >= 6
       ? [
           {
             category: "docs" as const,
@@ -3795,6 +4178,27 @@ export async function checkContracts(
           },
         ]
       : []),
+    ...(contract?.schemaVersion === 7
+      ? [
+          {
+            category: "docs" as const,
+            checker: paths.docsCreateBaseCheck,
+            cwd: "repos/arashi-docs",
+            failureCode: "DOCS_CREATE_BASE_CHECK_FAILED",
+            unreachableCode: "DOCS_CREATE_BASE_CHECK_UNREACHABLE",
+            command: "pnpm --dir repos/arashi-docs validate:create-base-docs",
+          },
+          {
+            category: "skills" as const,
+            checker: paths.skillsCreateBaseCheck,
+            cwd: "repos/arashi-skills",
+            failureCode: "SKILLS_CREATE_BASE_CHECK_FAILED",
+            unreachableCode: "SKILLS_CREATE_BASE_CHECK_UNREACHABLE",
+            command:
+              "node repos/arashi-skills/scripts/create-base-guidance-selftest.mjs",
+          },
+        ]
+      : []),
   ];
   let workflow = "";
   try {
@@ -3803,7 +4207,164 @@ export async function checkContracts(
     // Each focused check below reports the owning category and shared workflow source.
   }
   const workflowRuns = workflowRunSteps(workflow);
-  if (contract?.schemaVersion === 6) {
+  const contractJobRuns =
+    workflowJobRunSteps(workflow).find((runs) =>
+      directlyRuns(runs, "pnpm contracts:check"),
+    ) ?? [];
+  if (contract?.schemaVersion === 7) {
+    const cliGates = [
+      {
+        code: "CLI_CREATE_BASE_INSTALL_UNREACHABLE",
+        command: "pnpm --dir repos/arashi install --frozen-lockfile",
+      },
+      {
+        code: "CLI_CREATE_BASE_SCHEMA_GENERATION_UNREACHABLE",
+        command: "pnpm --dir repos/arashi schema:publish",
+      },
+      {
+        code: "CLI_CREATE_BASE_SCHEMA_CHECK_UNREACHABLE",
+        command: "pnpm --dir repos/arashi schema:check",
+      },
+      {
+        code: "CLI_CREATE_BASE_CONTRACT_GENERATION_UNREACHABLE",
+        command: "pnpm --dir repos/arashi contract:generate",
+      },
+      {
+        code: "CLI_CREATE_BASE_CONTRACT_CHECK_UNREACHABLE",
+        command: "pnpm --dir repos/arashi contract:check",
+      },
+      {
+        code: "CLI_CREATE_BASE_COMPLETION_GENERATION_UNREACHABLE",
+        command: "pnpm --dir repos/arashi completion:generate",
+      },
+      {
+        code: "CLI_CREATE_BASE_COMPLETION_CHECK_UNREACHABLE",
+        command: "pnpm --dir repos/arashi completion:check",
+      },
+      {
+        code: "CLI_CREATE_BASE_GENERATED_DIFF_UNREACHABLE",
+        command:
+          "git -C repos/arashi diff --exit-code -- schema/config.schema.json contracts/cli-commands.json src/generated/completions.ts",
+      },
+    ];
+    for (const gate of cliGates)
+      if (!directlyRuns(contractJobRuns, gate.command))
+        add(
+          d,
+          "error",
+          "schema",
+          gate.code,
+          paths.workflow,
+          gate.command,
+          "Meta CI must install the CLI toolchain, regenerate schema/contract/completions, run their canonical checks, and reject generated diffs in the checker job.",
+        );
+    if (
+      !runsInOrder(
+        contractJobRuns,
+        cliGates.map((gate) => gate.command),
+      )
+    )
+      add(
+        d,
+        "error",
+        "schema",
+        "CLI_CREATE_BASE_SEQUENCE_UNREACHABLE",
+        paths.workflow,
+        "CLI generated contracts",
+        "CLI install, schema, contract, completion, freshness, and diff gates must execute in dependency order in the checker job.",
+      );
+
+    const docsSequence = [
+      "pnpm --dir repos/arashi-docs install --frozen-lockfile",
+      "pnpm --dir repos/arashi-docs sync:content",
+      "pnpm --dir repos/arashi-docs validate:create-base-docs",
+    ];
+    for (const gate of [
+      {
+        category: "docs" as const,
+        code: "DOCS_CREATE_BASE_INSTALL_UNREACHABLE",
+        command: docsSequence[0],
+      },
+      {
+        category: "docs" as const,
+        code: "DOCS_CREATE_BASE_GENERATION_UNREACHABLE",
+        command: docsSequence[1],
+      },
+      {
+        category: "skills" as const,
+        code: "SKILLS_CREATE_BASE_PACKAGE_CHECK_UNREACHABLE",
+        command:
+          "node repos/arashi-skills/scripts/create-base-guidance-selftest.mjs --skill-root package-check/skills/arashi",
+      },
+    ])
+      if (!directlyRuns(contractJobRuns, gate.command))
+        add(
+          d,
+          "error",
+          gate.category,
+          gate.code,
+          paths.workflow,
+          gate.command,
+          "Meta CI must install pinned docs dependencies, regenerate ignored exports, and validate source plus release-shaped create-base guidance in the checker job.",
+        );
+    if (!runsInOrder(contractJobRuns, docsSequence))
+      add(
+        d,
+        "error",
+        "docs",
+        "DOCS_CREATE_BASE_SEQUENCE_UNREACHABLE",
+        paths.workflow,
+        "create-base docs",
+        "Docs install, ignored-export generation, and the focused checker must execute in dependency order in the checker job.",
+      );
+    const skillsSequence = [
+      "node repos/arashi-skills/scripts/create-base-guidance-selftest.mjs",
+      "tar -czf arashi-skill-package.tar.gz -C repos/arashi-skills skills/",
+      "mkdir package-check",
+      "tar -xzf arashi-skill-package.tar.gz -C package-check",
+      "node repos/arashi-skills/scripts/create-base-guidance-selftest.mjs --skill-root package-check/skills/arashi",
+    ];
+    if (!runsInOrder(contractJobRuns, skillsSequence))
+      add(
+        d,
+        "error",
+        "skills",
+        "SKILLS_CREATE_BASE_SEQUENCE_UNREACHABLE",
+        paths.workflow,
+        "create-base packaged skill",
+        "The source checker must precede creation, extraction, and checking of release-shaped skill bytes in the checker job.",
+      );
+
+    const triggerPaths = workflowPullRequestPaths(workflow);
+    for (const requiredPath of [
+      "repos/arashi/src/**",
+      "repos/arashi/schema/**",
+      "repos/arashi/contracts/**",
+      "repos/arashi/.github/workflows/**",
+      "repos/arashi-docs/docs/**",
+      "repos/arashi-docs/scripts/**",
+      "repos/arashi-docs/contracts/**",
+      "repos/arashi-docs/.github/workflows/**",
+      "repos/arashi-skills/skills/**",
+      "repos/arashi-skills/scripts/**",
+      "repos/arashi-skills/contracts/**",
+      "repos/arashi-skills/.github/workflows/**",
+    ])
+      if (!triggerPaths.has(requiredPath))
+        add(
+          d,
+          "error",
+          "schema",
+          "CREATE_BASE_TRIGGER_PATH_UNREACHABLE",
+          paths.workflow,
+          requiredPath,
+          "The coordinated contract workflow pull-request trigger must cover child sources, contracts, and workflow wiring.",
+        );
+  }
+  if (
+    typeof contract?.schemaVersion === "number" &&
+    contract.schemaVersion >= 6
+  ) {
     let cliReadme = "";
     try {
       cliReadme = await readFile(join(root, paths.cliReadme), "utf8");
@@ -3841,37 +4402,42 @@ export async function checkContracts(
         `CLI README completion guidance is missing: ${missingReadmeRequirements.join(", ")}.`,
       );
 
-    const cliCompletionGates = [
-      {
-        code: "CLI_COMPLETION_GENERATION_UNREACHABLE",
-        command: "pnpm --dir repos/arashi completion:generate",
-      },
-      {
-        code: "CLI_COMPLETION_FRESHNESS_UNREACHABLE",
-        command: "pnpm --dir repos/arashi completion:check",
-      },
-      {
-        code: "CLI_COMPLETION_FRESHNESS_UNREACHABLE",
-        command:
-          "git -C repos/arashi diff --exit-code -- src/generated/completions.ts",
-      },
-    ];
-    for (const gate of cliCompletionGates)
-      if (!directlyRuns(workflowRuns, gate.command))
-        add(
-          d,
-          "error",
-          "schema",
-          gate.code,
-          paths.workflow,
-          gate.command,
-          "Meta CI must generate completion artifacts, run freshness validation, and reject generated diffs.",
-        );
+    if (contract?.schemaVersion === 6) {
+      const cliCompletionGates = [
+        {
+          code: "CLI_COMPLETION_GENERATION_UNREACHABLE",
+          command: "pnpm --dir repos/arashi completion:generate",
+        },
+        {
+          code: "CLI_COMPLETION_FRESHNESS_UNREACHABLE",
+          command: "pnpm --dir repos/arashi completion:check",
+        },
+        {
+          code: "CLI_COMPLETION_FRESHNESS_UNREACHABLE",
+          command:
+            "git -C repos/arashi diff --exit-code -- src/generated/completions.ts",
+        },
+      ];
+      for (const gate of cliCompletionGates)
+        if (!directlyRuns(workflowRuns, gate.command))
+          add(
+            d,
+            "error",
+            "schema",
+            gate.code,
+            paths.workflow,
+            gate.command,
+            "Meta CI must generate completion artifacts, run freshness validation, and reject generated diffs.",
+          );
+    }
   }
   for (const focused of focusedChecks)
     if (
       !(await exists(join(root, focused.checker))) ||
-      !directlyRuns(workflowRuns, focused.command)
+      !directlyRuns(
+        contract?.schemaVersion === 7 ? contractJobRuns : workflowRuns,
+        focused.command,
+      )
     )
       add(
         d,
@@ -3900,7 +4466,10 @@ export async function checkContracts(
           "Meta CI must create, extract, and validate the release-shaped packaged skill.",
         );
   }
-  if (contract?.schemaVersion === 6) {
+  if (
+    typeof contract?.schemaVersion === "number" &&
+    contract.schemaVersion >= 6
+  ) {
     const packagedCompletionCommands = [
       "tar -czf arashi-skill-package.tar.gz -C repos/arashi-skills skills/",
       "tar -xzf arashi-skill-package.tar.gz -C package-check",
@@ -3918,7 +4487,10 @@ export async function checkContracts(
           "Meta CI must create, extract, and validate completion guidance in the release-shaped packaged skill.",
         );
   }
-  if (contract?.schemaVersion === 6)
+  if (
+    typeof contract?.schemaVersion === "number" &&
+    contract.schemaVersion >= 6
+  )
     for (const command of [
       "tar -czf arashi-skill-package.tar.gz -C repos/arashi-skills skills/",
       "tar -xzf arashi-skill-package.tar.gz -C package-check",
@@ -3949,13 +4521,22 @@ export async function checkContracts(
       ),
     ),
   );
-  if (contract?.schemaVersion === 6) {
+  if (contract?.schemaVersion === 7)
+    await runPackagedCreateBaseChecker(root, d);
+  if (
+    typeof contract?.schemaVersion === "number" &&
+    contract.schemaVersion >= 6
+  ) {
     await runPackagedCompletionChecker(root, d);
   }
 
   await checkKittyGuidance(root, d);
   await checkAddMaterializationGuidance(root, d);
-  if (contract?.schemaVersion === 6) await checkSshAliasDirectGuidance(root, d);
+  if (
+    typeof contract?.schemaVersion === "number" &&
+    contract.schemaVersion >= 6
+  )
+    await checkSshAliasDirectGuidance(root, d);
 
   d.sort((a, b) =>
     [
