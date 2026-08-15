@@ -5,6 +5,7 @@ on:
     paths:
       - "scripts/**"
       - "tests/**"
+      - "docs/**"
       - ".arashi/hooks/**"
       - "package.json"
       - "pnpm-lock.yaml"
@@ -22,6 +23,9 @@ on:
       - "repos/arashi-skills/skills/**"
       - "repos/arashi-skills/scripts/**"
       - "repos/arashi-skills/contracts/**"
+      - "repos/arashi-skills/security/**"
+      - "repos/arashi-skills/README.md"
+      - "repos/arashi-skills/LICENSE"
       - "repos/arashi-skills/.github/workflows/**"
   push:
     branches: [main]
@@ -126,47 +130,33 @@ jobs:
       - name: Install documentation generation toolchain
         working-directory: meta
         run: pnpm --dir repos/arashi-docs install --frozen-lockfile
-      - name: Generate documentation contract exports
+      - name: Check documentation semantics
         working-directory: meta
-        run: pnpm --dir repos/arashi-docs sync:content
+        run: pnpm --dir repos/arashi-docs validate:semantic-docs
+      - name: Check authored skill guidance
+        working-directory: meta
+        run: node repos/arashi-skills/scripts/validate-guidance.mjs
+      - name: Create canonical skill release archive
+        working-directory: meta
+        run: node repos/arashi-skills/scripts/create-release-archive.mjs --root repos/arashi-skills --output arashi-skill-package.tar.gz
+      - name: Verify canonical skill release archive
+        working-directory: meta
+        run: node repos/arashi-skills/scripts/create-release-archive.mjs --verify arashi-skill-package.tar.gz
+      - name: Extract canonical skill release archive
+        working-directory: meta
+        run: |
+          mkdir package-check
+          tar -xzf arashi-skill-package.tar.gz -C package-check
+      - name: Check packaged skill guidance
+        working-directory: meta
+        run: node repos/arashi-skills/scripts/validate-guidance.mjs --skill-root package-check/skills/arashi
       - name: Test checker
         working-directory: meta
         run: pnpm test
       - name: Type-check checker
         working-directory: meta
         run: pnpm typecheck
-      - name: Check documentation semantics
-        working-directory: meta
-        run: pnpm --dir repos/arashi-docs validate:semantic-docs
-      - name: Check focused packaged-skill lifecycle-hook semantics
-        working-directory: meta
-        run: node repos/arashi-skills/scripts/lifecycle-hook-guidance-selftest.mjs
-      - name: Check focused packaged-skill tab launch-disposition semantics
-        working-directory: meta
-        run: node repos/arashi-skills/scripts/tab-launch-disposition-guidance-selftest.mjs
-      - name: Check focused packaged-skill CLI option semantics
-        working-directory: meta
-        run: node repos/arashi-skills/scripts/cli-flag-rationalization-guidance-selftest.mjs
-      - name: Check focused packaged-skill shell-completion semantics
-        working-directory: meta
-        run: node repos/arashi-skills/scripts/shell-completion-guidance-selftest.mjs --meta-root .
-      - name: Check focused packaged-skill SSH host-alias semantics
-        working-directory: meta
-        run: node repos/arashi-skills/scripts/ssh-host-alias-guidance-selftest.mjs
-      - name: Check focused packaged-skill create-base semantics
-        working-directory: meta
-        run: node repos/arashi-skills/scripts/create-base-guidance-selftest.mjs
-      - name: Check release-shaped packaged-skill semantics
-        working-directory: meta
-        run: |
-          tar -czf arashi-skill-package.tar.gz -C repos/arashi-skills skills/
-          mkdir package-check
-          tar -xzf arashi-skill-package.tar.gz -C package-check
-          node repos/arashi-skills/scripts/lifecycle-hook-guidance-selftest.mjs --skill-root package-check/skills/arashi
-          node repos/arashi-skills/scripts/cli-flag-rationalization-guidance-selftest.mjs --skill-root package-check/skills/arashi
-          node repos/arashi-skills/scripts/shell-completion-guidance-selftest.mjs --skill-root package-check/skills/arashi
-          node repos/arashi-skills/scripts/ssh-host-alias-guidance-selftest.mjs --skill-root package-check/skills/arashi
-          node repos/arashi-skills/scripts/create-base-guidance-selftest.mjs --skill-root package-check/skills/arashi
+
       - name: Check cross-repository contracts
         working-directory: meta
         run: pnpm contracts:check:ci

@@ -8,13 +8,28 @@ Populate all four `repos/*` checkouts, install the pinned private toolchain, the
 
 ```sh
 pnpm install --frozen-lockfile
+pnpm --dir repos/arashi install --frozen-lockfile
+pnpm --dir repos/arashi schema:publish
+pnpm --dir repos/arashi schema:check
+pnpm --dir repos/arashi contract:generate
+pnpm --dir repos/arashi contract:check
+pnpm --dir repos/arashi completion:generate
+pnpm --dir repos/arashi completion:check
+git -C repos/arashi diff --exit-code -- schema/config.schema.json contracts/cli-commands.json src/generated/completions.ts
+pnpm --dir repos/arashi-docs install --frozen-lockfile
+pnpm --dir repos/arashi-docs validate:semantic-docs
+node repos/arashi-skills/scripts/validate-guidance.mjs
+node repos/arashi-skills/scripts/create-release-archive.mjs --root repos/arashi-skills --output arashi-skill-package.tar.gz
+node repos/arashi-skills/scripts/create-release-archive.mjs --verify arashi-skill-package.tar.gz
+mkdir package-check
+tar -xzf arashi-skill-package.tar.gz -C package-check
+node repos/arashi-skills/scripts/validate-guidance.mjs --skill-root package-check/skills/arashi
 pnpm contracts:check
-pnpm contracts:check --json
 pnpm test
 pnpm typecheck
 ```
 
-The human report groups findings by stable category/code. Intentional exclusions are `info`; schema, missing, stale, and invalid findings exit non-zero. JSON emits `{ ok, diagnostics }` with the same deterministic ordering.
+This sequence validates source guidance and then the extracted `skills/arashi` subtree from the canonical release archive. The archive producer verifies exact release membership during creation, and the explicit verification command keeps that boundary independently executable before extraction. Run `pnpm --silent run contracts:check --json` when one machine-readable aggregate JSON document is required; `--silent` prevents package-manager lifecycle text from contaminating JSON on a nonzero result.
 
 ## Update a command
 
