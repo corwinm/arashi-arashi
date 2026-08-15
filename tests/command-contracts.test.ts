@@ -10,7 +10,13 @@ import {
 } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
-import { checkContracts, formatHuman } from "../scripts/command-contracts";
+import {
+  checkContracts as checkContractsWithFocusedAcceptance,
+  formatHuman,
+} from "../scripts/command-contracts";
+
+const checkContracts = (root: string) =>
+  checkContractsWithFocusedAcceptance(root, { runFocusedCheckers: false });
 
 const roots: string[] = [];
 const createLaunchContract = {
@@ -622,7 +628,7 @@ async function fixture(): Promise<string> {
       },
     },
     ".github/workflows/cross-repo-command-contracts.yml":
-      "jobs:\n  contracts:\n    runs-on: ubuntu-latest\n    steps:\n      - name: docs\n        run: pnpm --dir repos/arashi-docs validate:tab-launch-docs\n      - name: skills\n        run: node repos/arashi-skills/scripts/tab-launch-disposition-guidance-selftest.mjs\n",
+      "jobs:\n  contracts:\n    runs-on: ubuntu-latest\n    steps:\n      - name: docs\n        run: pnpm --dir repos/arashi-docs validate:semantic-docs\n      - name: skills\n        run: node repos/arashi-skills/scripts/tab-launch-disposition-guidance-selftest.mjs\n",
   };
   for (const [path, value] of Object.entries(files)) {
     const target = join(root, path);
@@ -691,7 +697,7 @@ async function schemaV5Fixture(): Promise<string> {
   );
   await writeFile(
     workflowPath,
-    `${await readFile(workflowPath, "utf8")}      - name: docs option semantics\n        run: pnpm --dir repos/arashi-docs validate:cli-option-docs\n      - name: skills option semantics\n        run: node repos/arashi-skills/scripts/cli-flag-rationalization-guidance-selftest.mjs\n      - name: package skills\n        run: |\n          tar -czf arashi-skill-package.tar.gz -C repos/arashi-skills skills/\n          mkdir -p package-check\n          tar -xzf arashi-skill-package.tar.gz -C package-check\n          node repos/arashi-skills/scripts/cli-flag-rationalization-guidance-selftest.mjs --skill-root package-check/skills/arashi\n`,
+    `${await readFile(workflowPath, "utf8")}      - name: skills option semantics\n        run: node repos/arashi-skills/scripts/cli-flag-rationalization-guidance-selftest.mjs\n      - name: package skills\n        run: |\n          tar -czf arashi-skill-package.tar.gz -C repos/arashi-skills skills/\n          mkdir -p package-check\n          tar -xzf arashi-skill-package.tar.gz -C package-check\n          node repos/arashi-skills/scripts/cli-flag-rationalization-guidance-selftest.mjs --skill-root package-check/skills/arashi\n`,
   );
   return root;
 }
@@ -743,10 +749,7 @@ async function schemaV6Fixture(): Promise<string> {
       - run: pnpm --dir repos/arashi completion:generate
       - run: pnpm --dir repos/arashi completion:check
       - run: git -C repos/arashi diff --exit-code -- src/generated/completions.ts
-      - run: pnpm --dir repos/arashi-docs validate:tab-launch-docs
-      - run: pnpm --dir repos/arashi-docs validate:cli-option-docs
-      - run: pnpm --dir repos/arashi-docs validate:shell-completion-docs
-      - run: pnpm --dir repos/arashi-docs validate:ssh-host-alias-docs
+      - run: pnpm --dir repos/arashi-docs validate:semantic-docs
       - run: node repos/arashi-skills/scripts/tab-launch-disposition-guidance-selftest.mjs
       - run: node repos/arashi-skills/scripts/cli-flag-rationalization-guidance-selftest.mjs
       - run: node repos/arashi-skills/scripts/shell-completion-guidance-selftest.mjs --meta-root .
@@ -772,6 +775,7 @@ async function schemaV7Fixture(): Promise<string> {
     "repos/arashi-docs/docs/workflows/json-automation.md",
     "repos/arashi-docs/scripts/check-create-base-docs.ts",
     "repos/arashi-docs/scripts/generate-agent-exports.ts",
+    "repos/arashi-docs/scripts/semantic-doc-checks.json",
     "repos/arashi-docs/.github/workflows/docs-validate.yml",
     "repos/arashi-skills/contracts/create-base-branch.json",
     "repos/arashi-skills/scripts/create-base-guidance-selftest.mjs",
@@ -789,7 +793,7 @@ async function schemaV7Fixture(): Promise<string> {
   );
   await writeFile(
     workflowPath,
-    `on:\n  pull_request:\n    paths:\n      - "repos/arashi/src/**"\n      - "repos/arashi/schema/**"\n      - "repos/arashi/contracts/**"\n      - "repos/arashi/.github/workflows/**"\n      - "repos/arashi-docs/docs/**"\n      - "repos/arashi-docs/scripts/**"\n      - "repos/arashi-docs/contracts/**"\n      - "repos/arashi-docs/.github/workflows/**"\n      - "repos/arashi-skills/skills/**"\n      - "repos/arashi-skills/scripts/**"\n      - "repos/arashi-skills/contracts/**"\n      - "repos/arashi-skills/.github/workflows/**"\njobs:\n  contracts:\n    steps:\n      - run: pnpm --dir repos/arashi install --frozen-lockfile\n      - run: pnpm --dir repos/arashi schema:publish\n      - run: pnpm --dir repos/arashi schema:check\n      - run: pnpm --dir repos/arashi contract:generate\n      - run: pnpm --dir repos/arashi contract:check\n      - run: pnpm --dir repos/arashi completion:generate\n      - run: pnpm --dir repos/arashi completion:check\n      - run: git -C repos/arashi diff --exit-code -- schema/config.schema.json contracts/cli-commands.json src/generated/completions.ts\n      - run: pnpm --dir repos/arashi-docs install --frozen-lockfile\n      - run: pnpm --dir repos/arashi-docs sync:content\n      - run: pnpm --dir repos/arashi-docs validate:tab-launch-docs\n      - run: pnpm --dir repos/arashi-docs validate:cli-option-docs\n      - run: pnpm --dir repos/arashi-docs validate:shell-completion-docs\n      - run: pnpm --dir repos/arashi-docs validate:ssh-host-alias-docs\n      - run: pnpm --dir repos/arashi-docs validate:create-base-docs\n      - run: node repos/arashi-skills/scripts/tab-launch-disposition-guidance-selftest.mjs\n      - run: node repos/arashi-skills/scripts/cli-flag-rationalization-guidance-selftest.mjs\n      - run: node repos/arashi-skills/scripts/shell-completion-guidance-selftest.mjs --meta-root .\n      - run: node repos/arashi-skills/scripts/ssh-host-alias-guidance-selftest.mjs\n      - run: node repos/arashi-skills/scripts/create-base-guidance-selftest.mjs\n      - run: |\n          tar -czf arashi-skill-package.tar.gz -C repos/arashi-skills skills/\n          mkdir package-check\n          tar -xzf arashi-skill-package.tar.gz -C package-check\n          node repos/arashi-skills/scripts/cli-flag-rationalization-guidance-selftest.mjs --skill-root package-check/skills/arashi\n          node repos/arashi-skills/scripts/shell-completion-guidance-selftest.mjs --skill-root package-check/skills/arashi\n          node repos/arashi-skills/scripts/ssh-host-alias-guidance-selftest.mjs --skill-root package-check/skills/arashi\n          node repos/arashi-skills/scripts/create-base-guidance-selftest.mjs --skill-root package-check/skills/arashi\n      - run: pnpm contracts:check\n`,
+    `on:\n  pull_request:\n    paths:\n      - "repos/arashi/src/**"\n      - "repos/arashi/schema/**"\n      - "repos/arashi/contracts/**"\n      - "repos/arashi/.github/workflows/**"\n      - "repos/arashi-docs/docs/**"\n      - "repos/arashi-docs/scripts/**"\n      - "repos/arashi-docs/contracts/**"\n      - "repos/arashi-docs/.github/workflows/**"\n      - "repos/arashi-skills/skills/**"\n      - "repos/arashi-skills/scripts/**"\n      - "repos/arashi-skills/contracts/**"\n      - "repos/arashi-skills/.github/workflows/**"\njobs:\n  contracts:\n    steps:\n      - run: pnpm --dir repos/arashi install --frozen-lockfile\n      - run: pnpm --dir repos/arashi schema:publish\n      - run: pnpm --dir repos/arashi schema:check\n      - run: pnpm --dir repos/arashi contract:generate\n      - run: pnpm --dir repos/arashi contract:check\n      - run: pnpm --dir repos/arashi completion:generate\n      - run: pnpm --dir repos/arashi completion:check\n      - run: git -C repos/arashi diff --exit-code -- schema/config.schema.json contracts/cli-commands.json src/generated/completions.ts\n      - run: pnpm --dir repos/arashi-docs install --frozen-lockfile\n      - run: pnpm --dir repos/arashi-docs sync:content\n      - run: pnpm --dir repos/arashi-docs validate:tab-launch-docs\n      - run: pnpm --dir repos/arashi-docs validate:cli-option-docs\n      - run: pnpm --dir repos/arashi-docs validate:shell-completion-docs\n      - run: pnpm --dir repos/arashi-docs validate:ssh-host-alias-docs\n      - run: pnpm --dir repos/arashi-docs validate:semantic-docs\n      - run: node repos/arashi-skills/scripts/tab-launch-disposition-guidance-selftest.mjs\n      - run: node repos/arashi-skills/scripts/cli-flag-rationalization-guidance-selftest.mjs\n      - run: node repos/arashi-skills/scripts/shell-completion-guidance-selftest.mjs --meta-root .\n      - run: node repos/arashi-skills/scripts/ssh-host-alias-guidance-selftest.mjs\n      - run: node repos/arashi-skills/scripts/create-base-guidance-selftest.mjs\n      - run: |\n          tar -czf arashi-skill-package.tar.gz -C repos/arashi-skills skills/\n          mkdir package-check\n          tar -xzf arashi-skill-package.tar.gz -C package-check\n          node repos/arashi-skills/scripts/cli-flag-rationalization-guidance-selftest.mjs --skill-root package-check/skills/arashi\n          node repos/arashi-skills/scripts/shell-completion-guidance-selftest.mjs --skill-root package-check/skills/arashi\n          node repos/arashi-skills/scripts/ssh-host-alias-guidance-selftest.mjs --skill-root package-check/skills/arashi\n          node repos/arashi-skills/scripts/create-base-guidance-selftest.mjs --skill-root package-check/skills/arashi\n      - run: pnpm contracts:check\n`,
   );
   return root;
 }
@@ -1028,7 +1032,7 @@ describe("cross-repository command contracts", () => {
   test.each([
     [
       "docs focused checker",
-      "pnpm --dir repos/arashi-docs validate:create-base-docs",
+      "pnpm --dir repos/arashi-docs validate:semantic-docs",
       "DOCS_CREATE_BASE_CHECK_UNREACHABLE",
     ],
     [
@@ -1074,7 +1078,7 @@ describe("cross-repository command contracts", () => {
     const root = await schemaV7Fixture();
     await writeFile(
       join(root, ".github/workflows/cross-repo-command-contracts.yml"),
-      `jobs:\n  prepare:\n    steps:\n      - run: pnpm --dir repos/arashi-docs install --frozen-lockfile\n      - run: pnpm --dir repos/arashi-docs sync:content\n  contracts:\n    steps:\n      - run: pnpm --dir repos/arashi-docs validate:create-base-docs\n      - run: node repos/arashi-skills/scripts/create-base-guidance-selftest.mjs\n      - run: node repos/arashi-skills/scripts/create-base-guidance-selftest.mjs --skill-root package-check/skills/arashi\n      - run: pnpm contracts:check\n`,
+      `jobs:\n  prepare:\n    steps:\n      - run: pnpm --dir repos/arashi-docs install --frozen-lockfile\n      - run: pnpm --dir repos/arashi-docs sync:content\n  contracts:\n    steps:\n      - run: pnpm --dir repos/arashi-docs validate:semantic-docs\n      - run: node repos/arashi-skills/scripts/create-base-guidance-selftest.mjs\n      - run: node repos/arashi-skills/scripts/create-base-guidance-selftest.mjs --skill-root package-check/skills/arashi\n      - run: pnpm contracts:check\n`,
     );
 
     const codes = (await checkContracts(root)).diagnostics.map(
@@ -1102,12 +1106,12 @@ describe("cross-repository command contracts", () => {
           "      - run: __CREATE_BASE_DOCS_SWAP__\n",
         )
         .replace(
-          "      - run: pnpm --dir repos/arashi-docs validate:create-base-docs\n",
+          "      - run: pnpm --dir repos/arashi-docs validate:semantic-docs\n",
           "      - run: pnpm --dir repos/arashi-docs sync:content\n",
         )
         .replace(
           "      - run: __CREATE_BASE_DOCS_SWAP__\n",
-          "      - run: pnpm --dir repos/arashi-docs validate:create-base-docs\n",
+          "      - run: pnpm --dir repos/arashi-docs validate:semantic-docs\n",
         ),
     );
 
@@ -1169,7 +1173,9 @@ describe("cross-repository command contracts", () => {
     const path = join(root, relativePath);
     await writeFile(path, mutate(await readFile(path, "utf8")));
 
-    expect((await checkContracts(root)).diagnostics).toContainEqual(
+    expect(
+      (await checkContractsWithFocusedAcceptance(root)).diagnostics,
+    ).toContainEqual(
       expect.objectContaining({ code: "DOCS_CREATE_BASE_CHECK_FAILED" }),
     );
   });
@@ -1374,7 +1380,7 @@ describe("cross-repository command contracts", () => {
     ],
     [
       "focused docs",
-      "pnpm --dir repos/arashi-docs validate:shell-completion-docs",
+      "pnpm --dir repos/arashi-docs validate:semantic-docs",
       "DOCS_COMPLETION_CHECK_UNREACHABLE",
     ],
     [
@@ -1428,11 +1434,22 @@ describe("cross-repository command contracts", () => {
     async (_label, relativePath, code, source) => {
       const root = await schemaV6Fixture();
       await writeFile(join(root, relativePath), source);
-      expect((await checkContracts(root)).diagnostics).toContainEqual(
-        expect.objectContaining({ code }),
-      );
+      expect(
+        (await checkContractsWithFocusedAcceptance(root)).diagnostics,
+      ).toContainEqual(expect.objectContaining({ code }));
     },
   );
+  test("ordinary mutation fixtures do not execute focused checker subprocesses", async () => {
+    const root = await fixture();
+    await writeFile(
+      join(root, "repos/arashi-docs/scripts/check-tab-launch-docs.ts"),
+      "process.exit(9);\n",
+    );
+
+    expect((await checkContracts(root)).diagnostics).not.toContainEqual(
+      expect.objectContaining({ code: "DOCS_OPTION_POLICY_CHECK_FAILED" }),
+    );
+  });
   test("rejects a string-valued schema version instead of bypassing schema-v5 checks", async () => {
     const root = await schemaV5Fixture();
     const path = join(root, "repos/arashi/contracts/cli-commands.json");
@@ -2086,7 +2103,7 @@ describe("cross-repository command contracts", () => {
   test.each([
     [
       "docs",
-      "pnpm --dir repos/arashi-docs validate:tab-launch-docs",
+      "pnpm --dir repos/arashi-docs validate:semantic-docs",
       "DOCS_OPTION_POLICY_CHECK_UNREACHABLE",
     ],
     [
@@ -2116,23 +2133,23 @@ describe("cross-repository command contracts", () => {
   test.each([
     [
       "comment-only text",
-      "# run: pnpm --dir repos/arashi-docs validate:tab-launch-docs\n# run: node repos/arashi-skills/scripts/tab-launch-disposition-guidance-selftest.mjs\n",
+      "# run: pnpm --dir repos/arashi-docs validate:semantic-docs\n# run: node repos/arashi-skills/scripts/tab-launch-disposition-guidance-selftest.mjs\n",
     ],
     [
       "non-run step fields",
-      'jobs:\n  contracts:\n    steps:\n      - name: "run: pnpm --dir repos/arashi-docs validate:tab-launch-docs"\n        env:\n          NOTE: "run: node repos/arashi-skills/scripts/tab-launch-disposition-guidance-selftest.mjs"\n        uses: actions/checkout@v4\n',
+      'jobs:\n  contracts:\n    steps:\n      - name: "run: pnpm --dir repos/arashi-docs validate:semantic-docs"\n        env:\n          NOTE: "run: node repos/arashi-skills/scripts/tab-launch-disposition-guidance-selftest.mjs"\n        uses: actions/checkout@v4\n',
     ],
     [
       "uses step with with.run",
-      "jobs:\n  contracts:\n    steps:\n      - uses: actions/checkout@v4\n        with:\n          run: pnpm --dir repos/arashi-docs validate:tab-launch-docs\n      - uses: actions/checkout@v4\n        with:\n          run: node repos/arashi-skills/scripts/tab-launch-disposition-guidance-selftest.mjs\n",
+      "jobs:\n  contracts:\n    steps:\n      - uses: actions/checkout@v4\n        with:\n          run: pnpm --dir repos/arashi-docs validate:semantic-docs\n      - uses: actions/checkout@v4\n        with:\n          run: node repos/arashi-skills/scripts/tab-launch-disposition-guidance-selftest.mjs\n",
     ],
     [
       "uses step with env.run",
-      "jobs:\n  contracts:\n    steps:\n      - uses: actions/checkout@v4\n        env:\n          run: pnpm --dir repos/arashi-docs validate:tab-launch-docs\n      - uses: actions/checkout@v4\n        env:\n          run: node repos/arashi-skills/scripts/tab-launch-disposition-guidance-selftest.mjs\n",
+      "jobs:\n  contracts:\n    steps:\n      - uses: actions/checkout@v4\n        env:\n          run: pnpm --dir repos/arashi-docs validate:semantic-docs\n      - uses: actions/checkout@v4\n        env:\n          run: node repos/arashi-skills/scripts/tab-launch-disposition-guidance-selftest.mjs\n",
     ],
     [
       "nested arbitrary run objects",
-      "jobs:\n  contracts:\n    steps:\n      - name: docs\n        metadata:\n          run: pnpm --dir repos/arashi-docs validate:tab-launch-docs\n      - name: skills\n        metadata:\n          run: node repos/arashi-skills/scripts/tab-launch-disposition-guidance-selftest.mjs\n",
+      "jobs:\n  contracts:\n    steps:\n      - name: docs\n        metadata:\n          run: pnpm --dir repos/arashi-docs validate:semantic-docs\n      - name: skills\n        metadata:\n          run: node repos/arashi-skills/scripts/tab-launch-disposition-guidance-selftest.mjs\n",
     ],
   ])("rejects focused checker reachability in %s", async (_label, workflow) => {
     const root = await fixture();
@@ -2314,28 +2331,6 @@ describe("cross-repository command contracts", () => {
       const root = await fixture();
       const path = join(root, relativePath);
       await writeFile(path, mutate(await readFile(path, "utf8")));
-
-      expect((await checkContracts(root)).diagnostics).toContainEqual(
-        expect.objectContaining({ code }),
-      );
-    },
-  );
-  test.each([
-    [
-      "docs",
-      "repos/arashi-docs/scripts/check-tab-launch-docs.ts",
-      "DOCS_OPTION_POLICY_CHECK_FAILED",
-    ],
-    [
-      "skills",
-      "repos/arashi-skills/scripts/tab-launch-disposition-guidance-selftest.mjs",
-      "SKILLS_OPTION_POLICY_CHECK_FAILED",
-    ],
-  ])(
-    "runs the actual %s focused checker and rejects failure",
-    async (_label, relativePath, code) => {
-      const root = await fixture();
-      await writeFile(join(root, relativePath), "process.exit(9);\n");
 
       expect((await checkContracts(root)).diagnostics).toContainEqual(
         expect.objectContaining({ code }),
@@ -2864,6 +2859,28 @@ describe("cross-repository command contracts", () => {
         subject: "launchMode",
       }),
     );
+  });
+  test("authoritative workflow uses the stable docs semantic aggregate", async () => {
+    const workflow = await readFile(
+      join(process.cwd(), ".github/workflows/cross-repo-command-contracts.yml"),
+      "utf8",
+    );
+
+    expect(workflow).toContain(
+      "run: pnpm --dir repos/arashi-docs validate:semantic-docs",
+    );
+    expect(workflow).not.toMatch(
+      /run: pnpm --dir repos\/arashi-docs validate:(?!semantic-docs)[^\n]*-docs/,
+    );
+  });
+  test("authoritative workflow does not run hook contracts twice", async () => {
+    const workflow = await readFile(
+      join(process.cwd(), ".github/workflows/cross-repo-command-contracts.yml"),
+      "utf8",
+    );
+
+    expect(workflow).not.toContain("run: pnpm contracts:hooks");
+    expect(workflow.match(/run: pnpm contracts:check:ci/g)).toHaveLength(1);
   });
   test("sorts diagnostics deterministically and formats stable output", async () => {
     const root = await fixture();
