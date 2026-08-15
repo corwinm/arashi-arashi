@@ -15,11 +15,11 @@
 
 ## 3. Coordinated create execution and reuse
 
-- [ ] 3.1 Add RED integration tests proving new parent/child targets are created from captured `resolvedOid` values while `resolvedRef` remains reporting metadata.
-- [ ] 3.2 Add RED execution tests for moving refs plus mixed new/reused targets, proving captured OIDs apply only to newly created targets while existing targets receive no reset, rebase, or ancestry assertion.
-- [ ] 3.3 Add RED rollback tests proving later branch/worktree/setup/hook failure removes only invocation-owned targets and preserves base refs/objects, reused targets, and pre-existing worktrees.
-- [ ] 3.4 Thread the immutable canonical-path-keyed resolution plan through coordinated orchestration and create new target branches from captured OIDs.
-- [ ] 3.5 Verify all new execution tests GREEN and rerun the omitted-base characterization matrix to prove detected-default resolution and fallback behavior remain unchanged.
+- [x] 3.1 Add RED integration tests proving new parent/child targets are created from captured `resolvedOid` values while `resolvedRef` remains reporting metadata.
+- [x] 3.2 Add RED execution tests for moving refs plus mixed new/reused targets, proving captured OIDs apply only to newly created targets while existing targets receive no reset, rebase, or ancestry assertion.
+- [x] 3.3 Add RED rollback tests proving later branch/worktree/setup/hook failure removes only invocation-owned targets and preserves base refs/objects, reused targets, and pre-existing worktrees.
+- [x] 3.4 Thread the immutable canonical-path-keyed resolution plan through coordinated orchestration and create new target branches from captured OIDs.
+- [x] 3.5 Verify all new execution tests GREEN and rerun the omitted-base characterization matrix to prove detected-default resolution and fallback behavior remain unchanged.
 
 ## 4. Standalone create parity
 
