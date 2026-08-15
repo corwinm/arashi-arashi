@@ -23,6 +23,11 @@ The system SHALL accept Git SSH remotes in `ssh://[user@]host/path` and `[user@]
 - **THEN** Arashi accepts the URL as an SSH remote
 - **AND** derives `api` as the default repository name
 
+#### Scenario: SSH scheme includes an explicit port
+- **WHEN** the user runs `arashi add ssh://git@work-github:2222/acme/api.git`
+- **THEN** Arashi accepts the URL as an SSH remote
+- **AND** preserves the exact `work-github:2222` authority
+
 #### Scenario: Explicit repository name overrides derivation
 - **WHEN** the user adds any supported SSH alias remote with `--name service-api`
 - **THEN** Arashi uses `service-api` as the configured repository name
@@ -95,6 +100,11 @@ The system MUST preserve every configured SSH URL when HTTPS is inferred or sele
 - **THEN** HTTPS URLs remain HTTPS
 - **AND** SSH URLs remain exact SSH URLs
 - **AND** user-facing protocol-selection guidance does not promise that SSH sources will be rewritten
+
+#### Scenario: Non-convertible URI schemes do not imply SSH
+- **WHEN** clone protocol inference receives `file://` or `git://` configured URLs
+- **THEN** those URLs do not contribute an SSH protocol preference
+- **AND** they do not turn an otherwise HTTPS-only selection into a mixed-protocol prompt
 
 ### Requirement: Alias failures preserve existing command safety boundaries
 The system SHALL report the affected repository and underlying Git failure when an alias cannot be resolved or authenticated, while preserving the existing add rollback and clone per-repository partial-success contracts.

@@ -27,5 +27,5 @@
 
 - [x] 5.1 Run an independent implementation review against the approved OpenSpec requirements, reconcile only reproducible contract findings, and rerun every affected final gate after the last edit.
 - [x] 5.2 Commit and open separate CLI, docs, skills, and meta/OpenSpec PRs as required, cross-link all PRs to issue #277 with non-closing references on child PRs, and require exact-head CI plus eligible review feedback.
-- [ ] 5.3 Merge green child PRs first; then complete tasks, archive/sync the OpenSpec change, validate synced specs and coordinated contracts, update the meta PR to close #277, merge it last, and verify issue closure.
-- [ ] 5.4 Pull the base coordinated workspace, remove the feature worktree and surviving local/remote feature branches, and verify all configured repositories are clean and synchronized on `main`.
+- [x] 5.3 Merge the green child PRs first, verify their reviewed changes on child `main`, remove their remote feature branches, and rerun the exact meta head against child-main fallback.
+- [x] 5.4 Archive/sync the OpenSpec change, validate the synced specs and coordinated contracts, and update the meta PR to close #277.
