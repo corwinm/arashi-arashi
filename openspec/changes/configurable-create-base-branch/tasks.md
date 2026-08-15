@@ -56,4 +56,4 @@
 - [x] 9.2 Perform an exact staged-diff self-review against issue #281 and this approved contract before every repository commit.
 - [x] 9.3 Commit and open cross-linked CLI, docs, and skills child PRs with exact validation evidence; update this checklist only from verified milestones.
 - [x] 9.4 Re-run meta validation against the published child heads, commit the completed OpenSpec/checker state, and open the tracking meta PR without an issue-closing keyword until archive.
-- [ ] 9.5 Verify every related PR's exact-head CI, mergeability, and eligible review threads before requesting merge approval.
+- [x] 9.5 Verify every related PR's exact-head CI, mergeability, and eligible review threads before requesting merge approval.
