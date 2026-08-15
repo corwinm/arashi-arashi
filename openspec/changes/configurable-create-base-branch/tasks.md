@@ -28,9 +28,9 @@
 
 ## 5. Human, dry-run, and JSON results
 
-- [ ] 5.1 Add RED tests for human dry-run requested/resolved base output and zero mutation.
-- [ ] 5.2 Add process-level JSON RED tests asserting exact normalized branch values, `cli | config` source and `created | reused` action vocabularies, canonical absolute paths, selected-set repository ordering, exact local-then-origin `attemptedRefs`, one-document success data, reused targets, and affected-only aggregated failures with no stdout contamination.
-- [ ] 5.3 Implement the exact optional `base` result shape and `CREATE_BASE_RESOLUTION_FAILED` details from the specification, keeping normal human success concise and omitted-base shapes compatible.
+- [x] 5.1 Add RED tests for human dry-run requested/resolved base output and zero mutation.
+- [x] 5.2 Add process-level JSON RED tests asserting exact normalized branch values, `cli | config` source and `created | reused` action vocabularies, canonical absolute paths, selected-set repository ordering, exact local-then-origin `attemptedRefs`, one-document success data, reused targets, and affected-only aggregated failures with no stdout contamination.
+- [x] 5.3 Implement the exact optional `base` result shape and `CREATE_BASE_RESOLUTION_FAILED` details from the specification, keeping normal human success concise and omitted-base shapes compatible.
 
 ## 6. CLI-generated and cross-repository contracts
 
