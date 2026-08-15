@@ -1,10 +1,10 @@
 ## 1. Configuration and option contract
 
-- [ ] 1.1 Add and run passing characterization tests for the exact omitted-base parent-current-branch, child-detected-default, standalone-current-HEAD, conflict, output-shape, and rollback behavior before changing production code.
-- [ ] 1.2 Add failing configuration tests for generic `defaults.create.baseBranch`, invalid/empty values, schema acceptance, and editor-scoped rejection.
-- [ ] 1.3 Implement the split generic/editor create-default types and normalization, then regenerate and verify the configuration schema while keeping the characterization gate green.
-- [ ] 1.4 Add failing Commander/help/completion tests for `create --base <branch>` and its generated option metadata.
-- [ ] 1.5 Register the CLI option and regenerate shell completions while keeping the characterization gate green.
+- [x] 1.1 Add and run passing characterization tests for the exact omitted-base parent-current-branch, child-detected-default, standalone-current-HEAD, conflict, output-shape, and rollback behavior before changing production code.
+- [x] 1.2 Add failing configuration tests for generic `defaults.create.baseBranch`, invalid/empty values, schema acceptance, and editor-scoped rejection.
+- [x] 1.3 Implement the split generic/editor create-default types and normalization, then regenerate and verify the configuration schema while keeping the characterization gate green.
+- [x] 1.4 Add failing Commander/help/completion tests for `create --base <branch>` and its generated option metadata.
+- [x] 1.5 Register the CLI option and regenerate shell completions while keeping the characterization gate green.
 
 ## 2. Strict base-resolution planning
 
