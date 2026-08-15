@@ -39,13 +39,13 @@
 - [x] 5.4 Replace feature-specific skills source/package steps with stable source and canonical-package aggregates, using the merged child producer/member policy and one same-job create/verify/extract/validate sequence.
 - [x] 5.5 Retain CLI generation/freshness, meta tests/typecheck, exact revision reporting, path-trigger reachability, one registry-backed `contracts:check:ci`, and actionable stage boundaries while removing duplicate or feature-specific execution.
 - [x] 5.6 Run meta registration/runner tests, local/CI alignment, workflow composition, dedicated aggregate acceptance, focused mutation fixtures, full meta tests, typecheck, contract checks, format check, OpenSpec strict validation, and `git diff --check` after the final edit.
-- [ ] 5.7 Perform an exact staged-diff review against the approved contracts, commit and push normally, update the coordinating PR with the merged skills PR and `Tracks #283`, and verify live files and exact-head CI.
+- [x] 5.7 Perform an exact staged-diff review against the approved contracts, commit and push normally, update the coordinating PR with the merged skills PR and `Tracks #283`, and verify live files and exact-head CI.
 
 ## 6. Coordinated Review and Active-Change Completion
 
-- [ ] 6.1 Reconcile verified Corwin/Codex feedback on the coordinating PR, retain only approved-contract fixes, and rerun every affected focused and aggregate gate after the final edit.
-- [ ] 6.2 Obtain exact-head green CI for the meta PR and verify it resolves child repositories from merged `main` rather than an unpublished feature branch.
-- [ ] 6.3 Mark every verified implementation task through this item complete, validate the still-active `centralize-semantic-validation-entrypoints` change strictly, and commit the completed active checklist before archive.
+- [x] 6.1 Reconcile verified Corwin/Codex feedback on the coordinating PR, retain only approved-contract fixes, and rerun every affected focused and aggregate gate after the final edit.
+- [x] 6.2 Obtain exact-head green CI for the meta PR and verify it resolves child repositories from merged `main` rather than an unpublished feature branch.
+- [x] 6.3 Mark every verified implementation task through this item complete, validate the still-active `centralize-semantic-validation-entrypoints` change strictly, and commit the completed active checklist before archive.
 
 ## 7. Archive, Merge, and Cleanup
 
