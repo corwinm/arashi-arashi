@@ -1,5 +1,5 @@
-import { readFile, readdir } from "node:fs/promises";
-import { join, relative } from "node:path";
+import { readFile } from "node:fs/promises";
+import { join } from "node:path";
 
 export interface ExecutableDistributionDiagnostic {
   severity: "error";
@@ -22,12 +22,8 @@ const paths = {
   releaseWorkflow: "repos/arashi/.github/workflows/verify-aw-release.yml",
   commander: "repos/arashi/contracts/cli-commands.json",
   vscode: "repos/arashi-vscode/contracts/command-policy.json",
-  authoredDocs: "repos/arashi-docs/docs",
-  generatedDocs: "repos/arashi-docs/public/getting-started",
   llmsIndex: "repos/arashi-docs/public/llms.txt",
   llmsFull: "repos/arashi-docs/public/llms-full.txt",
-  authoredSkills: "repos/arashi-skills/skills/arashi",
-  packagedSkills: "package-check/skills/arashi",
 } as const;
 
 const expected = {
@@ -82,64 +78,25 @@ async function json(root: string, path: string): Promise<unknown> {
   return JSON.parse(await readFile(join(root, path), "utf8"));
 }
 
-function workflowJob(workflow: string, name: string): string {
+function yamlMappingBlock(
+  workflow: string,
+  name: string,
+  indentation: number,
+): string {
   const escapedName = name.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&");
+  const spaces = " ".repeat(indentation);
   return (
     workflow.match(
       new RegExp(
-        `^  ${escapedName}:\\s*\\n(?:(?!^  [A-Za-z0-9_-]+:\\s*$)[\\s\\S])*`,
+        `^${spaces}${escapedName}:\\s*\\n(?:(?!^ {0,${indentation}}\\S)[\\s\\S])*`,
         "mu",
       ),
     )?.[0] ?? ""
   );
 }
 
-async function markdownFiles(
-  root: string,
-  directory: string,
-): Promise<string[]> {
-  const absolute = join(root, directory);
-  try {
-    const entries = await readdir(absolute, { withFileTypes: true });
-    const nested = await Promise.all(
-      entries.map(async (entry) => {
-        const path = join(absolute, entry.name);
-        if (entry.isDirectory())
-          return markdownFiles(root, relative(root, path));
-        return entry.isFile() && /\.(?:md|mdx|txt)$/u.test(entry.name)
-          ? [relative(root, path)]
-          : [];
-      }),
-    );
-    return nested.flat().sort();
-  } catch {
-    return [];
-  }
-}
-
-async function corpus(
-  root: string,
-  source: string,
-): Promise<{ files: string[]; text: string }> {
-  const files = await markdownFiles(root, source);
-  const text = (
-    await Promise.all(files.map((file) => readFile(join(root, file), "utf8")))
-  ).join("\n");
-  return { files, text };
-}
-
 const canonicalContradiction =
   /\b(?:aw\s+(?:is\s+)?(?:now\s+)?(?:the\s+)?canonical(?:\s+command)?|canonical(?:\s+command)?\s+is\s+aw)\b/iu;
-
-async function firstContradiction(
-  root: string,
-  files: readonly string[],
-): Promise<string | undefined> {
-  for (const file of files)
-    if (canonicalContradiction.test(await readFile(join(root, file), "utf8")))
-      return file;
-  return undefined;
-}
 
 const includesAll = (text: string, phrases: readonly string[]) =>
   phrases.every((phrase) => text.includes(phrase));
@@ -297,8 +254,15 @@ export async function checkExecutableDistributionContracts(
   try {
     const packageJson = await json(root, paths.package);
     const workflow = await readFile(join(root, paths.releaseWorkflow), "utf8");
-    const posixJob = workflowJob(workflow, "verify-aw-posix");
-    const windowsJob = workflowJob(workflow, "verify-aw-windows");
+    const dispatch = yamlMappingBlock(workflow, "workflow_dispatch", 2);
+    const inputs = yamlMappingBlock(dispatch, "inputs", 4);
+    const versionInput = yamlMappingBlock(inputs, "version", 6);
+    const posixJob = yamlMappingBlock(workflow, "verify-aw-posix", 2);
+    const windowsJob = yamlMappingBlock(workflow, "verify-aw-windows", 2);
+    const windowsStepEvidence = windowsJob
+      .split(/\r?\n/u)
+      .filter((line) => !/^\s*#/u.test(line))
+      .join("\n");
     const posixConsumesDispatchedVersion =
       /release:verify-aw\s+--\s+["']?\$\{\{\s*inputs\.version\s*\}\}["']?/u.test(
         posixJob,
@@ -317,10 +281,7 @@ export async function checkExecutableDistributionContracts(
       !equalKeys(get(packageJson, "bin"), ["arashi", "aw"]) ||
       get(packageJson, "bin", "arashi") !== "./bin/arashi.js" ||
       get(packageJson, "bin", "aw") !== "./bin/arashi.js" ||
-      !workflow.includes("workflow_dispatch") ||
-      !workflow.includes("inputs:") ||
-      !workflow.includes("version:") ||
-      !workflow.includes("required: true") ||
+      !/^        required:\s*true\s*$/mu.test(versionInput) ||
       /release:verify-aw[^\n]*--\s+["']?latest\b/iu.test(workflow) ||
       !workflow.includes("release:verify-aw") ||
       !workflow.includes("verify-aw-posix") ||
@@ -331,9 +292,9 @@ export async function checkExecutableDistributionContracts(
       !posixConsumesDispatchedVersion ||
       !windowsBindsDispatchedVersion ||
       !windowsConsumesBoundVersion ||
-      !workflow.includes("powershell.exe") ||
-      !workflow.includes("cmd.exe") ||
-      !workflow.includes("bash.exe")
+      !windowsStepEvidence.includes("powershell.exe") ||
+      !windowsStepEvidence.includes("cmd.exe") ||
+      !windowsStepEvidence.includes("bash.exe")
     )
       add(
         "distribution",
@@ -388,6 +349,85 @@ export async function checkExecutableDistributionContracts(
     );
   }
 
+  const docsOwnerGroups = [
+    [
+      "index.mdx",
+      "index.md",
+      [
+        "`aw` means “Arashi Workspace”",
+        "`arashi` remains the canonical command",
+        "supported installations provide both names",
+      ],
+    ],
+    [
+      "getting-started/index.md",
+      "getting-started.md",
+      [
+        "`aw` means “Arashi Workspace”",
+        "`arashi` remains the canonical command",
+        "macOS/Linux installer provides both `arashi` and `aw`",
+        "PowerShell installer provides both `arashi` and `aw`",
+        "npm installs provide both `arashi` and `aw`",
+        "aw status",
+        "unrelated existing `aw` command",
+        "on PATH or at the destination",
+        "unsupported interim workaround for older releases",
+        "no direct-installer ownership ledger",
+        "deliberately move or remove",
+        "arashi-windows-x64.exe",
+        "arashi.ps1",
+        "arashi.bat",
+        "aw.ps1",
+        "aw.bat",
+      ],
+    ],
+    [
+      "commands/shell.md",
+      "commands/shell.md",
+      [
+        "both `arashi` and `aw`",
+        "one managed block",
+        "unrelated `aw` alias or function",
+        "command arashi",
+      ],
+    ],
+    [
+      "commands/completion.md",
+      "commands/completion.md",
+      ["both `arashi` and `aw`", "command arashi"],
+    ],
+    [
+      "commands/update.md",
+      "commands/update.md",
+      ["updates both `arashi` and `aw`", "`arashi` remains canonical"],
+    ],
+  ] as const;
+  for (const [authored, generated, phrases] of docsOwnerGroups) {
+    for (const [source, code] of [
+      [
+        `repos/arashi-docs/docs/${authored}`,
+        "EXECUTABLE_AUTHORED_DOCS_MISMATCH",
+      ],
+      [
+        `repos/arashi-docs/public/${generated}`,
+        "EXECUTABLE_GENERATED_DOCS_MISMATCH",
+      ],
+    ] as const) {
+      try {
+        const text = await readFile(join(root, source), "utf8");
+        if (!includesAll(text, phrases) || canonicalContradiction.test(text))
+          add(
+            "docs",
+            code,
+            source,
+            "Alias documentation drifted in its maintained owning path.",
+          );
+      } catch (error) {
+        add("docs", code, source, String(error));
+      }
+    }
+  }
+
   const docsRequirements = [
     "Arashi Workspace",
     "canonical",
@@ -409,20 +449,6 @@ export async function checkExecutableDistributionContracts(
     "aw.ps1",
     "aw.bat",
   ] as const;
-  for (const [source, code] of [
-    [paths.authoredDocs, "EXECUTABLE_AUTHORED_DOCS_MISMATCH"],
-    [paths.generatedDocs, "EXECUTABLE_GENERATED_DOCS_MISMATCH"],
-  ] as const) {
-    const evidence = await corpus(root, source);
-    const contradiction = await firstContradiction(root, evidence.files);
-    if (!includesAll(evidence.text, docsRequirements) || contradiction)
-      add(
-        "docs",
-        code,
-        contradiction ?? evidence.files[0] ?? source,
-        "Documentation must preserve alias identity, channels, collision namespaces, managed migration, dual shell/completion behavior, and the complete manual Windows payload.",
-      );
-  }
 
   for (const [source, phrases, code] of [
     [
@@ -454,22 +480,30 @@ export async function checkExecutableDistributionContracts(
     "not a Commander command alias or a second command vocabulary",
   ] as const;
   for (const [source, code] of [
-    [paths.authoredSkills, "EXECUTABLE_AUTHORED_SKILL_MISMATCH"],
-    [paths.packagedSkills, "EXECUTABLE_PACKAGED_SKILL_MISMATCH"],
+    [
+      "repos/arashi-skills/skills/arashi/references/tutorial.md",
+      "EXECUTABLE_AUTHORED_SKILL_MISMATCH",
+    ],
+    [
+      "package-check/skills/arashi/references/tutorial.md",
+      "EXECUTABLE_PACKAGED_SKILL_MISMATCH",
+    ],
   ] as const) {
-    const evidence = await corpus(root, source);
-    const contradiction = await firstContradiction(root, evidence.files);
-    if (
-      evidence.files.length === 0 ||
-      !includesAll(evidence.text, skillRequirements) ||
-      contradiction
-    )
-      add(
-        "skills",
-        code,
-        contradiction ?? evidence.files[0] ?? source,
-        "Skill guidance must keep canonical arashi discovery while recognizing aw as equivalent shorthand without a duplicate workflow vocabulary.",
-      );
+    try {
+      const text = await readFile(join(root, source), "utf8");
+      if (
+        !includesAll(text, skillRequirements) ||
+        canonicalContradiction.test(text)
+      )
+        add(
+          "skills",
+          code,
+          source,
+          "Skill guidance must keep canonical arashi discovery while recognizing aw as equivalent shorthand without a duplicate workflow vocabulary.",
+        );
+    } catch (error) {
+      add("skills", code, source, String(error));
+    }
   }
 
   diagnostics.sort((left, right) =>
