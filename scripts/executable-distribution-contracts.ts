@@ -82,6 +82,18 @@ async function json(root: string, path: string): Promise<unknown> {
   return JSON.parse(await readFile(join(root, path), "utf8"));
 }
 
+function workflowJob(workflow: string, name: string): string {
+  const escapedName = name.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&");
+  return (
+    workflow.match(
+      new RegExp(
+        `^  ${escapedName}:\\s*\\n(?:(?!^  [A-Za-z0-9_-]+:\\s*$)[\\s\\S])*`,
+        "mu",
+      ),
+    )?.[0] ?? ""
+  );
+}
+
 async function markdownFiles(
   root: string,
   directory: string,
@@ -285,6 +297,20 @@ export async function checkExecutableDistributionContracts(
   try {
     const packageJson = await json(root, paths.package);
     const workflow = await readFile(join(root, paths.releaseWorkflow), "utf8");
+    const posixJob = workflowJob(workflow, "verify-aw-posix");
+    const windowsJob = workflowJob(workflow, "verify-aw-windows");
+    const posixConsumesDispatchedVersion =
+      /release:verify-aw\s+--\s+["']?\$\{\{\s*inputs\.version\s*\}\}["']?/u.test(
+        posixJob,
+      );
+    const windowsBindsDispatchedVersion =
+      /^\s*VERIFY_VERSION:\s*["']?\$\{\{\s*inputs\.version\s*\}\}["']?\s*$/mu.test(
+        windowsJob,
+      );
+    const windowsConsumesBoundVersion =
+      /release:verify-aw\s+--\s+["']?\$env:VERIFY_VERSION["']?/u.test(
+        windowsJob,
+      );
     if (
       get(packageJson, "scripts", "release:verify-aw") !==
         "node scripts/release/verify-aw.ts" ||
@@ -302,6 +328,9 @@ export async function checkExecutableDistributionContracts(
       !workflow.includes("verify-aw-windows") ||
       !workflow.includes("runs-on: windows-latest") ||
       !workflow.includes("inputs.version") ||
+      !posixConsumesDispatchedVersion ||
+      !windowsBindsDispatchedVersion ||
+      !windowsConsumesBoundVersion ||
       !workflow.includes("powershell.exe") ||
       !workflow.includes("cmd.exe") ||
       !workflow.includes("bash.exe")
