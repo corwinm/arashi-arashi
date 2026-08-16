@@ -285,9 +285,9 @@ export async function checkExecutableDistributionContracts(
       /release:verify-aw[^\n]*--\s+["']?latest\b/iu.test(workflow) ||
       !workflow.includes("release:verify-aw") ||
       !workflow.includes("verify-aw-posix") ||
-      !workflow.includes("runs-on: ubuntu-latest") ||
+      !posixJob.includes("runs-on: ubuntu-latest") ||
       !workflow.includes("verify-aw-windows") ||
-      !workflow.includes("runs-on: windows-latest") ||
+      !windowsJob.includes("runs-on: windows-latest") ||
       !workflow.includes("inputs.version") ||
       !posixConsumesDispatchedVersion ||
       !windowsBindsDispatchedVersion ||

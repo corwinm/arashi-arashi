@@ -335,6 +335,24 @@ describe("executable distribution contracts", () => {
     );
   });
 
+  test("binds each release runner to its owning verification job", async () => {
+    const root = await fixture();
+    const path = "repos/arashi/.github/workflows/verify-aw-release.yml";
+    const workflow = await readFile(join(root, path), "utf8");
+    await writeFile(
+      join(root, path),
+      workflow
+        .replace("runs-on: ubuntu-latest", "runs-on: runner-swap-placeholder")
+        .replace("runs-on: windows-latest", "runs-on: ubuntu-latest")
+        .replace("runs-on: runner-swap-placeholder", "runs-on: windows-latest"),
+    );
+    expect(
+      (await checkExecutableDistributionContracts(root)).diagnostics,
+    ).toContainEqual(
+      expect.objectContaining({ code: "EXECUTABLE_RELEASE_GATE_MISMATCH" }),
+    );
+  });
+
   test("does not accept commented native-shell process tokens", async () => {
     const root = await fixture();
     const path = "repos/arashi/.github/workflows/verify-aw-release.yml";
