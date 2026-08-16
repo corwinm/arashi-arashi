@@ -353,21 +353,12 @@ export async function checkExecutableDistributionContracts(
   }
 
   const docsOwnerGroups = [
-    [
-      "index.mdx",
-      "index.md",
-      [
-        "`aw` means “Arashi Workspace”",
-        "`arashi` remains the canonical command",
-        "supported installations provide both names",
-      ],
-    ],
+    ["index.mdx", "index.md", []],
     [
       "getting-started/index.md",
       "getting-started.md",
       [
-        "`aw` means “Arashi Workspace”",
-        "`arashi` remains the canonical command",
+        "`aw` is a shorter alias for `arashi`",
         "macOS/Linux installer provides both `arashi` and `aw`",
         "PowerShell installer provides both `arashi` and `aw`",
         "npm installs provide both `arashi` and `aw`",
@@ -431,8 +422,26 @@ export async function checkExecutableDistributionContracts(
     }
   }
 
+  for (const [source, code] of [
+    ["repos/arashi-docs/docs/index.mdx", "EXECUTABLE_AUTHORED_DOCS_MISMATCH"],
+    ["repos/arashi-docs/public/index.md", "EXECUTABLE_GENERATED_DOCS_MISMATCH"],
+  ] as const) {
+    try {
+      const text = await readFile(join(root, source), "utf8");
+      if (text.includes("`aw` means “Arashi Workspace”"))
+        add(
+          "docs",
+          code,
+          source,
+          "The landing page must not carry the expanded alias explanation.",
+        );
+    } catch {
+      // The owning-path loop reports missing files.
+    }
+  }
+
   const docsRequirements = [
-    "Arashi Workspace",
+    "`aw` is a shorter alias for `arashi`",
     "canonical",
     "npm",
     "macOS",
@@ -456,7 +465,7 @@ export async function checkExecutableDistributionContracts(
   for (const [source, phrases, code] of [
     [
       paths.llmsIndex,
-      ["Arashi Workspace", "canonical", "npm", "macOS", "Linux", "Windows"],
+      ["`aw` is a shorter alias for `arashi`", "Getting started"],
       "EXECUTABLE_LLMS_INDEX_MISMATCH",
     ],
     [paths.llmsFull, docsRequirements, "EXECUTABLE_LLMS_FULL_MISMATCH"],

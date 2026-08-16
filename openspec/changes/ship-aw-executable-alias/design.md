@@ -32,7 +32,7 @@ The change crosses npm packaging, direct installers, release assets, self-update
 
 ### 1. Treat `aw` as a distribution entrypoint with canonical Arashi identity
 
-`arashi` remains the program name used by Commander, help usage, diagnostics, documentation headings, configuration, `ARASHI_*` environment variables, managed-block markers, package identity, and native release binary names. `aw` expands to “Arashi Workspace” only in concise alias guidance.
+`arashi` remains the program name used by Commander, help usage, diagnostics, documentation headings, configuration, `ARASHI_*` environment variables, managed-block markers, package identity, and native release binary names. The distribution contract retains the “Arashi Workspace” expansion, while user-facing docs may describe `aw` simply as a shorter alias for `arashi`.
 
 Human output is allowed to retain canonical `arashi` wording. Machine contracts, exit status, prompts, mutation behavior, and JSON envelopes must remain equivalent for identical arguments and environment.
 
@@ -42,13 +42,13 @@ Human output is allowed to retain canonical `arashi` wording. Machine contracts,
 
 The distribution matrix is:
 
-| Channel | Canonical entrypoint | Alias entrypoint | Shared implementation |
-| --- | --- | --- | --- |
-| npm on POSIX/Windows | package-manager shim `arashi` | package-manager shim `aw` | both map to `bin/arashi.js`, then the same installed native binary |
-| direct macOS/Linux | release wrapper `arashi` | release wrapper `aw` | adjacent `arashi.bin` |
-| direct Windows Git Bash | extensionless `arashi` | extensionless `aw` | adjacent `arashi.bin.exe` |
-| direct Windows PowerShell | `arashi.ps1` | `aw.ps1` | adjacent `arashi.bin.exe` |
-| direct Windows CMD | `arashi.bat` | `aw.bat` | adjacent `arashi.bin.exe` |
+| Channel                   | Canonical entrypoint          | Alias entrypoint          | Shared implementation                                              |
+| ------------------------- | ----------------------------- | ------------------------- | ------------------------------------------------------------------ |
+| npm on POSIX/Windows      | package-manager shim `arashi` | package-manager shim `aw` | both map to `bin/arashi.js`, then the same installed native binary |
+| direct macOS/Linux        | release wrapper `arashi`      | release wrapper `aw`      | adjacent `arashi.bin`                                              |
+| direct Windows Git Bash   | extensionless `arashi`        | extensionless `aw`        | adjacent `arashi.bin.exe`                                          |
+| direct Windows PowerShell | `arashi.ps1`                  | `aw.ps1`                  | adjacent `arashi.bin.exe`                                          |
+| direct Windows CMD        | `arashi.bat`                  | `aw.bat`                  | adjacent `arashi.bin.exe`                                          |
 
 Dedicated lightweight `aw`, `aw.ps1`, and `aw.bat` release assets keep manual installation explicit, checksummed, and testable. They contain stable Arashi-managed alias markers and delegate directly to the same adjacent binary. The npm package's two `bin` keys both target `bin/arashi.js`; npm does not require separate alias wrapper assets for dispatch.
 

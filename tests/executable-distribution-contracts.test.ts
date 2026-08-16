@@ -63,9 +63,9 @@ const contract = {
   },
 };
 
-const docs = `# Install Arashi\n\n\`arashi\` remains the canonical command. \`aw\` is the supported **Arashi Workspace** executable shorthand from npm and direct macOS, Linux, and Windows installers. Both names support shell integration and completion through the same native binary. Direct installation refuses destination and effective PATH collisions before mutation. Existing shell aliases and functions are a separate namespace conflict. Manual Windows installation requires arashi-windows-x64.exe, arashi, arashi.ps1, arashi.bat, aw, aw.ps1, and aw.bat. Manually placed wrappers have no direct-installer ownership ledger; deliberately move or remove them before installer migration.\n`;
-const landingDocs = `\`aw\` means “Arashi Workspace”. \`arashi\` remains the canonical command; supported installations provide both names.\n`;
-const gettingStartedDocs = `${docs}\n\`aw\` means “Arashi Workspace”. The macOS/Linux installer provides both \`arashi\` and \`aw\`. The PowerShell installer provides both \`arashi\` and \`aw\`. npm installs provide both \`arashi\` and \`aw\`. Run aw status. Refuse an unrelated existing \`aw\` command on PATH or at the destination. A manual wrapper is an unsupported interim workaround for older releases with no direct-installer ownership ledger; deliberately move or remove it.\n`;
+const docs = `# Install Arashi\n\n\`arashi\` remains the canonical command. \`aw\` is a shorter alias for \`arashi\` and is provided by npm and direct macOS, Linux, and Windows installers. Both names support shell integration and completion through the same native binary. Direct installation refuses destination and effective PATH collisions before mutation. Existing shell aliases and functions are a separate namespace conflict. Manual Windows installation requires arashi-windows-x64.exe, arashi, arashi.ps1, arashi.bat, aw, aw.ps1, and aw.bat. Manually placed wrappers have no direct-installer ownership ledger; deliberately move or remove them before installer migration.\n`;
+const landingDocs = `# Arashi\n\nCoordinate Git worktrees across every repository in your stack.\n`;
+const gettingStartedDocs = `${docs}\n\`aw\` is a shorter alias for \`arashi\`. The macOS/Linux installer provides both \`arashi\` and \`aw\`. The PowerShell installer provides both \`arashi\` and \`aw\`. npm installs provide both \`arashi\` and \`aw\`. Run aw status. Refuse an unrelated existing \`aw\` command on PATH or at the destination. A manual wrapper is an unsupported interim workaround for older releases with no direct-installer ownership ledger; deliberately move or remove it.\n`;
 const shellDocs = `Shell integration supports both \`arashi\` and \`aw\` in one managed block, preserves an unrelated \`aw\` alias or function, and uses command arashi.\n`;
 const completionDocs = `Completion supports both \`arashi\` and \`aw\` through command arashi.\n`;
 const updateDocs = `An update updates both \`arashi\` and \`aw\`; \`arashi\` remains canonical.\n`;
@@ -92,7 +92,7 @@ async function fixture(): Promise<string> {
     "repos/arashi-docs/public/commands/shell.md": shellDocs,
     "repos/arashi-docs/public/commands/completion.md": completionDocs,
     "repos/arashi-docs/public/commands/update.md": updateDocs,
-    "repos/arashi-docs/public/llms.txt": `Arashi Workspace: aw is supported; arashi remains canonical. npm, macOS, Linux, Windows.\n`,
+    "repos/arashi-docs/public/llms.txt": `\`aw\` is a shorter alias for \`arashi\`. See Getting started.\n`,
     "repos/arashi-docs/public/llms-full.txt": docs,
     "repos/arashi-skills/skills/arashi/references/tutorial.md": skills,
     "repos/arashi-skills/skills/arashi/README.md": skills,
@@ -306,12 +306,12 @@ describe("executable distribution contracts", () => {
     );
   });
 
-  test("rejects a canonical-identity contradiction even when positive tokens remain", async () => {
+  test("rejects expanded alias copy on the landing page", async () => {
     const root = await fixture();
     const path = "repos/arashi-docs/docs/index.mdx";
     await writeFile(
       join(root, path),
-      `${docs}\naw is now the canonical command.\n`,
+      `${landingDocs}\n\`aw\` means “Arashi Workspace”.\n`,
     );
     expect(
       (await checkExecutableDistributionContracts(root)).diagnostics,
@@ -393,8 +393,8 @@ describe("executable distribution contracts", () => {
   });
 
   test.each([
-    ["authored docs", "repos/arashi-docs/docs/index.mdx"],
-    ["generated docs", "repos/arashi-docs/public/index.md"],
+    ["authored docs", "repos/arashi-docs/docs/getting-started/index.md"],
+    ["generated docs", "repos/arashi-docs/public/getting-started.md"],
     ["llms index", "repos/arashi-docs/public/llms.txt"],
     ["llms full export", "repos/arashi-docs/public/llms-full.txt"],
     [

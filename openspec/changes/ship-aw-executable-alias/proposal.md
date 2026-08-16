@@ -10,7 +10,7 @@ Arashi's frequent interactive workflows currently require the full `arashi` exec
 - Extend coherent install/update rollback and smoke verification to the complete canonical-plus-alias payload, including transaction-scoped rollback when a POSIX installer is interrupted after mutation begins.
 - Make Bash, Zsh, and Fish parent-shell integration and generated completion work equivalently through both executable names while retaining one idempotent Arashi-managed startup block.
 - Verify human/JSON command parity and npm-wrapper `install`/`update` interception through real `arashi` and `aw` entrypoints.
-- Publish concise user and agent-readable guidance defining `aw` as “Arashi Workspace,” including current npm, direct-install, manual Windows payload, completion, and shell-integration behavior.
+- Publish concise user and agent-readable guidance introducing `aw` as a shorter alias for `arashi`, including current npm, direct-install, manual Windows payload, completion, and shell-integration behavior.
 - Add source, package, installer, native-shell, completion, release-contract, documentation, and published-release acceptance gates before delivery.
 
 ## Capabilities
