@@ -294,7 +294,10 @@ describe("executable distribution contracts", () => {
     const workflow = await readFile(join(root, path), "utf8");
     await writeFile(
       join(root, path),
-      workflow.replace("VERIFY_VERSION: ${{ inputs.version }}", "VERIFY_VERSION: 1.2.3"),
+      workflow.replace(
+        "VERIFY_VERSION: ${{ inputs.version }}",
+        "VERIFY_VERSION: 1.2.3",
+      ),
     );
     expect(
       (await checkExecutableDistributionContracts(root)).diagnostics,
