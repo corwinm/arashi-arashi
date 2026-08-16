@@ -54,7 +54,7 @@ Supported macOS and Linux direct releases SHALL publish checksummed `arashi` and
 - **AND** both names report the selected release version afterward
 
 ### Requirement: Direct installers fail closed on alias ownership
-Every direct alias launcher SHALL carry a stable shell-appropriate Arashi-managed alias marker. Each direct installer SHALL own a versioned `.arashi-managed-entrypoints.json` ledger that binds the selected install directory and every managed alias destination to its SHA-256 hash and release version. Before downloads, directory creation, backups, target replacement, PATH changes, or shell-startup mutation, the installer MUST reject any existing `aw`, `aw.ps1`, or `aw.bat` destination unless it is a readable regular marked file whose hash and path match the valid ledger for that installation. It MUST also reject a malformed or mismatched ledger and an `aw` command resolved outside the selected install directory.
+Every direct alias launcher SHALL carry a stable shell-appropriate Arashi-managed alias marker. Each direct installer SHALL own a versioned `.arashi-managed-entrypoints.json` ledger that binds the selected install directory and every managed alias destination to its SHA-256 hash and release version. Before downloads, directory creation, backups, target replacement, PATH changes, or shell-startup mutation, the installer MUST reject any existing `aw`, `aw.ps1`, or `aw.bat` destination unless it is a readable regular marked file whose hash and path match the valid ledger for that installation. It MUST also reject a malformed or mismatched ledger and a filesystem-backed `aw` command resolved outside the selected install directory. POSIX preflight MUST ignore aliases, functions, builtins, keywords, and other non-filesystem shell names, and MUST compare filesystem-backed command paths by physical identity so a managed wrapper reached through a symlinked PATH directory is not misclassified as external. Windows Git Bash evidence MUST come from verified Git for Windows Bash rather than an arbitrary PATH-preferred `bash.exe`, and its resolved command path MUST be converted through that shell's native path conversion before comparison.
 
 #### Scenario: Alias destination is absent
 - **WHEN** a direct installer preflights alias destinations that do not exist and finds no conflicting ownership ledger
@@ -86,12 +86,30 @@ Every direct alias launcher SHALL carry a stable shell-appropriate Arashi-manage
 - **AND** guidance requires the user to deliberately move or remove the manual alias before retrying so the installer can create managed state
 
 #### Scenario: Alias resolves from another PATH location
-- **WHEN** the target alias destination is absent but current POSIX or Windows command resolution finds `aw` outside the selected install directory
+- **WHEN** the target alias destination is absent but current POSIX or Windows command resolution finds a filesystem-backed `aw` outside the selected install directory
 - **THEN** the installer exits non-zero before downloads, directory creation, backups, file replacement, PATH modification, or shell startup changes
 - **AND** reports the resolved collision path without executing or altering it
 
+#### Scenario: Parent shell exports an aw function
+- **WHEN** POSIX installer preflight runs in an environment where `aw` resolves as an alias, function, builtin, keyword, or other non-filesystem shell name
+- **THEN** filesystem collision preflight does not classify that namespace entry as an external executable
+- **AND** does not execute, remove, or replace the namespace entry
+- **AND** parent-shell integration continues to preserve it under the shell-namespace collision contract
+
+#### Scenario: Managed alias resolves through a symlinked PATH directory
+- **WHEN** the selected install directory contains a ledger- and hash-verified regular `aw` wrapper
+- **AND** POSIX PATH resolution returns the same wrapper through a different directory spelling whose physical target is the selected install directory
+- **THEN** the installer treats the filesystem result as the managed alias destination and permits the managed upgrade
+- **AND** it does not relax rejection of an alias whose final destination path component is itself a symlink
+
+#### Scenario: Windows has another Bash ahead of Git for Windows
+- **WHEN** WSL, Cygwin, or another `bash.exe` wins ordinary Windows PATH precedence while Git for Windows is installed
+- **THEN** Windows collision preflight obtains Git Bash evidence only from the verified Git for Windows Bash
+- **AND** converts the Git Bash result to a native Windows path through that shell before managed-destination comparison
+- **AND** does not reject an installer-owned alias because another Bash emitted `/mnt/<drive>/...`, `/cygdrive/<drive>/...`, or another foreign path spelling
+
 ### Requirement: POSIX direct installation is recoverable as one payload
-The POSIX installer MUST preflight ownership before downloads, verify staged assets, back up the complete pre-existing managed payload and ownership ledger, replace canonical and alias files, smoke-test both names, and atomically commit the new ledger before discarding backups. It MUST restore every destination and prior ledger to their exact prior state after replacement, smoke-test, or ledger-commit failure and MUST preserve unrelated neighboring files and transaction sidecars.
+The POSIX installer MUST preflight ownership before downloads, verify staged assets, back up the complete pre-existing managed payload and ownership ledger, replace canonical and alias files, smoke-test both names, and atomically commit the new ledger before discarding backups. From the start of managed mutation until successful ledger commit and backup removal, it MUST keep transaction-scoped `HUP`, `INT`, `TERM`, and abnormal-exit rollback handling armed. It MUST restore every destination and prior ledger to their exact prior state after interruption or replacement, smoke-test, or ledger-commit failure; MUST preserve the interrupted or non-zero outcome rather than continue installation; and MUST preserve unrelated neighboring files and transaction sidecars.
 
 #### Scenario: POSIX replacement succeeds
 - **WHEN** verified staged files replace every managed POSIX destination, both smoke tests pass with identical output, and the new alias ledger commits atomically
@@ -102,6 +120,13 @@ The POSIX installer MUST preflight ownership before downloads, verify staged ass
 - **THEN** the installer restores all pre-existing managed files exactly
 - **AND** restores the previous ownership ledger exactly or removes the new ledger when none existed
 - **AND** removes only newly created managed destinations that were absent before the invocation
+
+#### Scenario: POSIX transaction is terminated after mutation begins
+- **WHEN** the installer receives `HUP`, `INT`, or `TERM`, or exits abnormally, after any managed destination may have changed and before successful ledger commit plus backup removal
+- **THEN** transaction-scoped handling restores every pre-existing managed file and prior ledger exactly
+- **AND** removes only newly created managed destinations and ledger state that were absent before the invocation
+- **AND** disarms itself only after rollback or successful commit so it cannot leave a marked alias without ownership evidence
+- **AND** the installer terminates non-zero instead of continuing with PATH or shell-startup mutation
 
 #### Scenario: POSIX rollback fails
 - **WHEN** one or more managed destinations cannot be restored

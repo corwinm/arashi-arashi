@@ -70,7 +70,11 @@ Before downloads, destination-directory creation, backups, PATH/profile edits, o
 - a readable regular alias file is eligible for replacement only when it carries the exact marker and its current hash matches a valid ledger entry bound to the selected install directory;
 - an unmarked or ledger-mismatched regular file, directory, symlink, reparse point, unreadable path, malformed ledger, or otherwise ambiguous state causes an actionable collision error before installation work begins.
 
-The installer also resolves an already available `aw` command through the effective shell/PATH before installation work. A command that resolves outside the selected install directory is treated as an unrelated collision. This prevents a fresh install from silently shadowing another tool even when the target filename itself is absent. Platform tests cover POSIX `command -v` plus Windows PowerShell/CMD/Git Bash resolution evidence without executing the unrelated command.
+The installer also resolves an already available `aw` command through the effective shell/PATH before installation work. A filesystem command that resolves outside the selected install directory is treated as an unrelated collision. This prevents a fresh install from silently shadowing another tool even when the target filename itself is absent. Platform tests cover POSIX filesystem-command resolution plus Windows PowerShell/CMD/Git Bash resolution evidence without executing the unrelated command.
+
+Filesystem collision preflight and parent-shell namespace preservation remain separate contracts. POSIX preflight classifies the resolved command type before path comparison: an alias, function, builtin, keyword, or other non-filesystem shell name is not an executable collision and is left untouched for the shell-integration guard to preserve. A filesystem-backed result is compared by physical identity, so a managed regular `aw` reached through a symlinked PATH directory is the same installer-owned destination rather than an external command. This physical comparison does not weaken the rule that an alias destination whose final path component is itself a symlink is ambiguous and rejected.
+
+Windows Git Bash evidence comes only from a verified Git for Windows installation, not whichever `bash.exe` happens to win PATH. The PowerShell installer locates the Git for Windows Bash associated with installed Git evidence and converts its `command -v aw` result through that shell's native path-conversion facility before comparing managed destinations. WSL, Cygwin, or unrelated Bash installations ahead of Git for Windows therefore cannot produce foreign `/mnt/<drive>/...` or `/cygdrive/<drive>/...` spellings that falsely reject an installer-owned wrapper.
 
 The error identifies the exact path or ledger defect and instructs the user to move or remove the unrelated state deliberately. The installer does not adopt, execute, delete, download around, or back up an unowned alias as if it were Arashi state. Manually placed release wrappers contain markers but no installer ledger, so a later direct-installer run fails closed; manual-install guidance explains that the user must deliberately move/remove the manual alias files before retrying, after which the installer creates its own ledger.
 
@@ -89,8 +93,9 @@ The POSIX installer is upgraded from sequential replacement to the same explicit
 5. smoke-test `arashi --version` and `aw --version`, requiring successful identical non-empty version output;
 6. atomically write the new versioned ownership ledger with hashes of the installed aliases;
 7. remove backups only after both smoke tests and ledger commit pass;
-8. on replacement, smoke, or ledger-write failure, restore every destination and ledger exactly, removing newly created managed files that were previously absent;
-9. if rollback fails, retain recoverable backups and report exact manual recovery guidance.
+8. while mutation is possible, keep transaction-scoped `HUP`, `INT`, `TERM`, and abnormal-exit handling armed; on interruption or ordinary replacement, smoke, or ledger-write failure, restore every destination and ledger exactly, removing newly created managed files that were previously absent;
+9. disarm transaction handlers only after ledger commit and backup removal complete, then preserve the invocation's interrupted/non-zero outcome instead of continuing installation;
+10. if rollback fails, retain recoverable backups and report exact manual recovery guidance.
 
 The POSIX executable payload is `arashi.bin`, `arashi`, and `aw`; the Windows executable payload is `arashi.bin.exe`, `arashi`, `arashi.ps1`, `arashi.bat`, `aw`, `aw.ps1`, and `aw.bat`. Each direct installation additionally owns `.arashi-managed-entrypoints.json` as transactional metadata. Installers preserve unrelated neighboring files and use uniquely owned transaction sidecars.
 

@@ -31,7 +31,7 @@ The Windows installer MUST verify SHA-256 checksums for every downloaded install
 - **THEN** the installer exits non-zero before replacing installed files and reports the failed asset plus fallback guidance
 
 ### Requirement: Windows user-level install layout
-The Windows installer SHALL install Arashi into a user-writable bin directory by default, SHALL support an explicit install-directory override, and MUST replace its canonical and alias executable payload plus versioned `.arashi-managed-entrypoints.json` ownership ledger as one recoverable set. Before downloads, directory creation, backups, target mutation, or PATH changes, it MUST reject each existing required alias destination unless it is a readable marked regular file whose current hash/path matches a valid ledger bound to the selected install directory; malformed/mismatched ledgers, directories, symlinks, reparse points, unreadable paths, and alias commands resolved outside the selected directory MUST fail closed.
+The Windows installer SHALL install Arashi into a user-writable bin directory by default, SHALL support an explicit install-directory override, and MUST replace its canonical and alias executable payload plus versioned `.arashi-managed-entrypoints.json` ownership ledger as one recoverable set. Before downloads, directory creation, backups, target mutation, or PATH changes, it MUST reject each existing required alias destination unless it is a readable marked regular file whose current hash/path matches a valid ledger bound to the selected install directory; malformed/mismatched ledgers, directories, symlinks, reparse points, unreadable paths, and filesystem-backed alias commands resolved outside the selected directory MUST fail closed. Git Bash collision evidence MUST be collected from a verified Git for Windows Bash rather than an arbitrary PATH-preferred `bash.exe`, and the result MUST be converted through that shell's native path conversion before comparison with the exact managed alias destinations.
 
 #### Scenario: Default install directory is used
 - **WHEN** no install directory override is provided
@@ -68,9 +68,16 @@ The Windows installer SHALL install Arashi into a user-writable bin directory by
 - **THEN** the installer fails closed before downloads or installed-state mutation and preserves the path unchanged
 
 #### Scenario: Existing aw command resolves outside the selected directory
-- **WHEN** PowerShell, Command Prompt, or Git Bash PATH evidence resolves `aw` outside the selected install directory
+- **WHEN** PowerShell, Command Prompt, or verified Git for Windows Bash PATH evidence resolves a filesystem-backed `aw` outside the selected install directory
 - **THEN** the installer reports the resolved collision and exits before downloads, directory creation, backups, target replacement, or PATH changes
 - **AND** does not execute or alter the unrelated command
+
+#### Scenario: Another Bash precedes Git for Windows on PATH
+- **WHEN** WSL, Cygwin, or another unrelated `bash.exe` precedes Git for Windows on the invoking PowerShell PATH
+- **THEN** the installer does not use that arbitrary Bash for Git Bash collision evidence
+- **AND** locates a verified Git for Windows Bash from installed Git evidence
+- **AND** converts `command -v aw` through that Git Bash process to a native Windows path before exact managed-destination comparison
+- **AND** an installer-owned alias is not rejected because an unrelated shell would describe it as `/mnt/<drive>/...`, `/cygdrive/<drive>/...`, or another foreign path form
 
 ### Requirement: Windows PATH management
 The Windows installer SHALL add the install directory to the persistent user PATH by default, SHALL support a no-modify-PATH mode, and MUST NOT modify Git Bash shell-profile files.
@@ -157,7 +164,7 @@ The Windows installer implementation SHALL have automated coverage for determini
 
 #### Scenario: Helper tests run
 - **WHEN** repository tests run for the installer implementation
-- **THEN** they cover architecture detection, asset URL construction, checksum parsing or verification, install directory selection, no-modify-PATH behavior, seven-file destination mapping, ownership-ledger schema/path/hash validation and atomic commit, absent/managed/unmarked/manual/PATH-resolved/ambiguous alias states, fresh and partial pre-existing payloads, rollback after replacement/smoke/ledger failures, and rollback-failure reporting
+- **THEN** they cover architecture detection, asset URL construction, checksum parsing or verification, install directory selection, no-modify-PATH behavior, seven-file destination mapping, ownership-ledger schema/path/hash validation and atomic commit, absent/managed/unmarked/manual/PATH-resolved/ambiguous alias states, selection of verified Git for Windows Bash despite unrelated Bash PATH precedence, native conversion of Git Bash command paths, fresh and partial pre-existing payloads, rollback after replacement/smoke/ledger failures, and rollback-failure reporting
 
 #### Scenario: Wrapper regression tests run
 - **WHEN** repository tests exercise extensionless `arashi` and `aw` wrappers

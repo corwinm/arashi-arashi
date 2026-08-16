@@ -6,7 +6,8 @@ Arashi's frequent interactive workflows currently require the full `arashi` exec
 
 - Ship `aw` beside canonical `arashi` across npm-managed installs and supported direct macOS, Linux, and Windows installations, with both names dispatching to the same package entrypoint or platform binary.
 - Preserve `arashi` as the canonical product, help, configuration, environment-variable, release, and documentation vocabulary; `aw` is additive and does not deprecate or replace it.
-- Make direct installers fail before mutation rather than overwrite an unrelated pre-existing `aw`, and extend coherent install/update rollback and smoke verification to the complete canonical-plus-alias payload.
+- Make direct installers fail before mutation rather than overwrite an unrelated pre-existing `aw`, distinguish filesystem commands from preserved shell aliases/functions, recognize installer-owned wrappers through physically equivalent PATH spellings, and require Windows collision evidence from Git for Windows rather than an arbitrary `bash.exe`.
+- Extend coherent install/update rollback and smoke verification to the complete canonical-plus-alias payload, including transaction-scoped rollback when a POSIX installer is interrupted after mutation begins.
 - Make Bash, Zsh, and Fish parent-shell integration and generated completion work equivalently through both executable names while retaining one idempotent Arashi-managed startup block.
 - Verify human/JSON command parity and npm-wrapper `install`/`update` interception through real `arashi` and `aw` entrypoints.
 - Publish concise user and agent-readable guidance defining `aw` as “Arashi Workspace,” including current npm, direct-install, manual Windows payload, completion, and shell-integration behavior.
