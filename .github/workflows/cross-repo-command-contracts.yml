@@ -126,7 +126,7 @@ jobs:
         run: pnpm --dir repos/arashi completion:check
       - name: Reject generated CLI contract diffs
         working-directory: meta
-        run: git -C repos/arashi diff --exit-code -- schema/config.schema.json contracts/cli-commands.json src/generated/completions.ts
+        run: git -C repos/arashi diff --exit-code -- schema/config.schema.json contracts/cli-commands.json contracts/executable-distribution.json src/generated/completions.ts
       - name: Install documentation generation toolchain
         working-directory: meta
         run: pnpm --dir repos/arashi-docs install --frozen-lockfile

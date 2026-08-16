@@ -15,7 +15,7 @@ pnpm --dir repos/arashi contract:generate
 pnpm --dir repos/arashi contract:check
 pnpm --dir repos/arashi completion:generate
 pnpm --dir repos/arashi completion:check
-git -C repos/arashi diff --exit-code -- schema/config.schema.json contracts/cli-commands.json src/generated/completions.ts
+git -C repos/arashi diff --exit-code -- schema/config.schema.json contracts/cli-commands.json contracts/executable-distribution.json src/generated/completions.ts
 pnpm --dir repos/arashi-docs install --frozen-lockfile
 pnpm --dir repos/arashi-docs validate:semantic-docs
 node repos/arashi-skills/scripts/validate-guidance.mjs

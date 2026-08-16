@@ -1,29 +1,4 @@
-# windows-powershell-installer Specification
-
-## Purpose
-
-Define the Windows direct-binary installation and update behavior for Arashi, including the hosted PowerShell installer, release asset verification, user-level install layout, PATH handling, smoke testing, and deferred update flow.
-
-## Requirements
-
-### Requirement: Windows PowerShell installer availability
-
-Arashi SHALL provide a hosted Windows PowerShell installer for direct binary installs that do not require Node.js or npm.
-
-#### Scenario: User inspects the installer
-
-- **WHEN** a user opens the hosted PowerShell installer URL in a browser or downloads it directly
-- **THEN** they can inspect the script contents before executing it
-
-#### Scenario: User runs the documented one-line PowerShell installer
-
-- **WHEN** a Windows user runs the documented `powershell -c "irm https://arashi.haphazard.dev/install.ps1 | iex"` command
-- **THEN** the script downloads, verifies, installs, and smoke-tests the latest supported Arashi Windows release assets without requiring Node.js or npm
-
-#### Scenario: Unsupported Windows platform attempts install
-
-- **WHEN** the installer runs on an unsupported operating system or CPU architecture
-- **THEN** it exits non-zero before downloading release assets and prints the direct GitHub Releases fallback URL
+## MODIFIED Requirements
 
 ### Requirement: Windows release asset resolution
 

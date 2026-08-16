@@ -4258,7 +4258,7 @@ export async function checkContracts(
       {
         code: "CLI_CREATE_BASE_GENERATED_DIFF_UNREACHABLE",
         command:
-          "git -C repos/arashi diff --exit-code -- schema/config.schema.json contracts/cli-commands.json src/generated/completions.ts",
+          "git -C repos/arashi diff --exit-code -- schema/config.schema.json contracts/cli-commands.json contracts/executable-distribution.json src/generated/completions.ts",
       },
     ];
     for (const gate of cliGates)
