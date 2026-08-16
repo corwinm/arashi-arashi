@@ -263,10 +263,12 @@ export async function checkExecutableDistributionContracts(
       .split(/\r?\n/u)
       .filter((line) => !/^\s*#/u.test(line))
       .join("\n");
-    const posixConsumesDispatchedVersion =
-      /release:verify-aw\s+--\s+["']?\$\{\{\s*inputs\.version\s*\}\}["']?/u.test(
+    const posixBindsDispatchedVersion =
+      /^\s*VERIFY_VERSION:\s*["']?\$\{\{\s*inputs\.version\s*\}\}["']?\s*$/mu.test(
         posixJob,
       );
+    const posixConsumesDispatchedVersion =
+      /release:verify-aw\s+--\s+["']?\$VERIFY_VERSION["']?/u.test(posixJob);
     const windowsBindsDispatchedVersion =
       /^\s*VERIFY_VERSION:\s*["']?\$\{\{\s*inputs\.version\s*\}\}["']?\s*$/mu.test(
         windowsJob,
@@ -289,6 +291,7 @@ export async function checkExecutableDistributionContracts(
       !workflow.includes("verify-aw-windows") ||
       !windowsJob.includes("runs-on: windows-latest") ||
       !workflow.includes("inputs.version") ||
+      !posixBindsDispatchedVersion ||
       !posixConsumesDispatchedVersion ||
       !windowsBindsDispatchedVersion ||
       !windowsConsumesBoundVersion ||
