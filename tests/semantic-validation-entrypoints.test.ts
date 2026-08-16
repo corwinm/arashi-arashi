@@ -18,6 +18,7 @@ const metaRoot = process.cwd();
 const registryPath = "scripts/contract-checks.json";
 const registry = [
   "scripts/check-command-contracts.ts",
+  "scripts/check-executable-distribution-contracts.ts",
   "scripts/check-hook-contracts.ts",
 ];
 const metaInstallStage = "pnpm install --frozen-lockfile";
@@ -30,7 +31,7 @@ const cliCompletionGenerateStage =
   "pnpm --dir repos/arashi completion:generate";
 const cliCompletionCheckStage = "pnpm --dir repos/arashi completion:check";
 const cliGeneratedDiffStage =
-  "git -C repos/arashi diff --exit-code -- schema/config.schema.json contracts/cli-commands.json src/generated/completions.ts";
+  "git -C repos/arashi diff --exit-code -- schema/config.schema.json contracts/cli-commands.json contracts/executable-distribution.json src/generated/completions.ts";
 const docsInstallStage =
   "pnpm --dir repos/arashi-docs install --frozen-lockfile";
 const docsStage = "pnpm --dir repos/arashi-docs validate:semantic-docs";
@@ -308,6 +309,7 @@ describe("meta aggregate modes", () => {
     );
     expect(ciLog.split("\n").filter(Boolean)).toEqual([
       "scripts/check-command-contracts.ts --skip-focused-checkers",
+      "scripts/check-executable-distribution-contracts.ts ",
       "scripts/check-hook-contracts.ts ",
     ]);
   });
@@ -355,6 +357,7 @@ describe("meta aggregate modes", () => {
     expect(parsed.diagnostics.map(({ code }) => code)).toEqual([
       "SENTINEL_0",
       "SENTINEL_1",
+      "SENTINEL_2",
     ]);
     expect(result.stdout).not.toContain("Contract checker registration passed");
     expect(result.stdout).not.toContain("== Contract checker:");

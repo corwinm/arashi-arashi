@@ -1,0 +1,312 @@
+import { afterEach, describe, expect, test } from "vitest";
+import { mkdtemp, mkdir, rm, writeFile } from "node:fs/promises";
+import { join } from "node:path";
+import { tmpdir } from "node:os";
+import { checkExecutableDistributionContracts } from "../scripts/executable-distribution-contracts";
+
+const roots: string[] = [];
+
+afterEach(async () => {
+  await Promise.all(
+    roots.splice(0).map((root) => rm(root, { recursive: true })),
+  );
+});
+
+const contract = {
+  alias: { expansion: "Arashi Workspace", name: "aw" },
+  canonical: "arashi",
+  completionNames: ["arashi", "aw"],
+  identity: {
+    branding: "arashi",
+    commanderProgramName: "arashi",
+    configurationVocabulary: "arashi",
+    environmentPrefix: "ARASHI_",
+    managedShellBlock: "arashi",
+    packageName: "arashi",
+  },
+  ledger: { name: ".arashi-managed-entrypoints.json", schemaVersion: 1 },
+  nativeBinaries: { posix: "arashi.bin", windows: "arashi.bin.exe" },
+  npmBins: { arashi: "./bin/arashi.js", aw: "./bin/arashi.js" },
+  ownership: {
+    collisionPolicy: "marker-and-ledger-hash",
+    ledger: { name: ".arashi-managed-entrypoints.json", schemaVersion: 1 },
+    markers: {
+      cmd: "arashi-managed-alias:aw:v1",
+      posix: "arashi-managed-alias:aw:v1",
+      powershell: "arashi-managed-alias:aw:v1",
+    },
+  },
+  posix: {
+    installed: ["arashi.bin", "arashi", "aw"],
+    releaseLaunchers: ["arashi", "aw"],
+  },
+  schemaVersion: 1,
+  shellWrapperNames: ["arashi", "aw"],
+  windows: {
+    installed: [
+      "arashi.bin.exe",
+      "arashi",
+      "arashi.ps1",
+      "arashi.bat",
+      "aw",
+      "aw.ps1",
+      "aw.bat",
+    ],
+    releaseLaunchers: [
+      "arashi",
+      "arashi.ps1",
+      "arashi.bat",
+      "aw",
+      "aw.ps1",
+      "aw.bat",
+    ],
+  },
+};
+
+const docs = `# Install Arashi\n\n\`arashi\` remains the canonical command. \`aw\` is the supported **Arashi Workspace** executable shorthand from npm and direct macOS, Linux, and Windows installers. Both names support shell integration and completion through the same native binary. Direct installation refuses destination and effective PATH collisions before mutation. Existing shell aliases and functions are a separate namespace conflict. Manual Windows installation requires arashi-windows-x64.exe, arashi, arashi.ps1, arashi.bat, aw, aw.ps1, and aw.bat. Manually placed wrappers have no direct-installer ownership ledger; deliberately move or remove them before installer migration.\n`;
+const skills = `Use canonical \`arashi --help\` for discovery and canonical entry commands. \`aw\` is supported shorthand for **Arashi Workspace** after npm or direct installation; it is not a Commander command alias or a second command vocabulary.\n`;
+
+async function fixture(): Promise<string> {
+  const root = await mkdtemp(join(tmpdir(), "arashi-executable-contracts-"));
+  roots.push(root);
+  const files: Record<string, string> = {
+    "repos/arashi/contracts/executable-distribution.json": `${JSON.stringify(contract, null, 2)}\n`,
+    "repos/arashi/package.json": `${JSON.stringify({ bin: { arashi: "./bin/arashi.js", aw: "./bin/arashi.js" }, scripts: { "release:verify-aw": "node scripts/release/verify-aw.ts" } })}\n`,
+    "repos/arashi/.github/workflows/verify-aw-release.yml":
+      "on:\n  workflow_dispatch:\n    inputs:\n      version:\n        required: true\njobs:\n  verify-aw-posix:\n    runs-on: ubuntu-latest\n    steps:\n      - run: pnpm release:verify-aw -- ${{ inputs.version }}\n  verify-aw-windows:\n    runs-on: windows-latest\n    steps:\n      - run: powershell.exe -NoProfile -Command arashi --version\n      - run: cmd.exe /d /s /c aw --version\n      - run: bash.exe --noprofile --norc -c 'aw --version'\n",
+    "repos/arashi/contracts/cli-commands.json": `${JSON.stringify({ schemaVersion: 1, aliasPaths: [], commands: [{ path: "status", aliases: [] }] })}\n`,
+    "repos/arashi-vscode/contracts/command-policy.json": `${JSON.stringify({ commands: ["arashi.status"], executableAliases: [] })}\n`,
+    "repos/arashi-docs/docs/getting-started/installation.md": docs,
+    "repos/arashi-docs/public/getting-started/installation.md": docs,
+    "repos/arashi-docs/public/llms.txt": `Arashi Workspace: aw is supported; arashi remains canonical. npm, macOS, Linux, Windows.\n`,
+    "repos/arashi-docs/public/llms-full.txt": docs,
+    "repos/arashi-skills/skills/arashi/references/installation.md": skills,
+    "package-check/skills/arashi/references/installation.md": skills,
+  };
+  for (const [path, content] of Object.entries(files)) {
+    const destination = join(root, path);
+    await mkdir(join(destination, ".."), { recursive: true });
+    await writeFile(destination, content);
+  }
+  return root;
+}
+
+async function mutateJson(
+  root: string,
+  path: string,
+  update: (value: any) => void,
+) {
+  const fullPath = join(root, path);
+  const value = JSON.parse(
+    await import("node:fs/promises").then(({ readFile }) =>
+      readFile(fullPath, "utf8"),
+    ),
+  );
+  update(value);
+  await writeFile(fullPath, `${JSON.stringify(value, null, 2)}\n`);
+}
+
+describe("executable distribution contracts", () => {
+  test("accepts aligned CLI, docs, exports, authored skill, packaged skill, and companion exclusions", async () => {
+    expect(await checkExecutableDistributionContracts(await fixture())).toEqual(
+      {
+        ok: true,
+        diagnostics: [],
+      },
+    );
+  });
+
+  test.each([
+    [
+      "canonical identity",
+      (value: any) => (value.canonical = "aw"),
+      "EXECUTABLE_IDENTITY_MISMATCH",
+    ],
+    [
+      "alias expansion",
+      (value: any) => (value.alias.expansion = "Arashi Worktree"),
+      "EXECUTABLE_ALIAS_EXPANSION_MISMATCH",
+    ],
+    [
+      "npm shared entrypoint",
+      (value: any) => (value.npmBins.aw = "./bin/aw.js"),
+      "EXECUTABLE_NATIVE_DUPLICATION",
+    ],
+    [
+      "POSIX payload",
+      (value: any) => value.posix.installed.pop(),
+      "EXECUTABLE_POSIX_PAYLOAD_MISMATCH",
+    ],
+    [
+      "Windows payload",
+      (value: any) => value.windows.installed.pop(),
+      "EXECUTABLE_WINDOWS_PAYLOAD_MISMATCH",
+    ],
+    [
+      "ownership ledger",
+      (value: any) => delete value.ownership.ledger,
+      "EXECUTABLE_OWNERSHIP_MISMATCH",
+    ],
+    [
+      "shell names",
+      (value: any) => value.shellWrapperNames.pop(),
+      "EXECUTABLE_SHELL_MISMATCH",
+    ],
+    [
+      "completion names",
+      (value: any) => value.completionNames.pop(),
+      "EXECUTABLE_COMPLETION_MISMATCH",
+    ],
+  ])("rejects %s drift", async (_label, update, code) => {
+    const root = await fixture();
+    await mutateJson(
+      root,
+      "repos/arashi/contracts/executable-distribution.json",
+      update as (value: any) => void,
+    );
+    const result = await checkExecutableDistributionContracts(root);
+    expect(result.ok).toBe(false);
+    expect(result.diagnostics).toContainEqual(
+      expect.objectContaining({ code }),
+    );
+  });
+
+  test("rejects aw in Commander command aliases", async () => {
+    const root = await fixture();
+    await mutateJson(
+      root,
+      "repos/arashi/contracts/cli-commands.json",
+      (value) => value.commands[0].aliases.push("aw"),
+    );
+    expect(
+      (await checkExecutableDistributionContracts(root)).diagnostics,
+    ).toContainEqual(
+      expect.objectContaining({ code: "EXECUTABLE_COMMANDER_ALIAS_FORBIDDEN" }),
+    );
+  });
+
+  test("rejects executable parity claims in the VS Code policy", async () => {
+    const root = await fixture();
+    await mutateJson(
+      root,
+      "repos/arashi-vscode/contracts/command-policy.json",
+      (value) => value.executableAliases.push("aw"),
+    );
+    expect(
+      (await checkExecutableDistributionContracts(root)).diagnostics,
+    ).toContainEqual(
+      expect.objectContaining({ code: "EXECUTABLE_VSCODE_ALIAS_FORBIDDEN" }),
+    );
+  });
+
+  test.each([
+    ["extra npm bin", (value: any) => (value.npmBins.rogue = "./bin/rogue.js")],
+    [
+      "renamed ownership marker",
+      (value: any) => {
+        value.ownership.markers.shell = value.ownership.markers.posix;
+        delete value.ownership.markers.posix;
+      },
+    ],
+  ])("rejects non-exact typed contract shape: %s", async (_label, update) => {
+    const root = await fixture();
+    await mutateJson(
+      root,
+      "repos/arashi/contracts/executable-distribution.json",
+      update,
+    );
+    expect(
+      (await checkExecutableDistributionContracts(root)).diagnostics,
+    ).toContainEqual(
+      expect.objectContaining({
+        code: expect.stringMatching(
+          /EXECUTABLE_(?:NATIVE_DUPLICATION|OWNERSHIP_MISMATCH)/,
+        ),
+      }),
+    );
+  });
+
+  test("rejects extra package bin metadata", async () => {
+    const root = await fixture();
+    await mutateJson(root, "repos/arashi/package.json", (value) => {
+      value.bin.rogue = "./bin/rogue.js";
+    });
+    expect(
+      (await checkExecutableDistributionContracts(root)).diagnostics,
+    ).toContainEqual(
+      expect.objectContaining({ code: "EXECUTABLE_RELEASE_GATE_MISMATCH" }),
+    );
+  });
+
+  test("rejects latest and incomplete release workflow semantics", async () => {
+    const root = await fixture();
+    await writeFile(
+      join(root, "repos/arashi/.github/workflows/verify-aw-release.yml"),
+      "on: workflow_dispatch\njobs:\n  verify-aw-windows:\n    runs-on: windows-latest\n    steps:\n      - run: pnpm release:verify-aw -- latest\n",
+    );
+    expect(
+      (await checkExecutableDistributionContracts(root)).diagnostics,
+    ).toContainEqual(
+      expect.objectContaining({ code: "EXECUTABLE_RELEASE_GATE_MISMATCH" }),
+    );
+  });
+
+  test("rejects a canonical-identity contradiction even when positive tokens remain", async () => {
+    const root = await fixture();
+    const path = "repos/arashi-docs/docs/getting-started/installation.md";
+    await writeFile(
+      join(root, path),
+      `${docs}\naw is now the canonical command.\n`,
+    );
+    expect(
+      (await checkExecutableDistributionContracts(root)).diagnostics,
+    ).toContainEqual(
+      expect.objectContaining({
+        code: "EXECUTABLE_AUTHORED_DOCS_MISMATCH",
+        source: path,
+      }),
+    );
+  });
+
+  test("requires the extracted packaged skill corpus", async () => {
+    const root = await fixture();
+    await rm(join(root, "package-check"), { force: true, recursive: true });
+    expect(
+      (await checkExecutableDistributionContracts(root)).diagnostics,
+    ).toContainEqual(
+      expect.objectContaining({
+        code: "EXECUTABLE_PACKAGED_SKILL_MISMATCH",
+        source: "package-check/skills/arashi",
+      }),
+    );
+  });
+
+  test.each([
+    ["authored docs", "repos/arashi-docs/docs/getting-started/installation.md"],
+    [
+      "generated docs",
+      "repos/arashi-docs/public/getting-started/installation.md",
+    ],
+    ["llms index", "repos/arashi-docs/public/llms.txt"],
+    ["llms full export", "repos/arashi-docs/public/llms-full.txt"],
+    [
+      "authored skill",
+      "repos/arashi-skills/skills/arashi/references/installation.md",
+    ],
+    [
+      "packaged skill",
+      "package-check/skills/arashi/references/installation.md",
+    ],
+  ])("rejects missing alias semantics in %s", async (_label, path) => {
+    const root = await fixture();
+    await writeFile(join(root, path), "arashi only\n");
+    const result = await checkExecutableDistributionContracts(root);
+    expect(result.ok).toBe(false);
+    expect(result.diagnostics).toContainEqual(
+      expect.objectContaining({
+        source: path,
+        code: expect.stringMatching(/^EXECUTABLE_/),
+      }),
+    );
+  });
+});
