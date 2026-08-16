@@ -1,1 +1,5 @@
-["scripts/check-command-contracts.ts", "scripts/check-hook-contracts.ts"]
+[
+  "scripts/check-command-contracts.ts",
+  "scripts/check-executable-distribution-contracts.ts",
+  "scripts/check-hook-contracts.ts"
+]
