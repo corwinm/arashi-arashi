@@ -51,6 +51,16 @@ For each configured child repository, Arashi SHALL resolve materialization sourc
 - **THEN** Arashi resolves each child's Git primary checkout independently from repository worktree metadata
 - **AND** does not treat the active configured child path as the source
 
+#### Scenario: Nested or absolute configured child path is used
+- **WHEN** a configured child path is nested or absolute and the active child is a linked worktree
+- **THEN** Arashi starts topology resolution from that child repository and selects its Git primary non-bare checkout
+- **AND** does not infer source ownership from parent-path concatenation
+
+#### Scenario: Configured parent checkout is bare
+- **WHEN** the configured parent workspace uses a bare-root layout but a selected child has a usable non-bare primary checkout
+- **THEN** Arashi resolves the child source from the child's independent Git topology
+- **AND** does not reject it merely because the parent layout is bare
+
 #### Scenario: Canonical source checkout is unusable
 - **WHEN** a selected repository has configured entries but no usable canonical source checkout
 - **THEN** create or doctor identifies that repository and source-checkout problem
@@ -107,7 +117,7 @@ For each selected configured repository, Arashi SHALL apply declared copy entrie
 - **AND** Arashi never overwrites the changed destination
 
 ### Requirement: Copy creates independent contained state
-`copy` SHALL use native filesystem APIs to copy regular files and directories without shell command composition or outputting content. It SHALL create missing destination parents safely and exclusively. Source symbolic links at any copied path SHALL be dereferenced only when their resolved targets remain inside the canonical source checkout. The recursive walker MUST detect a canonical directory identity already on its active recursion stack and fail with `source_cycle`; broken, cyclic, or escaping source links MUST fail rather than recurse indefinitely, import an external source, or create a misdirected destination link.
+`copy` SHALL use native filesystem APIs to copy regular files and directories without shell command composition or outputting content. It SHALL create missing destination parents safely and exclusively. Source symbolic links at any copied path SHALL be dereferenced only when their resolved targets remain inside the canonical source checkout. The recursive walker MUST detect a canonical directory identity already on its active recursion stack and fail with `source_cycle`; this covers self-links, ancestor links, and multi-link cycles. A canonical directory reached again only after its prior traversal has left the active stack SHALL be copied independently at the later destination, not globally deduplicated. Broken, cyclic, or escaping source links MUST fail rather than recurse indefinitely, import an external source, or create a misdirected destination link.
 
 #### Scenario: File and directory are copied
 - **WHEN** configured copy sources contain a file and a nested directory
@@ -129,9 +139,14 @@ For each selected configured repository, Arashi SHALL apply declared copy entrie
 - **AND** no external content is copied
 
 #### Scenario: Source link forms a cycle
-- **WHEN** a source link points to itself or to an ancestor directory in the active recursive copy
+- **WHEN** a source self-link, ancestor link, or multi-link loop revisits a canonical directory on the active recursive stack
 - **THEN** copy fails with reason `source_cycle` before unbounded recursion
 - **AND** rollback removes only invocation-owned partial destinations while preserving the source tree
+
+#### Scenario: Separate links repeat one non-cyclic target
+- **WHEN** two source links reach the same contained directory in separate non-ancestor traversal branches
+- **THEN** each destination receives an independent finite copy of that directory
+- **AND** traversal order remains deterministic
 
 ### Requirement: Symlink creates only the requested native link type
 `symlink` SHALL create a native symbolic link at the identical relative destination targeting the absolute canonical source path. The source MUST resolve to an existing file or directory at execution. Arashi SHALL select the matching native file/directory link kind, SHALL never request a Windows junction, and SHALL never fall back to copy, hard link, or another link type when privilege, filesystem, or platform policy rejects symbolic links.

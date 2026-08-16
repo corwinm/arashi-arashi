@@ -8,7 +8,7 @@
 
 - [ ] 2.1 Add focused failing configuration tests for direct `copy`/`symlink` types, normalization, persistence, unknown/invalid values, portable unsafe paths, duplicates, and cross-array collisions
 - [ ] 2.2 Add failing schema generation/freshness and compile-time contract tests for the optional repository fields without changing the checked-in schema first
-- [ ] 2.3 Add failing repository-projection tests proving Git-primary canonical source checkout, configuration root, and active execution/worktree paths remain distinct in linked non-bare and bare-root configured contexts
+- [ ] 2.3 Add failing repository-projection tests proving Git-primary canonical source checkout, configuration root, and active execution/worktree paths remain distinct for linked parents, nested/absolute child paths, bare-parent layouts, and missing child primary checkouts
 - [ ] 2.4 Add failing shared resolver/planner tests for missing sources, operational inspection errors, immutable target-tree tracked destination/ancestor conflicts, filesystem destination conflicts, symlink/junction ancestors, source-link containment/cycles, Windows aliases/case collisions, declaration order, and non-mutating dry-run plans
 - [ ] 2.5 Add failing real filesystem and built-CLI native acceptance for macOS/Linux/Windows, wire the suite into all three CI paths before GREEN, and prove the unchanged runtime fails for the intended missing materialization behavior
 - [ ] 2.6 Add failing command-layer precedence tests proving a materialization blocker occurs before managed-ignore reconciliation and leaves ignore files/preferences unchanged
@@ -23,7 +23,7 @@
 
 ## 4. Native materializer and rollback RED/GREEN
 
-- [ ] 4.1 Add failing real-filesystem tests for exclusive file/directory copies, deterministic recursive order, spaces/metacharacters, nested parents, contained source-link dereference, broken/escaping source links, self/ancestor cycles, and no content leakage
+- [ ] 4.1 Add failing real-filesystem tests for exclusive file/directory copies, deterministic recursive order, spaces/metacharacters, nested parents, contained source-link dereference, broken/escaping source links, self/ancestor/multi-link cycles, repeated non-ancestor targets copied independently, and no content leakage
 - [ ] 4.2 Add failing native link tests for exact absolute targets, file/directory kinds, no junction/copy/hard-link fallback, unavailable capability, and source disappearance
 - [ ] 4.3 Add failing ownership-ledger tests for partial recursive failures, reverse cleanup before whole-worktree rollback, link-object cleanup, empty invocation-created parent cleanup, preservation of pre-existing objects, and rollback-error reporting
 - [ ] 4.4 Implement the native ledgered materializer with no shell composition, exclusive no-overwrite operations, per-object partial-materialization ownership, contained source dereference/cycle detection, and link-safe reverse cleanup before existing whole-worktree rollback
@@ -40,7 +40,7 @@
 
 ## 6. Doctor and native platform acceptance
 
-- [ ] 6.1 Add failing doctor tests for Git-primary source checkout availability, optional missing sources, collisions, destination containment, provable copy destination missing/kind mismatch, explicit copy ownership/freshness non-claims, exact healthy links, broken/misdirected links, bounded findings, unknown non-mutating capability evidence, and standalone exclusion
+- [ ] 6.1 Add failing human/JSON doctor tests for the exact materialization code/severity/category/scope/detail/suggested-command and exit-status contract across Git-primary source checkout availability, optional missing sources, collisions, destination containment, provable copy destination missing/kind mismatch, copy ownership/freshness non-claims, exact healthy links, broken/misdirected links, unavailable/unknown capability evidence, and standalone exclusion
 - [ ] 6.2 Implement shared non-mutating doctor diagnostics without reading/hashing contents, executing hooks, repairing state, or creating capability probes
 - [ ] 6.3 Run the already-wired native built-CLI materialization acceptance on macOS/Linux/Windows for aliases/case collisions, files/directories, spaces/metacharacters, nested parents, missing/conflicting/cyclic sources, source/destination link escapes, symlink availability, lifecycle order, dry-run, JSON, multi-repository rollback, and removal target safety
 - [ ] 6.4 Run focused doctor tests, CLI lint/type/build gates, the complete CLI test suite, and CI workflow-reachability self-tests after the final CLI edit
@@ -68,7 +68,7 @@
 
 ## 10. Coordinated semantic contracts and delivery
 
-- [ ] 10.1 Add/register meta contract RED fixtures comparing normalized CLI schema semantics with CLI docs, website docs/exports, and authored/extracted skills guidance without adding feature-specific workflow steps
+- [ ] 10.1 Add/register meta contract RED fixtures consuming the generated CLI schema as the sole machine-readable field producer and comparing it plus maintained CLI guidance with website docs/exports and authored/extracted skills guidance, without a second contract artifact or feature-specific workflow steps
 - [ ] 10.2 Implement the coordinated materialization semantic checker and prove fail-closed registration, stable aggregate reachability, controlled mismatch detection, and unchanged real worktrees
 - [ ] 10.3 Run the complete local coordinated validation path once against final child heads and record exact revisions/results
 - [ ] 10.4 Update every related PR body with the complete sibling set; verify child heads, files, closing-keyword ownership, checks, review surfaces, and unresolved threads

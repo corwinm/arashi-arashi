@@ -1,12 +1,17 @@
 ## ADDED Requirements
 
 ### Requirement: Coordinated contracts enforce repository materialization semantics
-The CLI configuration schema and normalized semantic contract SHALL publish direct repository `copy` and `symlink` arrays, configured-only scope, same-relative-path behavior, copy-before-symlink order, canonical source ownership, lifecycle timing, missing-source skip, no-overwrite/path-containment rules, no-fallback symbolic links, dry-run/outcome behavior, and copy-versus-symlink guidance. Coordinated validation SHALL compare those semantics with canonical CLI docs, website docs, generated agent-readable exports, and authored plus extracted-package Arashi skill guidance.
+The generated CLI configuration JSON Schema SHALL be the sole machine-readable CLI producer for direct repository `copy` and `symlink` fields; this change SHALL NOT introduce a second semantic-contract artifact. Maintained CLI guidance SHALL own configured-only scope, same-relative-path behavior, copy-before-symlink order, Git-primary source ownership, lifecycle timing, missing-source skip, no-overwrite/path-containment rules, no-fallback symbolic links, dry-run/outcome behavior, and copy-versus-symlink guidance. Coordinated validation SHALL normalize the generated schema fields and compare schema plus maintained CLI guidance with website docs, generated agent-readable exports, and authored plus extracted-package Arashi skill guidance.
 
 #### Scenario: Companion surfaces agree
 - **WHEN** registered coordinated validation runs against current child revisions
-- **THEN** CLI schema/contract, docs, exports, and packaged skills agree on the normalized repository materialization contract
+- **THEN** the generated CLI schema, maintained CLI guidance, website docs/exports, and packaged skills agree on the normalized repository materialization contract
 - **AND** validation executes through the stable docs, skills source, skills package, and meta aggregates
+
+#### Scenario: No unnamed semantic artifact is required
+- **WHEN** CLI schema freshness and maintained guidance checks pass
+- **THEN** companion and meta validation consume those registered producers directly
+- **AND** do not require or generate an additional materialization contract file
 
 #### Scenario: Materialization semantic drifts
 - **WHEN** a controlled fixture removes or contradicts one required field, scope, ordering, source, safety, output, fallback, or guidance semantic
