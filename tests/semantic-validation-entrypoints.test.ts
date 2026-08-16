@@ -20,6 +20,7 @@ const registry = [
   "scripts/check-command-contracts.ts",
   "scripts/check-executable-distribution-contracts.ts",
   "scripts/check-hook-contracts.ts",
+  "scripts/check-inline-hook-contracts.ts",
 ];
 const metaInstallStage = "pnpm install --frozen-lockfile";
 const cliInstallStage = "pnpm --dir repos/arashi install --frozen-lockfile";
@@ -311,6 +312,7 @@ describe("meta aggregate modes", () => {
       "scripts/check-command-contracts.ts --skip-focused-checkers",
       "scripts/check-executable-distribution-contracts.ts ",
       "scripts/check-hook-contracts.ts ",
+      "scripts/check-inline-hook-contracts.ts ",
     ]);
   });
 
@@ -354,11 +356,9 @@ describe("meta aggregate modes", () => {
 
     expect(result.status, result.stderr).toBe(0);
     expect(parsed.ok).toBe(true);
-    expect(parsed.diagnostics.map(({ code }) => code)).toEqual([
-      "SENTINEL_0",
-      "SENTINEL_1",
-      "SENTINEL_2",
-    ]);
+    expect(parsed.diagnostics.map(({ code }) => code)).toEqual(
+      registry.map((_, index) => `SENTINEL_${index}`),
+    );
     expect(result.stdout).not.toContain("Contract checker registration passed");
     expect(result.stdout).not.toContain("== Contract checker:");
   });
