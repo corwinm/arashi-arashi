@@ -41,8 +41,8 @@
 
 ## 6. Review and deliver child repositories
 
-- [ ] 6.1 Before each child commit, review the exact staged diff against every delta scenario and surrounding producer/consumer, run final focused plus full repository format/lint/typecheck/test/build gates after the last edit, verify unchanged lockfiles and unrelated children, and commit CLI, docs, and skills changes independently.
-- [ ] 6.2 Run independent latest-snapshot spec-compliance and code/content-quality reviews for each changed child, reconcile only concrete approved-contract blockers, rerun affected final gates, and preserve the bounded review cutoff.
+- [x] 6.1 Before each child commit, review the exact staged diff against every delta scenario and surrounding producer/consumer, run final focused plus full repository format/lint/typecheck/test/build gates after the last edit, verify unchanged lockfiles and unrelated children, and commit CLI, docs, and skills changes independently.
+- [x] 6.2 Run independent latest-snapshot spec-compliance and code/content-quality reviews for each changed child, reconcile only concrete approved-contract blockers, rerun affected final gates, and preserve the bounded review cutoff.
 - [ ] 6.3 Push the CLI, docs, and skills child branches normally, open cross-linked PRs that track issue #290 without closing it, verify exact-head CI including native Windows and package/release plus authored/extracted-skill matrices, and merge green child PRs before the meta proposal PR.
 
 ## 7. Verify the published release and prepare archive
