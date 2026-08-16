@@ -78,7 +78,7 @@ async function fixture(): Promise<string> {
     "repos/arashi/contracts/executable-distribution.json": `${JSON.stringify(contract, null, 2)}\n`,
     "repos/arashi/package.json": `${JSON.stringify({ bin: { arashi: "./bin/arashi.js", aw: "./bin/arashi.js" }, scripts: { "release:verify-aw": "node scripts/release/verify-aw.ts" } })}\n`,
     "repos/arashi/.github/workflows/verify-aw-release.yml":
-      'on:\n  workflow_dispatch:\n    inputs:\n      version:\n        required: true\njobs:\n  verify-aw-posix:\n    runs-on: ubuntu-latest\n    steps:\n      - run: pnpm release:verify-aw -- "${{ inputs.version }}"\n  verify-aw-windows:\n    runs-on: windows-latest\n    env:\n      VERIFY_VERSION: ${{ inputs.version }}\n    steps:\n      - run: pnpm release:verify-aw -- "$env:VERIFY_VERSION"\n      - run: powershell.exe -NoProfile -Command arashi --version\n      - run: cmd.exe /d /s /c aw --version\n      - run: bash.exe --noprofile --norc -c \'aw --version\'\n',
+      'on:\n  workflow_dispatch:\n    inputs:\n      version:\n        required: true\njobs:\n  verify-aw-posix:\n    runs-on: ubuntu-latest\n    steps:\n      - env:\n          VERIFY_VERSION: ${{ inputs.version }}\n        run: pnpm release:verify-aw -- "$VERIFY_VERSION"\n  verify-aw-windows:\n    runs-on: windows-latest\n    env:\n      VERIFY_VERSION: ${{ inputs.version }}\n    steps:\n      - run: pnpm release:verify-aw -- "$env:VERIFY_VERSION"\n      - run: powershell.exe -NoProfile -Command arashi --version\n      - run: cmd.exe /d /s /c aw --version\n      - run: bash.exe --noprofile --norc -c \'aw --version\'\n',
     "repos/arashi/contracts/cli-commands.json": `${JSON.stringify({ schemaVersion: 1, aliasPaths: [], commands: [{ path: "status", aliases: [] }] })}\n`,
     "repos/arashi-vscode/contracts/command-policy.json": `${JSON.stringify({ commands: ["arashi.status"], executableAliases: [] })}\n`,
     "repos/arashi-docs/docs/index.mdx": landingDocs,
@@ -268,7 +268,7 @@ describe("executable distribution contracts", () => {
   });
 
   test.each([
-    ["POSIX", 'pnpm release:verify-aw -- "${{ inputs.version }}"'],
+    ["POSIX", 'pnpm release:verify-aw -- "$VERIFY_VERSION"'],
     ["Windows", 'pnpm release:verify-aw -- "$env:VERIFY_VERSION"'],
   ])(
     "rejects a %s release command disconnected from the dispatched exact version",
@@ -287,6 +287,21 @@ describe("executable distribution contracts", () => {
       );
     },
   );
+
+  test("rejects a POSIX verifier environment disconnected from the dispatched exact version", async () => {
+    const root = await fixture();
+    const path = "repos/arashi/.github/workflows/verify-aw-release.yml";
+    const workflow = await readFile(join(root, path), "utf8");
+    await writeFile(
+      join(root, path),
+      workflow.replace("VERIFY_VERSION: ${{ inputs.version }}", "VERIFY_VERSION: 1.2.3"),
+    );
+    expect(
+      (await checkExecutableDistributionContracts(root)).diagnostics,
+    ).toContainEqual(
+      expect.objectContaining({ code: "EXECUTABLE_RELEASE_GATE_MISMATCH" }),
+    );
+  });
 
   test("rejects a canonical-identity contradiction even when positive tokens remain", async () => {
     const root = await fixture();
