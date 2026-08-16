@@ -493,11 +493,11 @@ export async function checkExecutableDistributionContracts(
   ] as const;
   for (const [source, code] of [
     [
-      "repos/arashi-skills/skills/arashi/references/tutorial.md",
+      "repos/arashi-skills/skills/arashi/references/commands/setup.md",
       "EXECUTABLE_AUTHORED_SKILL_MISMATCH",
     ],
     [
-      "package-check/skills/arashi/references/tutorial.md",
+      "package-check/skills/arashi/references/commands/setup.md",
       "EXECUTABLE_PACKAGED_SKILL_MISMATCH",
     ],
   ] as const) {

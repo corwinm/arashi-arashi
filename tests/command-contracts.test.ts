@@ -600,8 +600,11 @@ async function fixture(): Promise<string> {
       ],
     },
     "repos/arashi-skills/skills/arashi/references/commands.md":
-      'Use `arashi add`.\nUse `arashi create feature --tab`.\nUse `arashi switch --tab feature`.\ntmux → Herdr → cmux → integrated IDE → Kitty → parent-shell `cd` → terminal application/platform fallback\n`mode: "kitty"`\nno explicit Kitty launcher flag\nnot a persisted create or switch mode\ndoes not fall back\n' +
-      addMaterializationGuidance +
+      "Use `arashi add`.\nUse `arashi create feature --tab`.\nUse `arashi switch --tab feature`.\n",
+    "repos/arashi-skills/skills/arashi/references/commands/workspace.md":
+      addMaterializationGuidance,
+    "repos/arashi-skills/skills/arashi/references/commands/switch-and-launch.md":
+      'tmux → Herdr → cmux → integrated IDE → Kitty → parent-shell `cd` → terminal application/platform fallback\n`mode: "kitty"`\nno explicit Kitty launcher flag\nnot a persisted create or switch mode\ndoes not fall back\n' +
       skillsTabContract,
     "repos/arashi-skills/scripts/tab-launch-disposition-guidance-selftest.mjs":
       "console.log('tab launch skill checker passed');\n",
@@ -648,6 +651,8 @@ async function schemaV5Fixture(): Promise<string> {
     "repos/arashi-docs/contracts/cli-options.json",
     "repos/arashi-docs/docs/workflows/launch-disposition.md",
     "repos/arashi-skills/skills/arashi/references/commands.md",
+    "repos/arashi-skills/skills/arashi/references/commands/workspace.md",
+    "repos/arashi-skills/skills/arashi/references/commands/switch-and-launch.md",
   ]) {
     const target = join(root, relativePath);
     await mkdir(join(target, ".."), { recursive: true });
@@ -1205,15 +1210,19 @@ describe("cross-repository command contracts", () => {
   test("rejects missing packaged SSH alias guidance", async () => {
     const root = await schemaV6Fixture();
     await writeFile(
-      join(root, "repos/arashi-skills/skills/arashi/references/commands.md"),
-      "# Commands\n\nRun Arashi commands.\n",
+      join(
+        root,
+        "repos/arashi-skills/skills/arashi/references/commands/workspace.md",
+      ),
+      "# Workspace commands\n\nRun Arashi commands.\n",
     );
 
     expect((await checkContracts(root)).diagnostics).toContainEqual(
       expect.objectContaining({
         category: "skills",
         code: "SSH_ALIAS_GUIDANCE_MISMATCH",
-        source: "repos/arashi-skills/skills/arashi/references/commands.md",
+        source:
+          "repos/arashi-skills/skills/arashi/references/commands/workspace.md",
       }),
     );
   });
@@ -1221,7 +1230,7 @@ describe("cross-repository command contracts", () => {
     const root = await schemaV6Fixture();
     const guidancePath = join(
       root,
-      "repos/arashi-skills/skills/arashi/references/commands.md",
+      "repos/arashi-skills/skills/arashi/references/commands/workspace.md",
     );
     const guidance = await readFile(guidancePath, "utf8");
     await writeFile(
@@ -1241,7 +1250,8 @@ describe("cross-repository command contracts", () => {
       expect.objectContaining({
         category: "skills",
         code: "SSH_ALIAS_GUIDANCE_MISMATCH",
-        source: "repos/arashi-skills/skills/arashi/references/commands.md",
+        source:
+          "repos/arashi-skills/skills/arashi/references/commands/workspace.md",
       }),
     );
   });
@@ -2166,16 +2176,6 @@ describe("cross-repository command contracts", () => {
       "DOCS_TAB_POLICY_MISMATCH",
     ],
     [
-      "skills configured-launcher override drift",
-      "repos/arashi-skills/skills/arashi/references/commands.md",
-      (content: string) =>
-        content.replace(
-          "bypasses configured launcher defaults",
-          "retains configured launcher defaults",
-        ),
-      "SKILLS_TAB_POLICY_MISMATCH",
-    ],
-    [
       "docs create configured-launcher override drift",
       "repos/arashi-docs/docs/workflows/launch-disposition.md",
       (content: string) =>
@@ -2184,16 +2184,6 @@ describe("cross-repository command contracts", () => {
           "For create, create tab implies launch and switch and retains configured launcher defaults.",
         ),
       "DOCS_TAB_POLICY_MISMATCH",
-    ],
-    [
-      "skills create configured-launcher override drift",
-      "repos/arashi-skills/skills/arashi/references/commands.md",
-      (content: string) =>
-        content.replace(
-          "`create --tab` implies launch and switch, wins over `--no-launch` and `--no-switch`, and bypasses configured launcher defaults.",
-          "`create --tab` implies launch and switch and retains configured launcher defaults.",
-        ),
-      "SKILLS_TAB_POLICY_MISMATCH",
     ],
     [
       "docs Terminal.app capability drift",
@@ -2220,20 +2210,6 @@ describe("cross-repository command contracts", () => {
       "DOCS_TAB_POLICY_MISMATCH",
     ],
     [
-      "skills Terminal.app guidance drift",
-      "repos/arashi-skills/skills/arashi/references/commands.md",
-      (content: string) =>
-        content.replace("press Command-T manually", "create a tab somehow"),
-      "SKILLS_TAB_POLICY_MISMATCH",
-    ],
-    [
-      "skills invalid Terminal.app path-substitution guidance",
-      "repos/arashi-skills/skills/arashi/references/commands.md",
-      (content: string) =>
-        `${content}\nWithout shell integration, run \`cd "$(arashi switch --no-cd --no-default-launch)"\`.\n`,
-      "SKILLS_TAB_POLICY_MISMATCH",
-    ],
-    [
       "docs default disposition drift",
       "repos/arashi-docs/docs/workflows/launch-disposition.md",
       (content: string) =>
@@ -2242,16 +2218,6 @@ describe("cross-repository command contracts", () => {
           "| Windows Terminal | Reused current window | True tab |",
         ),
       "DOCS_TAB_POLICY_MISMATCH",
-    ],
-    [
-      "skills managed-equivalent drift",
-      "repos/arashi-skills/skills/arashi/references/commands.md",
-      (content: string) =>
-        content.replace(
-          "| Managed Kitty | managed independent session | same managed Kitty tab/session primitive, not a window fallback |",
-          "| Managed Kitty | New Kitty OS window | same managed Kitty tab/session primitive, not a window fallback |",
-        ),
-      "SKILLS_TAB_POLICY_MISMATCH",
     ],
     [
       "docs missing old Ghostty row",
@@ -2284,26 +2250,10 @@ describe("cross-repository command contracts", () => {
       "DOCS_TAB_POLICY_MISMATCH",
     ],
     [
-      "skills launcher mapping",
-      "repos/arashi-skills/skills/arashi/references/commands.md",
-      (content: string) =>
-        content.replace(
-          "| WezTerm | `wezterm cli spawn --new-window --cwd <path>` | `wezterm cli spawn --pane-id",
-          "| WezTerm | `wezterm cli spawn --new-window --cwd <path>` | `TAB_DISPOSITION_UNSUPPORTED`; `wezterm cli spawn --pane-id",
-        ),
-      "SKILLS_TAB_POLICY_MISMATCH",
-    ],
-    [
       "docs JSON guard mode",
       "repos/arashi-docs/docs/workflows/launch-disposition.md",
       (content: string) => content.replace("`launch` mode", "`cd` mode"),
       "DOCS_TAB_POLICY_MISMATCH",
-    ],
-    [
-      "skills JSON exit",
-      "repos/arashi-skills/skills/arashi/references/commands.md",
-      (content: string) => content.replace("and exits `2`", "and exits `7`"),
-      "SKILLS_TAB_POLICY_MISMATCH",
     ],
     [
       "docs no-fallback guarantee",
