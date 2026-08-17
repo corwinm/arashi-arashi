@@ -72,12 +72,12 @@
 - [x] 10.2 Implement the coordinated materialization semantic checker and prove fail-closed registration, stable aggregate reachability, controlled mismatch detection, and unchanged real worktrees
 - [x] 10.3 Run the complete local coordinated validation path once against final child heads and record exact revisions/results
 - [x] 10.4 Update every related PR body with the complete sibling set; verify child heads, files, closing-keyword ownership, checks, review surfaces, and unresolved threads
-- [ ] 10.5 After approved child PRs are green and reviewed, merge CLI first, then docs and skills companions; verify reviewed surfaces on each child `main` and delete remote child branches
+- [x] 10.5 After approved child PRs are green and reviewed, merge CLI first, then docs and skills companions; verify reviewed surfaces on each child `main` and delete remote child branches
 
 ## 11. OpenSpec archive and final closeout
 
-- [ ] 11.1 Reconcile all completed implementation/validation evidence into this checklist and require every pre-archive task above to be checked with live PR/CI evidence
-- [ ] 11.2 Re-run the exact meta head against merged child `main` revisions, validate the change, and run the atomic exact-head checks/review-thread guard
-- [ ] 11.3 Archive `worktree-file-materialization`, inspect and format synced specs, replace generated placeholder purposes if any, and directly validate every touched canonical capability
-- [ ] 11.4 Commit and push archive output, change the meta PR from `Tracks #273` to the sole `Closes #273`, and list archive paths, validation, and merged child PRs
-- [ ] 11.5 Merge the green meta PR last, verify issue #273 closed, synchronize `main`, remove the coordinated worktree, delete any surviving remote feature branches, and verify final clean coordinated status
+- [x] 11.1 Reconcile all completed implementation/validation evidence into this checklist and require every pre-archive task above to be checked with live PR/CI evidence
+- [x] 11.2 Re-run the exact meta head against merged child `main` revisions, validate the change, and run the atomic exact-head checks/review-thread guard
+- [x] 11.3 Archive `worktree-file-materialization`, inspect and format synced specs, replace generated placeholder purposes if any, and directly validate every touched canonical capability
+- [x] 11.4 Commit and push archive output in a focused follow-up meta PR with the sole `Closes #273` linkage; list archive paths, validation, the merged child PRs, and the already-merged proposal/meta PR #296
+- [ ] 11.5 Merge the green follow-up archive PR after all implementation and proposal PRs, verify issue #273 closed, synchronize `main`, remove the coordinated worktree, delete any surviving remote feature branches, and verify final clean coordinated status

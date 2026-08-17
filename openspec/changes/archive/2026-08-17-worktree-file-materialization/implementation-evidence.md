@@ -35,6 +35,14 @@ This table is completed with exact file names, commands, observed RED causes, GR
 - Skills: `d54ff4a360438873ff942188d526ffa3447f0283` — https://github.com/corwinm/arashi-skills/pull/63
 - Proposal/meta: https://github.com/corwinm/arashi-arashi/pull/296
 
+## Merged child revisions and pre-archive validation
+
+- CLI PR #144 was squash-merged first as `d1372c4f3a17f0d65a71e7584bf017b609d366e0`; its remote feature branch was deleted.
+- Website/docs PR #80 was squash-merged second as `7f7fc72369d82f8b93bdc2e2a4d233b48375a88b`; its remote feature branch was deleted.
+- Skills PR #63 was squash-merged third as `c3596d73cb9016fe62d30509b8f84b6c0d940330`; its remote feature branch was deleted.
+- The coordinated contract fixtures passed 39/39 against those three merged `main` revisions, the live checker returned `diagnostics: []`, and strict validation reported `Change 'worktree-file-materialization' is valid`.
+- Meta PR #296 was squash-merged as `d1c60fd6e4099f5c76211f3638659e9b7a815741` before the archive output was committed. Archive output and the sole `Closes #273` linkage are therefore being delivered in a focused follow-up meta PR before final cleanup.
+
 ## Final local validation before child delivery
 
 - CLI final focused materialization/lifecycle slice: 10 files, 125/125 tests passed.
@@ -53,7 +61,7 @@ This table is completed with exact file names, commands, observed RED causes, GR
 
 ## Exact-head CI and review gates
 
-- CLI PR #144 head `6cbf536c56ec3a82c0455cb6df942c8a88756554` is open, mergeable, and clean with zero unresolved review threads. Final local focused validation passed 125/125; the complete local test command, typecheck, changed-file quality, build, schema freshness, and native macOS acceptance passed. Exact-head run `32004433257` passed every Linux/macOS/Windows test, build, validation, installer, hook-input, and native-materialization job; its Ubuntu matrix reported 164 files passed, 2 skipped, with 2,226 tests passed and 16 skipped.
-- Docs PR #80 head `ccb87336257f429734ce711c90325a010f05684b` is open, mergeable, and clean with zero unresolved review threads. Complete local validation and final bounded reviews passed; exact-head run `32001777954` passed.
-- Skills PR #63 head `d54ff4a360438873ff942188d526ffa3447f0283` is open, mergeable, and clean with zero unresolved review threads; source/extracted aggregates and the package security gate passed.
-- Proposal/meta PR #296 is open, mergeable, and clean remotely with zero unresolved review threads before this evidence refresh. All four PR bodies contain the complete sibling set, retain non-closing `Tracks` linkage to issue #273, and contain no closing keyword. No child or proposal PR was merged.
+- CLI PR #144 passed its exact-head gate at `6cbf536c56ec3a82c0455cb6df942c8a88756554` with zero unresolved review threads. Final local focused validation passed 125/125; the complete local test command, typecheck, changed-file quality, build, schema freshness, and native macOS acceptance passed. Exact-head run `32004433257` passed every Linux/macOS/Windows test, build, validation, installer, hook-input, and native-materialization job; its Ubuntu matrix reported 164 files passed, 2 skipped, with 2,226 tests passed and 16 skipped. It was squash-merged first as `d1372c4f3a17f0d65a71e7584bf017b609d366e0` and its remote feature branch was deleted.
+- Docs PR #80 passed its exact-head gate at `ccb87336257f429734ce711c90325a010f05684b` with zero unresolved review threads; complete local validation, final bounded reviews, and exact-head run `32001777954` passed. It was squash-merged second as `7f7fc72369d82f8b93bdc2e2a4d233b48375a88b` and its remote feature branch was deleted.
+- Skills PR #63 passed its exact-head gate at `d54ff4a360438873ff942188d526ffa3447f0283` with zero unresolved review threads; source/extracted aggregates and the package security gate passed. It was squash-merged third as `c3596d73cb9016fe62d30509b8f84b6c0d940330` and its remote feature branch was deleted.
+- Proposal/meta PR #296 passed its exact-head contract gate at `fb34156f2716f1bb4819933fb4e95edc497344f3` with zero unresolved review threads. It was then squash-merged as `d1c60fd6e4099f5c76211f3638659e9b7a815741` before the archive output was committed, and its remote feature branch was deleted. Its non-closing `Tracks #273` linkage did not close the issue; the focused archive follow-up PR owns the sole `Closes #273` linkage.

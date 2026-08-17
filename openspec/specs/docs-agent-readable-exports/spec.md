@@ -3,9 +3,7 @@
 ## Purpose
 
 Define the machine-readable documentation exports that help coding agents discover, fetch, and use Arashi documentation without scraping the full HTML site.
-
 ## Requirements
-
 ### Requirement: Docs SHALL publish a curated LLM entrypoint
 
 The docs site SHALL expose `/llms.txt` as a concise Markdown-oriented entrypoint for coding agents that summarizes Arashi and points to the highest-value docs pages and exports.
@@ -127,3 +125,19 @@ Generated Markdown routes, `/llms.txt`, and `/llms-full.txt` SHALL identify `aw`
 
 - **WHEN** authored documentation changes alias naming, canonical identity, installation channel, shell behavior, or manual payload requirements without regenerating exports
 - **THEN** docs validation reports the stale generated route or export and exits unsuccessfully
+
+### Requirement: Agent-readable exports include repository materialization guidance
+Canonical website generation SHALL include repository worktree materialization guidance in agent-readable Markdown exports and `/llms.txt` discovery using the same field names, configured-only scope, source ownership, lifecycle ordering, safety, output, and copy-versus-symlink recommendations as maintained user documentation.
+
+#### Scenario: Agent discovers materialization guidance
+- **WHEN** an automation consumer follows `/llms.txt` or a canonical Markdown route for configuration/create guidance
+- **THEN** it can discover direct `repos.<name>.copy` and `repos.<name>.symlink` arrays and their same-relative-path behavior
+- **AND** it receives canonical safety and lifecycle guidance rather than generated implementation details
+
+#### Scenario: Generated export is stale
+- **WHEN** maintained materialization guidance changes without regenerating agent-readable output
+- **THEN** docs freshness or semantic validation fails before publication
+
+#### Scenario: Export invents unsupported behavior
+- **WHEN** a generated or authored agent surface claims globs, remapping, external sources, implicit fallback, or standalone support
+- **THEN** registered docs semantic validation identifies the contradiction and exits unsuccessfully
