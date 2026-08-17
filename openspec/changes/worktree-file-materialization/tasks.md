@@ -42,7 +42,7 @@
 
 - [x] 6.1 Add failing human/JSON doctor tests for the exact materialization code/severity/category/scope/detail/suggested-command and exit-status contract across Git-primary source checkout availability, optional missing sources, collisions, destination containment, provable copy destination missing/kind mismatch, copy ownership/freshness non-claims, exact healthy links, broken/misdirected links, unavailable/unknown capability evidence, and standalone exclusion
 - [x] 6.2 Implement shared non-mutating doctor diagnostics without reading/hashing contents, executing hooks, repairing state, or creating capability probes
-- [ ] 6.3 Run the already-wired native built-CLI materialization acceptance on macOS/Linux/Windows for aliases/case collisions, files/directories, spaces/metacharacters, nested parents, missing/conflicting/cyclic sources, source/destination link escapes, symlink availability, lifecycle order, dry-run, JSON, multi-repository rollback, and removal target safety
+- [x] 6.3 Run the already-wired native built-CLI materialization acceptance on macOS/Linux/Windows for aliases/case collisions, files/directories, spaces/metacharacters, nested parents, missing/conflicting/cyclic sources, source/destination link escapes, symlink availability, lifecycle order, dry-run, JSON, multi-repository rollback, and removal target safety
 - [x] 6.4 Run focused doctor tests, CLI lint/type/build gates, the complete CLI test suite, and CI workflow-reachability self-tests after the final CLI edit
 - [x] 6.5 Perform a read-only staged CLI diff review against every approved requirement, reconcile concrete findings, commit, push, and open the CLI child PR with non-closing issue linkage
 
@@ -71,7 +71,7 @@
 - [x] 10.1 Add/register meta contract RED fixtures consuming the generated CLI schema as the sole machine-readable field producer and comparing it plus maintained CLI guidance with website docs/exports and authored/extracted skills guidance, without a second contract artifact or feature-specific workflow steps
 - [x] 10.2 Implement the coordinated materialization semantic checker and prove fail-closed registration, stable aggregate reachability, controlled mismatch detection, and unchanged real worktrees
 - [x] 10.3 Run the complete local coordinated validation path once against final child heads and record exact revisions/results
-- [ ] 10.4 Update every related PR body with the complete sibling set; verify child heads, files, closing-keyword ownership, checks, review surfaces, and unresolved threads
+- [x] 10.4 Update every related PR body with the complete sibling set; verify child heads, files, closing-keyword ownership, checks, review surfaces, and unresolved threads
 - [ ] 10.5 After approved child PRs are green and reviewed, merge CLI first, then docs and skills companions; verify reviewed surfaces on each child `main` and delete remote child branches
 
 ## 11. OpenSpec archive and final closeout
