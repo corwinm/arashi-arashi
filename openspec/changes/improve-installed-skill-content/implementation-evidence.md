@@ -99,12 +99,12 @@ Cross-links may summarize a boundary but must route detailed syntax, precedence,
 Measured after the final authored-source and extracted-package validation.
 
 - Installed files: 16
-- Installed characters: 98,062
-- Installed lines: 1,501
-- Character reduction: 34,776 (26.18%) from 132,838
+- Installed characters: 98,504
+- Installed lines: 1,523
+- Character reduction: 34,334 (25.85%) from 132,838
 - `SKILL.md`: 4,642 characters / 76 lines
 - `references/commands.md`: 2,703 characters / 28 lines
-- The canonical archive extracted to the same 16 files and 98,062 characters.
+- The canonical archive extracted to the same 16 files and 98,504 characters.
 
 ### Representative final task-context loads
 
@@ -112,7 +112,7 @@ Command-family routes include `SKILL.md`, the compact command router, and one fo
 
 | Task route | Characters loaded |
 | --- | ---: |
-| Setup/update/completion | 12,143 |
+| Setup/update/completion | 12,508 |
 | Remove/maintenance | 9,660 |
 | Tutorial | 8,198 |
 | Workflows | 10,690 |
@@ -149,7 +149,7 @@ The production archive command created and verified a 28-member canonical releas
 - all six focused command leaves were present;
 - `skills/arashi/references/publication.md` was absent;
 - repository-level `docs/publication.md` was outside the artifact;
-- extraction produced 16 installed files and 98,062 characters;
+- extraction produced 16 installed files and 98,504 characters;
 - `node repos/arashi-skills/scripts/validate-guidance.mjs --skill-root package-check/skills/arashi` passed all 15/15 package-capable checkers.
 
 ### Coordinated meta contracts
@@ -170,6 +170,16 @@ The independent review found three concrete blockers. Each was encoded as RED be
 - zero-config recovery now states that init appends the literal `.worktrees/` repository-local exclude rule rather than an exact destination;
 - `setup` and `list` coverage owners now contain actionable command guidance, and the coverage checker verifies both owners;
 - installed guidance rejects URL-form issue/PR examples and numeric `gh pr checks`/`view` examples; handoff examples now use caller-supplied placeholders.
+
+### Verified Codex PR feedback
+
+Codex GitHub App review of child commit `75f4cce95065189a1b734df87504619a16e09c78` produced three concrete findings. Follow-up child commit `be0f89fc8fc57af12cf37336b0e9f6ba0aeb4abc` addresses all three with RED-first regression assertions:
+
+- copyable inline-hook JSON now uses only supported interpreter keys, and validation rejects unknown keys;
+- setup guidance now includes independent Bash, Zsh, and Fish wrapper/completion activation commands;
+- standalone workflow guidance now describes the directory-wide literal `.worktrees/` exclude rule and rejects exact-destination bootstrap wording.
+
+All source, canonical extracted-package, security, coordinated-contract, test, and typecheck gates were rerun after the corrections. The three review threads were answered with the verified commit and resolved.
 
 ### Semantic reconciliation
 
