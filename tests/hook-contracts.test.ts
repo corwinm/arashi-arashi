@@ -381,6 +381,20 @@ path: meta/repos/arashi-vscode
     },
   );
 
+  test("accepts safe cmd choice guidance as native shell coverage", async () => {
+    const source = "repos/arashi-skills/skills/arashi/references/hooks.md";
+    const root = await fixture({
+      [source]: files[source].replace("cmd set /p", "cmd choice /c"),
+    });
+    const result = await checkHookContracts(root);
+    expect(result.diagnostics).not.toContainEqual(
+      expect.objectContaining({
+        code: "HOOK_INPUT_NATIVE_GUIDANCE_MISSING",
+        source,
+      }),
+    );
+  });
+
   test("rejects guidance without native shell coverage", async () => {
     const source = "repos/arashi-docs/docs/workflows/hooks.md";
     const root = await fixture({
