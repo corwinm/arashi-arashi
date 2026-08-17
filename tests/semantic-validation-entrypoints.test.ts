@@ -21,6 +21,7 @@ const registry = [
   "scripts/check-executable-distribution-contracts.ts",
   "scripts/check-hook-contracts.ts",
   "scripts/check-inline-hook-contracts.ts",
+  "scripts/check-worktree-materialization-contracts.ts",
 ];
 const metaInstallStage = "pnpm install --frozen-lockfile";
 const cliInstallStage = "pnpm --dir repos/arashi install --frozen-lockfile";
@@ -313,6 +314,7 @@ describe("meta aggregate modes", () => {
       "scripts/check-executable-distribution-contracts.ts ",
       "scripts/check-hook-contracts.ts ",
       "scripts/check-inline-hook-contracts.ts ",
+      "scripts/check-worktree-materialization-contracts.ts ",
     ]);
   });
 
