@@ -62,7 +62,6 @@ const paths = {
     "repos/arashi-skills/contracts/create-base-branch.json",
   skillsCreateBaseCheck:
     "repos/arashi-skills/scripts/create-base-guidance-selftest.mjs",
-  skillsTabPolicy: "repos/arashi-skills/skills/arashi/references/commands.md",
 } as const;
 const docsAggregate = "pnpm --dir repos/arashi-docs validate:semantic-docs";
 const skillsSourceAggregate =
@@ -269,7 +268,8 @@ const kittyGuidanceRequirements: Array<{
   },
   {
     category: "skills",
-    source: "repos/arashi-skills/skills/arashi/references/commands.md",
+    source:
+      "repos/arashi-skills/skills/arashi/references/commands/switch-and-launch.md",
     phrases: [
       "tmux → Herdr → cmux → integrated IDE → Kitty → parent-shell `cd` → terminal application/platform fallback",
       '`mode: "kitty"`',
@@ -370,7 +370,8 @@ const addMaterializationGuidanceRequirements: Array<{
   },
   {
     category: "skills",
-    source: "repos/arashi-skills/skills/arashi/references/commands.md",
+    source:
+      "repos/arashi-skills/skills/arashi/references/commands/workspace.md",
     phrases: [
       "canonical clone",
       "child default branch",
@@ -1974,7 +1975,8 @@ async function checkSshAliasDirectGuidance(
     },
     {
       category: "skills",
-      source: "repos/arashi-skills/skills/arashi/references/commands.md",
+      source:
+        "repos/arashi-skills/skills/arashi/references/commands/workspace.md",
       phrases: [
         "SSH Remote Aliases for Add and Clone",
         "arashi add work-github:acme/api.git",
@@ -2301,31 +2303,6 @@ const companionProjection = (
     };
   }
 
-  if (kind === "skills") {
-    const envelopes = [
-      ...scoped.matchAll(/```json\s*\n([\s\S]*?)\n```/g),
-    ].flatMap((match) => {
-      try {
-        return [JSON.parse(match[1]) as unknown];
-      } catch {
-        return [];
-      }
-    });
-    for (const command of ["create", "switch"] as const) {
-      const envelope = envelopes.find(
-        (value) => object(value) && value.command === command,
-      );
-      if (
-        !object(envelope) ||
-        !object(envelope.error) ||
-        !object(envelope.error.details) ||
-        envelope.error.code !== "JSON_UNSUPPORTED_FOR_MODE" ||
-        envelope.error.details.mode !== commands[command].mode
-      )
-        return undefined;
-    }
-  }
-
   return {
     commands,
     cliOnly:
@@ -2425,11 +2402,6 @@ async function checkTabCompanionSemantics(
       category: "docs",
       code: "DOCS_TAB_POLICY_MISMATCH",
       source: paths.docsTabPolicy,
-    },
-    {
-      category: "skills",
-      code: "SKILLS_TAB_POLICY_MISMATCH",
-      source: paths.skillsTabPolicy,
     },
   ];
   const terminalGuidance = [

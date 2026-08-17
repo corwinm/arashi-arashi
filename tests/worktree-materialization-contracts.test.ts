@@ -58,9 +58,9 @@ const groups = {
     ],
   },
   skills: {
-    primary: "repos/arashi-skills/skills/arashi/references/commands.md",
+    primary: "repos/arashi-skills/skills/arashi/references/commands/create.md",
     sources: [
-      "repos/arashi-skills/skills/arashi/references/commands.md",
+      "repos/arashi-skills/skills/arashi/references/commands/create.md",
       "repos/arashi-skills/skills/arashi/references/workflows.md",
       "repos/arashi-skills/skills/arashi/references/hooks.md",
     ],
@@ -221,7 +221,7 @@ describe("worktree materialization coordinated contract", () => {
 
   test("fails closed when canonical packaged guidance is a symlink", async () => {
     const root = await fixture();
-    const commands = join(root, "repos/arashi-skills/skills/arashi/references/commands.md");
+    const commands = join(root, "repos/arashi-skills/skills/arashi/references/commands/create.md");
     const outside = join(root, "outside-guidance.md");
     await write(outside, guidance);
     await rm(commands);

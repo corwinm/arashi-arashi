@@ -94,9 +94,9 @@ async function fixture(): Promise<string> {
     "repos/arashi-docs/public/commands/update.md": updateDocs,
     "repos/arashi-docs/public/llms.txt": `\`aw\` is a shorter alias for \`arashi\`. See Getting started.\n`,
     "repos/arashi-docs/public/llms-full.txt": docs,
-    "repos/arashi-skills/skills/arashi/references/tutorial.md": skills,
+    "repos/arashi-skills/skills/arashi/references/commands/setup.md": skills,
     "repos/arashi-skills/skills/arashi/README.md": skills,
-    "package-check/skills/arashi/references/tutorial.md": skills,
+    "package-check/skills/arashi/references/commands/setup.md": skills,
     "package-check/skills/arashi/README.md": skills,
   };
   for (const [path, content] of Object.entries(files)) {
@@ -331,7 +331,7 @@ describe("executable distribution contracts", () => {
     ).toContainEqual(
       expect.objectContaining({
         code: "EXECUTABLE_PACKAGED_SKILL_MISMATCH",
-        source: "package-check/skills/arashi/references/tutorial.md",
+        source: "package-check/skills/arashi/references/commands/setup.md",
       }),
     );
   });
@@ -399,9 +399,12 @@ describe("executable distribution contracts", () => {
     ["llms full export", "repos/arashi-docs/public/llms-full.txt"],
     [
       "authored skill",
-      "repos/arashi-skills/skills/arashi/references/tutorial.md",
+      "repos/arashi-skills/skills/arashi/references/commands/setup.md",
     ],
-    ["packaged skill", "package-check/skills/arashi/references/tutorial.md"],
+    [
+      "packaged skill",
+      "package-check/skills/arashi/references/commands/setup.md",
+    ],
   ])("rejects missing alias semantics in %s", async (_label, path) => {
     const root = await fixture();
     await writeFile(join(root, path), "arashi only\n");

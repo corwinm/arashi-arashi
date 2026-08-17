@@ -42,7 +42,7 @@ const guidanceGroups = [
     category: "skills",
     source: "repos/arashi-skills/skills/arashi/references",
     sources: [
-      "repos/arashi-skills/skills/arashi/references/commands.md",
+      "repos/arashi-skills/skills/arashi/references/commands/create.md",
       "repos/arashi-skills/skills/arashi/references/workflows.md",
       "repos/arashi-skills/skills/arashi/references/hooks.md",
     ],
@@ -226,7 +226,7 @@ async function readPackagedSkillGuidance(root: string): Promise<string> {
       throw new Error("canonical skills archive extraction failed");
     }
     const packagedSources = [
-      "skills/arashi/references/commands.md",
+      "skills/arashi/references/commands/create.md",
       "skills/arashi/references/workflows.md",
       "skills/arashi/references/hooks.md",
     ];
