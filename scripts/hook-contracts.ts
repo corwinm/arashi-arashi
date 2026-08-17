@@ -709,14 +709,15 @@ export async function checkHookContracts(
         !lower.includes("powershell") ||
         !lower.includes("read-host") ||
         !lower.includes("cmd") ||
-        !lower.includes("set /p")
+        (!lower.includes("set /p") &&
+          !/\bchoice(?:\.exe)?\s+\/c\b/i.test(content))
       ) {
         addDiagnostic(
           diagnostics,
           surface.category,
           "HOOK_INPUT_NATIVE_GUIDANCE_MISSING",
           surface.source,
-          "Guidance must cover native Bash read, PowerShell Read-Host, and cmd set /p.",
+          "Guidance must cover native Bash read, PowerShell Read-Host, and cmd set /p or choice /c.",
         );
       }
       if (
