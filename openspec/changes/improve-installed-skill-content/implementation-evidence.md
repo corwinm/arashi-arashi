@@ -99,12 +99,12 @@ Cross-links may summarize a boundary but must route detailed syntax, precedence,
 Measured after the final authored-source and extracted-package validation.
 
 - Installed files: 16
-- Installed characters: 99,361
-- Installed lines: 1,529
-- Character reduction: 33,477 (25.20%) from 132,838
-- `SKILL.md`: 4,770 characters / 77 lines
-- `references/commands.md`: 2,703 characters / 28 lines
-- The canonical archive extracted to the same 16 files and 99,361 characters.
+- Installed characters: 106,475
+- Installed lines: 1,577
+- Character reduction: 26,363 (19.85%) from 132,838
+- `SKILL.md`: 4,770 characters / 76 lines
+- `references/commands.md`: 2,951 characters / 27 lines
+- The canonical archive extracted to the same 16 files and 106,475 characters.
 
 ### Representative final task-context loads
 
@@ -112,18 +112,18 @@ Command-family routes include `SKILL.md`, the compact command router, and one fo
 
 | Task route | Characters loaded |
 | --- | ---: |
-| Setup/update/completion | 12,636 |
-| Remove/maintenance | 9,788 |
+| Setup/update/completion | 12,899 |
+| Remove/maintenance | 10,036 |
 | Tutorial | 8,537 |
-| Workflows | 11,070 |
-| Hooks | 13,189 |
-| Troubleshooting | 12,967 |
+| Workflows | 11,477 |
+| Hooks | 16,280 |
+| Troubleshooting | 13,895 |
 | Session shortcuts | 7,507 |
-| Prerequisites | 7,091 |
-| Create | 15,743 |
-| Automation/coordinated execution | 17,309 |
-| Workspace/repository management | 22,628 |
-| Switch/launch | 24,548 |
+| Prerequisites | 7,229 |
+| Create | 18,046 |
+| Automation/coordinated execution | 17,640 |
+| Workspace/repository management | 22,876 |
+| Switch/launch | 24,796 |
 
 The common narrow routes are approximately 7–13 KB. The broader workspace and launcher leaves remain larger because they own retained topology, precedence, refusal, platform, and recovery semantics rather than duplicating them across every workflow.
 
@@ -133,7 +133,7 @@ All successful gates below postdate the final installed-content edit.
 
 ### Authored source and checker architecture
 
-- `node scripts/validate-guidance.mjs`: PASS, 15/15 registered checkers completed.
+- `node scripts/validate-guidance.mjs`: PASS, 16/16 registered checkers completed.
 - `node scripts/guidance-registration-selftest.mjs`: PASS.
 - `node scripts/guidance-aggregate-selftest.mjs`: PASS, including extracted-only drift rejection.
 - `node scripts/workflow-composition-selftest.mjs`: PASS.
@@ -149,8 +149,8 @@ The production archive command created and verified a 28-member canonical releas
 - all six focused command leaves were present;
 - `skills/arashi/references/publication.md` was absent;
 - repository-level `docs/publication.md` was outside the artifact;
-- extraction produced 16 installed files and 99,361 characters;
-- `node repos/arashi-skills/scripts/validate-guidance.mjs --skill-root package-check/skills/arashi` passed all 15/15 package-capable checkers.
+- extraction produced 16 installed files and 106,475 characters;
+- `node repos/arashi-skills/scripts/validate-guidance.mjs --skill-root package-check/skills/arashi` passed all 16/16 package-capable checkers.
 
 ### Coordinated meta contracts
 
@@ -173,23 +173,24 @@ The independent review found three concrete blockers. Each was encoded as RED be
 
 ### Verified Codex PR feedback
 
-Five exact-head Codex GitHub App review passes produced fourteen concrete findings. Follow-up child commits `be0f89fc8fc57af12cf37336b0e9f6ba0aeb4abc`, `be603238991a9b28e4ca42b2fc1e1d319efb0d9c`, `e87aabb0f610f0e56db372c2174f8be467a1fe37`, `fc41fbd469861ef0639e6909f26d6b3e9c3e95e7`, and `123efa9c9ae84b681764b049e45885cf17d18adf` address them with RED-first regression assertions:
+Repeated authenticated Codex GitHub App review passes produced concrete findings, each independently verified and addressed with RED-first regression assertions. The corrections include:
 
-- copyable inline-hook JSON now uses only supported interpreter keys, and validation rejects unknown keys;
-- setup guidance includes independent Bash, Zsh, and Fish wrapper/completion activation commands;
-- standalone workflow guidance describes the directory-wide literal `.worktrees/` exclude rule and rejects exact-destination bootstrap wording;
-- missing completion activation recovers with `arashi shell install`, never the unrelated `arashi install`;
-- fresh configured workflows initialize before `doctor` and `status`;
-- hook guidance preserves init-generated inert `.example` files while stating that Arashi does not activate them automatically;
-- the tutorial initializes before diagnostics and validates real project worktrees rather than an invented child;
-- the fuzzy picker consumes pipe-friendly list output without `jq`;
-- picker selection and execution remain separate, quoted, and security-gate compliant;
-- the Bash hook prompt exits on EOF and validates an explicit affirmative response;
-- the top-level router selects and initializes a mode before workspace diagnostics;
-- parent-only validation stays project-local while `exec` is conditional on configured children;
-- PowerShell and cmd hook prompts reject empty and negative responses.
+- supported-only inline-hook JSON and fail-closed Bash, PowerShell, and cmd prompt examples;
+- independent shell-completion activation and correct `arashi shell install` recovery;
+- literal `.worktrees/` standalone exclusion and a copyable exact-path `git check-ignore` diagnostic;
+- initialization before diagnostics across the tutorial, workflows, `SKILL.md`, the command router, troubleshooting, and package README;
+- inert init-generated hook examples without claiming automatic activation;
+- real project-worktree tutorial validation and pipe-friendly picker guidance without undeclared `jq`;
+- quoted, separated picker selection and execution;
+- project-local validation for standalone and parent-only workspaces, with `exec` conditional on configured children;
+- plain tmux prerequisites independent from optional sesh integration;
+- standalone ignore checks that resolve and enter the main worktree root before testing the relative destination;
+- completion terminology that distinguishes Arashi-generated shell scripts from shell-builtin completion;
+- complete supported 1.x lifecycle-hook aliases, lossy remove aggregates, and the no-earlier-than-2.0 migration boundary.
 
-All source, canonical extracted-package, security, coordinated-contract, test, and typecheck gates were rerun after each correction pass. All fourteen review threads were answered with their verified commits and resolved.
+The child branch then merged current `main` commit `c3596d7` through signed merge commit `00e3764`. New repository worktree materialization guidance was moved into the refactored `references/commands/create.md` owner rather than restoring the old command monolith; inbound links and the semantic checker were updated with controlled placement, link, and capability-probe drift fixtures. The exact child head `8c67076` is mergeable, has zero unresolved review threads, and passed the pull-request `security-gate` run `32043435304`.
+
+All source, canonical extracted-package, security, coordinated-contract, test, typecheck, and OpenSpec gates were rerun after the final corrections.
 
 ### Semantic reconciliation
 
