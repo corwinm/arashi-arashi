@@ -8,7 +8,7 @@ Measured from clean `repos/arashi-skills` at `2ae32053830b8217d08e325a46173cb13d
 - Files: 11
 - Characters: 132,838
 - Lines: 1,799
-- `SKILL.md`: 6,001 characters / 96 lines
+- `SKILL.md`: 4,770 characters / 77 lines
 - `references/commands.md`: 64,898 characters / 847 lines
 
 ### Installed file sizes
@@ -34,12 +34,12 @@ These figures model the always-loaded entry skill plus one selected reference; t
 | Task route | Characters loaded |
 | --- | ---: |
 | Commands | 70,899 |
-| Workflows | 20,520 |
-| Hooks | 19,676 |
-| Troubleshooting | 19,667 |
-| Tutorial | 13,621 |
-| Session shortcuts | 10,642 |
-| Prerequisites | 8,262 |
+| Workflows | 11,070 |
+| Hooks | 13,189 |
+| Troubleshooting | 12,967 |
+| Tutorial | 8,537 |
+| Session shortcuts | 7,507 |
+| Prerequisites | 7,091 |
 | Publication | 7,944 |
 
 ## Existing checker readers
@@ -99,12 +99,12 @@ Cross-links may summarize a boundary but must route detailed syntax, precedence,
 Measured after the final authored-source and extracted-package validation.
 
 - Installed files: 16
-- Installed characters: 98,987
-- Installed lines: 1,523
-- Character reduction: 33,851 (25.48%) from 132,838
-- `SKILL.md`: 4,642 characters / 76 lines
+- Installed characters: 99,361
+- Installed lines: 1,529
+- Character reduction: 33,477 (25.20%) from 132,838
+- `SKILL.md`: 4,770 characters / 77 lines
 - `references/commands.md`: 2,703 characters / 28 lines
-- The canonical archive extracted to the same 16 files and 98,987 characters.
+- The canonical archive extracted to the same 16 files and 99,361 characters.
 
 ### Representative final task-context loads
 
@@ -112,18 +112,18 @@ Command-family routes include `SKILL.md`, the compact command router, and one fo
 
 | Task route | Characters loaded |
 | --- | ---: |
-| Setup/update/completion | 12,508 |
-| Remove/maintenance | 9,660 |
-| Tutorial | 8,409 |
-| Workflows | 10,817 |
-| Hooks | 12,940 |
-| Troubleshooting | 12,839 |
-| Session shortcuts | 7,379 |
-| Prerequisites | 6,963 |
-| Create | 15,615 |
-| Automation/coordinated execution | 17,181 |
-| Workspace/repository management | 22,500 |
-| Switch/launch | 24,420 |
+| Setup/update/completion | 12,636 |
+| Remove/maintenance | 9,788 |
+| Tutorial | 8,537 |
+| Workflows | 11,070 |
+| Hooks | 13,189 |
+| Troubleshooting | 12,967 |
+| Session shortcuts | 7,507 |
+| Prerequisites | 7,091 |
+| Create | 15,743 |
+| Automation/coordinated execution | 17,309 |
+| Workspace/repository management | 22,628 |
+| Switch/launch | 24,548 |
 
 The common narrow routes are approximately 7–13 KB. The broader workspace and launcher leaves remain larger because they own retained topology, precedence, refusal, platform, and recovery semantics rather than duplicating them across every workflow.
 
@@ -149,7 +149,7 @@ The production archive command created and verified a 28-member canonical releas
 - all six focused command leaves were present;
 - `skills/arashi/references/publication.md` was absent;
 - repository-level `docs/publication.md` was outside the artifact;
-- extraction produced 16 installed files and 98,987 characters;
+- extraction produced 16 installed files and 99,361 characters;
 - `node repos/arashi-skills/scripts/validate-guidance.mjs --skill-root package-check/skills/arashi` passed all 15/15 package-capable checkers.
 
 ### Coordinated meta contracts
@@ -173,7 +173,7 @@ The independent review found three concrete blockers. Each was encoded as RED be
 
 ### Verified Codex PR feedback
 
-Four exact-head Codex GitHub App review passes produced eleven concrete findings. Follow-up child commits `be0f89fc8fc57af12cf37336b0e9f6ba0aeb4abc`, `be603238991a9b28e4ca42b2fc1e1d319efb0d9c`, `e87aabb0f610f0e56db372c2174f8be467a1fe37`, and `fc41fbd469861ef0639e6909f26d6b3e9c3e95e7` address them with RED-first regression assertions:
+Five exact-head Codex GitHub App review passes produced fourteen concrete findings. Follow-up child commits `be0f89fc8fc57af12cf37336b0e9f6ba0aeb4abc`, `be603238991a9b28e4ca42b2fc1e1d319efb0d9c`, `e87aabb0f610f0e56db372c2174f8be467a1fe37`, `fc41fbd469861ef0639e6909f26d6b3e9c3e95e7`, and `123efa9c9ae84b681764b049e45885cf17d18adf` address them with RED-first regression assertions:
 
 - copyable inline-hook JSON now uses only supported interpreter keys, and validation rejects unknown keys;
 - setup guidance includes independent Bash, Zsh, and Fish wrapper/completion activation commands;
@@ -184,9 +184,12 @@ Four exact-head Codex GitHub App review passes produced eleven concrete findings
 - the tutorial initializes before diagnostics and validates real project worktrees rather than an invented child;
 - the fuzzy picker consumes pipe-friendly list output without `jq`;
 - picker selection and execution remain separate, quoted, and security-gate compliant;
-- the Bash hook prompt exits on EOF and validates an explicit affirmative response.
+- the Bash hook prompt exits on EOF and validates an explicit affirmative response;
+- the top-level router selects and initializes a mode before workspace diagnostics;
+- parent-only validation stays project-local while `exec` is conditional on configured children;
+- PowerShell and cmd hook prompts reject empty and negative responses.
 
-All source, canonical extracted-package, security, coordinated-contract, test, and typecheck gates were rerun after each correction pass. All eleven review threads were answered with their verified commits and resolved.
+All source, canonical extracted-package, security, coordinated-contract, test, and typecheck gates were rerun after each correction pass. All fourteen review threads were answered with their verified commits and resolved.
 
 ### Semantic reconciliation
 
