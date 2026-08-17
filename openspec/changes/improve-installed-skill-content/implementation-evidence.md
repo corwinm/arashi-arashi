@@ -99,12 +99,12 @@ Cross-links may summarize a boundary but must route detailed syntax, precedence,
 Measured after the final authored-source and extracted-package validation.
 
 - Installed files: 16
-- Installed characters: 98,565
+- Installed characters: 98,921
 - Installed lines: 1,523
-- Character reduction: 34,273 (25.80%) from 132,838
+- Character reduction: 33,917 (25.53%) from 132,838
 - `SKILL.md`: 4,642 characters / 76 lines
 - `references/commands.md`: 2,703 characters / 28 lines
-- The canonical archive extracted to the same 16 files and 98,565 characters.
+- The canonical archive extracted to the same 16 files and 98,921 characters.
 
 ### Representative final task-context loads
 
@@ -114,11 +114,11 @@ Command-family routes include `SKILL.md`, the compact command router, and one fo
 | --- | ---: |
 | Setup/update/completion | 12,508 |
 | Remove/maintenance | 9,660 |
-| Tutorial | 8,198 |
+| Tutorial | 8,409 |
 | Workflows | 10,817 |
 | Hooks | 12,874 |
 | Troubleshooting | 12,839 |
-| Session shortcuts | 7,234 |
+| Session shortcuts | 7,379 |
 | Prerequisites | 6,963 |
 | Create | 15,615 |
 | Automation/coordinated execution | 17,181 |
@@ -149,7 +149,7 @@ The production archive command created and verified a 28-member canonical releas
 - all six focused command leaves were present;
 - `skills/arashi/references/publication.md` was absent;
 - repository-level `docs/publication.md` was outside the artifact;
-- extraction produced 16 installed files and 98,565 characters;
+- extraction produced 16 installed files and 98,921 characters;
 - `node repos/arashi-skills/scripts/validate-guidance.mjs --skill-root package-check/skills/arashi` passed all 15/15 package-capable checkers.
 
 ### Coordinated meta contracts
@@ -173,16 +173,19 @@ The independent review found three concrete blockers. Each was encoded as RED be
 
 ### Verified Codex PR feedback
 
-Two exact-head Codex GitHub App review passes produced six concrete findings. Follow-up child commits `be0f89fc8fc57af12cf37336b0e9f6ba0aeb4abc` and `be603238991a9b28e4ca42b2fc1e1d319efb0d9c` address them with RED-first regression assertions:
+Three exact-head Codex GitHub App review passes produced ten concrete findings. Follow-up child commits `be0f89fc8fc57af12cf37336b0e9f6ba0aeb4abc`, `be603238991a9b28e4ca42b2fc1e1d319efb0d9c`, and `e87aabb0f610f0e56db372c2174f8be467a1fe37` address them with RED-first regression assertions:
 
 - copyable inline-hook JSON now uses only supported interpreter keys, and validation rejects unknown keys;
 - setup guidance includes independent Bash, Zsh, and Fish wrapper/completion activation commands;
 - standalone workflow guidance describes the directory-wide literal `.worktrees/` exclude rule and rejects exact-destination bootstrap wording;
 - missing completion activation recovers with `arashi shell install`, never the unrelated `arashi install`;
 - fresh configured workflows initialize before `doctor` and `status`;
-- hook guidance preserves init-generated inert `.example` files while stating that Arashi does not activate them automatically.
+- hook guidance preserves init-generated inert `.example` files while stating that Arashi does not activate them automatically;
+- the tutorial initializes before diagnostics and validates real project worktrees rather than an invented child;
+- the fuzzy picker consumes pipe-friendly list output without `jq`;
+- picker selection and execution remain separate, quoted, and security-gate compliant.
 
-All source, canonical extracted-package, security, coordinated-contract, test, and typecheck gates were rerun after each correction pass. All six review threads were answered with their verified commits and resolved.
+All source, canonical extracted-package, security, coordinated-contract, test, and typecheck gates were rerun after each correction pass. All ten review threads were answered with their verified commits and resolved.
 
 ### Semantic reconciliation
 
