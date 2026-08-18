@@ -57,6 +57,7 @@ Use `/speckit` commands in OpenCode:
 ```
 
 **Output Structure**:
+
 ```
 specs/001-feature-name/
 ├── spec.md              # User stories, acceptance criteria
@@ -92,6 +93,7 @@ gh pr create --head 001-feature-name --title "feat: Add Feature Name specificati
 ```
 
 **PR Should Include**:
+
 - Summary of the feature
 - List of specification files added
 - Constitutional compliance checklist
@@ -106,7 +108,8 @@ cd repos/arashi/
 git status  # Verify you're in the implementation repo
 ```
 
-**IMPORTANT**: 
+**IMPORTANT**:
+
 - `repos/arashi/` is a **separate git repository**
 - It has its own branches, commits, and remote
 - Changes here do NOT affect the meta repo
@@ -125,12 +128,14 @@ git checkout -b 001-feature-name
 Follow the task breakdown from `specs/001-feature-name/tasks.md`:
 
 **TDD Approach**:
+
 1. Write tests first (they should fail)
 2. Implement functionality
 3. Run tests until they pass
 4. Refactor as needed
 
 **Example Workflow**:
+
 ```bash
 # Phase 1: Setup
 # - Create directory structure
@@ -166,6 +171,7 @@ Next: Phase 4 - Next Phase Name"
 ```
 
 **Commit Message Guidelines**:
+
 - Reference task numbers (T001, T002, etc.)
 - Include test results
 - Note what phase/user story is complete
@@ -185,6 +191,7 @@ bun test tests/unit/lib/feature.test.ts
 ```
 
 **Test Requirements**:
+
 - All tests must pass
 - Coverage >80% for new code
 - Include both unit and integration tests
@@ -204,6 +211,7 @@ gh pr create --head 001-feature-name --title "feat: Implement Feature Name (Phas
 ```
 
 **PR Should Include**:
+
 - Link to meta repo specification PR
 - Implementation progress (phases/tasks completed)
 - Test results (N passing, 0 failing)
@@ -240,6 +248,7 @@ The meta repo should only contain:
 ### 3.2 Verify Repository Separation
 
 **Meta Repo Should Contain**:
+
 ```
 ✅ specs/               # Feature specifications
 ✅ docs/                # Documentation
@@ -255,6 +264,7 @@ The meta repo should only contain:
 ```
 
 **Implementation Repo Should Contain**:
+
 ```
 ✅ src/                 # Source code
 ✅ tests/               # Test files
@@ -271,6 +281,7 @@ The meta repo should only contain:
 ### 4.1 Review Checklist
 
 **Specification Review** (Meta Repo PR):
+
 - [ ] All user stories have acceptance criteria
 - [ ] Implementation plan is technically sound
 - [ ] Research decisions are documented
@@ -279,6 +290,7 @@ The meta repo should only contain:
 - [ ] No implementation files in meta repo
 
 **Implementation Review** (Implementation Repo PR):
+
 - [ ] Code matches specification
 - [ ] All tests passing (>80% coverage)
 - [ ] Error handling includes rollback
@@ -291,6 +303,7 @@ The meta repo should only contain:
 ### 4.2 Merge Order
 
 1. **Merge Meta Repo PR First** (specification approved)
+
    ```bash
    # Merge via GitHub UI using squash merge
    # This creates the official specification record
@@ -481,10 +494,12 @@ cd ../../         # If you need meta repo
 ### "Cannot find module '../../../src/lib/feature'"
 
 This means:
+
 1. The module doesn't exist yet (TDD - expected!)
 2. Or the relative path is wrong
 
 Solution:
+
 - If TDD: Implement the module
 - If wrong path: Fix the import statement
 

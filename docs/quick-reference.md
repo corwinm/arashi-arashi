@@ -31,6 +31,7 @@ origin  git@github.com:corwinm/arashi.git
 ### ✅ Meta Repo (arashi-arashi/)
 
 **Should Contain**:
+
 ```
 ✅ specs/               Feature specifications
 ✅ docs/                Project documentation
@@ -42,6 +43,7 @@ origin  git@github.com:corwinm/arashi.git
 ```
 
 **Should NOT Contain**:
+
 ```
 ❌ src/                 Source code
 ❌ tests/               Test files
@@ -53,6 +55,7 @@ origin  git@github.com:corwinm/arashi.git
 ### ✅ Implementation Repo (repos/arashi/)
 
 **Should Contain**:
+
 ```
 ✅ src/                 Source code
 ✅ tests/               Test files
@@ -62,6 +65,7 @@ origin  git@github.com:corwinm/arashi.git
 ```
 
 **Should NOT Contain**:
+
 ```
 ❌ specs/               Feature specifications
 ❌ .specify/            Spec-kit config
@@ -148,6 +152,7 @@ gh pr create --head 001-feature-name --base main
 **Symptom**: You see `src/`, `tests/`, `package.json` in the meta repo.
 
 **Solution**:
+
 ```bash
 cd arashi-arashi/  # Go to meta repo root
 rm -rf src/ tests/ package.json tsconfig.json
@@ -160,10 +165,12 @@ git commit -m "chore: remove wrongly placed implementation files"
 **Symptom**: `bun test` doesn't work.
 
 **Possible Causes**:
+
 1. You're in the meta repo (bun is only used in implementation repo)
 2. Bun is not installed
 
 **Solution**:
+
 ```bash
 # Check if you're in the right place
 pwd  # Should be repos/arashi/
@@ -180,6 +187,7 @@ curl -fsSL https://bun.sh/install | bash
 **Symptom**: Git commands fail with "not a git repository".
 
 **Solution**:
+
 ```bash
 # Check where you are
 pwd
@@ -194,6 +202,7 @@ git status  # Should work now
 ### "Tests are failing"
 
 **Checklist**:
+
 1. Are you in the implementation repo? (`pwd` should show repos/arashi/)
 2. Are dependencies installed? (`bun install`)
 3. Is the module implemented? (TDD: tests fail first, then implement)
@@ -204,11 +213,13 @@ git status  # Should work now
 **Format**: `NNN-feature-name`
 
 **Examples**:
+
 - `001-git-utility-lib`
 - `002-worktree-manager`
 - `003-config-system`
 
 **Rules**:
+
 - Use same branch name in both repos
 - Use leading zeros (001, not 1)
 - Use kebab-case (dashes, not underscores)
@@ -231,6 +242,7 @@ Next: Phase N+1
 ```
 
 **Types**:
+
 - `feat:` - New feature
 - `fix:` - Bug fix
 - `docs:` - Documentation
