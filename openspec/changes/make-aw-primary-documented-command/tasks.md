@@ -32,6 +32,6 @@
 - [x] 5.1 Run canonical format/lint/typecheck/test/build/generate checks in every changed child repository
 - [x] 5.2 Run strict OpenSpec validation and complete coordinated meta validation after the final source edit
 - [x] 5.3 Perform self-review and one independent repository-aware cumulative review; batch and fix concrete supported-path blockers
-- [ ] 5.4 Commit child repositories first, push normally, open and verify child PRs, then cross-link them
-- [ ] 5.5 Update task/evidence/cross-links, commit/push/open the meta PR with `Closes #295`, and verify every PR's title/body/base/head/files
+- [x] 5.4 Commit child repositories first, push normally, open and verify child PRs, then cross-link them
+- [x] 5.5 Update task/evidence/cross-links, commit/push/open the meta PR with `Closes #295`, and verify every PR's title/body/base/head/files
 - [ ] 5.6 Inspect exact-head live CI and eligible review feedback for every PR without merging or enabling auto-merge

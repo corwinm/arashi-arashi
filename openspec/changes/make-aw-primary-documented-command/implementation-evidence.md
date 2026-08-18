@@ -45,4 +45,15 @@ After the final source edit, `pnpm test` passed 7 files / 371 tests (the known 3
 
 `pnpm run format:check` has a pre-existing RC 1 on exactly `scripts/check-worktree-materialization-contracts.ts` and `tests/worktree-materialization-contracts.test.ts`. Isolated baseline probes also returned RC 1 for both files. Neither file is changed by #295, so this formatter baseline is explicitly excluded as not introduced here.
 
-Delivery tasks remain open: nothing has been pushed, no PR has been opened or cross-linked, and no live CI or PR feedback has been inspected.
+## Coordinated pull requests
+
+The child-first branches were pushed normally and the ready-for-review pull requests were opened and cross-linked:
+
+- CLI: https://github.com/corwinm/arashi/pull/147
+- Docs: https://github.com/corwinm/arashi-docs/pull/82
+- Presentation: https://github.com/corwinm/arashi-presentation/pull/4
+- Skills: https://github.com/corwinm/arashi-skills/pull/64
+- VS Code: https://github.com/corwinm/arashi-vscode/pull/34
+- Parent meta: https://github.com/corwinm/arashi-arashi/pull/309
+
+Every pull request was opened against `main`, is ready for review, and uses the coordinated title. Each child body links all five child pull requests and the parent; the parent body links every child and closes #295. Live exact-head CI and eligible review feedback remain task 5.6 and are not marked complete here.
