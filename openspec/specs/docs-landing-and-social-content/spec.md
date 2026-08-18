@@ -1,9 +1,7 @@
 ## Purpose
 
 Define the docs landing page messaging, metadata, and navigation requirements so first-time visitors understand Arashi and can quickly find onboarding and workflow documentation.
-
 ## Requirements
-
 ### Requirement: Landing page SHALL surface the canonical Arashi value statement
 
 The docs landing page SHALL present Arashi's primary value using the canonical README tagline and a one-sentence summary that explains the product before readers navigate to deeper documentation.
@@ -88,3 +86,11 @@ Canonical user documentation SHALL identify `aw` concisely as a shorter alias fo
 - **THEN** it explains that one managed Arashi block enables parent-shell behavior and native completion for both executable names
 - **AND** manual activation continues to use canonical `command arashi` lines
 - **AND** troubleshooting explains that an unrelated parent-shell `aw` alias or function is preserved until the user deliberately removes it and re-sources integration
+
+### Requirement: Introductory docs lead naturally with aw
+Getting Started and landing guidance SHALL introduce `aw` directly as the command users run, SHALL avoid repeatedly expanding the letters, and SHALL include no more than one concise compatibility note stating that `arashi` remains supported for existing scripts and workflows.
+
+#### Scenario: New user opens Getting Started
+- **WHEN** the introductory page renders
+- **THEN** its first verification and workflow commands use `aw`
+- **AND** it does not repeatedly explain what the letters mean

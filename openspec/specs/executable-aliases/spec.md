@@ -3,9 +3,7 @@
 ## Purpose
 
 Define how Arashi ships and maintains `aw` as a supported executable alias for canonical `arashi` across npm packages, direct installers, shell integration, completion, updates, and published release verification without duplicating the native binary or product identity.
-
 ## Requirements
-
 ### Requirement: Canonical and alias executable identity
 
 Arashi SHALL ship canonical executable name `arashi` and supported executable alias `aw`. The distribution contract SHALL retain the “Arashi Workspace” expansion, while user-facing docs MAY describe `aw` simply as a shorter alias for `arashi`. Both names SHALL dispatch to the same installed package entrypoint or native platform binary. `arashi` SHALL remain canonical for product identity, Commander help and usage, configuration, `ARASHI_*` environment variables, managed shell-block markers, package identity, repositories, and native binary names.
@@ -195,3 +193,24 @@ The feature SHALL NOT be considered delivered until one exact published additive
 
 - **WHEN** either executable name fails to resolve, dispatch, complete, preserve parent-shell behavior, or report the published version on a required release path
 - **THEN** delivery remains incomplete and the failure is corrected through the owning release or installer surface before closeout
+
+### Requirement: Primary documented command spelling
+Maintained user-facing command examples, quick starts, tutorials, recommended workflows, troubleshooting steps, shell guidance, completion guidance, and update guidance SHALL use `aw` as the primary executable spelling. The `arashi` executable SHALL remain supported for existing scripts and workflows, and maintained introductory guidance SHALL state that compatibility concisely without describing `arashi` as preferred or canonical documentation vocabulary.
+
+#### Scenario: New user follows introductory guidance
+- **WHEN** a user follows a maintained introductory workflow
+- **THEN** actionable commands use `aw`
+- **AND** one concise note states that `arashi` remains supported for existing scripts and workflows
+
+#### Scenario: Existing script invokes legacy spelling
+- **WHEN** an existing script invokes a supported `arashi` command
+- **THEN** runtime behavior remains supported and equivalent
+- **AND** no new deprecation warning or removal behavior is introduced
+
+### Requirement: Identifier boundaries remain stable
+The naming migration MUST preserve Arashi product naming and all `arashi` package, repository, URL, `.arashi` configuration/schema, `ARASHI_*` environment-variable, native-binary, installer payload, extension-command, and other machine identifier spellings.
+
+#### Scenario: Maintained content references an identifier
+- **WHEN** maintained content references `npm install -g arashi`, an Arashi URL/repository, `.arashi`, an `ARASHI_*` variable, a native binary, or an extension identifier
+- **THEN** the identifier retains its exact established spelling
+- **AND** semantic validation does not classify it as a preferred-command regression
