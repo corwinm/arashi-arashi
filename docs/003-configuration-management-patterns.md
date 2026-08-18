@@ -15,6 +15,7 @@ Configuration validation ensures that user-provided config files are correct bef
 #### Manual Validation
 
 **Pattern:**
+
 ```typescript
 interface Config {
   repositories: string[];
@@ -23,47 +24,52 @@ interface Config {
 }
 
 function validateConfig(data: unknown): Config {
-  if (!data || typeof data !== 'object') {
-    throw new Error('Config must be an object');
+  if (!data || typeof data !== "object") {
+    throw new Error("Config must be an object");
   }
-  
+
   const config = data as Record<string, unknown>;
-  
+
   // Validate repositories
   if (!Array.isArray(config.repositories)) {
-    throw new Error('repositories must be an array');
+    throw new Error("repositories must be an array");
   }
-  
+
   for (const repo of config.repositories) {
-    if (typeof repo !== 'string') {
-      throw new Error('Each repository must be a string path');
+    if (typeof repo !== "string") {
+      throw new Error("Each repository must be a string path");
     }
   }
-  
+
   // Validate optional fields
-  if (config.setupScript !== undefined && typeof config.setupScript !== 'string') {
-    throw new Error('setupScript must be a string');
+  if (
+    config.setupScript !== undefined &&
+    typeof config.setupScript !== "string"
+  ) {
+    throw new Error("setupScript must be a string");
   }
-  
-  if (config.parallel !== undefined && typeof config.parallel !== 'boolean') {
-    throw new Error('parallel must be a boolean');
+
+  if (config.parallel !== undefined && typeof config.parallel !== "boolean") {
+    throw new Error("parallel must be a boolean");
   }
-  
+
   return {
     repositories: config.repositories,
     setupScript: config.setupScript,
-    parallel: config.parallel
+    parallel: config.parallel,
   };
 }
 ```
 
 **Pros:**
+
 - No dependencies
 - Full control over error messages
 - Easy to understand and debug
 - Smallest bundle size
 
 **Cons:**
+
 - Verbose and repetitive
 - Easy to miss edge cases
 - No automatic type inference
@@ -74,27 +80,28 @@ function validateConfig(data: unknown): Config {
 #### JSON Schema
 
 **Pattern:**
+
 ```typescript
-import Ajv from 'ajv';
+import Ajv from "ajv";
 
 const configSchema = {
-  type: 'object',
-  required: ['repositories'],
+  type: "object",
+  required: ["repositories"],
   properties: {
     repositories: {
-      type: 'array',
-      items: { type: 'string' },
-      minItems: 1
+      type: "array",
+      items: { type: "string" },
+      minItems: 1,
     },
-    setupScript: { type: 'string' },
-    parallel: { type: 'boolean' },
-    timeout: { 
-      type: 'number',
+    setupScript: { type: "string" },
+    parallel: { type: "boolean" },
+    timeout: {
+      type: "number",
       minimum: 0,
-      maximum: 300000
-    }
+      maximum: 300000,
+    },
   },
-  additionalProperties: false
+  additionalProperties: false,
 };
 
 const ajv = new Ajv({ allErrors: true });
@@ -102,9 +109,9 @@ const validate = ajv.compile(configSchema);
 
 function validateConfig(data: unknown): Config {
   if (!validate(data)) {
-    const errors = validate.errors?.map(err => 
-      `${err.instancePath} ${err.message}`
-    ).join('; ');
+    const errors = validate.errors
+      ?.map((err) => `${err.instancePath} ${err.message}`)
+      .join("; ");
     throw new Error(`Invalid config: ${errors}`);
   }
   return data as Config;
@@ -112,6 +119,7 @@ function validateConfig(data: unknown): Config {
 ```
 
 **Pros:**
+
 - Industry standard (JSON Schema spec)
 - Language agnostic (can validate from any language)
 - Powerful validation rules (regex, ranges, formats)
@@ -119,6 +127,7 @@ function validateConfig(data: unknown): Config {
 - Widely understood format
 
 **Cons:**
+
 - Requires external library
 - Separate type definitions needed for TypeScript
 - Error messages can be cryptic
@@ -130,16 +139,17 @@ function validateConfig(data: unknown): Config {
 #### Zod (Recommended for TypeScript CLI tools)
 
 **Pattern:**
+
 ```typescript
-import { z } from 'zod';
+import { z } from "zod";
 
 const ConfigSchema = z.object({
-  repositories: z.array(z.string()).min(1, 'At least one repository required'),
+  repositories: z.array(z.string()).min(1, "At least one repository required"),
   setupScript: z.string().optional(),
   parallel: z.boolean().default(false),
   timeout: z.number().min(0).max(300000).default(30000),
   env: z.record(z.string()).optional(),
-  excludePatterns: z.array(z.string()).default([])
+  excludePatterns: z.array(z.string()).default([]),
 });
 
 type Config = z.infer<typeof ConfigSchema>;
@@ -149,9 +159,9 @@ function validateConfig(data: unknown): Config {
     return ConfigSchema.parse(data);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      const messages = error.errors.map(err => 
-        `${err.path.join('.')}: ${err.message}`
-      ).join('\n');
+      const messages = error.errors
+        .map((err) => `${err.path.join(".")}: ${err.message}`)
+        .join("\n");
       throw new Error(`Configuration validation failed:\n${messages}`);
     }
     throw error;
@@ -160,6 +170,7 @@ function validateConfig(data: unknown): Config {
 ```
 
 **Pros:**
+
 - TypeScript-first design
 - Automatic type inference (single source of truth)
 - Excellent error messages
@@ -169,6 +180,7 @@ function validateConfig(data: unknown): Config {
 - Small bundle size with tree-shaking
 
 **Cons:**
+
 - Adds a dependency (~50KB)
 - TypeScript only
 - Learning curve for complex schemas
@@ -185,23 +197,26 @@ function validateConfig(data: unknown): Config {
 4. **Maintainability**: Easy to evolve schemas as requirements change
 
 **Example: Complete validation with Zod**
-```typescript
-import { z } from 'zod';
-import { readFileSync } from 'fs';
 
-const ConfigSchema = z.object({
-  version: z.literal('1.0.0'),
-  repositories: z.array(z.string().min(1)).min(1),
-  setupScript: z.string().optional(),
-  parallel: z.boolean().default(false),
-  env: z.record(z.string()).optional(),
-  excludePatterns: z.array(z.string()).default(['node_modules', '.git'])
-}).strict(); // Reject unknown properties
+```typescript
+import { z } from "zod";
+import { readFileSync } from "fs";
+
+const ConfigSchema = z
+  .object({
+    version: z.literal("1.0.0"),
+    repositories: z.array(z.string().min(1)).min(1),
+    setupScript: z.string().optional(),
+    parallel: z.boolean().default(false),
+    env: z.record(z.string()).optional(),
+    excludePatterns: z.array(z.string()).default(["node_modules", ".git"]),
+  })
+  .strict(); // Reject unknown properties
 
 type Config = z.infer<typeof ConfigSchema>;
 
 function loadConfig(path: string): Config {
-  const raw = readFileSync(path, 'utf-8');
+  const raw = readFileSync(path, "utf-8");
   const json = JSON.parse(raw);
   return ConfigSchema.parse(json);
 }
@@ -218,22 +233,24 @@ Configuration migration allows seamless updates when config format changes betwe
 ### Core Pattern
 
 ```typescript
-import { z } from 'zod';
+import { z } from "zod";
 
 // Version 1.0 schema
 const ConfigV1Schema = z.object({
-  version: z.literal('1.0.0'),
-  repositories: z.array(z.string())
+  version: z.literal("1.0.0"),
+  repositories: z.array(z.string()),
 });
 
 // Version 2.0 schema (added new fields)
 const ConfigV2Schema = z.object({
-  version: z.literal('2.0.0'),
-  repositories: z.array(z.object({
-    path: z.string(),
-    enabled: z.boolean().default(true)
-  })),
-  parallel: z.boolean().default(false)
+  version: z.literal("2.0.0"),
+  repositories: z.array(
+    z.object({
+      path: z.string(),
+      enabled: z.boolean().default(true),
+    }),
+  ),
+  parallel: z.boolean().default(false),
 });
 
 type ConfigV1 = z.infer<typeof ConfigV1Schema>;
@@ -242,18 +259,18 @@ type ConfigV2 = z.infer<typeof ConfigV2Schema>;
 // Migration functions
 function migrateV1toV2(config: ConfigV1): ConfigV2 {
   return {
-    version: '2.0.0',
-    repositories: config.repositories.map(path => ({
+    version: "2.0.0",
+    repositories: config.repositories.map((path) => ({
       path,
-      enabled: true
+      enabled: true,
     })),
-    parallel: false
+    parallel: false,
   };
 }
 
 // Version detector
 const VersionSchema = z.object({
-  version: z.string()
+  version: z.string(),
 });
 
 function detectVersion(data: unknown): string {
@@ -264,12 +281,12 @@ function detectVersion(data: unknown): string {
 // Migration orchestrator
 function migrateConfig(data: unknown): ConfigV2 {
   const version = detectVersion(data);
-  
+
   switch (version) {
-    case '1.0.0':
+    case "1.0.0":
       const v1 = ConfigV1Schema.parse(data);
       return migrateV1toV2(v1);
-    case '2.0.0':
+    case "2.0.0":
       return ConfigV2Schema.parse(data);
     default:
       throw new Error(`Unsupported config version: ${version}`);
@@ -280,8 +297,8 @@ function migrateConfig(data: unknown): ConfigV2 {
 ### Automatic Migration with Backup
 
 ```typescript
-import { readFileSync, writeFileSync, copyFileSync } from 'fs';
-import { basename } from 'path';
+import { readFileSync, writeFileSync, copyFileSync } from "fs";
+import { basename } from "path";
 
 interface MigrationOptions {
   autoMigrate: boolean;
@@ -294,53 +311,53 @@ function loadAndMigrateConfig(
   options: MigrationOptions = {
     autoMigrate: true,
     createBackup: true,
-    dryRun: false
-  }
+    dryRun: false,
+  },
 ): ConfigV2 {
-  const raw = readFileSync(configPath, 'utf-8');
+  const raw = readFileSync(configPath, "utf-8");
   const data = JSON.parse(raw);
-  
+
   const version = detectVersion(data);
-  const CURRENT_VERSION = '2.0.0';
-  
+  const CURRENT_VERSION = "2.0.0";
+
   if (version === CURRENT_VERSION) {
     return ConfigV2Schema.parse(data);
   }
-  
-  console.log(`Found config version ${version}, current version is ${CURRENT_VERSION}`);
-  
+
+  console.log(
+    `Found config version ${version}, current version is ${CURRENT_VERSION}`,
+  );
+
   if (!options.autoMigrate) {
     throw new Error(
       `Config version ${version} is outdated. ` +
-      `Please migrate to ${CURRENT_VERSION} or run with --migrate flag`
+        `Please migrate to ${CURRENT_VERSION} or run with --migrate flag`,
     );
   }
-  
+
   // Perform migration
   const migrated = migrateConfig(data);
-  
+
   if (options.dryRun) {
-    console.log('Dry run - migration would produce:');
+    console.log("Dry run - migration would produce:");
     console.log(JSON.stringify(migrated, null, 2));
     return migrated;
   }
-  
+
   // Create backup
   if (options.createBackup) {
     const backupPath = `${configPath}.backup-v${version}`;
     copyFileSync(configPath, backupPath);
     console.log(`Created backup: ${backupPath}`);
   }
-  
+
   // Write migrated config
-  writeFileSync(
-    configPath,
-    JSON.stringify(migrated, null, 2) + '\n',
-    'utf-8'
+  writeFileSync(configPath, JSON.stringify(migrated, null, 2) + "\n", "utf-8");
+
+  console.log(
+    `Successfully migrated config from v${version} to v${CURRENT_VERSION}`,
   );
-  
-  console.log(`Successfully migrated config from v${version} to v${CURRENT_VERSION}`);
-  
+
   return migrated;
 }
 ```
@@ -359,26 +376,26 @@ interface MigrationRegistry {
 }
 
 const migrations: MigrationRegistry = {
-  '1.0.0': {
-    '2.0.0': migrateV1toV2
+  "1.0.0": {
+    "2.0.0": migrateV1toV2,
   },
-  '2.0.0': {
-    '3.0.0': migrateV2toV3
-  }
+  "2.0.0": {
+    "3.0.0": migrateV2toV3,
+  },
 };
 
 function findMigrationPath(from: string, to: string): string[] {
   // BFS to find shortest migration path
   const queue: [string, string[]][] = [[from, [from]]];
   const visited = new Set<string>([from]);
-  
+
   while (queue.length > 0) {
     const [current, path] = queue.shift()!;
-    
+
     if (current === to) {
       return path;
     }
-    
+
     const nextVersions = Object.keys(migrations[current] || {});
     for (const next of nextVersions) {
       if (!visited.has(next)) {
@@ -387,19 +404,19 @@ function findMigrationPath(from: string, to: string): string[] {
       }
     }
   }
-  
+
   throw new Error(`No migration path from ${from} to ${to}`);
 }
 
 function migrateConfigChained(data: unknown, targetVersion: string): any {
   const currentVersion = detectVersion(data);
-  
+
   if (currentVersion === targetVersion) {
     return data;
   }
-  
+
   const path = findMigrationPath(currentVersion, targetVersion);
-  
+
   let config = data;
   for (let i = 0; i < path.length - 1; i++) {
     const from = path[i];
@@ -408,7 +425,7 @@ function migrateConfigChained(data: unknown, targetVersion: string): any {
     config = migrate(config);
     console.log(`Migrated ${from} -> ${to}`);
   }
-  
+
   return config;
 }
 ```
@@ -445,15 +462,15 @@ CLI flags > Environment variables > Config file > Defaults
 ### Implementation
 
 ```typescript
-import { z } from 'zod';
+import { z } from "zod";
 
 // Base schema with all defaults
 const ConfigSchema = z.object({
   repositories: z.array(z.string()).default([]),
   parallel: z.boolean().default(false),
   timeout: z.number().default(30000),
-  logLevel: z.enum(['error', 'warn', 'info', 'debug']).default('info'),
-  setupScript: z.string().optional()
+  logLevel: z.enum(["error", "warn", "info", "debug"]).default("info"),
+  setupScript: z.string().optional(),
 });
 
 type Config = z.infer<typeof ConfigSchema>;
@@ -474,13 +491,13 @@ function loadConfigFile(path?: string): Partial<Config> {
   if (!path) {
     return {};
   }
-  
+
   try {
-    const raw = readFileSync(path, 'utf-8');
+    const raw = readFileSync(path, "utf-8");
     const data = JSON.parse(raw);
     return data;
   } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") {
       console.warn(`Config file not found: ${path}`);
       return {};
     }
@@ -490,51 +507,51 @@ function loadConfigFile(path?: string): Partial<Config> {
 
 function loadEnvVars(): Partial<Config> {
   const env: Partial<Config> = {};
-  
+
   if (process.env.ARASHI_PARALLEL) {
-    env.parallel = process.env.ARASHI_PARALLEL === 'true';
+    env.parallel = process.env.ARASHI_PARALLEL === "true";
   }
-  
+
   if (process.env.ARASHI_TIMEOUT) {
     env.timeout = parseInt(process.env.ARASHI_TIMEOUT, 10);
   }
-  
+
   if (process.env.ARASHI_LOG_LEVEL) {
     env.logLevel = process.env.ARASHI_LOG_LEVEL as any;
   }
-  
+
   if (process.env.ARASHI_SETUP_SCRIPT) {
     env.setupScript = process.env.ARASHI_SETUP_SCRIPT;
   }
-  
+
   return env;
 }
 
 function parseCLIFlags(args: CLIFlags): Partial<Config> {
   const flags: Partial<Config> = {};
-  
+
   if (args.parallel !== undefined) {
     flags.parallel = args.parallel;
   }
-  
+
   if (args.timeout !== undefined) {
     flags.timeout = args.timeout;
   }
-  
+
   if (args.logLevel !== undefined) {
     flags.logLevel = args.logLevel as any;
   }
-  
+
   if (args.repository !== undefined) {
     flags.repositories = args.repository;
   }
-  
+
   return flags;
 }
 
 function mergeConfigs(...configs: Partial<Config>[]): Config {
   const merged: any = {};
-  
+
   for (const config of configs) {
     for (const [key, value] of Object.entries(config)) {
       if (value !== undefined) {
@@ -542,7 +559,7 @@ function mergeConfigs(...configs: Partial<Config>[]): Config {
       }
     }
   }
-  
+
   return ConfigSchema.parse(merged);
 }
 
@@ -551,7 +568,7 @@ function resolveConfig(cliFlags: CLIFlags): Config {
   const fileConfig = loadConfigFile(cliFlags.config);
   const envConfig = loadEnvVars();
   const flagConfig = parseCLIFlags(cliFlags);
-  
+
   return mergeConfigs(defaults, fileConfig, envConfig, flagConfig);
 }
 ```
@@ -562,9 +579,9 @@ function resolveConfig(cliFlags: CLIFlags): Config {
 // User runs: arashi --parallel --timeout 60000 --config ./arashi.json
 
 const cliFlags: CLIFlags = {
-  config: './arashi.json',
+  config: "./arashi.json",
   parallel: true,
-  timeout: 60000
+  timeout: 60000,
 };
 
 const config = resolveConfig(cliFlags);
@@ -582,19 +599,15 @@ const config = resolveConfig(cliFlags);
 ### Config File Discovery
 
 ```typescript
-import { existsSync } from 'fs';
-import { resolve, dirname } from 'path';
+import { existsSync } from "fs";
+import { resolve, dirname } from "path";
 
 function findConfigFile(startDir: string = process.cwd()): string | null {
-  const configNames = [
-    'arashi.json',
-    '.arashirc.json',
-    '.arashirc'
-  ];
-  
+  const configNames = ["arashi.json", ".arashirc.json", ".arashirc"];
+
   let currentDir = resolve(startDir);
   const root = dirname(currentDir);
-  
+
   while (true) {
     for (const name of configNames) {
       const configPath = resolve(currentDir, name);
@@ -602,12 +615,12 @@ function findConfigFile(startDir: string = process.cwd()): string | null {
         return configPath;
       }
     }
-    
+
     // Check package.json for "arashi" field
-    const packageJsonPath = resolve(currentDir, 'package.json');
+    const packageJsonPath = resolve(currentDir, "package.json");
     if (existsSync(packageJsonPath)) {
       try {
-        const pkg = JSON.parse(readFileSync(packageJsonPath, 'utf-8'));
+        const pkg = JSON.parse(readFileSync(packageJsonPath, "utf-8"));
         if (pkg.arashi) {
           return packageJsonPath; // Special marker
         }
@@ -615,14 +628,14 @@ function findConfigFile(startDir: string = process.cwd()): string | null {
         // Ignore invalid package.json
       }
     }
-    
+
     if (currentDir === root) {
       break;
     }
-    
+
     currentDir = dirname(currentDir);
   }
-  
+
   return null;
 }
 ```
@@ -639,25 +652,28 @@ function findConfigFile(startDir: string = process.cwd()): string | null {
 ### Debug Output
 
 ```typescript
-function showConfigDebug(config: Config, sources: {
-  defaults: Config;
-  file: Partial<Config>;
-  env: Partial<Config>;
-  flags: Partial<Config>;
-}) {
-  console.log('Configuration sources:\n');
-  
+function showConfigDebug(
+  config: Config,
+  sources: {
+    defaults: Config;
+    file: Partial<Config>;
+    env: Partial<Config>;
+    flags: Partial<Config>;
+  },
+) {
+  console.log("Configuration sources:\n");
+
   for (const [key, value] of Object.entries(config)) {
-    let source = 'default';
-    
+    let source = "default";
+
     if (sources.flags[key as keyof Config] !== undefined) {
-      source = 'CLI flag';
+      source = "CLI flag";
     } else if (sources.env[key as keyof Config] !== undefined) {
-      source = 'environment';
+      source = "environment";
     } else if (sources.file[key as keyof Config] !== undefined) {
-      source = 'config file';
+      source = "config file";
     }
-    
+
     console.log(`  ${key}: ${JSON.stringify(value)} (${source})`);
   }
 }
@@ -674,8 +690,8 @@ Recursively discover git repositories within a directory tree by finding `.git` 
 ### Basic Algorithm
 
 ```typescript
-import { readdirSync, statSync, lstatSync } from 'fs';
-import { join, resolve } from 'path';
+import { readdirSync, statSync, lstatSync } from "fs";
+import { join, resolve } from "path";
 
 interface RepositoryInfo {
   path: string;
@@ -683,19 +699,23 @@ interface RepositoryInfo {
   gitDirPath: string;
 }
 
-function isGitRepository(dirPath: string): { isRepo: boolean; isWorktree: boolean; gitDir?: string } {
+function isGitRepository(dirPath: string): {
+  isRepo: boolean;
+  isWorktree: boolean;
+  gitDir?: string;
+} {
   try {
-    const gitPath = join(dirPath, '.git');
+    const gitPath = join(dirPath, ".git");
     const stats = lstatSync(gitPath);
-    
+
     if (stats.isDirectory()) {
       // Standard git repository
       return { isRepo: true, isWorktree: false, gitDir: gitPath };
     }
-    
+
     if (stats.isFile()) {
       // Git worktree (contains "gitdir: ..." pointer)
-      const content = readFileSync(gitPath, 'utf-8').trim();
+      const content = readFileSync(gitPath, "utf-8").trim();
       const match = content.match(/^gitdir: (.+)$/);
       if (match) {
         return { isRepo: true, isWorktree: true, gitDir: match[1] };
@@ -704,7 +724,7 @@ function isGitRepository(dirPath: string): { isRepo: boolean; isWorktree: boolea
   } catch (error) {
     // .git doesn't exist
   }
-  
+
   return { isRepo: false, isWorktree: false };
 }
 
@@ -714,33 +734,33 @@ function discoverRepositories(
     maxDepth?: number;
     excludePatterns?: string[];
     followSymlinks?: boolean;
-  } = {}
+  } = {},
 ): RepositoryInfo[] {
   const {
     maxDepth = Infinity,
-    excludePatterns = ['node_modules', '.git'],
-    followSymlinks = false
+    excludePatterns = ["node_modules", ".git"],
+    followSymlinks = false,
   } = options;
-  
+
   const repos: RepositoryInfo[] = [];
-  
+
   function traverse(dirPath: string, depth: number) {
     if (depth > maxDepth) {
       return;
     }
-    
+
     // Check if current directory is a repository
     const repoCheck = isGitRepository(dirPath);
     if (repoCheck.isRepo) {
       repos.push({
         path: dirPath,
         isWorktree: repoCheck.isWorktree,
-        gitDirPath: repoCheck.gitDir!
+        gitDirPath: repoCheck.gitDir!,
       });
       // Don't traverse into repositories
       return;
     }
-    
+
     // Read directory contents
     let entries: string[];
     try {
@@ -749,28 +769,28 @@ function discoverRepositories(
       // Permission denied or not a directory
       return;
     }
-    
+
     for (const entry of entries) {
       // Check exclusions
-      if (excludePatterns.some(pattern => entry.includes(pattern))) {
+      if (excludePatterns.some((pattern) => entry.includes(pattern))) {
         continue;
       }
-      
+
       const fullPath = join(dirPath, entry);
-      
+
       let stats;
       try {
         stats = followSymlinks ? statSync(fullPath) : lstatSync(fullPath);
       } catch {
         continue;
       }
-      
+
       if (stats.isDirectory()) {
         traverse(fullPath, depth + 1);
       }
     }
   }
-  
+
   traverse(resolve(rootDir), 0);
   return repos;
 }
@@ -779,8 +799,8 @@ function discoverRepositories(
 ### Optimized Parallel Discovery
 
 ```typescript
-import { readdir, stat, lstat, readFile } from 'fs/promises';
-import { cpus } from 'os';
+import { readdir, stat, lstat, readFile } from "fs/promises";
+import { cpus } from "os";
 
 async function isGitRepositoryAsync(dirPath: string): Promise<{
   isRepo: boolean;
@@ -788,15 +808,15 @@ async function isGitRepositoryAsync(dirPath: string): Promise<{
   gitDir?: string;
 }> {
   try {
-    const gitPath = join(dirPath, '.git');
+    const gitPath = join(dirPath, ".git");
     const stats = await lstat(gitPath);
-    
+
     if (stats.isDirectory()) {
       return { isRepo: true, isWorktree: false, gitDir: gitPath };
     }
-    
+
     if (stats.isFile()) {
-      const content = await readFile(gitPath, 'utf-8');
+      const content = await readFile(gitPath, "utf-8");
       const match = content.trim().match(/^gitdir: (.+)$/);
       if (match) {
         return { isRepo: true, isWorktree: true, gitDir: match[1] };
@@ -805,7 +825,7 @@ async function isGitRepositoryAsync(dirPath: string): Promise<{
   } catch {
     // .git doesn't exist
   }
-  
+
   return { isRepo: false, isWorktree: false };
 }
 
@@ -816,68 +836,68 @@ async function discoverRepositoriesAsync(
     excludePatterns?: string[];
     followSymlinks?: boolean;
     parallel?: boolean;
-  } = {}
+  } = {},
 ): Promise<RepositoryInfo[]> {
   const {
     maxDepth = Infinity,
-    excludePatterns = ['node_modules', '.git'],
+    excludePatterns = ["node_modules", ".git"],
     followSymlinks = false,
-    parallel = true
+    parallel = true,
   } = options;
-  
+
   const repos: RepositoryInfo[] = [];
   const maxConcurrency = parallel ? cpus().length : 1;
-  
+
   async function traverse(dirPath: string, depth: number): Promise<void> {
     if (depth > maxDepth) {
       return;
     }
-    
+
     const repoCheck = await isGitRepositoryAsync(dirPath);
     if (repoCheck.isRepo) {
       repos.push({
         path: dirPath,
         isWorktree: repoCheck.isWorktree,
-        gitDirPath: repoCheck.gitDir!
+        gitDirPath: repoCheck.gitDir!,
       });
       return;
     }
-    
+
     let entries: string[];
     try {
       entries = await readdir(dirPath);
     } catch {
       return;
     }
-    
-    const filtered = entries.filter(entry =>
-      !excludePatterns.some(pattern => entry.includes(pattern))
+
+    const filtered = entries.filter(
+      (entry) => !excludePatterns.some((pattern) => entry.includes(pattern)),
     );
-    
+
     // Process in batches for concurrency control
     for (let i = 0; i < filtered.length; i += maxConcurrency) {
       const batch = filtered.slice(i, i + maxConcurrency);
-      
+
       await Promise.all(
-        batch.map(async entry => {
+        batch.map(async (entry) => {
           const fullPath = join(dirPath, entry);
-          
+
           try {
             const stats = followSymlinks
               ? await stat(fullPath)
               : await lstat(fullPath);
-            
+
             if (stats.isDirectory()) {
               await traverse(fullPath, depth + 1);
             }
           } catch {
             // Skip inaccessible paths
           }
-        })
+        }),
       );
     }
   }
-  
+
   await traverse(resolve(rootDir), 0);
   return repos;
 }
@@ -886,25 +906,25 @@ async function discoverRepositoriesAsync(
 ### Glob-Based Discovery
 
 ```typescript
-import { glob } from 'glob';
+import { glob } from "glob";
 
 async function discoverRepositoriesGlob(
   rootDir: string,
   options: {
     excludePatterns?: string[];
-  } = {}
+  } = {},
 ): Promise<string[]> {
-  const { excludePatterns = ['node_modules'] } = options;
-  
-  const gitDirs = await glob('**/.git', {
+  const { excludePatterns = ["node_modules"] } = options;
+
+  const gitDirs = await glob("**/.git", {
     cwd: rootDir,
     absolute: true,
-    ignore: excludePatterns.map(p => `**/${p}/**`),
-    dot: true
+    ignore: excludePatterns.map((p) => `**/${p}/**`),
+    dot: true,
   });
-  
+
   // Extract repository paths (parent of .git)
-  return gitDirs.map(gitPath => dirname(gitPath));
+  return gitDirs.map((gitPath) => dirname(gitPath));
 }
 ```
 
@@ -938,29 +958,29 @@ type ProgressCallback = (progress: DiscoveryProgress) => void;
 
 async function discoverRepositoriesWithProgress(
   rootDir: string,
-  onProgress?: ProgressCallback
+  onProgress?: ProgressCallback,
 ): Promise<RepositoryInfo[]> {
   const repos: RepositoryInfo[] = [];
   const progress: DiscoveryProgress = {
     directoriesScanned: 0,
     repositoriesFound: 0,
-    currentPath: ''
+    currentPath: "",
   };
-  
+
   async function traverse(dirPath: string, depth: number) {
     progress.directoriesScanned++;
     progress.currentPath = dirPath;
-    
+
     if (onProgress && progress.directoriesScanned % 10 === 0) {
       onProgress({ ...progress });
     }
-    
+
     const repoCheck = await isGitRepositoryAsync(dirPath);
     if (repoCheck.isRepo) {
       repos.push({
         path: dirPath,
         isWorktree: repoCheck.isWorktree,
-        gitDirPath: repoCheck.gitDir!
+        gitDirPath: repoCheck.gitDir!,
       });
       progress.repositoriesFound++;
       if (onProgress) {
@@ -968,19 +988,24 @@ async function discoverRepositoriesWithProgress(
       }
       return;
     }
-    
+
     // ... continue traversal
   }
-  
+
   await traverse(resolve(rootDir), 0);
   return repos;
 }
 
 // Usage
-const repos = await discoverRepositoriesWithProgress('/projects', progress => {
-  console.log(`Scanned ${progress.directoriesScanned} dirs, found ${progress.repositoriesFound} repos`);
-  console.log(`Currently at: ${progress.currentPath}`);
-});
+const repos = await discoverRepositoriesWithProgress(
+  "/projects",
+  (progress) => {
+    console.log(
+      `Scanned ${progress.directoriesScanned} dirs, found ${progress.repositoriesFound} repos`,
+    );
+    console.log(`Currently at: ${progress.currentPath}`);
+  },
+);
 ```
 
 ---
@@ -990,83 +1015,81 @@ const repos = await discoverRepositoriesWithProgress('/projects', progress => {
 ### User-Friendly Error Messages
 
 ```typescript
-import { z } from 'zod';
+import { z } from "zod";
 
 // Custom error messages in schema
 const ConfigSchema = z.object({
   repositories: z
     .array(z.string())
-    .min(1, 'At least one repository is required')
+    .min(1, "At least one repository is required")
     .refine(
-      repos => repos.every(r => !r.includes('*')),
-      'Repository paths cannot contain wildcards. Did you mean to use a directory?'
+      (repos) => repos.every((r) => !r.includes("*")),
+      "Repository paths cannot contain wildcards. Did you mean to use a directory?",
     ),
-  
+
   timeout: z
     .number({
-      required_error: 'timeout is required',
-      invalid_type_error: 'timeout must be a number'
+      required_error: "timeout is required",
+      invalid_type_error: "timeout must be a number",
     })
-    .min(1000, 'timeout must be at least 1000ms (1 second)')
-    .max(300000, 'timeout cannot exceed 300000ms (5 minutes)'),
-  
+    .min(1000, "timeout must be at least 1000ms (1 second)")
+    .max(300000, "timeout cannot exceed 300000ms (5 minutes)"),
+
   parallel: z.boolean().default(false),
-  
+
   setupScript: z
     .string()
     .optional()
     .refine(
-      script => !script || !script.includes('rm -rf'),
-      'Setup script contains potentially dangerous command'
+      (script) => !script || !script.includes("rm -rf"),
+      "Setup script contains potentially dangerous command",
     ),
-  
-  logLevel: z
-    .enum(['error', 'warn', 'info', 'debug'])
-    .default('info'),
-  
+
+  logLevel: z.enum(["error", "warn", "info", "debug"]).default("info"),
+
   env: z
     .record(z.string())
     .optional()
     .refine(
-      env => !env || !Object.keys(env).some(k => k.includes(' ')),
-      'Environment variable names cannot contain spaces'
-    )
+      (env) => !env || !Object.keys(env).some((k) => k.includes(" ")),
+      "Environment variable names cannot contain spaces",
+    ),
 });
 
 // Enhanced error formatting
 function formatValidationError(error: z.ZodError): string {
-  const errors = error.errors.map(err => {
-    const path = err.path.join('.');
-    const location = path ? `"${path}"` : 'configuration';
-    
+  const errors = error.errors.map((err) => {
+    const path = err.path.join(".");
+    const location = path ? `"${path}"` : "configuration";
+
     switch (err.code) {
-      case 'invalid_type':
+      case "invalid_type":
         return `${location}: expected ${err.expected}, got ${err.received}`;
-      
-      case 'too_small':
-        if (err.type === 'array') {
+
+      case "too_small":
+        if (err.type === "array") {
           return `${location}: must have at least ${err.minimum} item(s)`;
         }
         return `${location}: ${err.message}`;
-      
-      case 'too_big':
-        if (err.type === 'array') {
+
+      case "too_big":
+        if (err.type === "array") {
           return `${location}: must have at most ${err.maximum} item(s)`;
         }
         return `${location}: ${err.message}`;
-      
-      case 'invalid_enum_value':
-        return `${location}: must be one of [${err.options.join(', ')}]`;
-      
-      case 'custom':
+
+      case "invalid_enum_value":
+        return `${location}: must be one of [${err.options.join(", ")}]`;
+
+      case "custom":
         return `${location}: ${err.message}`;
-      
+
       default:
         return `${location}: ${err.message}`;
     }
   });
-  
-  return errors.join('\n');
+
+  return errors.join("\n");
 }
 
 function validateConfigWithMessages(data: unknown): Config {
@@ -1075,7 +1098,7 @@ function validateConfigWithMessages(data: unknown): Config {
   } catch (error) {
     if (error instanceof z.ZodError) {
       const formatted = formatValidationError(error);
-      console.error('Configuration validation failed:\n');
+      console.error("Configuration validation failed:\n");
       console.error(formatted);
       process.exit(1);
     }
@@ -1087,21 +1110,21 @@ function validateConfigWithMessages(data: unknown): Config {
 ### Semantic Validation
 
 ```typescript
-import { existsSync, accessSync, constants } from 'fs';
+import { existsSync, accessSync, constants } from "fs";
 
 // Validate after parsing
 function validateConfigSemantics(config: Config): void {
   const errors: string[] = [];
-  
+
   // Check repository paths exist
   for (const repo of config.repositories) {
     if (!existsSync(repo)) {
       errors.push(`Repository does not exist: ${repo}`);
-    } else if (!existsSync(join(repo, '.git'))) {
+    } else if (!existsSync(join(repo, ".git"))) {
       errors.push(`Not a git repository: ${repo}`);
     }
   }
-  
+
   // Check setup script exists and is executable
   if (config.setupScript) {
     if (!existsSync(config.setupScript)) {
@@ -1112,21 +1135,21 @@ function validateConfigSemantics(config: Config): void {
       } catch {
         errors.push(
           `Setup script is not executable: ${config.setupScript}\n` +
-          `Run: chmod +x ${config.setupScript}`
+            `Run: chmod +x ${config.setupScript}`,
         );
       }
     }
   }
-  
+
   // Check for conflicting options
   if (config.parallel && config.timeout < 5000) {
     errors.push(
-      'Warning: parallel execution with timeout < 5000ms may cause issues'
+      "Warning: parallel execution with timeout < 5000ms may cause issues",
     );
   }
-  
+
   if (errors.length > 0) {
-    throw new Error('Configuration validation failed:\n' + errors.join('\n'));
+    throw new Error("Configuration validation failed:\n" + errors.join("\n"));
   }
 }
 ```
@@ -1136,31 +1159,31 @@ function validateConfigSemantics(config: Config): void {
 ```typescript
 function suggestFixes(error: z.ZodError, rawData: unknown): string[] {
   const suggestions: string[] = [];
-  
+
   for (const err of error.errors) {
-    const path = err.path.join('.');
-    
-    if (err.code === 'invalid_type' && err.expected === 'array') {
+    const path = err.path.join(".");
+
+    if (err.code === "invalid_type" && err.expected === "array") {
       suggestions.push(
-        `Did you forget to wrap "${path}" in square brackets? Try: "${path}": [${JSON.stringify((rawData as any)[path])}]`
+        `Did you forget to wrap "${path}" in square brackets? Try: "${path}": [${JSON.stringify((rawData as any)[path])}]`,
       );
     }
-    
-    if (err.code === 'unrecognized_keys') {
-      const keys = (err as any).keys.join(', ');
+
+    if (err.code === "unrecognized_keys") {
+      const keys = (err as any).keys.join(", ");
       suggestions.push(
         `Unknown configuration key(s): ${keys}\n` +
-        `Check for typos or refer to the configuration documentation`
+          `Check for typos or refer to the configuration documentation`,
       );
     }
-    
-    if (path === 'repositories' && (rawData as any).repository) {
+
+    if (path === "repositories" && (rawData as any).repository) {
       suggestions.push(
-        `Did you mean "repositories" (plural) instead of "repository"?`
+        `Did you mean "repositories" (plural) instead of "repository"?`,
       );
     }
   }
-  
+
   return suggestions;
 }
 ```
@@ -1191,8 +1214,8 @@ File locking prevents concurrent writes to configuration files, avoiding corrupt
 ### Lock File Pattern (Simple)
 
 ```typescript
-import { existsSync, writeFileSync, unlinkSync, readFileSync } from 'fs';
-import { join } from 'path';
+import { existsSync, writeFileSync, unlinkSync, readFileSync } from "fs";
+import { join } from "path";
 
 interface LockOptions {
   timeout?: number;
@@ -1202,28 +1225,30 @@ interface LockOptions {
 class FileLock {
   private lockPath: string;
   private acquired: boolean = false;
-  
+
   constructor(private filePath: string) {
     this.lockPath = `${filePath}.lock`;
   }
-  
+
   async acquire(options: LockOptions = {}): Promise<void> {
     const { timeout = 5000, stale = 10000 } = options;
     const startTime = Date.now();
-    
+
     while (Date.now() - startTime < timeout) {
       if (this.tryAcquire(stale)) {
         this.acquired = true;
         return;
       }
-      
+
       // Wait before retry
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise((resolve) => setTimeout(resolve, 100));
     }
-    
-    throw new Error(`Failed to acquire lock for ${this.filePath} after ${timeout}ms`);
+
+    throw new Error(
+      `Failed to acquire lock for ${this.filePath} after ${timeout}ms`,
+    );
   }
-  
+
   private tryAcquire(stalePeriod: number): boolean {
     if (!existsSync(this.lockPath)) {
       try {
@@ -1231,9 +1256,9 @@ class FileLock {
           this.lockPath,
           JSON.stringify({
             pid: process.pid,
-            timestamp: Date.now()
+            timestamp: Date.now(),
           }),
-          { flag: 'wx' } // Exclusive write
+          { flag: "wx" }, // Exclusive write
         );
         return true;
       } catch (error) {
@@ -1241,12 +1266,12 @@ class FileLock {
         return false;
       }
     }
-    
+
     // Check if lock is stale
     try {
-      const lockData = JSON.parse(readFileSync(this.lockPath, 'utf-8'));
+      const lockData = JSON.parse(readFileSync(this.lockPath, "utf-8"));
       const age = Date.now() - lockData.timestamp;
-      
+
       if (age > stalePeriod) {
         console.warn(`Removing stale lock (age: ${age}ms)`);
         unlinkSync(this.lockPath);
@@ -1257,15 +1282,15 @@ class FileLock {
       unlinkSync(this.lockPath);
       return false;
     }
-    
+
     return false;
   }
-  
+
   release(): void {
     if (!this.acquired) {
       return;
     }
-    
+
     try {
       unlinkSync(this.lockPath);
       this.acquired = false;
@@ -1273,7 +1298,7 @@ class FileLock {
       console.warn(`Failed to release lock: ${error}`);
     }
   }
-  
+
   async withLock<T>(fn: () => T | Promise<T>): Promise<T> {
     await this.acquire();
     try {
@@ -1287,9 +1312,9 @@ class FileLock {
 // Usage
 async function updateConfig(configPath: string, updates: Partial<Config>) {
   const lock = new FileLock(configPath);
-  
+
   await lock.withLock(async () => {
-    const current = JSON.parse(readFileSync(configPath, 'utf-8'));
+    const current = JSON.parse(readFileSync(configPath, "utf-8"));
     const updated = { ...current, ...updates };
     writeFileSync(configPath, JSON.stringify(updated, null, 2));
   });
@@ -1299,12 +1324,12 @@ async function updateConfig(configPath: string, updates: Partial<Config>) {
 ### Proper-Lockfile Library (Recommended)
 
 ```typescript
-import lockfile from 'proper-lockfile';
-import { readFileSync, writeFileSync } from 'fs';
+import lockfile from "proper-lockfile";
+import { readFileSync, writeFileSync } from "fs";
 
 async function updateConfigWithLockfile(
   configPath: string,
-  updates: Partial<Config>
+  updates: Partial<Config>,
 ) {
   // Acquire lock
   const release = await lockfile.lock(configPath, {
@@ -1312,13 +1337,13 @@ async function updateConfigWithLockfile(
     retries: {
       retries: 5,
       minTimeout: 100,
-      maxTimeout: 1000
-    }
+      maxTimeout: 1000,
+    },
   });
-  
+
   try {
     // Critical section
-    const current = JSON.parse(readFileSync(configPath, 'utf-8'));
+    const current = JSON.parse(readFileSync(configPath, "utf-8"));
     const updated = { ...current, ...updates };
     writeFileSync(configPath, JSON.stringify(updated, null, 2));
   } finally {
@@ -1330,18 +1355,18 @@ async function updateConfigWithLockfile(
 ### Advisory Locking with flock (Unix)
 
 ```typescript
-import { openSync, closeSync, flock } from 'fs';
+import { openSync, closeSync, flock } from "fs";
 
 function updateConfigWithFlock(configPath: string, updates: Partial<Config>) {
-  const fd = openSync(configPath, 'r+');
-  
+  const fd = openSync(configPath, "r+");
+
   try {
     // Acquire exclusive lock
-    flock(fd, 'ex'); // Blocks until lock acquired
-    
-    const current = JSON.parse(readFileSync(fd, 'utf-8'));
+    flock(fd, "ex"); // Blocks until lock acquired
+
+    const current = JSON.parse(readFileSync(fd, "utf-8"));
     const updated = { ...current, ...updates };
-    
+
     // Truncate and write
     ftruncateSync(fd, 0);
     writeSync(fd, JSON.stringify(updated, null, 2));
@@ -1354,18 +1379,18 @@ function updateConfigWithFlock(configPath: string, updates: Partial<Config>) {
 ### Atomic Write Pattern
 
 ```typescript
-import { writeFileSync, renameSync, unlinkSync } from 'fs';
-import { join, dirname } from 'path';
-import { randomBytes } from 'crypto';
+import { writeFileSync, renameSync, unlinkSync } from "fs";
+import { join, dirname } from "path";
+import { randomBytes } from "crypto";
 
 function atomicWrite(filePath: string, content: string): void {
   const dir = dirname(filePath);
-  const tempPath = join(dir, `.${randomBytes(6).toString('hex')}.tmp`);
-  
+  const tempPath = join(dir, `.${randomBytes(6).toString("hex")}.tmp`);
+
   try {
     // Write to temporary file
     writeFileSync(tempPath, content, { mode: 0o644 });
-    
+
     // Atomic rename (overwrites destination)
     renameSync(tempPath, filePath);
   } catch (error) {
@@ -1381,12 +1406,12 @@ function atomicWrite(filePath: string, content: string): void {
 
 async function updateConfigAtomic(
   configPath: string,
-  updates: Partial<Config>
+  updates: Partial<Config>,
 ) {
   const lock = new FileLock(configPath);
-  
+
   await lock.withLock(() => {
-    const current = JSON.parse(readFileSync(configPath, 'utf-8'));
+    const current = JSON.parse(readFileSync(configPath, "utf-8"));
     const updated = { ...current, ...updates };
     atomicWrite(configPath, JSON.stringify(updated, null, 2));
   });
@@ -1425,10 +1450,10 @@ function setupLockCleanup() {
     }
     process.exit(0);
   };
-  
-  process.on('SIGINT', cleanup);
-  process.on('SIGTERM', cleanup);
-  process.on('exit', cleanup);
+
+  process.on("SIGINT", cleanup);
+  process.on("SIGTERM", cleanup);
+  process.on("exit", cleanup);
 }
 
 // Usage
@@ -1461,38 +1486,38 @@ Detect and validate setup scripts that should run before repository operations.
 ### Detection Algorithm
 
 ```typescript
-import { existsSync, accessSync, constants, statSync } from 'fs';
-import { resolve } from 'path';
+import { existsSync, accessSync, constants, statSync } from "fs";
+import { resolve } from "path";
 
 interface SetupScriptInfo {
   path: string;
   exists: boolean;
   executable: boolean;
-  type: 'shell' | 'node' | 'python' | 'other';
+  type: "shell" | "node" | "python" | "other";
 }
 
 function detectSetupScript(scriptPath: string): SetupScriptInfo {
   const resolvedPath = resolve(scriptPath);
-  
+
   const info: SetupScriptInfo = {
     path: resolvedPath,
     exists: false,
     executable: false,
-    type: 'other'
+    type: "other",
   };
-  
+
   // Check existence
   if (!existsSync(resolvedPath)) {
     return info;
   }
   info.exists = true;
-  
+
   // Check if it's a file
   const stats = statSync(resolvedPath);
   if (!stats.isFile()) {
     return info;
   }
-  
+
   // Check executable permission
   try {
     accessSync(resolvedPath, constants.X_OK);
@@ -1500,16 +1525,16 @@ function detectSetupScript(scriptPath: string): SetupScriptInfo {
   } catch {
     info.executable = false;
   }
-  
+
   // Detect type by extension
-  if (resolvedPath.endsWith('.sh') || resolvedPath.endsWith('.bash')) {
-    info.type = 'shell';
-  } else if (resolvedPath.endsWith('.js') || resolvedPath.endsWith('.mjs')) {
-    info.type = 'node';
-  } else if (resolvedPath.endsWith('.py')) {
-    info.type = 'python';
+  if (resolvedPath.endsWith(".sh") || resolvedPath.endsWith(".bash")) {
+    info.type = "shell";
+  } else if (resolvedPath.endsWith(".js") || resolvedPath.endsWith(".mjs")) {
+    info.type = "node";
+  } else if (resolvedPath.endsWith(".py")) {
+    info.type = "python";
   }
-  
+
   return info;
 }
 ```
@@ -1519,19 +1544,19 @@ function detectSetupScript(scriptPath: string): SetupScriptInfo {
 ```typescript
 function validateSetupScript(scriptPath: string): void {
   const info = detectSetupScript(scriptPath);
-  
+
   if (!info.exists) {
     throw new Error(
       `Setup script not found: ${scriptPath}\n\n` +
-      `Please check the path in your configuration.`
+        `Please check the path in your configuration.`,
     );
   }
-  
+
   if (!info.executable) {
     throw new Error(
       `Setup script is not executable: ${scriptPath}\n\n` +
-      `To fix this, run:\n` +
-      `  chmod +x ${scriptPath}`
+        `To fix this, run:\n` +
+        `  chmod +x ${scriptPath}`,
     );
   }
 }
@@ -1542,23 +1567,23 @@ function validateSetupScript(scriptPath: string): void {
 ```typescript
 function findSetupScript(repoPath: string): string | null {
   const candidates = [
-    'setup.sh',
-    'scripts/setup.sh',
-    '.arashi/setup.sh',
-    'setup',
-    'bootstrap.sh',
-    'bootstrap'
+    "setup.sh",
+    "scripts/setup.sh",
+    ".arashi/setup.sh",
+    "setup",
+    "bootstrap.sh",
+    "bootstrap",
   ];
-  
+
   for (const candidate of candidates) {
     const fullPath = join(repoPath, candidate);
     const info = detectSetupScript(fullPath);
-    
+
     if (info.exists && info.executable) {
       return fullPath;
     }
   }
-  
+
   return null;
 }
 ```
@@ -1566,7 +1591,7 @@ function findSetupScript(repoPath: string): string | null {
 ### Execution with Safety Checks
 
 ```typescript
-import { spawn } from 'child_process';
+import { spawn } from "child_process";
 
 interface ExecutionOptions {
   cwd?: string;
@@ -1577,40 +1602,40 @@ interface ExecutionOptions {
 
 async function executeSetupScript(
   scriptPath: string,
-  options: ExecutionOptions = {}
+  options: ExecutionOptions = {},
 ): Promise<{ success: boolean; output: string; error?: string }> {
   const {
     cwd = process.cwd(),
     env = {},
     timeout = 30000,
-    dryRun = false
+    dryRun = false,
   } = options;
-  
+
   // Validate before execution
   validateSetupScript(scriptPath);
-  
+
   if (dryRun) {
     console.log(`Would execute: ${scriptPath}`);
-    return { success: true, output: '' };
+    return { success: true, output: "" };
   }
-  
+
   const info = detectSetupScript(scriptPath);
-  
+
   // Determine command based on script type
   let command: string;
   let args: string[];
-  
+
   switch (info.type) {
-    case 'shell':
-      command = 'bash';
+    case "shell":
+      command = "bash";
       args = [scriptPath];
       break;
-    case 'node':
-      command = 'node';
+    case "node":
+      command = "node";
       args = [scriptPath];
       break;
-    case 'python':
-      command = 'python3';
+    case "python":
+      command = "python3";
       args = [scriptPath];
       break;
     default:
@@ -1618,40 +1643,40 @@ async function executeSetupScript(
       command = scriptPath;
       args = [];
   }
-  
+
   return new Promise((resolve, reject) => {
     const child = spawn(command, args, {
       cwd,
       env: { ...process.env, ...env },
-      timeout
+      timeout,
     });
-    
-    let stdout = '';
-    let stderr = '';
-    
-    child.stdout.on('data', data => {
+
+    let stdout = "";
+    let stderr = "";
+
+    child.stdout.on("data", (data) => {
       stdout += data.toString();
       process.stdout.write(data);
     });
-    
-    child.stderr.on('data', data => {
+
+    child.stderr.on("data", (data) => {
       stderr += data.toString();
       process.stderr.write(data);
     });
-    
-    child.on('close', code => {
+
+    child.on("close", (code) => {
       if (code === 0) {
         resolve({ success: true, output: stdout });
       } else {
         resolve({
           success: false,
           output: stdout,
-          error: stderr || `Process exited with code ${code}`
+          error: stderr || `Process exited with code ${code}`,
         });
       }
     });
-    
-    child.on('error', error => {
+
+    child.on("error", (error) => {
       reject(new Error(`Failed to execute setup script: ${error.message}`));
     });
   });
@@ -1663,29 +1688,32 @@ async function executeSetupScript(
 ```typescript
 const ConfigSchema = z.object({
   // ... other fields
-  setupScript: z.string().optional().refine(
-    script => {
-      if (!script) return true;
-      
-      const info = detectSetupScript(script);
-      return info.exists && info.executable;
-    },
-    script => {
-      const info = detectSetupScript(script!);
-      
-      if (!info.exists) {
-        return { message: `Setup script not found: ${script}` };
-      }
-      
-      if (!info.executable) {
-        return {
-          message: `Setup script not executable: ${script}\nRun: chmod +x ${script}`
-        };
-      }
-      
-      return { message: 'Unknown error' };
-    }
-  )
+  setupScript: z
+    .string()
+    .optional()
+    .refine(
+      (script) => {
+        if (!script) return true;
+
+        const info = detectSetupScript(script);
+        return info.exists && info.executable;
+      },
+      (script) => {
+        const info = detectSetupScript(script!);
+
+        if (!info.exists) {
+          return { message: `Setup script not found: ${script}` };
+        }
+
+        if (!info.executable) {
+          return {
+            message: `Setup script not executable: ${script}\nRun: chmod +x ${script}`,
+          };
+        }
+
+        return { message: "Unknown error" };
+      },
+    ),
 });
 ```
 
@@ -1697,37 +1725,40 @@ interface Repository {
   setupScript?: string;
 }
 
-function detectRepositorySetupScript(repoPath: string, globalScript?: string): string | null {
+function detectRepositorySetupScript(
+  repoPath: string,
+  globalScript?: string,
+): string | null {
   // Priority:
   // 1. Repository-level script
   // 2. Global script from config
-  
+
   const localScript = findSetupScript(repoPath);
   if (localScript) {
     return localScript;
   }
-  
+
   if (globalScript) {
     return globalScript;
   }
-  
+
   return null;
 }
 
 async function setupRepository(repo: Repository, globalScript?: string) {
   const script = detectRepositorySetupScript(repo.path, globalScript);
-  
+
   if (!script) {
     console.log(`No setup script for ${repo.path}`);
     return;
   }
-  
+
   console.log(`Running setup script for ${repo.path}: ${script}`);
-  
+
   const result = await executeSetupScript(script, {
-    cwd: repo.path
+    cwd: repo.path,
   });
-  
+
   if (!result.success) {
     throw new Error(`Setup failed for ${repo.path}: ${result.error}`);
   }
@@ -1779,13 +1810,13 @@ async function setupRepository(repo: Repository, globalScript?: string) {
 
 ### Trade-offs Summary
 
-| Aspect | Simple Approach | Advanced Approach | Recommendation |
-|--------|----------------|-------------------|----------------|
-| Validation | Manual checks | Zod/JSON Schema | **Zod** for TypeScript |
-| Migration | Version detection only | Full transform pipeline | Start simple, add complexity as needed |
-| Repository Discovery | Sync, single-threaded | Async, parallel | **Async** for better UX |
-| File Locking | None | proper-lockfile | Start without, add when needed |
-| Setup Scripts | Manual path in config | Auto-discovery | **Auto-discovery** with override |
+| Aspect               | Simple Approach        | Advanced Approach       | Recommendation                         |
+| -------------------- | ---------------------- | ----------------------- | -------------------------------------- |
+| Validation           | Manual checks          | Zod/JSON Schema         | **Zod** for TypeScript                 |
+| Migration            | Version detection only | Full transform pipeline | Start simple, add complexity as needed |
+| Repository Discovery | Sync, single-threaded  | Async, parallel         | **Async** for better UX                |
+| File Locking         | None                   | proper-lockfile         | Start without, add when needed         |
+| Setup Scripts        | Manual path in config  | Auto-discovery          | **Auto-discovery** with override       |
 
 ---
 
@@ -1798,4 +1829,3 @@ async function setupRepository(repo: Repository, globalScript?: string) {
 5. Create setup script detection and execution
 6. Write comprehensive tests for all validation logic
 7. Document configuration format and migration process
-

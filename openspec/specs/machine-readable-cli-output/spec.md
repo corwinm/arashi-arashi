@@ -3,7 +3,9 @@
 ## Purpose
 
 Define the automation-safe machine-readable output contract for the Arashi CLI, including consistent JSON envelopes, stdout isolation, non-interactive behavior, command support classification, and related documentation and skill guidance.
+
 ## Requirements
+
 ### Requirement: JSON output envelope
 
 The Arashi CLI SHALL use a consistent JSON envelope for every command invocation that accepts `--json` and reaches command-level execution.
@@ -84,29 +86,13 @@ Commands or modes whose primary purpose is shell-code emission, external app lau
 
 ### Requirement: JSON output documentation and skill guidance
 
-Arashi documentation and the Arashi skill package SHALL describe the JSON envelope, error shape, command support matrix, stdout/stderr contract, and handoff-report JSON payload for automation consumers.
+User and agent documentation SHALL explain one-document JSON behavior, stable base-policy source values, per-repository create/clone results, and structured selector/resolution failures without recommending human-output parsing.
 
-#### Scenario: User looks up JSON mode support
+#### Scenario: Automation needs base-policy evidence
 
-- **WHEN** a user reads the CLI documentation for automation or command output
-- **THEN** the documentation identifies which commands support `--json`, which modes are unsupported, and the shape of success and failure envelopes
-
-#### Scenario: Agent uses Arashi skill guidance
-
-- **WHEN** an agent consults the Arashi skill package for command guidance
-- **THEN** the skill references identify when to prefer `--json` for automation-safe command output
-- **AND** the guidance explains that unsupported launch, shell integration, or interactive modes return structured JSON errors rather than human prompts
-
-#### Scenario: User writes a parser from documentation
-
-- **WHEN** a user follows the documented JSON mode contract
-- **THEN** they can parse stdout as a single JSON document and inspect `ok`, `data`, `warnings`, and `error` without scraping human-readable output
-
-#### Scenario: User looks up handoff JSON support
-
-- **WHEN** a user reads the CLI documentation for handoff-report automation
-- **THEN** the documentation identifies `arashi handoff --json` as a JSON-capable command
-- **AND** the documentation describes the workspace metadata, per-repository status records, caller-supplied context arrays, warnings, and generated next-command hints included in the handoff payload
+- **WHEN** automation consumes configured create or clone with base policy
+- **THEN** canonical docs and packaged skill guidance identify the stable JSON fields and source vocabulary
+- **AND** direct automation to stderr/exit status and the JSON envelope rather than human text
 
 ### Requirement: Prune JSON results
 
@@ -423,187 +409,228 @@ The system SHALL represent explicit plain-tmux launch requests that use JSON mod
 - **AND** the same precedence applies through the Commander action and direct exported executor
 
 ### Requirement: Configured init JSON reports the authoritative resolved worktree location
+
 Configured `arashi init --json`, its dry-run variant, and its supported preference-only form SHALL report the normalized authoritative worktree location through the standard single-document JSON envelope.
 
 #### Scenario: Bare configured init JSON uses parent default
+
 - **WHEN** configured init runs with `--json` in a bare repository without `--worktrees-dir`
 - **THEN** stdout contains exactly one valid success envelope with `command: "init"`
 - **AND** its data reports canonical bare `workspaceRoot` and `worktreesDir: ".."`
 - **AND** no human progress, preview, success, or warning output appears on stdout or stderr
 
 #### Scenario: Non-bare configured init JSON retains managed default
+
 - **WHEN** configured init runs with `--json` in a non-bare repository without `--worktrees-dir`
 - **THEN** its data reports `worktreesDir: ".arashi/worktrees"`
 
 #### Scenario: Explicit override is reflected in JSON
+
 - **WHEN** configured init runs with `--json --worktrees-dir <path>`
 - **THEN** its data reports the normalized explicit path regardless of repository type
 
 #### Scenario: Preference-only result uses config authority
+
 - **WHEN** an existing configured workspace runs the supported preference-only init form with `--json`
 - **THEN** its data reports the existing normalized configured `worktreesDir`
 - **AND** reports `.arashi/worktrees` only when the existing configuration uses the legacy omitted-field fallback
 - **AND** does not substitute a repository-type default
 
 #### Scenario: Bare dry-run JSON is non-mutating
+
 - **WHEN** configured init runs with `--dry-run --json` in a bare repository without an explicit worktree location
 - **THEN** its data reports `worktreesDir: ".."` and the bare non-worktree managed-path classifications
 - **AND** no config, directory, ignore, preference, hook, repository, linked worktree, temporary worktree, or created worktree mutation occurs
 - **AND** stdout contains only the envelope and stderr contains no human output
 
 #### Scenario: Bootstrap dry-run JSON remains non-bare
+
 - **WHEN** configured init previews a new repository bootstrap with `--dry-run --json`
 - **THEN** its data reports `.arashi/worktrees` without requiring Git classification of a nonexistent repository
 - **AND** no repository or directory is created
 
 ### Requirement: Keep launch disposition human-only in machine-readable mode
+
 The system SHALL classify `--tab` as human-only launch behavior on both switch and create, SHALL reject it with each command's existing structured unsupported-mode label and exit convention, and SHALL enforce the rejection at the Commander action and exported executor before any competing option error, human output, discovery with side effects, mutation, directive, or launch.
 
 #### Scenario: Switch JSON tab rejection has existing shape
+
 - **WHEN** `arashi switch --json --tab` is invoked with or without another conflicting launch or behavior flag
 - **THEN** stdout contains exactly one `JSON_UNSUPPORTED_FOR_MODE` envelope with command `switch` and mode `launch`
 - **AND** the process uses switch's existing JSON usage exit code
 - **AND** stderr contains no human progress or error output
 
 #### Scenario: Create JSON tab rejection has existing shape
+
 - **WHEN** `arashi create <branch> --json --tab` is invoked with or without another conflicting launch flag
 - **THEN** stdout contains exactly one `JSON_UNSUPPORTED_FOR_MODE` envelope with command `create` and mode `interactive-or-launch`
 - **AND** the process uses create's existing JSON error exit code
 - **AND** stderr contains no human progress or error output
 
 #### Scenario: Exported executors cannot bypass rejection
+
 - **WHEN** a direct caller passes `json: true` and `tab: true` to the exported switch or create executor
 - **THEN** the executor returns that command's existing numeric JSON rejection result
 - **AND** invokes no workspace discovery, selector, directive, managed-ignore reconciliation, branch/worktree mutation, hook, or launcher dependency
 
 #### Scenario: General option types preserve overload honesty
+
 - **WHEN** a caller holds the broad switch or create options type with possible JSON and tab values
 - **THEN** compile-time return types preserve the existing numeric-versus-human result union
 - **AND** do not infer a human launch result for an invocation that can be rejected in JSON mode
 
 ### Requirement: JSON lifecycle results expose a stable per-hook outcome schema
+
 Successful JSON create and remove envelopes SHALL expose `data.hookOutcomes`; failed-command envelopes SHALL preserve the canonical error-envelope discriminant and expose the same array at `error.details.hookOutcomes`. Each record SHALL contain `hookName`, `scope`, `workspaceMode`, `hookStatus`, `reasonCode`, `message`, and `repositoryId`; SHALL contain `sourceScriptPath`, `executionPath`, `targetRepositoryName`, `targetRepositoryPath`, and `targetWorktreePath` as strings or `null`; and SHALL contain non-negative integer `durationMs` when execution was attempted. `scope` SHALL be one of `workspace`, `repository`, `global-repository`, or `global-shared`; `workspaceMode` SHALL be `configured` or `standalone`; `repositoryId` SHALL be `workspace` for untargeted configured workspace hooks and the canonical target name otherwise; `hookStatus` SHALL be `success`, `failure`, or `skipped`; and `reasonCode` SHALL be one of `none`, `not_found`, `disabled`, `validation_failed`, `interpreter_unavailable`, `timeout`, `exit_non_zero`, or `not_applicable`.
 
 #### Scenario: Validation fails before execution
+
 - **WHEN** a discovered hook fails file or executable validation
 - **THEN** its record has `hookStatus: "failure"` and `reasonCode: "validation_failed"`
 - **AND** `durationMs` is omitted because execution was not attempted
 
 #### Scenario: Hook is absent
+
 - **WHEN** a hook location is evaluated and no native script exists
 - **THEN** its record has `hookStatus: "skipped"`, `reasonCode: "not_found"`, and `sourceScriptPath: null`
 
 #### Scenario: Fail-fast prevents later evaluation
+
 - **WHEN** a create hook failure stops the lifecycle before later hook locations are evaluated
 - **THEN** `hookOutcomes` contains the failed and previously evaluated locations only
 - **AND** does not fabricate `not_applicable` records for an execution plan that was never reached
 
 ### Requirement: JSON create results include complete evaluated hook outcomes
+
 Successful configured create SHALL order `data.hookOutcomes` as workspace pre-create, each selected repository's pre/post pair in selected-repository order, then workspace post-create. A failed configured create SHALL preserve the evaluated prefix in the same order at `error.details.hookOutcomes`. Standalone create SHALL order targeted-global before shared-global at each lifecycle point. Records SHALL cover every location actually evaluated before success or fail-fast termination without mixing hook, progress, or recovery prose into stdout.
 
 #### Scenario: Configured create succeeds with hooks
+
 - **WHEN** configured `arashi create --json` evaluates workspace and repository-specific hooks successfully
 - **THEN** stdout contains one valid create envelope
 - **AND** `data.hookOutcomes` follows configured lifecycle order with explicit workspace and target metadata
 
 #### Scenario: Standalone create succeeds with hooks
+
 - **WHEN** standalone `arashi create --json` evaluates targeted and shared user-global hooks
 - **THEN** stdout contains one valid create envelope
 - **AND** `data.hookOutcomes` identifies standalone mode through its target/execution context and preserves targeted-before-shared order
 
 #### Scenario: Workspace create hook fails
+
 - **WHEN** a workspace create hook fails during JSON create
 - **THEN** stdout contains one canonical structured failure envelope with evaluated outcomes at `error.details.hookOutcomes` and rollback information in error details
 - **AND** hook stdout, stderr, progress, and human recovery prose do not contaminate JSON stdout
 
 ### Requirement: JSON remove results preserve per-hook and operation failures
+
 Configured and standalone remove SHALL use the same record schema at the success/failure envelope locations defined above for each executed scope/target instead of collapsing all hooks into one last-failure summary. Records SHALL follow target selection order and, within each target, repository → workspace → global-repository → global-shared scope order for each lifecycle. Existing aggregate pre/post summary fields MAY remain as compatibility summaries but MUST be derived from the complete records.
 
 #### Scenario: Remove has timeout and nonzero failures
+
 - **WHEN** remove operations continue and evaluated hooks include both timeout and nonzero failures
 - **THEN** each record retains its own `timeout` or `exit_non_zero` reason
 - **AND** the final command failure preserves removal errors plus all hook records regardless of completion order
 
 #### Scenario: Remove succeeds across multiple targets
+
 - **WHEN** configured remove evaluates hooks for multiple repository targets
 - **THEN** records are ordered by target selection and documented scope order
 - **AND** each record contains that invocation's target and execution paths
 
 ### Requirement: JSON dry-run remains non-executing
+
 Create and remove dry-run JSON SHALL preserve their existing hook-preview contracts and MUST NOT spawn hook processes. This change does not require dry-run to fabricate execution outcome records for locations that normal orchestration has not evaluated.
 
 #### Scenario: Dry-run previews hooks
+
 - **WHEN** create or remove runs with `--dry-run --json`
 - **THEN** the existing structured preview identifies applicable discovered hook plans where supported
 - **AND** no `success` or `failure` execution record is fabricated and no hook process is spawned
 
 ### Requirement: JSON short alias preserves the machine-readable contract
+
 Every command that registers `--json` SHALL also register `-j` as an exact alias, including commands whose requested operation returns a structured unsupported-mode error rather than success.
 
 #### Scenario: JSON-capable command uses short alias
+
 - **WHEN** a user replaces `--json` with `-j` on a JSON-capable command
 - **THEN** stdout, envelope schema, warnings, exit code, interactivity, and side effects are identical
 
 #### Scenario: Unsupported JSON mode uses short alias
+
 - **WHEN** a user supplies `-j` for a command or mode that rejects JSON operation
 - **THEN** Arashi returns the same one-document structured unsupported-mode error as `--json`
 - **AND** does not fall back to human execution
 
 #### Scenario: Json alias and long form are combined
+
 - **WHEN** a user supplies both `-j` and `--json` on one command
 - **THEN** Arashi treats them as the same boolean intent
 - **AND** emits exactly one JSON document
 
 #### Scenario: Npm wrapper recognizes the JSON alias
+
 - **WHEN** npm-managed `install` or `update` intercepts an invocation containing `-j` before Commander runs
 - **THEN** the wrapper applies the same JSON mode, output isolation, envelope, and exit behavior as `--json`
 - **AND** does not delegate to an unintended human-mode path
 
 ### Requirement: Deprecated option handling preserves structured output isolation
+
 Compatibility spellings accepted during deprecation SHALL NOT add human deprecation prose to JSON stdout and SHALL preserve the command's existing JSON guard and validation precedence.
 
 #### Scenario: Deprecated spelling reaches JSON success
+
 - **WHEN** a deprecated spelling is accepted alongside a successful JSON invocation
 - **THEN** stdout contains exactly one success envelope
 - **AND** any deprecation signal is represented in the existing structured warnings field or outside stdout according to documented policy
 
 #### Scenario: Deprecated spelling reaches JSON failure
+
 - **WHEN** a deprecated spelling is accepted alongside a JSON invocation that fails or is unsupported
 - **THEN** stdout contains exactly one error envelope
 - **AND** the original command-specific error/guard precedence remains authoritative
 
 #### Scenario: Human deprecation output is isolated
+
 - **WHEN** a deprecated spelling emits a human migration warning
 - **THEN** the warning is written only to stderr
 - **AND** it does not alter machine-readable stdout
 
 ### Requirement: JSON lifecycle hook execution is non-interactive
+
 Configured and standalone create and remove SHALL execute lifecycle hooks with `ARASHI_HOOK_INPUT=disabled` and immediate-EOF stdin whenever JSON mode is active, including when the parent process has terminal stdin. No interactive attribution banner, prompt byte, prefixed hook line, progress output, or recovery prose SHALL be written to stdout. The existing one-document envelope discriminant, exit convention, hook outcome locations, and captured diagnostic behavior SHALL remain authoritative.
 
 #### Scenario: JSON hook attempts to read
+
 - **WHEN** a create or remove hook performs a native stdin read during `--json`
 - **THEN** the hook receives EOF immediately rather than waiting for the lifecycle timeout
 - **AND** its environment reports `ARASHI_HOOK_INPUT=disabled`
 
 #### Scenario: JSON runs from a terminal
+
 - **WHEN** create or remove runs with `--json` while parent stdin is a TTY
 - **THEN** terminal availability does not enable hook input
 - **AND** stdout contains exactly one parseable JSON document
 
 #### Scenario: Hook emits an unterminated prompt in JSON mode
+
 - **WHEN** a JSON-mode hook writes prompt text without a newline before attempting to read
 - **THEN** no prompt text or interactive attribution is streamed to stdout
 - **AND** internal `HookResult` capture remains available to existing classification and diagnostics without adding stdout or stderr fields to the public hook-outcome schema
 
 #### Scenario: JSON hook fails after EOF
+
 - **WHEN** a hook treats immediate EOF as an error and exits nonzero
 - **THEN** create or remove reports the existing structured hook failure with evaluated outcomes
 - **AND** no human hook output contaminates stdout
 
 ### Requirement: JSON dry-run remains input-channel-free
+
 Create and remove dry-run JSON SHALL continue not to spawn lifecycle hooks and SHALL NOT fabricate `ARASHI_HOOK_INPUT`, interactive attribution, or execution outcomes for previewed hook locations.
 
 #### Scenario: Dry-run previews an input-capable hook
+
 - **WHEN** `--dry-run --json` discovers a hook that could request input during a real human invocation
 - **THEN** the existing preview describes the hook without executing it
 - **AND** stdout remains one structured preview document
@@ -657,94 +684,110 @@ Create and remove dry-run JSON SHALL continue not to spawn lifecycle hooks and S
 - **AND** the process exits non-zero without emitting a second JSON document
 
 ### Requirement: Create JSON reports requested and effective base resolution
-`arashi create --json` and `arashi create --dry-run --json` SHALL include optional `base` data when a base was requested. `requestedBranch` SHALL be the normalized logical branch after removing at most one leading `origin/`; the literal prefixed spelling SHALL NOT be retained. `source` SHALL be exactly `cli` or `config`. The success `repositories` array SHALL follow effective selected-set order, and each entry SHALL contain `repositoryName`, the existing canonical absolute `repositoryPath`, `resolvedRef`, `resolvedOid`, and `targetAction` exactly `created` or `reused`. Base-resolution failure SHALL use code `CREATE_BASE_RESOLUTION_FAILED`; its details SHALL use the same normalized `requestedBranch` and `source`, and SHALL contain only affected repositories in effective selected-set order. Every failure entry SHALL use the canonical absolute path and `attemptedRefs` exactly `["refs/heads/<normalized-branch>", "refs/remotes/origin/<normalized-branch>"]` in that order. Create results SHALL omit `base` when neither CLI nor configuration requests one, and every JSON path SHALL preserve single-document stdout isolation.
 
-#### Scenario: JSON create resolves local and remote bases
-- **WHEN** JSON create resolves a requested base locally in one selected repository and from `origin` in another
-- **THEN** stdout contains exactly one success envelope
-- **AND** `data.base` contains `requestedBranch`, `source`, and `repositories`
-- **AND** every repository entry contains `repositoryName`, `repositoryPath`, `resolvedRef`, `resolvedOid`, and `targetAction`
-- **AND** `requestedBranch`, `source`, path representation, value vocabularies, and repository order match the normative requirement
+When configured or explicit base policy applies, `arashi create --json` SHALL expose each selected repository's normalized effective branch, exact policy source, canonical repository identity/path, resolved full ref, captured commit OID, and created/reused target action. Base-resolution errors SHALL use a stable code and include every affected repository with its independently effective branch and exact attempted refs. When no base policy applies, legacy result shapes SHALL remain unchanged.
 
-#### Scenario: JSON create reuses an existing target
-- **WHEN** JSON create reuses an existing target branch under `REUSE_EXISTING`
-- **THEN** that repository record identifies reuse and its independently resolved requested base
-- **AND** does not claim that the existing target was created from the requested base
+#### Scenario: JSON success has per-repository branches and sources
 
-#### Scenario: JSON base resolution fails in multiple repositories
-- **WHEN** more than one selected repository lacks the requested base
-- **THEN** stdout contains exactly one error envelope with code `CREATE_BASE_RESOLUTION_FAILED`
-- **AND** error details contain `requestedBranch`, `source`, and `repositories`
-- **AND** every failure entry contains `repositoryName`, `repositoryPath`, and `attemptedRefs`
-- **AND** only affected repositories appear in selected-set order with the exact local-then-origin attempted-ref array
-- **AND** no human progress or diagnostics are written to stdout
+- **WHEN** create resolves meta and child repositories from mixed repository CLI, invocation CLI, repository config, and workspace config sources
+- **THEN** stdout contains exactly one success document
+- **AND** every selected repository record reports its own normalized branch and exact source
+
+#### Scenario: JSON failure aggregates different missing bases
+
+- **WHEN** selected repositories cannot resolve different effective bases
+- **THEN** stdout contains exactly one structured error document covering every affected repository
+- **AND** each record contains that repository's requested branch and attempted local/origin refs
+- **AND** no human text appears on stdout
+
+#### Scenario: Existing target is reused
+
+- **WHEN** create retains an existing target under `REUSE_EXISTING`
+- **THEN** JSON reports the independently resolved policy and `reused` action
+- **AND** does not claim that the existing target was created from or ancestry-validated against that base
 
 ### Requirement: Lifecycle records identify source kind and owner without disclosure
+
 Every public create/remove hook outcome record SHALL add `sourceKind`, `sourceOwnerKind`, and `sourceOwnerName`. `sourceKind` SHALL be `file` or `inline-config`; `sourceOwnerKind` SHALL be `workspace`, `repository`, or `user-global`; and `sourceOwnerName` SHALL be the canonical repository name for repository-owned locations and `null` otherwise. Existing `sourceScriptPath` SHALL be the absolute path for a file and `null` for inline config. No outcome field, message, warning, error, or diagnostic SHALL contain or derive inline snippet text. Existing success `data.hookOutcomes` and failure `error.details.hookOutcomes` locations, status/reason vocabulary, duration rules, ordering, and fail-fast evaluated-prefix behavior SHALL remain unchanged.
 
 #### Scenario: Inline hook succeeds
+
 - **WHEN** JSON create or remove executes a repository-owned inline hook successfully
 - **THEN** its outcome has `sourceKind: "inline-config"`, `sourceOwnerKind: "repository"`, canonical `sourceOwnerName`, and `sourceScriptPath: null`
 - **AND** contains no snippet text
 
 #### Scenario: File hook succeeds
+
 - **WHEN** JSON create or remove executes an existing file hook
 - **THEN** its outcome has `sourceKind: "file"`, accurate owner metadata, and its absolute `sourceScriptPath`
 - **AND** all pre-existing record fields retain their meanings
 
 #### Scenario: Inline failure is preserved at canonical location
+
 - **WHEN** an inline hook fails, times out, or fails preflight and the command fails
 - **THEN** the evaluated records appear at `error.details.hookOutcomes` with the exact classified reason
 - **AND** stdout remains one JSON document with no human or snippet disclosure
 
 ### Requirement: Disabled, quiet, input, and timeout JSON behavior is source-neutral
+
 JSON create SHALL apply its existing `--no-hooks`; JSON create/remove SHALL apply existing `--no-hook-input`, timeout, JSON-owned quiet/progress isolation, and immediate-EOF behavior equally to inline and file sources. Remove MUST NOT acquire `--no-hooks`. No source-neutral policy SHALL add a second JSON document or human hook output to stdout.
 
 #### Scenario: JSON create disables hooks
+
 - **WHEN** JSON create uses `--no-hooks`
 - **THEN** no inline/file source is discovered, preflighted, or executed after configuration validation
 - **AND** the existing disabled result representation is preserved
 
 #### Scenario: JSON inline hook reads or times out
+
 - **WHEN** an inline hook reads stdin or exceeds the timeout under JSON execution
 - **THEN** stdin is immediate EOF and timeout classification remains exact where applicable
 - **AND** only the final structured envelope is written to stdout
 
 ### Requirement: Inline dry-run JSON preserves each command's existing preview surface
+
 Remove dry-run JSON SHALL describe applicable inline/file plans with source-kind, owner, logical lifecycle, scope, target, selected interpreter, and file path where applicable, while omitting snippet text. It MUST NOT execute hooks or fabricate success/failure outcome records. Configured-create dry-run JSON SHALL preserve its existing no-hook-discovery behavior, empty `hookOutcomes`, and absence of a hook-preview surface for both inline and file configuration.
 
 #### Scenario: Remove dry-run JSON previews inline hook
+
 - **WHEN** `arashi remove --dry-run --json` resolves an inline source
 - **THEN** its existing hook preview contains only the normative non-secret metadata
 - **AND** no execution outcome or process is produced
 
 #### Scenario: Configured-create dry-run remains source-neutral by omission
+
 - **WHEN** `arashi create --dry-run --json` loads valid inline or file hook configuration
 - **THEN** it performs no hook discovery or interpreter preflight and returns the existing empty `hookOutcomes`
 - **AND** it does not add a hook-preview field or fabricate source metadata
 
 ### Requirement: Configuration and ambiguity failures remain structured and pre-mutation
+
 Invalid inline configuration SHALL use the existing canonical JSON configuration failure. Same-location ambiguity SHALL map to `reasonCode: "validation_failed"`; unavailable interpreter preflight SHALL map to `reasonCode: "interpreter_unavailable"`. Configured-create command failure SHALL retain code `CREATE_FAILED`, configured-remove preflight failure SHALL retain `HOOK_CONFIGURATION_INVALID`, and both SHALL expose structured hook details containing logical source metadata and any file path but no snippet. These failures MUST precede hook discovery for invalid configuration and lifecycle mutation for resolver failures.
 
 #### Scenario: Invalid inline value fails in JSON mode
+
 - **WHEN** a JSON command loads an empty, unknown, unsupported, or wrong-typed inline value
 - **THEN** stdout contains one canonical configuration error envelope
 - **AND** no discovery, mutation, prompt, or snippet disclosure occurs
 
 #### Scenario: Inline/file ambiguity fails in JSON mode
+
 - **WHEN** enabled JSON create/remove finds a same-location collision
 - **THEN** stdout contains one structured failure identifying scope, owner, source kinds, and file path
 - **AND** no lifecycle mutation occurs
 
 ### Requirement: Configured create JSON reports repository materialization outcomes
+
 Configured `create --json` success, dry-run, and failure envelopes SHALL expose ordered per-repository materialization outcomes without changing the existing envelope schema version or stdout-isolation contract. Executed records at `data.repositoryResults[].materializationOutcomes`, or at `error.details.repositoryResults[].materializationOutcomes` on failure, SHALL contain `action`, normalized repository-relative `path`, `status`, `reasonCode`, and bounded `message`; status SHALL be `copied`, `linked`, `skipped`, `failed`, or `rolled-back`. Dry-run records SHALL appear at `data.dryRunOutcome.materializationPlans[]` as `{ repositoryId, outcomes }`, with outcome status `would-copy`, `would-link`, `skipped`, or `blocked`, and MUST NOT populate executed repository results. `reasonCode` SHALL be one of `none`, `source_missing`, `source_checkout_unavailable`, `source_inspection_failed`, `source_link_broken`, `source_escape`, `source_cycle`, `destination_exists`, `destination_ancestor_unsafe`, `destination_inspection_failed`, `symlink_unsupported`, `copy_failed`, `symlink_failed`, `rolled_back`, or `rollback_failed`. Failed-command details SHALL preserve the existing command-wide rollback summary independently and SHALL add `materializationRollback: { attempted, complete, failureCount, failures }` for materialization cleanup only; each materialization failure entry SHALL identify `repositoryId`, `action`, `path`, `reasonCode: "rollback_failed"`, and bounded `message`. Branch, worktree, and generic directory rollback failures remain in the existing command-wide rollback shape and MUST NOT be forced to invent materialization fields.
 
 #### Scenario: JSON create succeeds with materialization
+
 - **WHEN** configured create copies, links, or skips declared paths and otherwise succeeds with `--json`
 - **THEN** stdout contains exactly one `ok: true`, `command: "create"` envelope
 - **AND** each repository result contains its outcomes in copy-then-symlink declaration order
 
 #### Scenario: Actionable JSON dry-run previews materialization
+
 - **WHEN** configured create runs with `--dry-run --json` and no materialization blocker exists
 - **THEN** stdout contains one `ok: true` envelope, the process exits zero, and ordered plans appear at `data.dryRunOutcome.materializationPlans`
 - **AND** no record falsely claims a file was copied or link was created
@@ -752,12 +795,14 @@ Configured `create --json` success, dry-run, and failure envelopes SHALL expose 
 - **AND** no hook, Git, managed-ignore, directory, file, or link mutation occurs
 
 #### Scenario: Blocked JSON dry-run reports an error plan
+
 - **WHEN** configured create runs with `--dry-run --json` and one or more materialization outcomes are `blocked`
 - **THEN** stdout contains one `ok: false` envelope with `error.code: "MATERIALIZATION_PLAN_BLOCKED"` and the process exits nonzero
 - **AND** ordered plans appear at `error.details.dryRunOutcome.materializationPlans` with at least one `blocked` status
 - **AND** executed `repositoryResults` and `materializationOutcomes` are absent
 
 #### Scenario: JSON materialization fails
+
 - **WHEN** a destination conflict, path-containment problem, source-checkout failure, copy failure, or symlink capability failure blocks create
 - **THEN** stdout contains exactly one structured failure envelope
 - **AND** `error.details.repositoryResults` preserves affected and previously completed repository results with their materialization ledgers
@@ -765,11 +810,13 @@ Configured `create --json` success, dry-run, and failure envelopes SHALL expose 
 - **AND** existing command-wide rollback details retain branch/worktree/directory cleanup failures without invented action/path fields
 
 #### Scenario: Later lifecycle failure rolls materialization back
+
 - **WHEN** materialization succeeds but a later create hook or repository operation fails and rollback removes owned destinations
 - **THEN** the failure envelope reports confirmed removed outcomes as `rolled-back`
 - **AND** uses `rolled_back` for confirmed cleanup and `rollback_failed` plus `materializationRollback.complete: false` for incomplete materialization cleanup
 
 #### Scenario: Materialization output protects contents
+
 - **WHEN** human or JSON output reports a configured source or destination
 - **THEN** it includes only bounded repository identity, action, relative path, status, and diagnostics
 - **AND** includes no file contents, hashes, environment values, or copied data

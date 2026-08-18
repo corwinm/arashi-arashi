@@ -632,13 +632,13 @@ async function check(
     "INLINE_COMMAND_CONTRACT_MISSING",
   );
   if (commandContract) {
-    if (commandContract.schemaVersion !== 7)
+    if (commandContract.schemaVersion !== 8)
       add(
         diagnostics,
         "cli",
         "INLINE_COMMAND_CONTRACT_VERSION_CHANGED",
         commandSource,
-        "CLI command contract must remain schema version 7.",
+        "CLI command contract must remain schema version 8.",
       );
     const create = commandOptions(commandContract, "create");
     const remove = commandOptions(commandContract, "remove");

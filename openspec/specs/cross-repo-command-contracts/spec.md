@@ -3,20 +3,18 @@
 ## Purpose
 
 Define the canonical CLI-derived command contract and the deterministic checks that keep documentation, skills guidance, and VS Code command integrations aligned across Arashi repositories.
+
 ## Requirements
+
 ### Requirement: CLI-derived command contract
 
-The system SHALL derive canonical command paths and structural metadata from the same Commander program tree used for CLI execution, and SHALL supplement that structure with complete typed semantic metadata for companion-surface policy.
+The CLI repository SHALL generate a deterministic command contract from registered commands plus typed semantic policy, including the shared base-policy configuration paths, migration, option relationships, selectors, precedence, command scope, resolution/reporting rules, and stable source vocabulary.
 
-#### Scenario: Runtime command is added
+#### Scenario: Base option metadata is generated
 
-- **WHEN** a registered CLI command or subcommand is added to the Commander tree
-- **THEN** contract validation fails until complete semantic metadata exists for that command path
-
-#### Scenario: Stale metadata remains
-
-- **WHEN** semantic metadata references a command path that is no longer registered
-- **THEN** contract validation reports the stale metadata and exits unsuccessfully
+- **WHEN** the command contract is generated
+- **THEN** create and clone option metadata and semantic policy contain canonical `--base` and repeatable `--repo-base` behavior
+- **AND** generated artifacts are byte-stable when sources are unchanged
 
 ### Requirement: Versioned deterministic contract artifact
 
@@ -401,31 +399,22 @@ The meta-repository SHALL semantically compare the canonical CLI-derived command
 
 ### Requirement: Create base-branch contracts remain synchronized across repositories
 
-The CLI configuration schema and command contract SHALL publish normalized `defaults.create.baseBranch` and `create --base <branch>` semantics, including CLI-over-config precedence, generic-only persistence, explicit standalone support, local-then-origin resolution, selected-repository scope, new-target-only application, fail-before-hook/mutation behavior, dry-run visibility, and structured JSON reporting. Coordinated validation SHALL compare those semantics with canonical docs, generated agent-readable exports, and packaged skill guidance.
+The shared base-policy contract SHALL publish root/meta/child configuration paths, legacy migration, configured and standalone scope, `--base`/`--repo-base` syntax, selector vocabulary, precedence, local-then-origin resolution, create/clone application, pre-mutation failure, reuse semantics, dry-run/JSON reporting, and prohibited hook aliases. CLI schema/command artifacts, canonical docs exports, packaged skill records, and meta validation SHALL agree on that policy.
 
-#### Scenario: CLI contracts expose create base semantics
+#### Scenario: Shared policy is synchronized
 
-- **WHEN** schema and command contracts are generated after the feature is registered
-- **THEN** the schema accepts optional generic `defaults.create.baseBranch` and rejects editor-scoped base fields
-- **AND** the command contract records `--base` precedence, persistence, standalone support, resolution order, and safety boundary
+- **WHEN** CLI, docs, skills, and meta contract checks run
+- **THEN** all surfaces agree on configuration paths, option syntax, precedence, create/clone semantics, selectors, sources, and failure boundaries
 
-#### Scenario: Companion create-base guidance agrees
+#### Scenario: One companion keeps create-only semantics
 
-- **WHEN** the meta cross-repository checker validates the coordinated repositories
-- **THEN** docs and skill guidance use the canonical field and flag
-- **AND** their precedence, resolution, selected-repository, reuse, dry-run, JSON, and non-mutation semantics match the CLI contracts
+- **WHEN** a companion artifact still recommends only `defaults.create.baseBranch` or one branch shared by every repository
+- **THEN** cross-repository validation fails with the mismatched field and repository
 
-#### Scenario: Deliberate create-base drift is rejected
+#### Scenario: Clone semantics drift
 
-- **WHEN** an out-of-repository fixture removes or contradicts one required create-base semantic
-- **THEN** the focused checker exits unsuccessfully with a stable diagnostic naming the owning surface and mismatch
-- **AND** the real coordinated worktrees remain unchanged
-
-#### Scenario: Focused create-base validation is reachable from CI
-
-- **WHEN** repository self-tests inspect the applicable workflow and semantic registries
-- **THEN** they confirm CI invokes the stable docs and skills aggregates and any required contract generation before comparison
-- **AND** dedicated executable acceptance proves the registered create-base checkers run through those aggregates
+- **WHEN** docs or skill guidance omits workspace/per-child clone bases or claims a coordinated child is checked out on the base instead of the coordinated target
+- **THEN** semantic validation fails before coordinated delivery
 
 ### Requirement: Authoritative coordinated validation composes stable child aggregates
 
@@ -610,56 +599,69 @@ The meta-repository SHALL compare normalized executable-distribution policy with
 - **AND** no feature-specific workflow step is required while workflow topology, permissions, runtime, triggers, and artifact assembly remain unchanged
 
 ### Requirement: Coordinated contracts enforce repository materialization semantics
+
 The generated CLI configuration JSON Schema SHALL be the sole machine-readable CLI producer for direct repository `copy` and `symlink` fields; this change SHALL NOT introduce a second semantic-contract artifact. Maintained CLI guidance SHALL own configured-only scope, same-relative-path behavior, copy-before-symlink order, Git-primary source ownership, lifecycle timing, missing-source skip, no-overwrite/path-containment rules, no-fallback symbolic links, dry-run/outcome behavior, and copy-versus-symlink guidance. Coordinated validation SHALL normalize the generated schema fields and compare schema plus maintained CLI guidance with website docs, generated agent-readable exports, and authored plus extracted-package Arashi skill guidance.
 
 #### Scenario: Companion surfaces agree
+
 - **WHEN** registered coordinated validation runs against current child revisions
 - **THEN** the generated CLI schema, maintained CLI guidance, website docs/exports, and packaged skills agree on the normalized repository materialization contract
 - **AND** validation executes through the stable docs, skills source, skills package, and meta aggregates
 
 #### Scenario: No unnamed semantic artifact is required
+
 - **WHEN** CLI schema freshness and maintained guidance checks pass
 - **THEN** companion and meta validation consume those registered producers directly
 - **AND** do not require or generate an additional materialization contract file
 
 #### Scenario: Materialization semantic drifts
+
 - **WHEN** a controlled fixture removes or contradicts one required field, scope, ordering, source, safety, output, fallback, or guidance semantic
 - **THEN** focused or coordinated validation fails with a stable diagnostic naming the owning surface and mismatch
 - **AND** real coordinated worktrees remain unchanged
 
 #### Scenario: Focused checkers are registered
+
 - **WHEN** docs, skills, or meta repositories add materialization semantic checkers
 - **THEN** each checker is registered in the existing fail-closed manifest and remains directly executable for RED/GREEN diagnostics
 - **AND** existing stable aggregates execute it without a feature-specific workflow step
 
 #### Scenario: Extracted skill package drifts
+
 - **WHEN** authored skill guidance is correct but the canonical extracted package omits materialization guidance
 - **THEN** the skills package aggregate and coordinated validation fail against the extracted artifact
 - **AND** source success does not mask the package defect
 
 #### Scenario: Authoritative workflow remains stable
+
 - **WHEN** only registered semantic coverage changes and workflow topology, permissions, runtime, triggers, and artifact assembly are unchanged
 - **THEN** authoritative workflow YAML remains feature-agnostic
 - **AND** aggregate reachability tests prove the new checks execute in local and CI paths
 
 ### Requirement: Cross-repository documented-command policy
+
 The coordinated semantic contract SHALL validate every configured repository's maintained user-facing command guidance and SHALL reject `arashi` used as a preferred or unlabeled actionable executable example while accepting Arashi product references, stable identifiers, historical records, and explicitly labeled compatibility examples.
 
 #### Scenario: Preferred example regresses
+
 - **WHEN** a maintained positive fixture or owned source restores `arashi status`, `arashi create`, or another `arashi` invocation as the recommended example
 - **THEN** repository-local or coordinated semantic validation exits unsuccessfully with a stable source-specific diagnostic
 
 #### Scenario: Valid identifier is present
+
 - **WHEN** a fixture includes `npm install -g arashi`, an Arashi URL/repository, `.arashi`, `ARASHI_*`, a native binary name, or an extension identifier
 - **THEN** semantic validation accepts the identifier
 
 #### Scenario: Compatibility example is explicit
+
 - **WHEN** guidance explicitly explains that `arashi` remains supported for existing scripts and workflows
 - **THEN** semantic validation accepts the compatibility statement and any example scoped to that explanation
 
 ### Requirement: Complete configured-repository coverage
+
 The authoritative coordinated check SHALL cover CLI, docs, presentation, skills, VS Code, and meta-owned guidance from the configured repository inventory and SHALL exclude dependencies, caches, generated intermediates not owned as published artifacts, and historical archives.
 
 #### Scenario: Configured companion surface drifts
+
 - **WHEN** any configured companion repository changes an owned maintained command example back to preferred `arashi`
 - **THEN** the coordinated check reports that repository and source path and exits unsuccessfully

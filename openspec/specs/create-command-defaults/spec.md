@@ -3,35 +3,35 @@
 ## Purpose
 
 Define how `arashi create` resolves configured defaults, host-specific behavior, explicit overrides, and interactive repository selection.
+
 ## Requirements
+
 ### Requirement: Resolve create defaults from configuration and CLI
-The system SHALL resolve `arashi create` execution behavior from CLI flags, invocation context, and workspace configuration using deterministic precedence. Generic `defaults.create.baseBranch` SHALL select the logical base branch for configured create, and explicit `--base <branch>` SHALL override that configured value. Editor-scoped create defaults SHALL continue to control only switch and launch behavior and SHALL NOT expose or override base-branch topology.
+
+The system SHALL resolve `arashi create` launch/switch behavior from CLI flags, invocation context, and create defaults while resolving branch ancestry from the shared repository base policy. `defaults.create` SHALL control only create launch and switch behavior. Explicit `--base` and `--repo-base` values SHALL participate in the shared base-policy precedence. Editor-scoped create defaults SHALL continue to control only switch and launch behavior.
 
 #### Scenario: Terminal invocation applies generic create defaults
-- **WHEN** the user runs `arashi create <branch>` from a terminal context and workspace config defines generic create defaults
-- **THEN** the command applies those configured defaults for switch, launch, and base-branch behavior
+
+- **WHEN** a terminal create runs with generic launch/switch defaults and shared base policy
+- **THEN** the command applies configured launch/switch defaults
+- **AND** independently resolves each selected repository's effective base from shared policy
 
 #### Scenario: Editor-hosted invocation applies host-specific create defaults
-- **WHEN** the user runs `arashi create <branch>` from a supported editor host and workspace config defines create defaults for that host
-- **THEN** the command applies the matching host-specific defaults for switch and launch behavior
-- **AND** uses only generic `defaults.create.baseBranch` for configured base-branch behavior
 
-#### Scenario: CLI flags override configured defaults
-- **WHEN** the user runs `arashi create <branch>` with explicit flags for switch, shell/editor launch, or base branch
-- **THEN** the command uses explicit CLI values instead of the corresponding configured defaults
+- **WHEN** a supported editor-hosted create has matching editor defaults
+- **THEN** the command applies host-specific switch and launch behavior
+- **AND** branch ancestry remains governed by host-independent shared base policy
 
-#### Scenario: Explicit base overrides configured base
-- **WHEN** `defaults.create.baseBranch` is `feature/FEAT-1234` and the user passes `--base release/next`
-- **THEN** every newly created selected target branch starts from its repository-local resolution of `release/next`
+#### Scenario: CLI flags override corresponding configuration
 
-#### Scenario: Configured base is invalid
-- **WHEN** `defaults.create.baseBranch` is non-string, empty, whitespace-only, or not a valid Git branch name
-- **THEN** configuration validation fails with an error naming `defaults.create.baseBranch`
-- **AND** repository discovery, hook preflight/execution, managed-ignore reconciliation, and Git mutation do not run
+- **WHEN** create receives explicit launch, switch, invocation-wide base, or repository-base flags
+- **THEN** each explicit value overrides only its corresponding configured behavior under documented precedence
 
-#### Scenario: Editor scope cannot change the base
-- **WHEN** configuration places `baseBranch` under `defaults.editors.<host>.create`
-- **THEN** configuration validation rejects that unsupported field with its exact path
+#### Scenario: Create-only defaults cannot own a base
+
+- **WHEN** canonical configuration places `baseBranch` under `defaults.create`
+- **THEN** Arashi treats it only as deprecated migration input
+- **AND** directs the user to root `baseBranch`
 
 ### Requirement: Support default auto-switch after create
 
@@ -76,18 +76,21 @@ The system SHALL provide per-invocation opt-out flags that disable configured cr
 - **THEN** the command does not execute launch behavior for that invocation
 
 ### Requirement: Preserve current behavior when defaults are absent
-The system MUST preserve existing create behavior when `defaults.create.baseBranch` and explicit `--base` are absent, and editor-hosted invocations MUST fall back to no post-create defaults when no host-specific create defaults are configured.
 
-#### Scenario: Terminal workspace has no create default settings
-- **WHEN** the user runs `arashi create <branch>` from a terminal context in a workspace with no new create defaults configured
+The system MUST preserve existing create behavior when shared/repository base policy and explicit base flags are absent, and editor-hosted invocations MUST fall back to no post-create defaults when no host-specific create defaults are configured.
+
+#### Scenario: Terminal workspace has no create or base settings
+
+- **WHEN** terminal create runs with no new create defaults or base policy
 - **THEN** command behavior matches current explicit-flag-only behavior
 - **AND** the configured parent retains the invoking parent branch as its start point
-- **AND** configured children retain their existing detected-default start-point resolver and fallback behavior
+- **AND** configured children retain their detected-default resolver and fallback behavior
 
 #### Scenario: Editor host has no matching create defaults
-- **WHEN** the user runs `arashi create <branch>` from a supported editor host and the workspace does not define create defaults for that host
-- **THEN** the command does not apply generic launch/switch defaults and does not perform post-create switch or launch behavior unless explicitly requested by CLI flags
-- **AND** generic `defaults.create.baseBranch`, when present, remains authoritative because it is not editor-scoped
+
+- **WHEN** editor-hosted create has no matching host defaults
+- **THEN** it performs no post-create switch or launch unless explicitly requested
+- **AND** shared base policy, when present, remains authoritative because it is host-independent
 
 ### Requirement: Support editor-scoped create defaults
 
@@ -200,22 +203,23 @@ The system SHALL use the shared terminal-aware worktree launcher for post-create
 - **AND** does not fall back to standalone Ghostty
 
 ### Requirement: Implicit standalone create has no persisted command defaults
-`arashi create` in implicit standalone mode SHALL resolve behavior from explicit invocation flags and existing built-in defaults without loading or persisting configured create/editor defaults. Explicit `--base` SHALL remain available as invocation-only branch ancestry input.
+
+`arashi create` in implicit standalone mode SHALL resolve behavior from explicit invocation flags and built-in defaults without loading or persisting configured create/editor defaults or shared base policy. Explicit `--base` SHALL remain available as invocation-only ancestry input, while `--repo-base` SHALL be rejected.
 
 #### Scenario: Standalone create has no explicit overrides
-- **WHEN** a user runs create in implicit standalone mode without base, launch, or switch overrides
-- **THEN** Arashi applies existing built-in command behavior
-- **AND** a new target retains its existing current-HEAD start point
-- **AND** does not infer defaults from another worktree, user-global state, or synthesized configuration
 
-#### Scenario: Standalone create has explicit overrides
-- **WHEN** the user supplies supported base, launch, or switch flags
-- **THEN** those flags control the invocation under existing precedence rules
-- **AND** no command-default configuration is written
+- **WHEN** a user runs create in implicit standalone mode with no explicit behavior or base flags
+- **THEN** Arashi uses existing built-in standalone behavior and creates no config
 
-#### Scenario: Configured defaults exist
-- **WHEN** a valid configured workspace provides create or editor defaults
-- **THEN** existing configured default resolution remains authoritative despite a root `.worktrees/` directory
+#### Scenario: Standalone create receives explicit base
+
+- **WHEN** standalone create receives `--base <branch>`
+- **THEN** Arashi uses it only for that invocation
+
+#### Scenario: Standalone create receives repository base
+
+- **WHEN** standalone create receives `--repo-base <repository=branch>`
+- **THEN** Arashi rejects the configured-workspace-only option before mutation
 
 ### Requirement: Support Herdr post-create launch selection
 
@@ -575,100 +579,122 @@ The system SHALL reject conflicting create launch overrides and missing tmux con
 - **THEN** Arashi reports the complete deterministic set of conflicting create launch overrides before repository mutation
 
 ### Requirement: Reuse Kitty-aware launch behavior after create
+
 The system SHALL use the shared managed Kitty worktree-session launcher for resolved automatic post-create launch, SHALL report mode `kitty` on validated success, and SHALL keep explicit/configured `sesh` and `herdr` choices authoritative over automatic Kitty detection.
 
 #### Scenario: Explicit automatic post-create launch uses Kitty
+
 - **WHEN** a user runs `arashi create <branch> --launch` from a supported Kitty context and worktree creation succeeds
 - **THEN** Arashi creates or reuses and focuses the managed Kitty session for the newly created primary worktree
 - **AND** the create launch result reports mode `kitty`
 
 #### Scenario: Configured automatic post-create launch uses Kitty
+
 - **WHEN** the matching create-default scope sets canonical `launch` to `auto`, creation succeeds, and automatic precedence resolves to Kitty
 - **THEN** Arashi uses the same managed Kitty identity, reuse, creation, validation, and failure contract as `arashi switch`
 
 #### Scenario: Explicit or configured named launcher bypasses Kitty
+
 - **WHEN** resolved create launch is explicit/configured `sesh` or `herdr` and Kitty environment evidence is present
 - **THEN** Arashi invokes the named launcher instead of managed Kitty
 
 #### Scenario: Post-create Kitty launch fails
+
 - **WHEN** worktree creation succeeds but managed Kitty preflight, remote control, focus, launch, reconciliation, or validation fails
 - **THEN** Arashi preserves every successfully created worktree
 - **AND** reports completed creation separately from the actionable Kitty launch failure
 - **AND** does not invoke another launcher or roll back Git worktrees
 
 ### Requirement: Support one-off post-create tab disposition
+
 The system SHALL register `--tab` on `arashi create`, SHALL treat it as explicit CLI-only launch intent that implies post-create launch and switch handling, and SHALL pass disposition `tab` through coordinated and standalone post-create launch. It SHALL NOT add a persisted create-disposition field or alter canonical create launch values.
 
 #### Scenario: Create help exposes tab disposition
+
 - **WHEN** a user runs `arashi create --help`
 - **THEN** help states that `--tab` implies launch and switch handling
 - **AND** explains that unsupported launchers fail without silently opening a window
 
 #### Scenario: Explicit create tab implies launch and switch
+
 - **WHEN** the user runs `arashi create <branch> --tab`
 - **THEN** resolved create defaults enable post-create launch and switch handling for that invocation
 - **AND** the shared launcher receives disposition `tab`
 
 #### Scenario: Explicit tab wins over negative create flags
+
 - **WHEN** the user combines `--tab` with `--no-launch` or `--no-switch`
 - **THEN** explicit tab intent still enables post-create launch and switch handling
 - **AND** help and option-policy metadata document that compatibility and precedence
 
 #### Scenario: Positive create launch flags are redundant with tab
+
 - **WHEN** the user combines `--tab` with `--launch` or `--switch`
 - **THEN** Arashi accepts the invocation without a conflict
 - **AND** resolves one post-create launch with disposition `tab`
 
 #### Scenario: Tab composes with create launcher flags
+
 - **WHEN** the user combines `--tab` with one of `--tmux`, `--sesh`, or `--herdr`
 - **THEN** existing launcher-selection conflict rules remain unchanged
 - **AND** the selected launcher's normative tab or unsupported mapping applies
 
 #### Scenario: Configured automatic launch receives explicit tab disposition
+
 - **WHEN** matching create defaults enable `launch: "auto"` and the user passes `--tab`
 - **THEN** Arashi preserves configured launch selection while applying tab disposition for that invocation
 
 #### Scenario: Configuration vocabulary is unchanged
+
 - **WHEN** schemas, types, normalization, or structured create configuration contracts are generated or validated
 - **THEN** no launch-disposition field or `tab` create launch value is accepted or advertised
 - **AND** configuration continues to accept only its existing canonical launch choices
 
 #### Scenario: Standalone create has disposition parity
+
 - **WHEN** `arashi create <branch> --tab` runs in implicit standalone mode
 - **THEN** it uses the same launch support resolver and post-create failure semantics as configured mode
 - **AND** does not create `.arashi` configuration
 
 ### Requirement: Validate post-create tab support at the correct mutation boundary
+
 The system SHALL reject a knowably unsupported resolved tab launcher before managed-ignore reconciliation, branch or worktree creation, and hook execution. Preview-only dry runs SHALL validate deterministic option conflicts but SHALL NOT require runtime-only tab support.
 
 #### Scenario: Unsupported automatic tab launcher is detected before coordinated creation
+
 - **WHEN** configured create resolution and invocation environment select a launcher without tab support and `--tab` is present
 - **THEN** Arashi returns `TAB_DISPOSITION_UNSUPPORTED` before changing managed-ignore state, creating branches/worktrees, or running hooks
 
 #### Scenario: Unsupported tab launcher is detected before standalone creation
+
 - **WHEN** standalone create resolution selects a launcher without tab support and `--tab` is present
 - **THEN** Arashi returns `TAB_DISPOSITION_UNSUPPORTED`
 - **AND** creates no branch, worktree, or Arashi configuration
 
 #### Scenario: Dry-run previews tab intent without runtime preflight
+
 - **WHEN** the user runs `arashi create <branch> --dry-run --tab` with otherwise valid options
 - **THEN** Arashi reports the planned launch disposition without requiring runtime-only launcher evidence
 - **AND** creates no branch, worktree, managed-ignore change, or hook outcome
 
 #### Scenario: Supported tab launch fails after create
+
 - **WHEN** tab support preflight succeeds, worktree creation completes, and the selected tab-capable launch process then fails
 - **THEN** Arashi preserves every successfully created worktree
 - **AND** reports actionable post-create launch failure without trying a window or another launcher
 
 ### Requirement: Preserve structured create rejection for tab disposition
+
 The system SHALL classify `create --json --tab` as the existing unsupported interactive-or-launch JSON mode at both the Commander action and exported executor before launcher conflicts, configured default resolution that can mutate, or create operations.
 
 #### Scenario: CLI JSON and tab are combined
+
 - **WHEN** a user invokes `arashi create <branch> --json --tab` with or without another conflicting launcher
 - **THEN** stdout contains exactly one existing `JSON_UNSUPPORTED_FOR_MODE` envelope with mode `interactive-or-launch`
 - **AND** the process uses the existing create JSON error exit code
 
 #### Scenario: Direct executor JSON and tab are combined
+
 - **WHEN** a caller invokes the exported create executor with `json: true` and `tab: true`
 - **THEN** the executor returns the existing numeric JSON error result
 - **AND** performs no discovery that mutates, managed-ignore reconciliation, branch/worktree creation, hooks, or launch

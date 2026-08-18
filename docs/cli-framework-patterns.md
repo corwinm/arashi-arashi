@@ -19,6 +19,7 @@ This document provides comprehensive patterns and best practices for building th
 ## 1. Commander.js Patterns
 
 ### Recommended Version
+
 - **Package**: `commander` (latest stable)
 - **High source reputation**, 193 code snippets, benchmark score 88.7
 
@@ -29,21 +30,21 @@ Commander.js provides a robust API for structuring CLI commands with subcommands
 #### Basic Command Setup
 
 ```typescript
-import { Command } from 'commander';
+import { Command } from "commander";
 
 const program = new Command();
 
 program
-  .name('arashi')
-  .description('CLI for managing Git worktrees')
-  .version('1.0.0');
+  .name("arashi")
+  .description("CLI for managing Git worktrees")
+  .version("1.0.0");
 
 // Simple command
 program
-  .command('list')
-  .description('List all worktrees')
+  .command("list")
+  .description("List all worktrees")
   .action(() => {
-    console.log('Listing worktrees...');
+    console.log("Listing worktrees...");
   });
 
 program.parse();
@@ -52,19 +53,19 @@ program.parse();
 #### Commands with Options and Arguments
 
 ```typescript
-import { Command, Argument } from 'commander';
+import { Command, Argument } from "commander";
 
 program
-  .command('create')
-  .description('Create a new worktree')
-  .argument('<branch>', 'Branch name for the worktree')
-  .argument('[path]', 'Path for the worktree (optional)')
-  .option('-f, --force', 'Force creation even if worktree exists')
-  .option('-b, --new-branch <name>', 'Create a new branch')
+  .command("create")
+  .description("Create a new worktree")
+  .argument("<branch>", "Branch name for the worktree")
+  .argument("[path]", "Path for the worktree (optional)")
+  .option("-f, --force", "Force creation even if worktree exists")
+  .option("-b, --new-branch <name>", "Create a new branch")
   .action((branch, path, options) => {
     console.log(`Creating worktree for branch: ${branch}`);
     if (path) console.log(`Path: ${path}`);
-    if (options.force) console.log('Force mode enabled');
+    if (options.force) console.log("Force mode enabled");
     if (options.newBranch) console.log(`New branch: ${options.newBranch}`);
   });
 ```
@@ -75,7 +76,7 @@ program
 function parseInteger(value: string) {
   const parsed = parseInt(value, 10);
   if (isNaN(parsed)) {
-    throw new commander.InvalidArgumentError('Not a number.');
+    throw new commander.InvalidArgumentError("Not a number.");
   }
   return parsed;
 }
@@ -85,12 +86,13 @@ function collect(value: string, previous: string[]) {
 }
 
 program
-  .command('config')
-  .option('-t, --timeout <seconds>', 'Timeout in seconds', parseInteger)
-  .option('-e, --exclude <pattern>', 'Exclude patterns', collect, [])
+  .command("config")
+  .option("-t, --timeout <seconds>", "Timeout in seconds", parseInteger)
+  .option("-e, --exclude <pattern>", "Exclude patterns", collect, [])
   .action((options) => {
     if (options.timeout) console.log(`Timeout: ${options.timeout}s`);
-    if (options.exclude.length > 0) console.log(`Excludes: ${options.exclude.join(', ')}`);
+    if (options.exclude.length > 0)
+      console.log(`Excludes: ${options.exclude.join(", ")}`);
   });
 ```
 
@@ -98,9 +100,9 @@ program
 
 ```typescript
 program
-  .command('remove')
-  .argument('<name>', 'Worktree name to remove')
-  .option('-d, --debug', 'Enable debug mode')
+  .command("remove")
+  .argument("<name>", "Worktree name to remove")
+  .option("-d, --debug", "Enable debug mode")
   .action((name, options, command) => {
     if (options.debug) {
       console.error(`Called ${command.name()} with options`, options);
@@ -131,6 +133,7 @@ program
 ## 2. @inquirer/prompts Patterns
 
 ### Recommended Version
+
 - **Package**: `@inquirer/prompts` (modern modular version)
 - **High source reputation**, 322 code snippets, benchmark score 76.4
 
@@ -139,26 +142,26 @@ The modern `@inquirer/prompts` package provides individual prompt types that can
 ### Select Prompt (Single Choice)
 
 ```typescript
-import { select, Separator } from '@inquirer/prompts';
+import { select, Separator } from "@inquirer/prompts";
 
 const worktree = await select({
-  message: 'Select a worktree to switch to',
+  message: "Select a worktree to switch to",
   choices: [
     {
-      name: 'main',
-      value: 'main',
-      description: 'Main development branch',
+      name: "main",
+      value: "main",
+      description: "Main development branch",
     },
     {
-      name: 'feature/new-ui',
-      value: 'feature/new-ui',
-      description: 'New UI implementation',
+      name: "feature/new-ui",
+      value: "feature/new-ui",
+      description: "New UI implementation",
     },
-    new Separator('--- Archived ---'),
+    new Separator("--- Archived ---"),
     {
-      name: 'hotfix/urgent',
-      value: 'hotfix/urgent',
-      disabled: '(Already active)',
+      name: "hotfix/urgent",
+      value: "hotfix/urgent",
+      disabled: "(Already active)",
     },
   ],
   pageSize: 10,
@@ -171,39 +174,39 @@ console.log(`Switched to: ${worktree}`);
 ### Checkbox Prompt (Multi-Select)
 
 ```typescript
-import { checkbox, Separator } from '@inquirer/prompts';
+import { checkbox, Separator } from "@inquirer/prompts";
 
 const selected = await checkbox({
-  message: 'Select worktrees to remove',
+  message: "Select worktrees to remove",
   choices: [
-    { name: 'feature/old-feature', value: 'feature/old-feature' },
-    { name: 'bugfix/fixed-bug', value: 'bugfix/fixed-bug' },
+    { name: "feature/old-feature", value: "feature/old-feature" },
+    { name: "bugfix/fixed-bug", value: "bugfix/fixed-bug" },
     new Separator(),
-    { 
-      name: 'main', 
-      value: 'main', 
-      disabled: '(Cannot remove main worktree)' 
+    {
+      name: "main",
+      value: "main",
+      disabled: "(Cannot remove main worktree)",
     },
   ],
 });
 
-console.log(`Removing: ${selected.join(', ')}`);
+console.log(`Removing: ${selected.join(", ")}`);
 ```
 
 ### Confirm Prompt
 
 ```typescript
-import { confirm } from '@inquirer/prompts';
+import { confirm } from "@inquirer/prompts";
 
 const shouldDelete = await confirm({
-  message: 'Are you sure you want to delete this worktree?',
+  message: "Are you sure you want to delete this worktree?",
   default: false,
 });
 
 if (shouldDelete) {
-  console.log('Deleting worktree...');
+  console.log("Deleting worktree...");
 } else {
-  console.log('Cancelled');
+  console.log("Cancelled");
   process.exit(2); // User abort
 }
 ```
@@ -211,17 +214,17 @@ if (shouldDelete) {
 ### Input Prompt
 
 ```typescript
-import { input } from '@inquirer/prompts';
+import { input } from "@inquirer/prompts";
 
 const branchName = await input({
-  message: 'Enter the new branch name',
-  default: 'feature/new-feature',
+  message: "Enter the new branch name",
+  default: "feature/new-feature",
   validate: (value: string) => {
     if (value.length < 3) {
-      return 'Branch name must be at least 3 characters';
+      return "Branch name must be at least 3 characters";
     }
     if (!/^[a-zA-Z0-9/_-]+$/.test(value)) {
-      return 'Branch name contains invalid characters';
+      return "Branch name contains invalid characters";
     }
     return true;
   },
@@ -233,11 +236,11 @@ console.log(`Creating branch: ${branchName}`);
 ### Password Prompt
 
 ```typescript
-import { password } from '@inquirer/prompts';
+import { password } from "@inquirer/prompts";
 
 const apiKey = await password({
-  message: 'Enter your API key',
-  mask: '*',
+  message: "Enter your API key",
+  mask: "*",
 });
 ```
 
@@ -264,6 +267,7 @@ const apiKey = await password({
 ## 3. ora Spinner Patterns
 
 ### Recommended Version
+
 - **Package**: `ora` (latest stable)
 - **High source reputation**, 28 code snippets, benchmark score 85
 
@@ -272,35 +276,34 @@ ora provides elegant terminal spinners for long-running operations.
 ### Basic Spinner Usage
 
 ```typescript
-import ora from 'ora';
+import ora from "ora";
 
-const spinner = ora('Loading worktrees').start();
+const spinner = ora("Loading worktrees").start();
 
 // Simulate async work
 setTimeout(() => {
-  spinner.text = 'Fetching remote branches';
+  spinner.text = "Fetching remote branches";
 }, 1000);
 
 setTimeout(() => {
-  spinner.succeed('Worktrees loaded successfully');
+  spinner.succeed("Worktrees loaded successfully");
 }, 2000);
 ```
 
 ### Success/Failure States
 
 ```typescript
-import ora from 'ora';
+import ora from "ora";
 
 async function createWorktree(branch: string) {
   const spinner = ora(`Creating worktree for ${branch}`).start();
 
   try {
     // Simulate worktree creation
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+
     spinner.succeed(`Worktree created: ${branch}`);
     // Output: ✔ Worktree created: feature/new-ui
-    
   } catch (error) {
     spinner.fail(`Failed to create worktree: ${error.message}`);
     // Output: ✖ Failed to create worktree: ...
@@ -312,24 +315,23 @@ async function createWorktree(branch: string) {
 ### Multi-Step Operations
 
 ```typescript
-import ora from 'ora';
+import ora from "ora";
 
 async function setupWorktree(branch: string) {
-  const spinner = ora('Starting worktree setup').start();
+  const spinner = ora("Starting worktree setup").start();
 
   try {
-    spinner.text = 'Step 1/3: Validating branch';
+    spinner.text = "Step 1/3: Validating branch";
     await validateBranch(branch);
 
-    spinner.text = 'Step 2/3: Creating worktree directory';
+    spinner.text = "Step 2/3: Creating worktree directory";
     await createDirectory();
 
-    spinner.text = 'Step 3/3: Checking out branch';
+    spinner.text = "Step 3/3: Checking out branch";
     await checkoutBranch(branch);
 
-    spinner.succeed('Worktree setup complete');
+    spinner.succeed("Worktree setup complete");
     return { success: true };
-
   } catch (error) {
     spinner.fail(`Setup failed: ${error.message}`);
     throw error;
@@ -340,17 +342,17 @@ async function setupWorktree(branch: string) {
 ### Warning and Info States
 
 ```typescript
-import ora from 'ora';
+import ora from "ora";
 
-const spinner1 = ora('Checking for updates').start();
+const spinner1 = ora("Checking for updates").start();
 setTimeout(() => {
-  spinner1.warn('No updates available');
+  spinner1.warn("No updates available");
   // Output: ⚠ No updates available
 }, 1000);
 
-const spinner2 = ora('Scanning files').start();
+const spinner2 = ora("Scanning files").start();
 setTimeout(() => {
-  spinner2.info('Found 42 files');
+  spinner2.info("Found 42 files");
   // Output: ℹ Found 42 files
 }, 1000);
 ```
@@ -358,21 +360,22 @@ setTimeout(() => {
 ### Promise Integration (oraPromise)
 
 ```typescript
-import { oraPromise } from 'ora';
+import { oraPromise } from "ora";
 
-const fetchData = () => new Promise((resolve) => {
-  setTimeout(() => resolve({ count: 100 }), 2000);
-});
+const fetchData = () =>
+  new Promise((resolve) => {
+    setTimeout(() => resolve({ count: 100 }), 2000);
+  });
 
 await oraPromise(fetchData(), {
-  text: 'Fetching worktree data',
-  successText: 'Data fetched successfully',
-  failText: 'Failed to fetch data',
+  text: "Fetching worktree data",
+  successText: "Data fetched successfully",
+  failText: "Failed to fetch data",
 });
 
 // With dynamic success text based on result
 await oraPromise(fetchData(), {
-  text: 'Loading worktrees',
+  text: "Loading worktrees",
   successText: (result) => `Loaded ${result.count} worktrees`,
   failText: (error) => `Error: ${error.message}`,
 });
@@ -400,6 +403,7 @@ await oraPromise(fetchData(), {
 ## 4. chalk Color Scheme
 
 ### Recommended Version
+
 - **Package**: `chalk` (latest stable, v5+ for ESM)
 - **High source reputation**, 54 code snippets, benchmark score 86.7
 
@@ -408,48 +412,48 @@ await oraPromise(fetchData(), {
 Create a consistent color palette for your CLI application:
 
 ```typescript
-import chalk from 'chalk';
+import chalk from "chalk";
 
 // Define semantic color functions
 export const colors = {
   // Status colors
   success: chalk.green,
   error: chalk.bold.red,
-  warning: chalk.hex('#FFA500'), // Orange
+  warning: chalk.hex("#FFA500"), // Orange
   info: chalk.blue,
-  
+
   // UI elements
   highlight: chalk.cyan,
   dim: chalk.gray,
   muted: chalk.dim,
-  
+
   // Special emphasis
   bold: chalk.bold,
   underline: chalk.underline,
-  
+
   // Code/technical
   code: chalk.bgBlack.green,
   path: chalk.cyan,
   branch: chalk.yellow,
-  
+
   // Contextual
   primary: chalk.blue,
   secondary: chalk.magenta,
 };
 
 // Usage
-console.log(colors.success('✓ Worktree created successfully'));
-console.log(colors.error('✗ Failed to create worktree'));
-console.log(colors.warning('⚠ Worktree already exists'));
-console.log(colors.info('ℹ Fetching remote branches...'));
-console.log(colors.path('/Users/dev/projects/worktree'));
-console.log(colors.branch('feature/new-ui'));
+console.log(colors.success("✓ Worktree created successfully"));
+console.log(colors.error("✗ Failed to create worktree"));
+console.log(colors.warning("⚠ Worktree already exists"));
+console.log(colors.info("ℹ Fetching remote branches..."));
+console.log(colors.path("/Users/dev/projects/worktree"));
+console.log(colors.branch("feature/new-ui"));
 ```
 
 ### Log Level Styling
 
 ```typescript
-import chalk from 'chalk';
+import chalk from "chalk";
 
 const logLevels = {
   fatal: chalk.bgRed.white.bold,
@@ -467,36 +471,36 @@ function log(level: keyof typeof logLevels, message: string) {
 }
 
 // Usage
-log('info', 'Application started');
-log('warn', 'Memory usage high');
-log('error', 'Connection failed');
+log("info", "Application started");
+log("warn", "Memory usage high");
+log("error", "Connection failed");
 ```
 
 ### Decorative Elements
 
 ```typescript
-import chalk from 'chalk';
+import chalk from "chalk";
 
 function formatHeader(title: string) {
-  const border = chalk.cyan('═'.repeat(title.length + 4));
+  const border = chalk.cyan("═".repeat(title.length + 4));
   return `${border}\n  ${chalk.bold.cyan(title)}\n${border}`;
 }
 
-console.log(formatHeader('Arashi CLI'));
+console.log(formatHeader("Arashi CLI"));
 
 // Section dividers
-console.log(chalk.dim('─'.repeat(50)));
+console.log(chalk.dim("─".repeat(50)));
 
 // Lists
-console.log(chalk.green('✓'), 'Task completed');
-console.log(chalk.red('✗'), 'Task failed');
-console.log(chalk.blue('➜'), 'Running task');
+console.log(chalk.green("✓"), "Task completed");
+console.log(chalk.red("✗"), "Task failed");
+console.log(chalk.blue("➜"), "Running task");
 ```
 
 ### Conditional Styling (Terminal Support)
 
 ```typescript
-import chalk, { supportsColor, supportsColorStderr } from 'chalk';
+import chalk, { supportsColor, supportsColorStderr } from "chalk";
 
 function logWithColor(message: string) {
   if (supportsColor && supportsColor.has256) {
@@ -510,9 +514,9 @@ function logWithColor(message: string) {
 
 // Check color support
 if (supportsColor) {
-  console.log('Color level:', supportsColor.level);
-  console.log('Has 256 colors:', supportsColor.has256);
-  console.log('Has 16m colors:', supportsColor.has16m);
+  console.log("Color level:", supportsColor.level);
+  console.log("Has 256 colors:", supportsColor.has256);
+  console.log("Has 16m colors:", supportsColor.has16m);
 }
 ```
 
@@ -552,11 +556,11 @@ Standard exit codes for CLI applications:
 
 ```typescript
 export const ExitCode = {
-  Success: 0,        // Command completed successfully
-  Error: 1,          // General error
-  UserAbort: 2,      // User cancelled operation (Ctrl+C)
-  InvalidArgs: 3,    // Invalid command-line arguments
-  NotFound: 4,       // Resource not found
+  Success: 0, // Command completed successfully
+  Error: 1, // General error
+  UserAbort: 2, // User cancelled operation (Ctrl+C)
+  InvalidArgs: 3, // Invalid command-line arguments
+  NotFound: 4, // Resource not found
   PermissionDenied: 5, // Permission issues
 } as const;
 ```
@@ -564,44 +568,42 @@ export const ExitCode = {
 ### Error Formatting Pattern
 
 ```typescript
-import chalk from 'chalk';
-import { ExitCode } from './exit-codes';
+import chalk from "chalk";
+import { ExitCode } from "./exit-codes";
 
 class CLIError extends Error {
   constructor(
     message: string,
     public exitCode: number = ExitCode.Error,
-    public details?: string
+    public details?: string,
   ) {
     super(message);
-    this.name = 'CLIError';
+    this.name = "CLIError";
   }
 }
 
 function formatError(error: Error | CLIError): void {
   console.error();
-  console.error(chalk.red.bold('Error:'), error.message);
-  
+  console.error(chalk.red.bold("Error:"), error.message);
+
   if (error instanceof CLIError && error.details) {
     console.error(chalk.dim(error.details));
   }
-  
+
   if (process.env.DEBUG) {
     console.error();
-    console.error(chalk.dim('Stack trace:'));
+    console.error(chalk.dim("Stack trace:"));
     console.error(chalk.dim(error.stack));
   }
-  
+
   console.error();
 }
 
 function handleError(error: Error | CLIError): never {
   formatError(error);
-  
-  const exitCode = error instanceof CLIError 
-    ? error.exitCode 
-    : ExitCode.Error;
-  
+
+  const exitCode = error instanceof CLIError ? error.exitCode : ExitCode.Error;
+
   process.exit(exitCode);
 }
 
@@ -609,9 +611,9 @@ function handleError(error: Error | CLIError): never {
 try {
   // Your CLI logic
   throw new CLIError(
-    'Worktree not found',
+    "Worktree not found",
     ExitCode.NotFound,
-    'Run "aw list" to see available worktrees'
+    'Run "aw list" to see available worktrees',
   );
 } catch (error) {
   handleError(error as Error);
@@ -621,16 +623,14 @@ try {
 ### User Abort Handling
 
 ```typescript
-import { confirm } from '@inquirer/prompts';
-import { ExitCode } from './exit-codes';
+import { confirm } from "@inquirer/prompts";
+import { ExitCode } from "./exit-codes";
 
-async function promptWithAbort<T>(
-  promptFn: () => Promise<T>
-): Promise<T> {
+async function promptWithAbort<T>(promptFn: () => Promise<T>): Promise<T> {
   try {
     return await promptFn();
   } catch (error) {
-    if (error.name === 'ExitPromptError') {
+    if (error.name === "ExitPromptError") {
       // User pressed Ctrl+C
       console.log(); // Add newline after ^C
       process.exit(ExitCode.UserAbort);
@@ -641,35 +641,35 @@ async function promptWithAbort<T>(
 
 // Usage
 const shouldDelete = await promptWithAbort(() =>
-  confirm({ message: 'Delete worktree?' })
+  confirm({ message: "Delete worktree?" }),
 );
 ```
 
 ### Validation Errors
 
 ```typescript
-import chalk from 'chalk';
+import chalk from "chalk";
 
 function validateBranchName(name: string): void {
   const errors: string[] = [];
-  
+
   if (name.length < 3) {
-    errors.push('Branch name must be at least 3 characters');
+    errors.push("Branch name must be at least 3 characters");
   }
-  
+
   if (!/^[a-zA-Z0-9/_-]+$/.test(name)) {
-    errors.push('Branch name contains invalid characters');
+    errors.push("Branch name contains invalid characters");
   }
-  
-  if (name.startsWith('/') || name.endsWith('/')) {
+
+  if (name.startsWith("/") || name.endsWith("/")) {
     errors.push('Branch name cannot start or end with "/"');
   }
-  
+
   if (errors.length > 0) {
     throw new CLIError(
-      'Invalid branch name',
+      "Invalid branch name",
       ExitCode.InvalidArgs,
-      errors.map(e => `  ${chalk.red('•')} ${e}`).join('\n')
+      errors.map((e) => `  ${chalk.red("•")} ${e}`).join("\n"),
     );
   }
 }
@@ -710,10 +710,10 @@ try {
 Standard pattern for loading configuration files:
 
 ```typescript
-import { existsSync } from 'node:fs';
-import { readFile } from 'node:fs/promises';
-import { join } from 'node:path';
-import { homedir } from 'node:os';
+import { existsSync } from "node:fs";
+import { readFile } from "node:fs/promises";
+import { join } from "node:path";
+import { homedir } from "node:os";
 
 interface Config {
   defaultPath?: string;
@@ -722,18 +722,14 @@ interface Config {
   [key: string]: unknown;
 }
 
-const CONFIG_FILE_NAMES = [
-  '.arashirc',
-  '.arashirc.json',
-  'arashi.config.json',
-];
+const CONFIG_FILE_NAMES = [".arashirc", ".arashirc.json", "arashi.config.json"];
 
 const SEARCH_PATHS = [
-  process.cwd(),                           // Current directory
-  join(process.cwd(), '.arashi'),          // .arashi subdirectory
-  join(homedir(), '.config', 'arashi'),    // XDG config
-  join(homedir(), '.arashi'),              // Home directory
-  '/etc/arashi',                           // System-wide config
+  process.cwd(), // Current directory
+  join(process.cwd(), ".arashi"), // .arashi subdirectory
+  join(homedir(), ".config", "arashi"), // XDG config
+  join(homedir(), ".arashi"), // Home directory
+  "/etc/arashi", // System-wide config
 ];
 
 async function findConfigFile(): Promise<string | null> {
@@ -750,17 +746,17 @@ async function findConfigFile(): Promise<string | null> {
 
 async function loadConfig(): Promise<Config> {
   const configPath = await findConfigFile();
-  
+
   if (!configPath) {
     return {}; // Return default config
   }
-  
+
   try {
-    const content = await readFile(configPath, 'utf-8');
+    const content = await readFile(configPath, "utf-8");
     return JSON.parse(content);
   } catch (error) {
     throw new Error(
-      `Failed to parse config file at ${configPath}: ${error.message}`
+      `Failed to parse config file at ${configPath}: ${error.message}`,
     );
   }
 }
@@ -773,8 +769,8 @@ const config = await loadConfig();
 
 ```typescript
 const DEFAULT_CONFIG: Config = {
-  defaultPath: '~/worktrees',
-  excludePatterns: ['node_modules', '.git'],
+  defaultPath: "~/worktrees",
+  excludePatterns: ["node_modules", ".git"],
   autoSync: true,
   maxWorktrees: 10,
 };
@@ -789,7 +785,7 @@ async function getConfig(): Promise<Config> {
 
 // Usage
 const config = await getConfig();
-console.log('Default path:', config.defaultPath);
+console.log("Default path:", config.defaultPath);
 ```
 
 ### Environment Variable Overrides
@@ -799,11 +795,12 @@ function applyEnvOverrides(config: Config): Config {
   return {
     ...config,
     defaultPath: process.env.ARASHI_DEFAULT_PATH || config.defaultPath,
-    autoSync: process.env.ARASHI_AUTO_SYNC === 'true' 
-      ? true 
-      : process.env.ARASHI_AUTO_SYNC === 'false' 
-        ? false 
-        : config.autoSync,
+    autoSync:
+      process.env.ARASHI_AUTO_SYNC === "true"
+        ? true
+        : process.env.ARASHI_AUTO_SYNC === "false"
+          ? false
+          : config.autoSync,
   };
 }
 
@@ -817,22 +814,26 @@ async function getConfig(): Promise<Config> {
 ### Config Validation
 
 ```typescript
-import chalk from 'chalk';
+import chalk from "chalk";
 
 function validateConfig(config: Config): void {
   const errors: string[] = [];
-  
+
   if (config.maxWorktrees && config.maxWorktrees < 1) {
-    errors.push('maxWorktrees must be at least 1');
+    errors.push("maxWorktrees must be at least 1");
   }
-  
-  if (config.defaultPath && !config.defaultPath.startsWith('/') && !config.defaultPath.startsWith('~')) {
-    errors.push('defaultPath must be an absolute path or start with ~');
+
+  if (
+    config.defaultPath &&
+    !config.defaultPath.startsWith("/") &&
+    !config.defaultPath.startsWith("~")
+  ) {
+    errors.push("defaultPath must be an absolute path or start with ~");
   }
-  
+
   if (errors.length > 0) {
     throw new Error(
-      `Invalid configuration:\n${errors.map(e => `  ${chalk.red('•')} ${e}`).join('\n')}`
+      `Invalid configuration:\n${errors.map((e) => `  ${chalk.red("•")} ${e}`).join("\n")}`,
     );
   }
 }
@@ -914,6 +915,7 @@ bun build \
 ```
 
 **Flags explained:**
+
 - `--minify`: Reduces code size (saves megabytes for large apps)
 - `--sourcemap`: Embeds compressed sourcemaps for better error messages
 - `--bytecode`: Pre-compiles to bytecode for faster startup (2x faster for large apps)
@@ -924,17 +926,17 @@ bun build \
 ```typescript
 // build.ts
 await Bun.build({
-  entrypoints: ['./src/cli.ts'],
+  entrypoints: ["./src/cli.ts"],
   compile: {
-    target: 'bun-linux-x64',
-    outfile: './dist/arashi',
+    target: "bun-linux-x64",
+    outfile: "./dist/arashi",
   },
   minify: true,
-  sourcemap: 'linked',
+  sourcemap: "linked",
   bytecode: true,
   define: {
-    'process.env.NODE_ENV': JSON.stringify('production'),
-    'process.env.VERSION': JSON.stringify('1.0.0'),
+    "process.env.NODE_ENV": JSON.stringify("production"),
+    "process.env.VERSION": JSON.stringify("1.0.0"),
   },
 });
 ```
@@ -963,11 +965,11 @@ console.log(`Built: ${BUILD_TIME}`);
 
 ```typescript
 // Import assets with type: "file"
-import icon from './assets/icon.png' with { type: 'file' };
-import config from './default-config.json' with { type: 'file' };
+import icon from "./assets/icon.png" with { type: "file" };
+import config from "./default-config.json" with { type: "file" };
 
 // Read embedded files at runtime
-import { file } from 'bun';
+import { file } from "bun";
 
 const iconData = await file(icon).arrayBuffer();
 const configData = await file(config).json();
@@ -986,10 +988,10 @@ bun build --compile ./cli.ts './assets/**/*' --outfile arashi
 ### Embedding SQLite Databases
 
 ```typescript
-import db from './data.db' with { type: 'sqlite', embed: 'true' };
+import db from "./data.db" with { type: "sqlite", embed: "true" };
 
 // Database is embedded and read-only in the executable
-const result = db.query('SELECT * FROM worktrees').all();
+const result = db.query("SELECT * FROM worktrees").all();
 ```
 
 ### Platform-Specific Targets
@@ -998,16 +1000,16 @@ Available targets:
 
 ```typescript
 type Target =
-  | 'bun-darwin-x64'          // macOS Intel
-  | 'bun-darwin-x64-baseline' // macOS Intel (pre-2013 CPUs)
-  | 'bun-darwin-arm64'        // macOS Apple Silicon
-  | 'bun-linux-x64'           // Linux x64
-  | 'bun-linux-x64-baseline'  // Linux x64 (pre-2013 CPUs)
-  | 'bun-linux-x64-modern'    // Linux x64 (2013+ CPUs)
-  | 'bun-linux-arm64'         // Linux ARM64
-  | 'bun-windows-x64'         // Windows x64
-  | 'bun-windows-x64-baseline'// Windows x64 (pre-2013 CPUs)
-  | 'bun-windows-x64-modern'; // Windows x64 (2013+ CPUs)
+  | "bun-darwin-x64" // macOS Intel
+  | "bun-darwin-x64-baseline" // macOS Intel (pre-2013 CPUs)
+  | "bun-darwin-arm64" // macOS Apple Silicon
+  | "bun-linux-x64" // Linux x64
+  | "bun-linux-x64-baseline" // Linux x64 (pre-2013 CPUs)
+  | "bun-linux-x64-modern" // Linux x64 (2013+ CPUs)
+  | "bun-linux-arm64" // Linux ARM64
+  | "bun-windows-x64" // Windows x64
+  | "bun-windows-x64-baseline" // Windows x64 (pre-2013 CPUs)
+  | "bun-windows-x64-modern"; // Windows x64 (2013+ CPUs)
 ```
 
 **Note:** Use `-baseline` for maximum compatibility, `-modern` for better performance (requires AVX2).
@@ -1015,6 +1017,7 @@ type Target =
 ### Config File Loading
 
 By default, compiled executables:
+
 - ✅ Load `.env` and `bunfig.toml` at runtime
 - ❌ Do NOT load `tsconfig.json` and `package.json`
 
@@ -1056,34 +1059,34 @@ bun build --compile --no-compile-autoload-dotenv ./cli.ts --outfile arashi
 ```typescript
 // build-all.ts
 const targets = [
-  'bun-linux-x64',
-  'bun-linux-arm64',
-  'bun-darwin-arm64',
-  'bun-darwin-x64',
-  'bun-windows-x64',
+  "bun-linux-x64",
+  "bun-linux-arm64",
+  "bun-darwin-arm64",
+  "bun-darwin-x64",
+  "bun-windows-x64",
 ] as const;
 
 for (const target of targets) {
-  const isWindows = target.includes('windows');
-  const ext = isWindows ? '.exe' : '';
+  const isWindows = target.includes("windows");
+  const ext = isWindows ? ".exe" : "";
   const outfile = `./dist/arashi-${target}${ext}`;
-  
+
   console.log(`Building for ${target}...`);
-  
+
   await Bun.build({
-    entrypoints: ['./src/cli.ts'],
+    entrypoints: ["./src/cli.ts"],
     compile: {
       target,
       outfile,
     },
     minify: true,
-    sourcemap: 'linked',
+    sourcemap: "linked",
     bytecode: true,
     define: {
-      'process.env.NODE_ENV': JSON.stringify('production'),
+      "process.env.NODE_ENV": JSON.stringify("production"),
     },
   });
-  
+
   console.log(`✓ Built: ${outfile}`);
 }
 ```

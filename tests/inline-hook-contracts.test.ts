@@ -85,7 +85,7 @@ const inlineContract = {
 };
 
 const commandContract = {
-  schemaVersion: 7,
+  schemaVersion: 8,
   root: { name: "arashi" },
   commands: [
     {
@@ -391,7 +391,7 @@ afterEach(async () => {
 });
 
 describe("normalized inline lifecycle-hook coordinated contract", () => {
-  test("accepts the dedicated schema-v1 contract while config stays 1.0.0 and CLI commands stay schema v7", async () => {
+  test("accepts the dedicated schema-v1 contract while config stays 1.0.0 and CLI commands stay schema v8", async () => {
     const root = await fixture();
 
     const result = run(root);
@@ -442,7 +442,7 @@ Do not store credentials or API tokens in inline snippets or hook input.
     [
       "command-contract schema version",
       "repos/arashi/contracts/cli-commands.json",
-      { ...commandContract, schemaVersion: 8 },
+      { ...commandContract, schemaVersion: 9 },
       "INLINE_COMMAND_CONTRACT_VERSION_CHANGED",
     ],
     [

@@ -75,7 +75,7 @@ const skillsArchiveExtract =
 const skillsPackageAggregate =
   "node repos/arashi-skills/scripts/validate-guidance.mjs --skill-root package-check/skills/arashi";
 const createBaseBranchPattern = String.raw`^(?!HEAD$)(?!origin/(?:HEAD$|-))(?![-/.])(?!.*(?:/\.|//|\.\.|@\{))(?!.*\.lock(?:/|$))(?!.*[/.]$)[^\u0000-\u0020\u007F~^:?*\[\\]+$`;
-const createBaseSemanticPolicy: Obj = {
+export const createBaseSemanticPolicy: Obj = {
   ownership: "command",
   persisted: false,
   createBase: {
@@ -439,6 +439,8 @@ const completionHiddenOptions = new Set([
   "switch.--no-default-launch",
 ]);
 const completionRepeatableOptions = new Set([
+  "clone.--repo-base",
+  "create.--repo-base",
   "handoff.--link",
   "handoff.--next-command",
   "handoff.--risk",
@@ -3009,7 +3011,7 @@ export async function checkContracts(
   const d: Diagnostic[] = [];
   const contract = await json(root, paths.contract, d);
   const skillsCreateBaseContract =
-    contract?.schemaVersion === 7
+    typeof contract?.schemaVersion === "number" && contract.schemaVersion >= 7
       ? await json(root, paths.skillsCreateBaseContract, d)
       : undefined;
   const cliCreateConfig = await json(root, paths.cliCreateConfig, d);
@@ -3243,7 +3245,7 @@ export async function checkContracts(
     ? editorCommandProperties.create
     : {};
   const expectedEditorCreateRef =
-    contract?.schemaVersion === 7
+    typeof contract?.schemaVersion === "number" && contract.schemaVersion >= 7
       ? "#/definitions/EditorCreateCommandDefaults"
       : "#/definitions/CreateCommandDefaults";
   if (editorCreate.$ref !== expectedEditorCreateRef)
@@ -3288,7 +3290,7 @@ export async function checkContracts(
         "Each editor host must reference EditorCommandDefaults.",
       );
   }
-  if (contract && ![4, 5, 6, 7].includes(contract.schemaVersion as number))
+  if (contract && ![4, 5, 6, 7, 8].includes(contract.schemaVersion as number))
     add(
       d,
       "error",
@@ -3296,7 +3298,7 @@ export async function checkContracts(
       "SCHEMA_VERSION_UNSUPPORTED",
       paths.contract,
       String(contract.schemaVersion),
-      "Expected schemaVersion 4, 5, 6, or 7.",
+      "Expected schemaVersion 4, 5, 6, 7, or 8.",
     );
   version(coverage, paths.coverage, d);
   version(policy, paths.policy, d);
@@ -3569,6 +3571,200 @@ export async function checkContracts(
         "defaults.editors.<host>.create.baseBranch",
         "Create baseBranch is workspace-generic and must not be editor-scoped.",
       );
+  } else if (contract?.schemaVersion === 8) {
+    const skillsSemanticPolicy = object(
+      skillsCreateBaseContract?.semanticPolicy,
+    )
+      ? skillsCreateBaseContract.semanticPolicy
+      : {};
+    const expectedRepositoryBase = object(skillsSemanticPolicy.repositoryBase)
+      ? skillsSemanticPolicy.repositoryBase
+      : undefined;
+    if (!expectedRepositoryBase) {
+      add(
+        d,
+        "error",
+        "skills",
+        "REPOSITORY_BASE_SKILLS_POLICY_MISMATCH",
+        paths.skillsCreateBaseContract,
+        "semanticPolicy.repositoryBase",
+        "Schema v8 requires the packaged shared repository-base policy.",
+      );
+    }
+    for (const commandPath of ["create", "clone"] as const) {
+      const command = commands.get(commandPath);
+      for (const optionName of ["--base", "--repo-base"] as const) {
+        const option = commandOptions(command ?? {}).find(
+          (candidate) => optionLong(candidate) === optionName,
+        );
+        const subject = `${commandPath}.${optionName}`;
+        if (!option) {
+          add(
+            d,
+            "error",
+            "schema",
+            "REPOSITORY_BASE_CLI_POLICY_MISMATCH",
+            paths.contract,
+            subject,
+            "Schema v8 requires shared base options on configured create and clone.",
+          );
+          continue;
+        }
+        const semanticPolicy = object(option.semanticPolicy)
+          ? option.semanticPolicy
+          : {};
+        compareExactRecord(
+          semanticPolicy.repositoryBase,
+          expectedRepositoryBase,
+          paths.contract,
+          `${subject}.semanticPolicy.repositoryBase`,
+          "schema",
+          "REPOSITORY_BASE_CLI_POLICY_MISMATCH",
+          "Schema-v8 shared repository-base semantics differ from packaged guidance.",
+          d,
+        );
+        if (
+          option.semanticPolicyOwner !== "command" ||
+          option.required !== true ||
+          option.valueShape !== "required" ||
+          option.repeatable !== (optionName === "--repo-base")
+        )
+          add(
+            d,
+            "error",
+            "schema",
+            "REPOSITORY_BASE_CLI_POLICY_MISMATCH",
+            paths.contract,
+            subject,
+            "Schema v8 requires command-owned branch values and repeatable --repo-base overrides.",
+          );
+      }
+    }
+
+    const configDefinition = object(definitions.Config)
+      ? definitions.Config
+      : {};
+    const configProperties = object(configDefinition.properties)
+      ? configDefinition.properties
+      : {};
+    const metaDefinition = object(definitions.MetaRepositoryConfig)
+      ? definitions.MetaRepositoryConfig
+      : {};
+    const metaProperties = object(metaDefinition.properties)
+      ? metaDefinition.properties
+      : {};
+    const repoDefinition = object(definitions.RepoConfig)
+      ? definitions.RepoConfig
+      : {};
+    const repoProperties = object(repoDefinition.properties)
+      ? repoDefinition.properties
+      : {};
+    const legacyBaseBranch = object(createProperties.baseBranch)
+      ? createProperties.baseBranch
+      : undefined;
+    if (
+      !legacyBaseBranch ||
+      legacyBaseBranch.type !== "string" ||
+      legacyBaseBranch.minLength !== 1 ||
+      legacyBaseBranch.pattern !== createBaseBranchPattern
+    )
+      add(
+        d,
+        "error",
+        "schema",
+        "REPOSITORY_BASE_CONFIG_SCHEMA_MISMATCH",
+        paths.configSchema,
+        "defaults.create.baseBranch",
+        "Schema v8 must preserve the validated deprecated create-only baseBranch field.",
+      );
+    const editorCreateDefinition = object(
+      definitions.EditorCreateCommandDefaults,
+    )
+      ? definitions.EditorCreateCommandDefaults
+      : {};
+    const editorCreateProperties = object(editorCreateDefinition.properties)
+      ? editorCreateDefinition.properties
+      : {};
+    if ("baseBranch" in editorCreateProperties)
+      add(
+        d,
+        "error",
+        "schema",
+        "REPOSITORY_BASE_CONFIG_SCHEMA_MISMATCH",
+        paths.configSchema,
+        "defaults.editors.<host>.create.baseBranch",
+        "The deprecated create-only baseBranch field must remain workspace-generic, not editor-scoped.",
+      );
+
+    const metaRoute = object(configProperties.meta)
+      ? configProperties.meta
+      : {};
+    if (metaRoute.$ref !== "#/definitions/MetaRepositoryConfig")
+      add(
+        d,
+        "error",
+        "schema",
+        "REPOSITORY_BASE_CONFIG_SCHEMA_MISMATCH",
+        paths.configSchema,
+        "meta",
+        "Config.meta must reference MetaRepositoryConfig so meta.baseBranch is reachable.",
+      );
+    const reposRoute = object(configProperties.repos)
+      ? configProperties.repos
+      : {};
+    const repoValues = object(reposRoute.additionalProperties)
+      ? reposRoute.additionalProperties
+      : {};
+    if (
+      reposRoute.type !== "object" ||
+      repoValues.$ref !== "#/definitions/RepoConfig"
+    )
+      add(
+        d,
+        "error",
+        "schema",
+        "REPOSITORY_BASE_CONFIG_SCHEMA_MISMATCH",
+        paths.configSchema,
+        "repos",
+        "Config.repos must map repository names to RepoConfig so child baseBranch fields are reachable.",
+      );
+
+    const sharedBaseSchemas: Array<[string, Obj | undefined]> = [
+      [
+        "baseBranch",
+        object(configProperties.baseBranch)
+          ? configProperties.baseBranch
+          : undefined,
+      ],
+      [
+        "meta.baseBranch",
+        object(metaProperties.baseBranch)
+          ? metaProperties.baseBranch
+          : undefined,
+      ],
+      [
+        "repos.<name>.baseBranch",
+        object(repoProperties.baseBranch)
+          ? repoProperties.baseBranch
+          : undefined,
+      ],
+    ];
+    for (const [subject, field] of sharedBaseSchemas)
+      if (
+        !object(field) ||
+        field.type !== "string" ||
+        field.minLength !== 1 ||
+        field.pattern !== createBaseBranchPattern
+      )
+        add(
+          d,
+          "error",
+          "schema",
+          "REPOSITORY_BASE_CONFIG_SCHEMA_MISMATCH",
+          paths.configSchema,
+          subject,
+          "Shared repository baseBranch fields must retain the generated Git branch-name schema.",
+        );
   }
 
   let index = "";
@@ -4163,7 +4359,8 @@ export async function checkContracts(
           },
         ]
       : []),
-    ...(contract?.schemaVersion === 7
+    ...(typeof contract?.schemaVersion === "number" &&
+    contract.schemaVersion >= 7
       ? [
           {
             category: "docs" as const,
@@ -4197,7 +4394,10 @@ export async function checkContracts(
         directlyRuns(runs, "pnpm contracts:check:ci") ||
         directlyRuns(runs, "pnpm contracts:check"),
     ) ?? [];
-  if (contract?.schemaVersion === 7) {
+  if (
+    typeof contract?.schemaVersion === "number" &&
+    contract.schemaVersion >= 7
+  ) {
     const cliGates = [
       {
         code: "CLI_CREATE_BASE_INSTALL_UNREACHABLE",
@@ -4415,7 +4615,10 @@ export async function checkContracts(
     if (
       !(await exists(join(root, focused.checker))) ||
       !directlyRuns(
-        contract?.schemaVersion === 7 ? contractJobRuns : workflowRuns,
+        typeof contract?.schemaVersion === "number" &&
+          contract.schemaVersion >= 7
+          ? contractJobRuns
+          : workflowRuns,
         focused.command,
       )
     )
@@ -4505,7 +4708,11 @@ export async function checkContracts(
       ),
     ),
   );
-  if (contract?.schemaVersion === 7 && options.runFocusedCheckers !== false)
+  if (
+    typeof contract?.schemaVersion === "number" &&
+    contract.schemaVersion >= 7 &&
+    options.runFocusedCheckers !== false
+  )
     await runPackagedCreateBaseChecker(root, d);
   if (
     typeof contract?.schemaVersion === "number" &&
