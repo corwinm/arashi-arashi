@@ -51,13 +51,13 @@ This repository started with a SpecKit-oriented workflow, but current planning w
 
 ## Framework Support Matrix (Spec-Driven Workflows)
 
-| Framework | Support Level | Scope | Caveats |
-| --- | --- | --- | --- |
-| OpenSpec | Current | Primary workflow for change proposals, design, specs, and tasks | Use `openspec/changes/` for active changes and `openspec/specs/` for capability baselines |
-| Spec-Kit | Historical | Earlier workflow used during initial project setup | Legacy `specs/NNN-*` artifacts remain for reference, but new changes should use OpenSpec |
-| Kiro | Supported with modifications | Works for story/task decomposition and implementation guidance | Requires adapting command conventions and path references |
-| Specification by Example | Experimental | Useful for acceptance-criteria shaping in specs | No dedicated automation in this repository |
-| BDD (Gherkin-first) | Not supported | Can inform narrative requirements only | No native pipeline for feature file execution here |
+| Framework                | Support Level                | Scope                                                           | Caveats                                                                                   |
+| ------------------------ | ---------------------------- | --------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| OpenSpec                 | Current                      | Primary workflow for change proposals, design, specs, and tasks | Use `openspec/changes/` for active changes and `openspec/specs/` for capability baselines |
+| Spec-Kit                 | Historical                   | Earlier workflow used during initial project setup              | Legacy `specs/NNN-*` artifacts remain for reference, but new changes should use OpenSpec  |
+| Kiro                     | Supported with modifications | Works for story/task decomposition and implementation guidance  | Requires adapting command conventions and path references                                 |
+| Specification by Example | Experimental                 | Useful for acceptance-criteria shaping in specs                 | No dedicated automation in this repository                                                |
+| BDD (Gherkin-first)      | Not supported                | Can inform narrative requirements only                          | No native pipeline for feature file execution here                                        |
 
 ## Contribution
 
@@ -66,7 +66,7 @@ Use the canonical guide: [`CONTRIBUTING.md`](./CONTRIBUTING.md).
 Quick path:
 
 1. Build and link Arashi CLI from `repos/arashi/`.
-2. Create a feature worktree with `arashi create NNN-feature-name`.
+2. Create a feature worktree with `aw create NNN-feature-name`.
 3. Switch into that worktree and run `opencode`.
 4. Propose or update a change with `/opsx-propose <change-name>`.
 5. Implement the change tasks with `/opsx-apply <change-name>`.

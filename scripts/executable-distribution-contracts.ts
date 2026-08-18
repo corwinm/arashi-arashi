@@ -358,7 +358,7 @@ export async function checkExecutableDistributionContracts(
       "getting-started/index.md",
       "getting-started.md",
       [
-        "`aw` is a shorter alias for `arashi`",
+        "`arashi` executable remains supported for existing scripts and workflows",
         "macOS/Linux installer provides both `arashi` and `aw`",
         "PowerShell installer provides both `arashi` and `aw`",
         "npm installs provide both `arashi` and `aw`",
@@ -379,21 +379,24 @@ export async function checkExecutableDistributionContracts(
       "commands/shell.md",
       "commands/shell.md",
       [
-        "both `arashi` and `aw`",
+        "both installed executable names",
         "one managed block",
         "unrelated `aw` alias or function",
-        "command arashi",
+        "command aw",
       ],
     ],
     [
       "commands/completion.md",
       "commands/completion.md",
-      ["both `arashi` and `aw`", "command arashi"],
+      ["both `arashi` and `aw`", "command aw"],
     ],
     [
       "commands/update.md",
       "commands/update.md",
-      ["updates both `arashi` and `aw`", "`arashi` remains canonical"],
+      [
+        "refreshes both `arashi` and `aw`",
+        "both names continue to use the same release",
+      ],
     ],
   ] as const;
   for (const [authored, generated, phrases] of docsOwnerGroups) {
@@ -441,8 +444,7 @@ export async function checkExecutableDistributionContracts(
   }
 
   const docsRequirements = [
-    "`aw` is a shorter alias for `arashi`",
-    "canonical",
+    "`arashi` executable remains supported for existing scripts and workflows",
     "npm",
     "macOS",
     "Linux",
@@ -465,7 +467,10 @@ export async function checkExecutableDistributionContracts(
   for (const [source, phrases, code] of [
     [
       paths.llmsIndex,
-      ["`aw` is a shorter alias for `arashi`", "Getting started"],
+      [
+        "`arashi` executable remains supported for existing scripts and workflows",
+        "Getting started",
+      ],
       "EXECUTABLE_LLMS_INDEX_MISMATCH",
     ],
     [paths.llmsFull, docsRequirements, "EXECUTABLE_LLMS_FULL_MISMATCH"],
@@ -485,11 +490,10 @@ export async function checkExecutableDistributionContracts(
   }
 
   const skillRequirements = [
-    "Arashi Workspace",
-    "canonical",
-    "arashi --help",
-    "aw",
-    "not a Commander command alias or a second command vocabulary",
+    "`arashi` executable remains supported for existing scripts and workflows",
+    "aw --help",
+    "both names through the same implementation",
+    "https://arashi.haphazard.dev",
   ] as const;
   for (const [source, code] of [
     [
@@ -511,7 +515,7 @@ export async function checkExecutableDistributionContracts(
           "skills",
           code,
           source,
-          "Skill guidance must keep canonical arashi discovery while recognizing aw as equivalent shorthand without a duplicate workflow vocabulary.",
+          "Skill guidance must use aw for discovery while preserving concise arashi compatibility and stable identifiers.",
         );
     } catch (error) {
       add("skills", code, source, String(error));

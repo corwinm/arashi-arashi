@@ -36,7 +36,7 @@ bun link
 Verify:
 
 ```bash
-arashi --version
+aw --version
 ```
 
 ## Recommended Workflow
@@ -44,13 +44,13 @@ arashi --version
 1. From the repository root, create a feature worktree with Arashi:
 
    ```bash
-   arashi create NNN-feature-name
+   aw create NNN-feature-name
    ```
 
-2. Switch to the new worktree path (for example, from `arashi list`):
+2. Switch to the new worktree path (for example, from `aw list`):
 
    ```bash
-   cd "$(arashi list | fzf)"
+   cd "$(aw list | fzf)"
    ```
 
 3. Open OpenCode in that feature worktree:

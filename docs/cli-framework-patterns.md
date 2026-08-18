@@ -611,7 +611,7 @@ try {
   throw new CLIError(
     'Worktree not found',
     ExitCode.NotFound,
-    'Run "arashi list" to see available worktrees'
+    'Run "aw list" to see available worktrees'
   );
 } catch (error) {
   handleError(error as Error);

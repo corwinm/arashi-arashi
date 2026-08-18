@@ -31,7 +31,7 @@ Release can be considered discoverable when all criteria are met:
 1. Create a release tag in this repository.
 2. Run the canonical security gate and confirm pass output.
 3. From a clean environment, install Arashi CLI using pinned command guidance.
-4. Run `arashi --version` and one documented workflow.
+4. Run `aw --version` and one documented workflow.
 5. Record outcomes.
 
 If any step fails because listing support is unavailable, record publication status as `not_applicable` with the blocking policy details.

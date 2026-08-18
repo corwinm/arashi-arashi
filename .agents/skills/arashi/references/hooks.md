@@ -1,6 +1,6 @@
 # Remove Lifecycle Hooks
 
-Use remove lifecycle hooks to automate trusted cleanup around `arashi remove`.
+Use remove lifecycle hooks to automate trusted cleanup around `aw remove`.
 
 For the latest workflow guidance, see https://arashi.haphazard.dev/workflows/hooks/.
 

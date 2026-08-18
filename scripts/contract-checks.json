@@ -1,5 +1,6 @@
 [
   "scripts/check-command-contracts.ts",
+  "scripts/check-documented-command-contracts.ts",
   "scripts/check-executable-distribution-contracts.ts",
   "scripts/check-hook-contracts.ts",
   "scripts/check-inline-hook-contracts.ts",
