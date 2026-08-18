@@ -45,7 +45,7 @@ Configured `create` and `clone` SHALL accept `--base <branch>` as an invocation-
 - **AND** creates no configuration, branch, hook outcome, or worktree
 
 ### Requirement: Resolve effective bases with deterministic precedence
-For each selected repository, Arashi SHALL resolve the effective base in this order: repository-specific CLI override, invocation-wide `--base`, repository-specific configuration, root `baseBranch`, then existing omitted-base behavior. A higher-precedence source SHALL replace lower-precedence values for that repository only.
+For each selected repository, Arashi SHALL resolve the effective base in this order: repository-specific CLI override, invocation-wide `--base`, repository-specific configuration, root `baseBranch`, then (for configured create only) deprecated `defaults.create.baseBranch`, then existing omitted-base behavior. A higher-precedence source SHALL replace lower-precedence values for that repository only.
 
 #### Scenario: Invocation-wide CLI overrides repository config
 - **WHEN** child `api` configures `baseBranch` as `develop`

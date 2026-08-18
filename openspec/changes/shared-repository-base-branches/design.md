@@ -65,7 +65,8 @@ A pure shared policy resolver produces ordered records keyed by canonical reposi
 2. invocation-wide `--base`;
 3. `meta.baseBranch` or `repos.<name>.baseBranch`;
 4. root `baseBranch`;
-5. legacy omitted behavior.
+5. deprecated `defaults.create.baseBranch` for configured create only;
+6. legacy omitted behavior.
 
 Stable source values are `repository-cli`, `cli`, `repository-config`, `workspace-config`, and `legacy-omitted`. Create passes non-omitted records to its existing strict resolver, extended to accept per-repository requests instead of one branch/source pair. Each strict resolution still normalizes one leading `origin/`, prefers local then `origin`, and captures an immutable OID.
 
