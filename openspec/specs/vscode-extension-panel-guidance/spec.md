@@ -16,3 +16,11 @@ The extension README SHALL include a concise walkthrough of the panel's primary 
 #### Scenario: User wants to understand panel actions before using them
 - **WHEN** a user reviews the README feature guidance
 - **THEN** the README shows or describes the panel actions clearly enough for the user to identify create, refresh, worktree actions, and repository navigation without trial and error
+
+### Requirement: VS Code guidance uses aw for terminal examples
+Maintained VS Code README, walkthrough, settings descriptions, and user-facing terminal examples SHALL use `aw` for recommended CLI invocations while preserving extension command IDs, setting IDs, product labels, executable discovery defaults, and native binary names.
+
+#### Scenario: Extension user follows terminal guidance
+- **WHEN** a user copies a CLI command from a maintained extension surface
+- **THEN** the executable spelling is `aw`
+- **AND** `arashi.*` extension identifiers and configured binary-path behavior remain unchanged

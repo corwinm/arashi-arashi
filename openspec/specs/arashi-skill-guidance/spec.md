@@ -3,9 +3,7 @@
 ## Purpose
 
 Define how the Arashi skill package keeps its top-level skill guidance minimal while directing detailed workflow instructions to reference files and canonical docs.
-
 ## Requirements
-
 ### Requirement: Minimal skill entry point
 
 The Arashi skill package SHALL keep `skills/arashi/SKILL.md` focused on skill routing, universal operating rules, and links to detailed references rather than duplicating workflow manuals, command-family details, canonical-doc indexes, or exhaustive command parameters.
@@ -595,3 +593,16 @@ The installed-skill reduction SHALL preserve all approved command, standalone/co
 - **WHEN** implementation validation is complete
 - **THEN** the change reports before/after installed character counts and representative task-context sizes
 - **AND** demonstrates materially smaller narrow-task loads without counting removed safety or recovery semantics as success
+
+### Requirement: Authored and packaged skills teach aw
+Installed Arashi skill routing, tutorials, command references, troubleshooting, prerequisites, shortcuts, and cheatsheets SHALL use `aw` for actionable CLI commands while preserving Arashi product and machine identifiers. Source and extracted-package semantic checks SHALL enforce the same policy.
+
+#### Scenario: Agent follows installed skill guidance
+- **WHEN** an agent copies an actionable command from the installed skill package
+- **THEN** the executable spelling is `aw`
+- **AND** any required package, URL, `.arashi`, `ARASHI_*`, or native identifier remains unchanged
+
+#### Scenario: Packaged artifact is checked
+- **WHEN** the canonical skill archive is created and extracted
+- **THEN** the extracted guidance passes the same primary-spelling checks as source
+- **AND** repeated archive creation from unchanged inputs is deterministic
