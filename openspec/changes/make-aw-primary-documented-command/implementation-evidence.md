@@ -5,8 +5,8 @@
 All child worktrees are clean on `issue-295-aw-primary-docs`:
 
 - `arashi`: `107c1286255711ec1df1c0edd9f513dd4c9b4fdc` (`0f80375ad29fcbbd70dbce9734c37613d4b80914` plus the reviewed FZF compatibility fix)
-- `arashi-docs`: `e03e0db2a6e0fbb7d55ef0408f42ead73265735f`
-- `arashi-presentation`: `30295764763653733d69885b56f9ee5f22ee8ad4`
+- `arashi-docs`: `b656055426b861c03ead10babf98045533c41ae6`
+- `arashi-presentation`: `b66b297cf479ad990fc9f3a24f9085643d3ca578`
 - `arashi-skills`: `ee17e08b4fce31bb2b3095516f00faf48a437763`
 - `arashi-vscode`: `7c2f4c84c27fc16c52862cddf7fec3ba8f3968e7` (`b3a9eb134d3ffeaff2447e7fe824bce78f89a7b0` plus the reviewed maintained-guidance follow-up)
 
@@ -41,11 +41,19 @@ Before the final independent review: strict OpenSpec validation passed; the focu
 
 ## Final bounded blocker fix
 
-The final confirmed meta-only blocker cycle used focused TDD. Three new checker cases first failed 3/3 for option-before-command detection, clause-local compatibility exemption, and historical framing. A strengthened unrelated-history fixture then failed separately, proving the previous `history` escape was line-wide. The final focused suite passes 6/6. The checker now detects documented option syntax before known commands (including `arashi --json status`, short options, and analogous placements), exempts only the exact compatibility invocation, and recognizes clause-local historical evidence without exempting unrelated history prose.
+The final confirmed meta-only blocker cycle used focused TDD. Three new checker cases first failed 3/3 for option-before-command detection, clause-local compatibility exemption, and historical framing. A strengthened unrelated-history fixture then failed separately, proving the previous `history` escape was line-wide. The final focused suite passes 7/7. The checker now detects documented option syntax before known commands (including `arashi --json status`, short options, and analogous placements), exempts only the exact compatibility invocation, and recognizes clause-local historical evidence without exempting unrelated history prose.
 
 The two maintained premise mismatches now consistently describe `aw` being absent while verifying `aw`: the tutorial's PATH recovery lead and the troubleshooting matrix symptom. The concise `arashi` executable compatibility note and established Arashi product/package/configuration identifiers remain intact. Cumulative self-review found no naming-boundary drift and confirmed the actual VS Code child head remains `7c2f4c84c27fc16c52862cddf7fec3ba8f3968e7`.
 
-After the final source edit, `pnpm test` passed 7 files / 371 tests (the known 368-test baseline plus 3 focused regressions), strict OpenSpec validation passed, and `pnpm run contracts:check:ci` passed all 6 registered checkers against a verified 28-member canonical skills archive. The temporary archive and `package-check/` extraction were removed in `finally` cleanup. Focused Prettier checks and `git diff --check` also passed.
+After the final source edit, `pnpm test` passed 7 files / 372 tests, strict OpenSpec validation passed, and `pnpm run contracts:check:ci` passed all 6 registered checkers against a verified 28-member canonical skills archive. The temporary archive and `package-check/` extraction were removed in `finally` cleanup. Focused Prettier checks and `git diff --check` also passed.
+
+The final meta regression reproduces the dated `Manual Acceptance Outcomes (2026-02-11)` record exactly: a checked npm-install outcome that completed before `arashi --version` returned `1.4.0`. RED diagnosed that result under the prior checker. The minimal GREEN rule is section-, checklist-, clause-, command-, and returned-version-aware. It rejects unchecked/current guidance, a checked imperative, date/version evidence outside the named section, and unrelated completed legacy invocations. The focused suite passes 7/7; the full meta suite passes 7 files / 372 tests; strict OpenSpec, the six-checker aggregate against the verified 28-member canonical skills archive, focused Prettier, and `git diff --check` pass. The temporary archive and `package-check/` extraction were removed.
+
+## Final exact-head review and CI read-back
+
+The five child pull requests remain open, ready for review, and cleanly mergeable at the exact heads above. Every reported check is terminal with the expected result: CLI has 15 successful jobs; docs quality, redirects, and deploy preview succeeded with the expected neutral/skipped contexts; presentation validation and deploy preview succeeded; skills security passed; and all four VS Code CI jobs passed.
+
+The live review-thread read-back is not yet clear enough to complete task 5.6. CLI and VS Code have zero threads, and the sole skills thread is resolved. Docs has one current unresolved PowerShell-continuation checker comment at `b656055426b861c03ead10babf98045533c41ae6`; presentation has one current unresolved `npx --yes` package-runner checker comment at `b66b297cf479ad990fc9f3a24f9085643d3ca578`. Both are exact-head, non-outdated comments. Because child edits are explicitly out of scope for this meta-only closeout, task 5.6 remains unchecked rather than claiming zero unresolved review threads.
 
 ## Known baseline exclusion
 

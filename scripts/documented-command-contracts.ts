@@ -44,7 +44,14 @@ export function findPreferredArashiInvocations(
   content: string,
   source: string,
 ): DocumentedCommandDiagnostic[] {
+  let inDatedManualAcceptanceOutcomes = false;
   return content.split(/\r?\n/).flatMap((line, index) => {
+    if (/^#{1,6}\s+/.test(line)) {
+      inDatedManualAcceptanceOutcomes =
+        /^#{1,6}\s+Manual Acceptance Outcomes\s+\(\d{4}-\d{2}-\d{2}\)\s*$/.test(
+          line,
+        );
+    }
     if (/\blowerCombined\.includes\(/.test(line)) return [];
     legacyInvocation.lastIndex = 0;
     const hasPreferredInvocation = [...line.matchAll(legacyInvocation)].some(
@@ -52,6 +59,22 @@ export function findPreferredArashiInvocations(
         const start = match.index ?? 0;
         const prefix = line.slice(0, start);
         const suffix = line.slice(start + match[0].length);
+        const clauseStart =
+          Math.max(
+            prefix.lastIndexOf(";"),
+            prefix.lastIndexOf("."),
+            prefix.lastIndexOf("!"),
+            prefix.lastIndexOf("?"),
+          ) + 1;
+        const clausePrefix = prefix.slice(clauseStart);
+        const recordedAcceptanceOutcome =
+          inDatedManualAcceptanceOutcomes &&
+          /^\s*-\s+\[[xX]\]\s+/.test(line) &&
+          /\bcompleted\b/i.test(clausePrefix) &&
+          /\barashi\s+--version\b/i.test(match[0]) &&
+          /^[\x60'"]*\s+returned\s+[\x60'"]*v?\d+(?:\.\d+){1,3}(?:[-+][0-9A-Za-z.-]+)?[\x60'"]*(?=[\s.,;!?]|$)/i.test(
+            suffix,
+          );
         const historicallyIntroduced =
           /\bhistorical(?:ly)?\b[^.!?;]*\b(?:used|ran|invoked|called)\s*(?:the\s+command\s+)?[\x60'"$ ]*$/i.test(
             prefix,
@@ -63,7 +86,11 @@ export function findPreferredArashiInvocations(
           /^[\x60'"]*\s+(?:(?:is\s+still|remains)\s+valid\s+there)\b/i.test(
             suffix,
           );
-        return !historicallyIntroduced && !compatibilityInvocation;
+        return (
+          !recordedAcceptanceOutcome &&
+          !historicallyIntroduced &&
+          !compatibilityInvocation
+        );
       },
     );
     return hasPreferredInvocation

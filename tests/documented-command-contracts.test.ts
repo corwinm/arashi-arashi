@@ -89,6 +89,31 @@ describe("coordinated primary documented command contract", () => {
     ).toHaveLength(1);
   });
 
+  test("accepts only completed version results in dated manual acceptance outcomes", () => {
+    const recordedOutcome = [
+      "## Manual Acceptance Outcomes (2026-02-11)",
+      "- [x] npm install flow: `npm install -g arashi --prefix <temp-dir>` completed and `arashi --version` returned `1.4.0`.",
+    ].join("\n");
+    expect(
+      findPreferredArashiInvocations(recordedOutcome, "recorded-outcome.md"),
+    ).toEqual([]);
+
+    const controls = [
+      "## Manual Acceptance Outcomes (2026-02-11)\n- [ ] Run `arashi --version` and record the returned version after the test is completed.",
+      "## Manual Acceptance Outcomes (2026-02-11)\n- [x] Run `arashi --version` and record the returned version.",
+      "## Release record\n- [x] 2026-02-11: `arashi --version` returned `1.4.0`.",
+      "## Manual Acceptance Outcomes (2026-02-11)\n- [x] Legacy smoke test: `arashi status` completed successfully.",
+    ];
+    for (const [index, fixture] of controls.entries()) {
+      expect(
+        findPreferredArashiInvocations(
+          fixture,
+          `historical-control-${index + 1}.md`,
+        ),
+      ).toHaveLength(1);
+    }
+  });
+
   test("accepts identifiers, history, compatibility, and aw examples", () => {
     const valid = [
       "npm install -g arashi",
