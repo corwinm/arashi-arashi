@@ -3659,15 +3659,7 @@ export async function checkContracts(
     const repoProperties = object(repoDefinition.properties)
       ? repoDefinition.properties
       : {};
-    const legacyBaseBranch = object(createProperties.baseBranch)
-      ? createProperties.baseBranch
-      : undefined;
-    if (
-      !legacyBaseBranch ||
-      legacyBaseBranch.type !== "string" ||
-      legacyBaseBranch.minLength !== 1 ||
-      legacyBaseBranch.pattern !== createBaseBranchPattern
-    )
+    if ("baseBranch" in createProperties)
       add(
         d,
         "error",
@@ -3675,7 +3667,17 @@ export async function checkContracts(
         "REPOSITORY_BASE_CONFIG_SCHEMA_MISMATCH",
         paths.configSchema,
         "defaults.create.baseBranch",
-        "Schema v8 must preserve the validated deprecated create-only baseBranch field.",
+        "Schema v8 must reject the removed defaults.create.baseBranch field.",
+      );
+    if (createDefaults.additionalProperties !== false)
+      add(
+        d,
+        "error",
+        "schema",
+        "REPOSITORY_BASE_CONFIG_SCHEMA_MISMATCH",
+        paths.configSchema,
+        "defaults.create.additionalProperties",
+        "Schema v8 must reject unknown defaults.create properties, including the removed baseBranch key.",
       );
     const editorCreateDefinition = object(
       definitions.EditorCreateCommandDefaults,
@@ -3693,8 +3695,56 @@ export async function checkContracts(
         "REPOSITORY_BASE_CONFIG_SCHEMA_MISMATCH",
         paths.configSchema,
         "defaults.editors.<host>.create.baseBranch",
-        "The deprecated create-only baseBranch field must remain workspace-generic, not editor-scoped.",
+        "The removed create-only baseBranch field must not be editor-scoped.",
       );
+    if (editorCreateDefinition.additionalProperties !== false)
+      add(
+        d,
+        "error",
+        "schema",
+        "REPOSITORY_BASE_CONFIG_SCHEMA_MISMATCH",
+        paths.configSchema,
+        "defaults.editors.<host>.create.additionalProperties",
+        "Schema v8 must reject unknown editor-scoped create properties, including the removed baseBranch key.",
+      );
+
+    const removedCreateBaseMention = /defaults\.create\.baseBranch/i;
+    const removedCreateBaseRecommendation =
+      /\b(?:set|use|configure|add|put|place)\b[^.\n]{0,40}`?defaults\.create\.baseBranch/i;
+    const negatedRemovedCreateBaseRecommendation =
+      /\b(?:do not|never|must not)\b[^.\n]{0,30}\b(?:set|use|configure|add|put|place)\b[^.\n]{0,40}`?defaults\.create\.baseBranch/i;
+    const removedCreateBaseBehaviorClaim =
+      /defaults\.create\.baseBranch[^.\n]{0,100}\b(?:remains?[^.\n]{0,30}create-only|applies only)\b/i;
+    const removedCreateBaseAcceptanceClaim =
+      /\b(?:arashi|create|configuration|config)\b[^.\n]{0,40}\b(?:still\s+)?(?:accepts?|supports?|reads?|uses?|honors?)\b/i;
+    const removedCreateBaseRejection =
+      /\b(?:unsupported|no longer supported|removed|obsolete|invalid|forbidden|rejects?|rejected|replac(?:e|ed|ement)|migrat(?:e|ed|ion)|move(?:d)?|do not|does not|never|cannot|can't|must not)\b/i;
+    for (const [category, directory] of [
+      ["docs", "repos/arashi-docs/docs"],
+      ["skills", paths.skills],
+    ] as const) {
+      for (const file of await markdownFiles(join(root, directory))) {
+        const guidance = await readFile(file, "utf8");
+        for (const line of guidance.split("\n"))
+          if (
+            removedCreateBaseMention.test(line) &&
+            (removedCreateBaseBehaviorClaim.test(line) ||
+              removedCreateBaseAcceptanceClaim.test(line) ||
+              (removedCreateBaseRecommendation.test(line) &&
+                !negatedRemovedCreateBaseRecommendation.test(line)) ||
+              !removedCreateBaseRejection.test(line))
+          )
+            add(
+              d,
+              "error",
+              category,
+              "REPOSITORY_BASE_GUIDANCE_MISMATCH",
+              relative(root, file),
+              "defaults.create.baseBranch",
+              "Current guidance must reject the removed defaults.create.baseBranch key rather than recommend or describe legacy behavior.",
+            );
+      }
+    }
 
     const metaRoute = object(configProperties.meta)
       ? configProperties.meta
