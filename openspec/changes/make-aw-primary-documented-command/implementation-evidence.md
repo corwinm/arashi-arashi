@@ -5,7 +5,7 @@
 All child worktrees are clean on `issue-295-aw-primary-docs`:
 
 - `arashi`: `107c1286255711ec1df1c0edd9f513dd4c9b4fdc` (`0f80375ad29fcbbd70dbce9734c37613d4b80914` plus the reviewed FZF compatibility fix)
-- `arashi-docs`: `fc62e22c00cb1877b3d1242539c9cdfd3aa07d68`
+- `arashi-docs`: `6e0b74acc7193d79d2526d454067e5aaa6af14a4`
 - `arashi-presentation`: `30295764763653733d69885b56f9ee5f22ee8ad4`
 - `arashi-skills`: `ee17e08b4fce31bb2b3095516f00faf48a437763`
 - `arashi-vscode`: `7c2f4c84c27fc16c52862cddf7fec3ba8f3968e7` (`b3a9eb134d3ffeaff2447e7fe824bce78f89a7b0` plus the reviewed maintained-guidance follow-up)
@@ -26,6 +26,10 @@ Independently completed child validations—not the later interrupted rerun—re
 - Skills: security gate passed with 0 findings; source/extracted aggregate passed 16/16; release archive, workflow composition, deterministic archive/extraction, and diff checks passed.
 - VS Code: lint/build/package passed; 13 files and 112 tests passed; the generated VSIX was removed.
 - Strict OpenSpec, coordinated meta tests/contracts, and `git diff --check` passed in the completed validation record.
+
+## Docs homepage cursor follow-up
+
+The homepage cursor drift came from deriving the reveal width from separately maintained `--chars * 1ch` values rather than the rendered command content. Docs commit `6e0b74acc7193d79d2526d454067e5aaa6af14a4` colocates each cursor with its typed text in an intrinsic-width inline grid and animates the shared reveal track, removing the duplicate character-width source of truth. The focused homepage contract passes for all 8 content-driven lines, and `pnpm validate` passes with 17 semantic checkers. Visual geometry across 24 sampled states at 1280×800 and 390×844 held a constant 1.906px cursor gap with zero overlap or overflow and all content contained; reduced-motion validation found zero animations and hidden cursors. External read-back confirmed docs PR #82 remains open, non-draft, based on `main`, on the expected head branch, and mergeable at that exact clean head; its live checks were complete and successful or neutral as appropriate.
 
 Earlier child-scope reviews found and fixed concrete issues: CLI FZF installation now installs both `aw` and compatibility wrapper `arashi`; the skills ATH005 eval allowlist is narrowly anchored to `eval "$(command aw shell init bash|zsh)"` with hostile variants rejected; and archive regressions now cover nested output self-inclusion, unavailable external gzip, safe same-filesystem staging, deterministic Node zlib compression, and temporary-file cleanup. A final cumulative meta review then found that the coordinated gate omitted VS Code runtime-owned user-facing command descriptions and that those committed child sources still contained preferred `arashi` examples. The reviewed VS Code follow-up corrected all eight maintained examples and extended its local policy coverage.
 
