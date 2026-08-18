@@ -2,17 +2,17 @@
 
 Use this catalog to choose the right workflow by goal and confidence level.
 
-| Workflow | Difficulty | User Goal |
-|----------|------------|-----------|
-| Beginner | Beginner | Initialize a workspace and inspect current status |
+| Workflow     | Difficulty   | User Goal                                                               |
+| ------------ | ------------ | ----------------------------------------------------------------------- |
+| Beginner     | Beginner     | Initialize a workspace and inspect current status                       |
 | Intermediate | Intermediate | Clone missing repositories and create a feature branch across worktrees |
-| Advanced | Advanced | Recover from branch drift and synchronize repositories safely |
+| Advanced     | Advanced     | Recover from branch drift and synchronize repositories safely           |
 
 ## Command Shape by Workflow
 
-- Beginner: `arashi init` -> `arashi status`
-- Intermediate: `arashi clone --all` -> `arashi create` -> `arashi switch`
-- Advanced: `arashi pull` -> `arashi sync` -> `arashi status`
+- Beginner: `aw init` -> `aw status`
+- Intermediate: `aw clone --all` -> `aw create` -> `aw switch`
+- Advanced: `aw pull` -> `aw sync` -> `aw status`
 
 ## Selection Guidance
 
@@ -31,56 +31,56 @@ Use this catalog to choose the right workflow by goal and confidence level.
 
 Assume Arashi is available unless the user is installing it or a command is not working as expected.
 
-When a workflow needs command-specific options, inspect `arashi <command> --help` before recommending or running flags. If your team enforces repository security checks, run them before executing workflows.
+When a workflow needs command-specific options, inspect `aw <command> --help` before recommending or running flags. If your team enforces repository security checks, run them before executing workflows.
 
 ## Beginner Workflow
 
-Run `arashi init` from one of two valid starting points:
+Run `aw init` from one of two valid starting points:
 
 - inside an existing repository root you want to manage
 - inside a non-repository parent directory, then enter `.` or a child repository name when prompted
 
 ```bash
-arashi init
-arashi status
+aw init
+aw status
 ```
 
 Expected outcomes:
 
-- `.arashi/config.json` exists after `arashi init`.
+- `.arashi/config.json` exists after `aw init`.
 - `.arashi/config.json` records `worktreesDir` (default `.arashi/worktrees`).
 - bootstrap mode accepts `.` for the current directory and a direct child repository name for child-directory creation.
 - `.gitignore` includes the configured repositories directory.
 - `.gitignore` includes the normalized managed worktree directory entry when using the default location or a safe repository-relative subdirectory.
-- `arashi status` prints repository/worktree status without errors.
+- `aw status` prints repository/worktree status without errors.
 
 ## Intermediate Workflow
 
 ```bash
-arashi clone --all
-arashi create feature/skill-integration
-arashi switch feature/skill-integration
+aw clone --all
+aw create feature/skill-integration
+aw switch feature/skill-integration
 ```
 
 Expected outcomes:
 
 - Missing configured repositories are materialized locally.
 - New worktrees exist for `feature/skill-integration`.
-- `arashi switch` opens the selected worktree in a new terminal context.
-- Use `arashi switch --help` to confirm current editor launch flags before choosing an IDE-specific switch option.
+- `aw switch` opens the selected worktree in a new terminal context.
+- Use `aw switch --help` to confirm current editor launch flags before choosing an IDE-specific switch option.
 
 ## Advanced Workflow
 
 ```bash
-arashi pull
-arashi sync
-arashi status
+aw pull
+aw sync
+aw status
 ```
 
 Expected outcomes:
 
 - Remotes are fetched and local branches update where possible.
 - Sync avoids partial update states.
-- `arashi status` reports clean or actionable next steps.
+- `aw status` reports clean or actionable next steps.
 
 After completion, confirm the expected outcomes listed for that workflow before moving to another one.

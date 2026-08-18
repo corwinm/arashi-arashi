@@ -12,22 +12,22 @@ compatibility:
   optional_commands: [npm, node, fzf, tmux, sesh]
 entry_commands:
   install_arashi: "see https://arashi.haphazard.dev for installation instructions"
-  verify_arashi: arashi --version
-  discover_commands: arashi --help
+  verify_arashi: aw --version
+  discover_commands: aw --help
   workflows:
-    beginner: arashi init && arashi status
-    intermediate: arashi clone --all && arashi create <branch> && arashi switch <branch>
-    advanced: arashi pull && arashi sync
+    beginner: aw init && aw status
+    intermediate: aw clone --all && aw create <branch> && aw switch <branch>
+    advanced: aw pull && aw sync
   session_shortcuts:
-    list: arashi list
-    switch: arashi switch
+    list: aw list
+    switch: aw switch
 visibility: public
 status: draft
 ---
 
 # Arashi Skill
 
-Guidance for helping users manage multi-repository feature branches and worktrees with the `arashi` CLI.
+Guidance for helping users manage multi-repository feature branches and worktrees with the Arashi CLI. Use `aw` in actionable guidance; the `arashi` executable remains supported for existing scripts and workflows.
 
 ## Common Requests
 
@@ -44,13 +44,13 @@ Users may ask for help with:
 Assume Arashi is already installed unless the user is installing it or a command is not working as expected.
 
 1. Choose the relevant guide: [Workflows](references/workflows.md), [Commands](references/commands.md), or [Session Shortcuts](references/session-shortcuts.md)
-2. For command parameters, inspect current help output when needed: `arashi <command> --help`
+2. For command parameters, inspect current help output when needed: `aw <command> --help`
 3. For CLI setup or command failures, use [Prerequisites](references/prerequisites.md) and [Troubleshooting](references/troubleshooting.md)
 
 ## Operating Rules
 
 - Check the docs site for the latest install instructions: https://arashi.haphazard.dev.
-- Use `arashi --help` and `arashi <command> --help` when current command parameters are needed.
+- Use `aw --help` and `aw <command> --help` when current command parameters are needed.
 - Prefer linked references over duplicating detailed workflow instructions here.
 - Use the [Hooks](references/hooks.md) reference for remove lifecycle hook guidance.
 

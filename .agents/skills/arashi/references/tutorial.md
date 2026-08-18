@@ -20,36 +20,36 @@ Use the website install guide and follow the instructions for your platform:
 
 - https://arashi.haphazard.dev
 
-If you use the official curl installer, it can offer shell integration during install so `arashi switch --cd` works without an extra setup step. For unattended installs, use `ARASHI_SHELL_INTEGRATION=yes` or `ARASHI_SHELL_INTEGRATION=no`.
+If you use the official curl installer, it can offer shell integration during install so `aw switch --cd` works without an extra setup step. For unattended installs, use `ARASHI_SHELL_INTEGRATION=yes` or `ARASHI_SHELL_INTEGRATION=no`.
 
 ## Step 3: Verify CLI
 
 ```bash
-arashi --version
-arashi --help
+aw --version
+aw --help
 ```
 
 Success criteria:
 
 - all commands exit `0`
-- if `arashi --version` exits immediately or returns `137`, stop and reinstall using a pinned version from the website guide
+- if `aw --version` exits immediately or returns `137`, stop and reinstall using a pinned version from the website guide
 - help output lists commands
 
 ## Step 4: Run First Workflow
 
-Choose where you want the workspace repository to live before running `arashi init`:
+Choose where you want the workspace repository to live before running `aw init`:
 
-- Existing repository flow: `cd` into the repository root and run `arashi init` there.
-- New repository flow: `cd` into a parent directory, run `arashi init`, then enter `.` or a child name when prompted.
+- Existing repository flow: `cd` into the repository root and run `aw init` there.
+- New repository flow: `cd` into a parent directory, run `aw init`, then enter `.` or a child name when prompted.
 
 Bootstrap the current directory:
 
 ```bash
 mkdir my-arashi-workspace
 cd my-arashi-workspace
-arashi init
+aw init
 # prompt: Repository target ('.' for current directory or a child directory name) -> .
-arashi status
+aw status
 ```
 
 Bootstrap a child directory from a parent folder:
@@ -57,35 +57,35 @@ Bootstrap a child directory from a parent folder:
 ```bash
 mkdir scratch
 cd scratch
-arashi init
+aw init
 # prompt: Repository target ('.' for current directory or a child directory name) -> my-arashi-repo
 cd my-arashi-repo
-arashi status
+aw status
 ```
 
 If you already have a repository, the shorter flow still works:
 
 ```bash
-arashi init
-arashi status
+aw init
+aw status
 ```
 
 Success criteria:
 
-- `.arashi/config.json` exists after `arashi init`
+- `.arashi/config.json` exists after `aw init`
 - `.arashi/config.json` includes `worktreesDir` (default `.arashi/worktrees`)
 - the repository target prompt accepts `.` for the current directory and a simple child name for child-directory bootstrap
 - `.gitignore` includes the normalized managed worktree directory entry when using the default location or a safe repository-relative subdirectory
-- `arashi status` prints repository/worktree status without errors
+- `aw status` prints repository/worktree status without errors
 
 ## Step 5: Optional Session Shortcut Flow
 
 ```bash
-arashi switch
-arashi switch --repos docs
-arashi switch --cursor feature-auth
-arashi switch --sesh
-arashi switch --no-default-launch
+aw switch
+aw switch --repos docs
+aw switch --cursor feature-auth
+aw switch --sesh
+aw switch --no-default-launch
 ```
 
 Use `--sesh` only when running inside tmux with `sesh` installed.
@@ -111,15 +111,15 @@ cp .arashi/hooks/pre-remove.sh.example ~/.arashi/hooks/pre-remove.sh
 ```
 
 Before enabling these hooks, review script contents and keep commands limited to trusted operations for each scope.
-Treat hook scripts as executable code: only enable scripts from trusted repositories and verify their contents before running `arashi remove`.
-Use these hooks to automate teardown tasks (for example tmux session cleanup) around `arashi remove`.
+Treat hook scripts as executable code: only enable scripts from trusted repositories and verify their contents before running `aw remove`.
+Use these hooks to automate teardown tasks (for example tmux session cleanup) around `aw remove`.
 
 ## Step 7: Simulate and Recover
 
-If `arashi` is not on `PATH`, run:
+If `aw` is not on `PATH`, run:
 
 ```bash
-arashi --version
+aw --version
 ```
 
 Expected failure: `command not found`.
@@ -129,6 +129,6 @@ Recovery path:
 1. reinstall Arashi using the website instructions (`https://arashi.haphazard.dev`)
 2. open a new shell
 3. ensure the installed binary location is on `PATH`
-4. rerun `arashi --version`
+4. rerun `aw --version`
 
 Tutorial is complete when one workflow succeeds end-to-end and failure recovery works.

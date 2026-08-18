@@ -18,6 +18,7 @@ const metaRoot = process.cwd();
 const registryPath = "scripts/contract-checks.json";
 const registry = [
   "scripts/check-command-contracts.ts",
+  "scripts/check-documented-command-contracts.ts",
   "scripts/check-executable-distribution-contracts.ts",
   "scripts/check-hook-contracts.ts",
   "scripts/check-inline-hook-contracts.ts",
@@ -311,6 +312,7 @@ describe("meta aggregate modes", () => {
     );
     expect(ciLog.split("\n").filter(Boolean)).toEqual([
       "scripts/check-command-contracts.ts --skip-focused-checkers",
+      "scripts/check-documented-command-contracts.ts ",
       "scripts/check-executable-distribution-contracts.ts ",
       "scripts/check-hook-contracts.ts ",
       "scripts/check-inline-hook-contracts.ts ",

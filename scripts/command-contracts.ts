@@ -223,7 +223,7 @@ const kittyDocsGuidance = [
   "exact Arashi worktree identity",
   "live only",
   "`.kitty-session`",
-  "`arashi remove` does not close Kitty windows or sessions",
+  "`aw remove` does not close Kitty windows or sessions",
   "no `--kitty` flag",
   "does not add Kitty to persistent Arashi launch configuration",
   "`LAUNCH_FAILED`",
@@ -1979,7 +1979,7 @@ async function checkSshAliasDirectGuidance(
         "repos/arashi-skills/skills/arashi/references/commands/workspace.md",
       phrases: [
         "SSH Remote Aliases for Add and Clone",
-        "arashi add work-github:acme/api.git",
+        "aw add work-github:acme/api.git",
         "preserves every configured SSH URL byte-for-byte",
         "machine-global Git `url.<base>.insteadOf` rule",
         'git config --global url."git@work-github:".insteadOf git@github.com:',
@@ -2405,12 +2405,12 @@ async function checkTabCompanionSemantics(
     },
   ];
   const terminalGuidance = [
-    "press Command-T manually, then run `arashi switch --cd`",
+    "press Command-T manually, then run `aw switch --cd`",
     "requires active Arashi shell integration",
     "when automatic launcher resolution selects Terminal.app",
   ];
   const invalidTerminalGuidance =
-    'cd "$(arashi switch --no-cd --no-default-launch)"';
+    'cd "$(aw switch --no-cd --no-default-launch)"';
   for (const companion of companions) {
     let content: string | undefined;
     let projection: TabProjection | undefined;
@@ -4353,12 +4353,12 @@ export async function checkContracts(
     }
     const normalizedReadme = cliReadme.toLowerCase();
     const readmeRequirements = [
-      'eval "$(command arashi shell init bash)"',
-      "source <(command arashi completion bash)",
-      'eval "$(command arashi shell init zsh)"',
-      "source <(command arashi completion zsh)",
-      "command arashi shell init fish | source",
-      "command arashi completion fish | source",
+      'eval "$(command aw shell init bash)"',
+      "source <(command aw completion bash)",
+      'eval "$(command aw shell init zsh)"',
+      "source <(command aw completion zsh)",
+      "command aw shell init fish | source",
+      "command aw completion fish | source",
       "wrapper-only",
       "local and read-only",
       "200 ms whole-query budget",
