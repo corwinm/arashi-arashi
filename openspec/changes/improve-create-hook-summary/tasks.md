@@ -18,5 +18,5 @@
 - [x] 3.1 Run CLI format, lint, typecheck, full tests, build, and contract checks
 - [x] 3.2 Run strict OpenSpec validation and meta-repository format, typecheck, tests, contract checks, and diff checks
 - [x] 3.3 Self-review the exact child and meta diffs for issue scope, JSON compatibility, narrow-output readability, and sibling call sites
-- [ ] 3.4 Commit and open linked CLI and meta pull requests for corwinm/arashi-arashi#302, then report exact-head CI honestly
+- [x] 3.4 Commit and open linked CLI and meta pull requests for corwinm/arashi-arashi#302, then report exact-head CI honestly
 - [x] 3.5 Reconcile canonical CLI website and skill guidance so human summaries are not described as complete per-outcome output
