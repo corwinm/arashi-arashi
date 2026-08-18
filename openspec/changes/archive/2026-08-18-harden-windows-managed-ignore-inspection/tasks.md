@@ -15,9 +15,9 @@
 
 - [x] 3.1 Run focused managed-ignore and init tests, then `pnpm run lint`, `pnpm run test`, and `pnpm run build` in `repos/arashi`.
 - [x] 3.2 Run a native Windows CRLF initialization/recovery probe against the exact implementation revision.
-- [ ] 3.3 Complete exact-diff self-review, open the child implementation PR, and reconcile its CI/review findings.
-- [ ] 3.4 Update this checklist from evidence and complete all pre-archive OpenSpec validation and reconciliation.
+- [x] 3.3 Complete exact-diff self-review, open the child implementation PR, and reconcile its CI/review findings.
+- [x] 3.4 Update this checklist from evidence and complete all pre-archive OpenSpec validation and reconciliation.
 
 ## 4. Archive and Merge
 
-- [ ] 4.1 Archive the approved change, sync the archived artifacts to the meta PR, and complete the child-first merge workflow.
+- [x] 4.1 Archive the approved change, sync the archived artifacts to the meta PR, and complete the child-first merge workflow.
