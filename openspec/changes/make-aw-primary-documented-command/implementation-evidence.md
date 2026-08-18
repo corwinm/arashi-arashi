@@ -5,7 +5,7 @@
 All child worktrees are clean on `issue-295-aw-primary-docs`:
 
 - `arashi`: `107c1286255711ec1df1c0edd9f513dd4c9b4fdc` (`0f80375ad29fcbbd70dbce9734c37613d4b80914` plus the reviewed FZF compatibility fix)
-- `arashi-docs`: `b656055426b861c03ead10babf98045533c41ae6`
+- `arashi-docs`: `87e10bce1f0c681196f897a89e8363e3564e70cf`
 - `arashi-presentation`: `b66b297cf479ad990fc9f3a24f9085643d3ca578`
 - `arashi-skills`: `ee17e08b4fce31bb2b3095516f00faf48a437763`
 - `arashi-vscode`: `7c2f4c84c27fc16c52862cddf7fec3ba8f3968e7` (`b3a9eb134d3ffeaff2447e7fe824bce78f89a7b0` plus the reviewed maintained-guidance follow-up)
@@ -49,15 +49,19 @@ After the final source edit, `pnpm test` passed 7 files / 372 tests, strict Open
 
 The final meta regression reproduces the dated `Manual Acceptance Outcomes (2026-02-11)` record exactly: a checked npm-install outcome that completed before `arashi --version` returned `1.4.0`. RED diagnosed that result under the prior checker. The minimal GREEN rule is section-, checklist-, clause-, command-, and returned-version-aware. It rejects unchecked/current guidance, a checked imperative, date/version evidence outside the named section, and unrelated completed legacy invocations. The focused suite passes 7/7; the full meta suite passes 7 files / 372 tests; strict OpenSpec, the six-checker aggregate against the verified 28-member canonical skills archive, focused Prettier, and `git diff --check` pass. The temporary archive and `package-check/` extraction were removed.
 
+The docs PowerShell-continuation review finding was fixed at exact head `87e10bce1f0c681196f897a89e8363e3564e70cf`. Focused RED proved that a fenced `powershell` command split after `arashi --json` with one trailing backtick bypassed the prior physical-line scan. The bounded fix joins unescaped trailing backticks only in `powershell`/`pwsh` fences, preserves the starting line and existing POSIX backslash behavior, and leaves non-PowerShell Markdown and doubled literal backticks unjoined. The focused checker, repository sabotage at the original line, full `pnpm validate` with 17 semantic checkers, generated-output freshness, and `git diff --check` all passed; the exact review thread is resolved.
+
+Central parity followed the same test-first boundary. The new `powershell`/`pwsh` fixture first returned zero diagnostics instead of the expected starting-line diagnostics; after logical-line normalization it passes 8/8 with non-PowerShell and doubled-backtick controls. A temporary real docs-page sabotage failed at the command's starting line and was restored to the identical SHA-256. Final meta validation passes 7 files / 373 tests, typecheck, strict OpenSpec, the 6/6 aggregate against a verified 28-member canonical skills archive, focused formatting, and `git diff --check`; the archive and `package-check/` were removed.
+
 ## Final exact-head review and CI read-back
 
-The five child pull requests remain open, ready for review, and cleanly mergeable at the exact heads above. Every reported check is terminal with the expected result: CLI has 15 successful jobs; docs quality, redirects, and deploy preview succeeded with the expected neutral/skipped contexts; presentation validation and deploy preview succeeded; skills security passed; and all four VS Code CI jobs passed.
+The CLI child PR is merged at `107c1286255711ec1df1c0edd9f513dd4c9b4fdc`; its 15 checks succeeded and it has zero review threads. The remaining four child PRs are open, non-draft, and mergeable at the exact heads above. Docs quality and redirects succeeded with the expected skipped/neutral contexts and deploy preview success; presentation validation/deploy preview, skills security, and all four VS Code jobs succeeded.
 
-The live review-thread read-back is not yet clear enough to complete task 5.6. CLI and VS Code have zero threads, and the sole skills thread is resolved. Docs has one current unresolved PowerShell-continuation checker comment at `b656055426b861c03ead10babf98045533c41ae6`; presentation has one current unresolved `npx --yes` package-runner checker comment at `b66b297cf479ad990fc9f3a24f9085643d3ca578`. Both are exact-head, non-outdated comments. Because child edits are explicitly out of scope for this meta-only closeout, task 5.6 remains unchecked rather than claiming zero unresolved review threads.
+Task 5.6 is not complete at this read-back. Docs has one current, non-outdated unresolved quoted-invocation checker thread at `87e10bce1f0c681196f897a89e8363e3564e70cf`; the earlier PowerShell-continuation thread is resolved. Presentation still has one current, non-outdated unresolved `npx --yes` runner-option thread at `b66b297cf479ad990fc9f3a24f9085643d3ca578`. Skills' sole thread is resolved, and CLI and VS Code have no threads.
 
 ## Known baseline exclusion
 
-`pnpm run format:check` has a pre-existing RC 1 on exactly `scripts/check-worktree-materialization-contracts.ts` and `tests/worktree-materialization-contracts.test.ts`. Isolated baseline probes also returned RC 1 for both files. Neither file is changed by #295, so this formatter baseline is explicitly excluded as not introduced here.
+`pnpm run format:check` has a pre-existing RC 1 on six unchanged files: `scripts/check-worktree-materialization-contracts.ts`, `tests/worktree-materialization-contracts.test.ts`, `docs/003-configuration-management-patterns.md`, `docs/cli-framework-patterns.md`, `docs/implementation-workflow.md`, and `docs/quick-reference.md`. None is changed by #295. Focused Prettier validation passes for every file changed by this follow-up, so the full-suite formatter baseline is explicitly excluded as not introduced here.
 
 ## Coordinated pull requests
 

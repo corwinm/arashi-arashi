@@ -51,6 +51,35 @@ describe("coordinated primary documented command contract", () => {
     ]);
   });
 
+  test("folds only unescaped PowerShell backtick continuations", () => {
+    const diagnostics = findPreferredArashiInvocations(
+      [
+        "```powershell",
+        "arashi --json `",
+        "status",
+        "```",
+        "```pwsh",
+        "arashi --json `",
+        "status",
+        "```",
+        "```bash",
+        "arashi --json `",
+        "status",
+        "```",
+        "```powershell",
+        "arashi --json ``",
+        "status",
+        "```",
+      ].join("\n"),
+      "powershell.md",
+    );
+
+    expect(diagnostics).toEqual([
+      expect.objectContaining({ message: expect.stringContaining("line 2") }),
+      expect.objectContaining({ message: expect.stringContaining("line 6") }),
+    ]);
+  });
+
   test("rejects commands preceded by documented option syntax", () => {
     expect(
       findPreferredArashiInvocations(

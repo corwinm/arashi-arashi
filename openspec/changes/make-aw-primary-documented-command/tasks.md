@@ -34,4 +34,4 @@
 - [x] 5.3 Perform self-review and one independent repository-aware cumulative review; batch and fix concrete supported-path blockers
 - [x] 5.4 Commit child repositories first, push normally, open and verify child PRs, then cross-link them
 - [x] 5.5 Update task/evidence/cross-links, commit/push/open the meta PR with `Closes #295`, and verify every PR's title/body/base/head/files
-- [x] 5.6 Inspect exact-head live CI and eligible review feedback for every PR without merging or enabling auto-merge
+- [ ] 5.6 Inspect exact-head live CI and eligible review feedback for every PR without merging or enabling auto-merge
