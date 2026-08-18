@@ -3,7 +3,9 @@
 ## Purpose
 
 Define how the Arashi skill package keeps its top-level skill guidance minimal while directing detailed workflow instructions to reference files and canonical docs.
+
 ## Requirements
+
 ### Requirement: Minimal skill entry point
 
 The Arashi skill package SHALL keep `skills/arashi/SKILL.md` focused on skill routing, universal operating rules, and links to detailed references rather than duplicating workflow manuals, command-family details, canonical-doc indexes, or exhaustive command parameters.
@@ -250,36 +252,46 @@ The packaged Arashi skill guidance SHALL use canonical switch behavior names and
 
 ### Requirement: Skill guidance teaches configurable create base branches
 
-The packaged Arashi skill SHALL teach agents to use generic `defaults.create.baseBranch` for a persistent coordinated base and `arashi create <target> --base <branch>` for a one-off override. Guidance SHALL distinguish configured and implicit standalone behavior, explain local-then-origin resolution and selected-repository preflight, and preserve existing target branches rather than implying history rewriting.
+The packaged Arashi skill SHALL teach shared repository base policy for configured create and clone: root `baseBranch`, `meta.baseBranch`, `repos.<name>.baseBranch`, invocation-wide `--base`, and repeatable `--repo-base <repository=branch>`. Guidance SHALL explain precedence, `@meta`, local-then-origin resolution, selected-set preflight, coordinated clone target alignment, existing-target preservation, legacy migration, and standalone scope.
 
-#### Scenario: Agent configures a long-running feature base
+#### Scenario: Agent configures mixed repository bases
 
-- **WHEN** an agent needs follow-up coordinated branches to start from `feature/FEAT-1234`
-- **THEN** skill guidance uses `defaults.create.baseBranch` in generic create defaults
-- **AND** does not place the field under editor-scoped defaults or per-repository configuration
+- **WHEN** meta and child repositories use different integration branches
+- **THEN** skill guidance uses a root fallback plus only necessary meta/child overrides
+- **AND** does not duplicate values under create and clone defaults
 
-#### Scenario: Agent selects a one-off base
+#### Scenario: Agent selects one-off bases
 
-- **WHEN** an agent needs a different base for one create invocation
-- **THEN** guidance uses `--base <branch>` and states that it overrides configuration
-- **AND** explains that the base must resolve in every effective selected repository before hooks or mutation
+- **WHEN** an agent needs an invocation-wide base and one repository exception
+- **THEN** guidance uses `--base` plus `--repo-base`
+- **AND** states the complete precedence and fail-before-mutation boundary
 
-#### Scenario: Agent reuses a pre-created target branch
+#### Scenario: Agent clones a missing coordinated child
 
-- **WHEN** an agent uses the documented manual workaround or `REUSE_EXISTING`
-- **THEN** guidance explains that `--base` applies only to newly created targets
-- **AND** does not claim Arashi resets, rebases, or validates ancestry of an existing target
+- **WHEN** clone runs in a coordinated worktree
+- **THEN** guidance preserves the coordinated target branch and treats the effective base only as its creation point
+
+#### Scenario: Agent reuses a target branch
+
+- **WHEN** create or coordinated clone finds an existing target
+- **THEN** guidance does not claim Arashi resets, rebases, or validates its ancestry against the base
+
+#### Scenario: Agent migrates old configuration
+
+- **WHEN** an agent encounters `defaults.create.baseBranch`
+- **THEN** it migrates the value to root `baseBranch`
+- **AND** recognizes that the canonical value applies to configured create and clone
 
 #### Scenario: Agent uses implicit standalone mode
 
-- **WHEN** an agent runs standalone create with an explicit base
-- **THEN** guidance allows `--base` as an invocation-only option
-- **AND** does not claim standalone mode loads or persists `defaults.create.baseBranch`
+- **WHEN** an agent runs standalone create
+- **THEN** guidance permits invocation-only `--base`
+- **AND** rejects configured or repository-specific base policy and does not invent clone support
 
-#### Scenario: Agent writes create hooks
+#### Scenario: Agent writes hooks
 
-- **WHEN** an agent needs target-branch context after base selection
-- **THEN** guidance continues to use `ARASHI_BRANCH_NAME` for the target
+- **WHEN** an agent needs target-branch context after policy resolution
+- **THEN** guidance continues to use `ARASHI_BRANCH_NAME`
 - **AND** does not invent or advertise `ARASHI_BASE_BRANCH`
 
 ### Requirement: Skills semantic guidance uses stable fail-closed aggregates
@@ -595,14 +607,17 @@ The installed-skill reduction SHALL preserve all approved command, standalone/co
 - **AND** demonstrates materially smaller narrow-task loads without counting removed safety or recovery semantics as success
 
 ### Requirement: Authored and packaged skills teach aw
+
 Installed Arashi skill routing, tutorials, command references, troubleshooting, prerequisites, shortcuts, and cheatsheets SHALL use `aw` for actionable CLI commands while preserving Arashi product and machine identifiers. Source and extracted-package semantic checks SHALL enforce the same policy.
 
 #### Scenario: Agent follows installed skill guidance
+
 - **WHEN** an agent copies an actionable command from the installed skill package
 - **THEN** the executable spelling is `aw`
 - **AND** any required package, URL, `.arashi`, `ARASHI_*`, or native identifier remains unchanged
 
 #### Scenario: Packaged artifact is checked
+
 - **WHEN** the canonical skill archive is created and extracted
 - **THEN** the extracted guidance passes the same primary-spelling checks as source
 - **AND** repeated archive creation from unchanged inputs is deterministic

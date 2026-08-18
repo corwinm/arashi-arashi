@@ -46,6 +46,6 @@
 
 - [x] 7.1 Run post-final-edit format, lint, typecheck, build, focused integration, full CLI, docs, skills, schema/completion/contract, and meta cross-repository gates.
 - [x] 7.2 Perform exact staged-diff self-review against issue #307 and the approved OpenSpec contract before every repository commit.
-- [ ] 7.3 Commit and open cross-linked CLI, docs, and skills child PRs with exact validation evidence; omit unaffected child repositories.
-- [ ] 7.4 Re-run meta validation against published child heads, commit completed OpenSpec/checker state, and open the tracking meta PR without an issue-closing keyword until archive.
-- [ ] 7.5 Verify every related PR's exact-head CI, mergeability, and eligible review threads before requesting merge approval.
+- [x] 7.3 Commit and open cross-linked CLI, docs, and skills child PRs with exact validation evidence; omit unaffected child repositories.
+- [x] 7.4 Re-run meta validation against published child heads, commit completed OpenSpec/checker state, and open the tracking meta PR without an issue-closing keyword until archive.
+- [x] 7.5 Verify every related PR's exact-head CI, mergeability, and eligible review threads before requesting merge approval.
