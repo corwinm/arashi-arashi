@@ -25,7 +25,7 @@ Configured create records a complete deterministic hook outcome ledger spanning 
 
 The first line will retain the `Hook results:` label and append deterministic counts in status order: succeeded, skipped, failed. Counts include every evaluated outcome. Successful and skipped outcomes receive no individual rows because their status is routine and remains available in `--json` when complete per-location inspection is needed.
 
-Every failed outcome receives a separate detail block headed by an uppercase failure marker. Separately labelled lines print its canonical repository identity, logical hook name, scope, source kind and owner, non-`none` reason code, and public diagnostic message. Every line of a multiline diagnostic repeats the `Message:` label so diagnostic text cannot escape the block or resemble another field. File-backed failures print the absolute script path on another labelled line; inline failures identify `inline-config` but do not invent a path.
+Every failed outcome receives a separate detail block headed by an uppercase failure marker. Separately labelled lines print its canonical repository identity, logical hook name, scope, source kind and owner, non-`none` reason code, and available non-stream diagnostic message. Every line of a multiline diagnostic repeats the `Message:` label so diagnostic text cannot escape the block or resemble another field. File-backed failures print the absolute script path on another labelled line; inline failures identify source kind and owner without echoing the configured snippet or synthesizing a path. Nonzero hook stdout and stderr remain on their original streams rather than being duplicated into the summary; the reason, attribution, script path, original hook stream, and recovery guidance together retain an actionable diagnostic.
 
 Alternatives considered:
 
@@ -43,7 +43,7 @@ This is preferred over width-dependent alternate layouts because redirected outp
 
 A pure formatter will accept the existing `HookOutcomeRecord[]` and return lines for the human renderer. `executeCreate` will call it only on existing human paths. JSON serialization, outcome construction, fail-fast prefixes, recovery guidance, and command status remain untouched.
 
-Tests will pin aggregate grammar, deterministic ordering of failure blocks, omission of routine per-hook rows and success script paths, complete failure attribution/diagnostics/paths, and width-independent output. Existing command-level JSON tests guard compatibility.
+Tests will pin aggregate grammar, deterministic ordering of failure blocks, omission of routine per-hook rows and success script paths, complete failure attribution/diagnostics/paths, original-stream preservation, and width-independent output. Existing command-level JSON tests guard compatibility.
 
 ## Risks / Trade-offs
 
