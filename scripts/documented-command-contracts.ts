@@ -25,12 +25,21 @@ const commands = [
   "update",
 ];
 const documentedOption = String.raw`(?:--[a-z][\w-]*(?:=[^\s\x60]+)?|-[A-Za-z])`;
+const quotedLegacyExecutable = String.raw`(?<![\w./@-])(?:&\s+)?(?:"arashi"|'arashi')`;
 const legacyInvocation = new RegExp(
-  String.raw`(?:\bcommand\s+)?(?<![./@-])\barashi\s+(?:--(?:help|version)\b|-[hV]\b|<command>(?=\s|\x60|$)|(?:${documentedOption}\s+)*(?:${commands.join("|")})\b)`,
+  String.raw`(?:(?:\bcommand\s+)?(?<![./@-])\barashi|${quotedLegacyExecutable})\s+(?:--(?:help|version)\b|-[hV]\b|<command>(?=\s|\x60|$)|(?:${documentedOption}\s+)*(?:${commands.join("|")})\b)`,
   "g",
 );
 const compatibilityNote =
   "`arashi` executable remains supported for existing scripts and workflows";
+
+function maskPackageRunnerSpecifiers(line: string): string {
+  return line.replace(
+    /\b(npx(?:\s+(?:--yes|-y))?|pnpm\s+dlx|npm\s+exec\s+--)(\s+)arashi(?=\s)/g,
+    (_, runner: string, spacing: string) =>
+      `${runner}${spacing}${" ".repeat("arashi".length)}`,
+  );
+}
 
 export interface DocumentedCommandDiagnostic {
   severity: "error";
@@ -110,49 +119,48 @@ export function findPreferredArashiInvocations(
 ): DocumentedCommandDiagnostic[] {
   return logicalDocumentLines(content).flatMap(
     ({ line, lineNumber, inDatedManualAcceptanceOutcomes }) => {
-      if (/\blowerCombined\.includes\(/.test(line)) return [];
+      const searchableLine = maskPackageRunnerSpecifiers(line);
+      if (/\blowerCombined\.includes\(/.test(searchableLine)) return [];
       legacyInvocation.lastIndex = 0;
-      const hasPreferredInvocation = [...line.matchAll(legacyInvocation)].some(
-        (match) => {
-          const start = match.index ?? 0;
-          const prefix = line.slice(0, start);
-          const suffix = line.slice(start + match[0].length);
-          const clauseStart =
-            Math.max(
-              prefix.lastIndexOf(";"),
-              prefix.lastIndexOf("."),
-              prefix.lastIndexOf("!"),
-              prefix.lastIndexOf("?"),
-            ) + 1;
-          const clausePrefix = prefix.slice(clauseStart);
-          const recordedAcceptanceOutcome =
-            inDatedManualAcceptanceOutcomes &&
-            /^\s*-\s+\[[xX]\]\s+/.test(line) &&
-            /\bcompleted\b/i.test(clausePrefix) &&
-            /\barashi\s+--version\b/i.test(match[0]) &&
-            /^[\x60'"]*\s+returned\s+[\x60'"]*v?\d+(?:\.\d+){1,3}(?:[-+][0-9A-Za-z.-]+)?[\x60'"]*(?=[\s.,;!?]|$)/i.test(
-              suffix,
-            );
-          const historicallyIntroduced =
-            /\bhistorical(?:ly)?\b[^.!?;]*\b(?:used|ran|invoked|called)\s*(?:the\s+command\s+)?[\x60'"$ ]*$/i.test(
-              prefix,
-            ) ||
-            (/\bhistorical(?:ly)?\b[^.!?;]*:\s*[\x60'"]*$/i.test(prefix) &&
-              /^[\x60'"]*\s+was\s+(?:shown|used|invoked|called)\b/i.test(
-                suffix,
-              ));
-          const compatibilityInvocation =
-            prefix.includes(compatibilityNote) &&
-            /^[\x60'"]*\s+(?:(?:is\s+still|remains)\s+valid\s+there)\b/i.test(
-              suffix,
-            );
-          return (
-            !recordedAcceptanceOutcome &&
-            !historicallyIntroduced &&
-            !compatibilityInvocation
+      const hasPreferredInvocation = [
+        ...searchableLine.matchAll(legacyInvocation),
+      ].some((match) => {
+        const start = match.index ?? 0;
+        const prefix = searchableLine.slice(0, start);
+        const suffix = searchableLine.slice(start + match[0].length);
+        const clauseStart =
+          Math.max(
+            prefix.lastIndexOf(";"),
+            prefix.lastIndexOf("."),
+            prefix.lastIndexOf("!"),
+            prefix.lastIndexOf("?"),
+          ) + 1;
+        const clausePrefix = prefix.slice(clauseStart);
+        const recordedAcceptanceOutcome =
+          inDatedManualAcceptanceOutcomes &&
+          /^\s*-\s+\[[xX]\]\s+/.test(line) &&
+          /\bcompleted\b/i.test(clausePrefix) &&
+          /\barashi\b["']?\s+--version\b/i.test(match[0]) &&
+          /^[\x60'"]*\s+returned\s+[\x60'"]*v?\d+(?:\.\d+){1,3}(?:[-+][0-9A-Za-z.-]+)?[\x60'"]*(?=[\s.,;!?]|$)/i.test(
+            suffix,
           );
-        },
-      );
+        const historicallyIntroduced =
+          /\bhistorical(?:ly)?\b[^.!?;]*\b(?:used|ran|invoked|called)\s*(?:the\s+command\s+)?[\x60'"$ ]*$/i.test(
+            prefix,
+          ) ||
+          (/\bhistorical(?:ly)?\b[^.!?;]*:\s*[\x60'"]*$/i.test(prefix) &&
+            /^[\x60'"]*\s+was\s+(?:shown|used|invoked|called)\b/i.test(suffix));
+        const compatibilityInvocation =
+          prefix.includes(compatibilityNote) &&
+          /^[\x60'"]*\s+(?:(?:is\s+still|remains)\s+valid\s+there)\b/i.test(
+            suffix,
+          );
+        return (
+          !recordedAcceptanceOutcome &&
+          !historicallyIntroduced &&
+          !compatibilityInvocation
+        );
+      });
       return hasPreferredInvocation
         ? [
             {

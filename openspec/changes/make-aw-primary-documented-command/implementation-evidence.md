@@ -4,9 +4,9 @@
 
 All child worktrees are clean on `issue-295-aw-primary-docs`:
 
-- `arashi`: `107c1286255711ec1df1c0edd9f513dd4c9b4fdc` (`0f80375ad29fcbbd70dbce9734c37613d4b80914` plus the reviewed FZF compatibility fix)
-- `arashi-docs`: `87e10bce1f0c681196f897a89e8363e3564e70cf`
-- `arashi-presentation`: `b66b297cf479ad990fc9f3a24f9085643d3ca578`
+- `arashi`: reviewed head `107c1286255711ec1df1c0edd9f513dd4c9b4fdc`, squash-merged as `7eaff304bcc432b0ce3b259eebad65fb8ecd5923`
+- `arashi-docs`: `864ef66cb815bf8a7d2f5bb04faf816376ada019`
+- `arashi-presentation`: `3197c8398120bf421526f919ded12fc5603d4119`
 - `arashi-skills`: `ee17e08b4fce31bb2b3095516f00faf48a437763`
 - `arashi-vscode`: `7c2f4c84c27fc16c52862cddf7fec3ba8f3968e7` (`b3a9eb134d3ffeaff2447e7fe824bce78f89a7b0` plus the reviewed maintained-guidance follow-up)
 
@@ -53,11 +53,15 @@ The docs PowerShell-continuation review finding was fixed at exact head `87e10bc
 
 Central parity followed the same test-first boundary. The new `powershell`/`pwsh` fixture first returned zero diagnostics instead of the expected starting-line diagnostics; after logical-line normalization it passes 8/8 with non-PowerShell and doubled-backtick controls. A temporary real docs-page sabotage failed at the command's starting line and was restored to the identical SHA-256. Final meta validation passes 7 files / 373 tests, typecheck, strict OpenSpec, the 6/6 aggregate against a verified 28-member canonical skills archive, focused formatting, and `git diff --check`; the archive and `package-check/` were removed.
 
+Final docs/presentation parity also followed focused TDD. The central quoted-executable and package-runner fixtures first failed in exactly two cases: all three quoted executable forms produced zero diagnostics, while all five accepted package-runner forms were incorrectly diagnosed. The minimal GREEN change recognizes only bounded single/double-quoted `arashi` executable forms (plus optional PowerShell `&`) before recognized options/commands, and masks only the `arashi` package-specifier token for plain `npx`, `npx -y`, `npx --yes`, `pnpm dlx`, and `npm exec --`. Quoted package identifiers, installs, paths, and URLs remain accepted; later real legacy invocations and unsupported `npx --quiet` remain rejected. The focused suite passes 10/10.
+
+The final parent validation passes 7 files / 375 tests, typecheck, strict OpenSpec, and the 6/6 registered aggregate against source guidance plus the verified 28-member canonical extracted skills archive. Focused Prettier and `git diff --check` pass, and the archive plus `package-check/` extraction were removed. The full formatter still reports only the six unchanged baseline files listed below.
+
 ## Final exact-head review and CI read-back
 
-The CLI child PR is merged at `107c1286255711ec1df1c0edd9f513dd4c9b4fdc`; its 15 checks succeeded and it has zero review threads. The remaining four child PRs are open, non-draft, and mergeable at the exact heads above. Docs quality and redirects succeeded with the expected skipped/neutral contexts and deploy preview success; presentation validation/deploy preview, skills security, and all four VS Code jobs succeeded.
+The final bounded read-back inspected each child once at its exact current head. CLI #147 is merged from reviewed head `107c1286255711ec1df1c0edd9f513dd4c9b4fdc` as `7eaff304bcc432b0ce3b259eebad65fb8ecd5923`; all 15 checks succeeded and it has zero unresolved threads. Docs #82 is open, non-draft, and mergeable at `864ef66cb815bf8a7d2f5bb04faf816376ada019`; docs quality and redirects succeeded, deploy preview succeeded, expected publish was skipped, and expected Netlify contexts were neutral, with zero unresolved threads. Presentation #4 is open, non-draft, and mergeable at `3197c8398120bf421526f919ded12fc5603d4119`; validation and deploy preview succeeded. Skills #64 and VS Code #34 remain open, non-draft, mergeable, and green at `ee17e08b4fce31bb2b3095516f00faf48a437763` and `7c2f4c84c27fc16c52862cddf7fec3ba8f3968e7`, with zero unresolved threads.
 
-Task 5.6 is not complete at this read-back. Docs has one current, non-outdated unresolved quoted-invocation checker thread at `87e10bce1f0c681196f897a89e8363e3564e70cf`; the earlier PowerShell-continuation thread is resolved. Presentation still has one current, non-outdated unresolved `npx --yes` runner-option thread at `b66b297cf479ad990fc9f3a24f9085643d3ca578`. Skills' sole thread is resolved, and CLI and VS Code have no threads.
+Presentation received two later automated P2 threads after the bounded `-y`/`--yes` fix. One requests general support for value-taking `npx --workspace` syntax, and one requests bare argumentless executable detection. Both are outside the approved recognized-option/recognized-command contract and the explicit no-general-parser boundary; the final controls intentionally reject unsupported runner options rather than speculatively parsing all `npx` syntax. They are recorded as bounded-out, unresolved ineligible feedback, leaving zero unresolved eligible threads across the coordinated child set. All exact-head child CI is terminal acceptable, so task 5.6 is complete.
 
 ## Known baseline exclusion
 
@@ -74,4 +78,4 @@ The child-first branches were pushed normally and the ready-for-review pull requ
 - VS Code: https://github.com/corwinm/arashi-vscode/pull/34
 - Parent meta: https://github.com/corwinm/arashi-arashi/pull/309
 
-Every pull request was opened against `main`, is ready for review, and uses the coordinated title. Each child body links all five child pull requests and the parent; the parent body links every child and closes #295. Live exact-head CI and eligible review feedback remain task 5.6 and are not marked complete here.
+Every pull request was opened against `main`, is ready for review, and uses the coordinated title. Each child body links all five child pull requests and the parent; the parent body links every child and closes #295. Final exact-head child CI and eligible review feedback are recorded above.

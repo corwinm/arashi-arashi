@@ -89,6 +89,57 @@ describe("coordinated primary documented command contract", () => {
     ).toHaveLength(3);
   });
 
+  test("rejects quoted executable invocations without matching quoted identifiers", () => {
+    expect(
+      findPreferredArashiInvocations(
+        [
+          'Run `"arashi" status`.',
+          "Run `'arashi' status`.",
+          'Run `& "arashi" status` from PowerShell.',
+        ].join("\n"),
+        "quoted-executables.md",
+      ),
+    ).toHaveLength(3);
+
+    expect(
+      findPreferredArashiInvocations(
+        [
+          'The package identifier is "arashi".',
+          'Install the package with `npm install -g "arashi"`.',
+          "Use the paths \"/opt/arashi\" and './vendor/arashi'.",
+          'See "https://github.com/corwinm/arashi".',
+        ].join("\n"),
+        "quoted-identifiers.md",
+      ),
+    ).toEqual([]);
+  });
+
+  test("masks only supported package-runner specifiers", () => {
+    expect(
+      findPreferredArashiInvocations(
+        [
+          "Try npx arashi status.",
+          "Try npx --yes arashi status.",
+          "Try npx -y arashi status.",
+          "Try pnpm dlx arashi status.",
+          "Try npm exec -- arashi status.",
+        ].join("\n"),
+        "package-runners.md",
+      ),
+    ).toEqual([]);
+
+    expect(
+      findPreferredArashiInvocations(
+        [
+          "npx --yes arashi status; arashi status",
+          "npx -y arashi status; `arashi status`",
+          "npx --quiet arashi status",
+        ].join("\n"),
+        "package-runner-controls.md",
+      ),
+    ).toHaveLength(3);
+  });
+
   test("limits compatibility exemptions to the compatibility clause", () => {
     expect(
       findPreferredArashiInvocations(
