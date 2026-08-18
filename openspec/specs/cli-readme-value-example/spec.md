@@ -2,7 +2,6 @@
 
 ## Purpose
 Define README requirements that explain Arashi's current OpenSpec-based multi-repo value proposition and keep historical SpecKit references clearly contextualized.
-
 ## Requirements
 ### Requirement: CLI README SHALL include a value-focused multi-repo example section
 The CLI README SHALL include a dedicated section that explains Arashi's value through a minimal frontend-and-backend multi-repo workflow and SHALL identify OpenSpec as the current spec workflow used for this project.
@@ -18,6 +17,14 @@ The CLI README SHALL include a dedicated section that explains Arashi's value th
 #### Scenario: CLI README is compared with the meta-repo README
 - **WHEN** a maintainer or contributor reads `repos/arashi/README.md` alongside the root `arashi-arashi` `README.md`
 - **THEN** both READMEs agree that OpenSpec is the project's current workflow and that SpecKit appears only as historical context
+
+### Requirement: CLI README teaches aw first
+The CLI README SHALL use `aw` for actionable installation verification, setup, command examples, shell integration, update, and troubleshooting workflows while preserving package/install and native identifier spellings. It SHALL include one concise compatibility note for existing `arashi` scripts and workflows.
+
+#### Scenario: User copies a README workflow
+- **WHEN** a user copies an actionable CLI workflow from the README
+- **THEN** the executable spelling is `aw`
+- **AND** package installation commands still install the `arashi` package
 
 ## ADDED Requirements
 
