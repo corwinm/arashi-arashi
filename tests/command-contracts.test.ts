@@ -292,7 +292,7 @@ For create, create tab implies launch and switch, wins over \`--no-launch\` and 
 | IDE workspaces | Existing editor behavior | Unsupported | No terminal-tab contract |
 | generic fallback | New terminal/platform window | Unsupported | No portable exact tab target |
 
-For Terminal.app, press Command-T manually, then run \`arashi switch --cd\`; this requires active Arashi shell integration. Normal automatic launch opens a new Terminal window only when automatic launcher resolution selects Terminal.app.
+For Terminal.app, press Command-T manually, then run \`aw switch --cd\`; this requires active Arashi shell integration. Normal automatic launch opens a new Terminal window only when automatic launcher resolution selects Terminal.app.
 
 Unsupported tab disposition never opens a window or falls through to another launcher.
 These guards win before launcher conflicts or runtime-context validation.
@@ -338,7 +338,7 @@ A requested tab never silently falls back. Enforce each guard before option or c
 | iTerm2 | new window with current profile | tab in exact target window with current profile |
 | Generic Linux/macOS/Windows fallback | independent window | \`TAB_DISPOSITION_UNSUPPORTED\` |
 
-For Terminal.app, press Command-T manually, then run \`arashi switch --cd\`; this requires active Arashi shell integration. Normal automatic launch opens a new Terminal window only when automatic launcher resolution selects Terminal.app.
+For Terminal.app, press Command-T manually, then run \`aw switch --cd\`; this requires active Arashi shell integration. Normal automatic launch opens a new Terminal window only when automatic launcher resolution selects Terminal.app.
 `;
 afterEach(async () =>
   Promise.all(roots.splice(0).map((root) => rm(root, { recursive: true }))),
@@ -545,12 +545,12 @@ async function fixture(): Promise<string> {
       },
     },
     "repos/arashi-docs/docs/workflows/kitty.md":
-      "Kitty 0.43 or newer\n`allow_remote_control`\nexact Arashi worktree identity\nafter integrated IDE detection and before parent-shell `cd`\nlive only\n`.kitty-session`\n`arashi remove` does not close Kitty windows or sessions\nno `--kitty` flag\ndoes not add Kitty to persistent Arashi launch configuration\n`LAUNCH_FAILED`\ndoes not fall back\ncreated worktrees remain available\ncross-process identity lock\n10 seconds\nlive owner\ndead owner\n30 seconds\nownership-safe release\n",
+      "Kitty 0.43 or newer\n`allow_remote_control`\nexact Arashi worktree identity\nafter integrated IDE detection and before parent-shell `cd`\nlive only\n`.kitty-session`\n`aw remove` does not close Kitty windows or sessions\nno `--kitty` flag\ndoes not add Kitty to persistent Arashi launch configuration\n`LAUNCH_FAILED`\ndoes not fall back\ncreated worktrees remain available\ncross-process identity lock\n10 seconds\nlive owner\ndead owner\n30 seconds\nownership-safe release\n",
     "repos/arashi-docs/public/workflows/kitty.md":
-      "Kitty 0.43 or newer\n`allow_remote_control`\nexact Arashi worktree identity\nafter integrated IDE detection and before parent-shell `cd`\nlive only\n`.kitty-session`\n`arashi remove` does not close Kitty windows or sessions\nno `--kitty` flag\ndoes not add Kitty to persistent Arashi launch configuration\n`LAUNCH_FAILED`\ndoes not fall back\ncreated worktrees remain available\ncross-process identity lock\n10 seconds\nlive owner\ndead owner\n30 seconds\nownership-safe release\n",
+      "Kitty 0.43 or newer\n`allow_remote_control`\nexact Arashi worktree identity\nafter integrated IDE detection and before parent-shell `cd`\nlive only\n`.kitty-session`\n`aw remove` does not close Kitty windows or sessions\nno `--kitty` flag\ndoes not add Kitty to persistent Arashi launch configuration\n`LAUNCH_FAILED`\ndoes not fall back\ncreated worktrees remain available\ncross-process identity lock\n10 seconds\nlive owner\ndead owner\n30 seconds\nownership-safe release\n",
     "repos/arashi-docs/public/commands/add.md": addMaterializationGuidance,
     "repos/arashi-docs/public/llms-full.txt":
-      "Kitty 0.43 or newer\n`allow_remote_control`\nexact Arashi worktree identity\nafter integrated IDE detection and before parent-shell `cd`\nlive only\n`.kitty-session`\n`arashi remove` does not close Kitty windows or sessions\nno `--kitty` flag\ndoes not add Kitty to persistent Arashi launch configuration\n`LAUNCH_FAILED`\ndoes not fall back\ncreated worktrees remain available\ncross-process identity lock\n10 seconds\nlive owner\ndead owner\n30 seconds\nownership-safe release\n" +
+      "Kitty 0.43 or newer\n`allow_remote_control`\nexact Arashi worktree identity\nafter integrated IDE detection and before parent-shell `cd`\nlive only\n`.kitty-session`\n`aw remove` does not close Kitty windows or sessions\nno `--kitty` flag\ndoes not add Kitty to persistent Arashi launch configuration\n`LAUNCH_FAILED`\ndoes not fall back\ncreated worktrees remain available\ncross-process identity lock\n10 seconds\nlive owner\ndead owner\n30 seconds\nownership-safe release\n" +
       addMaterializationGuidance,
     "repos/arashi-skills/contracts/command-coverage.json": {
       schemaVersion: 1,
@@ -601,7 +601,7 @@ async function fixture(): Promise<string> {
       ],
     },
     "repos/arashi-skills/skills/arashi/references/commands.md":
-      "Use `arashi add`.\nUse `arashi create feature --tab`.\nUse `arashi switch --tab feature`.\n",
+      "Use `aw add`.\nUse `aw create feature --tab`.\nUse `aw switch --tab feature`.\n",
     "repos/arashi-skills/skills/arashi/references/commands/workspace.md":
       addMaterializationGuidance,
     "repos/arashi-skills/skills/arashi/references/commands/switch-and-launch.md":
@@ -1390,7 +1390,7 @@ describe("cross-repository command contracts", () => {
     const root = await schemaV6Fixture();
     await writeFile(
       join(root, "repos/arashi/README.md"),
-      "# Arashi\n\nRun `arashi completion bash`.\n",
+      "# Arashi\n\nRun `aw completion bash`.\n",
     );
     expect((await checkContracts(root)).diagnostics).toContainEqual(
       expect.objectContaining({
@@ -2322,7 +2322,7 @@ describe("cross-repository command contracts", () => {
       "docs invalid Terminal.app path-substitution guidance",
       "repos/arashi-docs/docs/workflows/launch-disposition.md",
       (content: string) =>
-        `${content}\nWithout shell integration, run \`cd "$(arashi switch --no-cd --no-default-launch)"\`.\n`,
+        `${content}\nWithout shell integration, run \`cd "$(aw switch --no-cd --no-default-launch)"\`.\n`,
       "DOCS_TAB_POLICY_MISMATCH",
     ],
     [

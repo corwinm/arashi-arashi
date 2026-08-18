@@ -6,10 +6,10 @@ Common command patterns for installing and using the Arashi CLI.
 
 ```bash
 # verify Arashi CLI
-arashi --version
+aw --version
 
 # inspect command surface
-arashi --help
+aw --help
 ```
 
 ## Installation
@@ -22,8 +22,8 @@ Use the website flow for your platform and environment policy.
 
 Expected outcome:
 
-- `arashi --version` exits `0`
-- `arashi --help` exits `0`
+- `aw --version` exits `0`
+- `aw --help` exits `0`
 
 ## Workflow Execution
 
@@ -33,16 +33,16 @@ Order of operations:
 
 1. Execute one workflow from start to finish.
 2. Confirm expected outcomes from the workflow doc.
-3. If a command is missing or behaves unexpectedly, verify setup with `arashi --version` and use [Troubleshooting](troubleshooting.md).
+3. If a command is missing or behaves unexpectedly, verify setup with `aw --version` and use [Troubleshooting](troubleshooting.md).
 
 ## Workspace Initialization
 
-Run `arashi init` from an existing repository root, or from a non-repository parent directory when you want Arashi to create the repository during setup.
+Run `aw init` from an existing repository root, or from a non-repository parent directory when you want Arashi to create the repository during setup.
 
 Initialize an existing repository with defaults:
 
 ```bash
-arashi init
+aw init
 ```
 
 Bootstrap the current directory as a new repository:
@@ -50,7 +50,7 @@ Bootstrap the current directory as a new repository:
 ```bash
 mkdir my-arashi-workspace
 cd my-arashi-workspace
-arashi init
+aw init
 # prompt: Repository target ('.' for current directory or a child directory name) -> .
 ```
 
@@ -59,7 +59,7 @@ Bootstrap a child repository from a parent directory:
 ```bash
 mkdir scratch
 cd scratch
-arashi init
+aw init
 # prompt: Repository target ('.' for current directory or a child directory name) -> my-arashi-repo
 cd my-arashi-repo
 ```
@@ -67,13 +67,13 @@ cd my-arashi-repo
 Use a custom repositories directory:
 
 ```bash
-arashi init --repos-dir ./workspace-repos
+aw init --repos-dir ./workspace-repos
 ```
 
 Use a custom worktree base directory:
 
 ```bash
-arashi init --worktrees-dir ./workspace-worktrees
+aw init --worktrees-dir ./workspace-worktrees
 ```
 
 Expected outcomes:
@@ -87,61 +87,61 @@ Expected outcomes:
 
 ## Repository Cloning and Recovery
 
-Use `arashi clone` to clone configured repositories that are missing locally.
+Use `aw clone` to clone configured repositories that are missing locally.
 
 ```bash
 # interactively choose missing repositories
-arashi clone
+aw clone
 
 # clone all missing repositories
-arashi clone --all
+aw clone --all
 ```
 
 Expected outcomes:
 
 - command exits `0` when clone operations succeed
 - already-present repositories are skipped
-- `arashi status` no longer reports missing repository spawn errors
+- `aw status` no longer reports missing repository spawn errors
 
 ## Worktree Switching
 
-Use `arashi switch` to open a terminal context for an existing worktree, or change the current shell directory when shell integration is active.
+Use `aw switch` to open a terminal context for an existing worktree, or change the current shell directory when shell integration is active.
 
 ```bash
 # parent workspace worktrees (default)
-arashi switch
+aw switch
 
 # child repositories in current workspace only
-arashi switch --repos docs
+aw switch --repos docs
 
 # include parent workspaces + nested child repo worktrees
-arashi switch --all
+aw switch --all
 
 # select one exact worktree by full path
-arashi switch --path /path/to/worktree
+aw switch --path /path/to/worktree
 
 # force Cursor / VS Code / Kiro for one run
-arashi switch --cursor feature-auth
-arashi switch --vscode feature-auth
-arashi switch --kiro feature-auth
+aw switch --cursor feature-auth
+aw switch --vscode feature-auth
+aw switch --kiro feature-auth
 
 # request parent-shell cd when shell integration is active
-arashi switch --cd feature-auth
+aw switch --cd feature-auth
 
 # force launch behavior for one run
-arashi switch --no-cd
+aw switch --no-cd
 
 # sesh mode inside tmux
-arashi switch --sesh
+aw switch --sesh
 
 # bypass configured switch launch defaults for one run
-arashi switch --no-default-launch
+aw switch --no-default-launch
 ```
 
 Expected outcomes:
 
 - command exits `0` and opens the selected target in a new context
-- `arashi switch --cd` changes the current shell directory when invoked through the installed shell wrapper
+- `aw switch --cd` changes the current shell directory when invoked through the installed shell wrapper
 - `--repos` matches repository names first (exact match preferred)
 - `--repos` with no matches lists available child repositories
 - `--path` matches one exact worktree path and skips fuzzy branch/path matching
@@ -170,15 +170,15 @@ Use command defaults in `.arashi/config.json` to control post-create switch/laun
 }
 ```
 
-Use one-off CLI overrides when you want a single `arashi create` run to differ from configured defaults, such as launching immediately or skipping the post-create switch. Common examples include:
+Use one-off CLI overrides when you want a single `aw create` run to differ from configured defaults, such as launching immediately or skipping the post-create switch. Common examples include:
 
 ```bash
-arashi create feature-auth --launch
-arashi create feature-auth --no-launch
-arashi create feature-auth --no-switch
+aw create feature-auth --launch
+aw create feature-auth --no-launch
+aw create feature-auth --no-switch
 ```
 
-Use `arashi shell install` to enable parent-shell switching for bash, zsh, or fish, or `arashi shell init <shell>` for manual setup.
+Use `aw shell install` to enable parent-shell switching for bash, zsh, or fish, or `aw shell init <shell>` for manual setup.
 
 Precedence for create/switch launch behavior is: explicit flag > opt-out flag > config default > built-in default.
 For `switch`, IDE-integrated terminals also prefer the matching IDE launcher when no explicit override is provided.

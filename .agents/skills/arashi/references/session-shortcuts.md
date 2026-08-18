@@ -13,14 +13,14 @@ Use these optional shortcuts to move quickly between Arashi worktrees.
 List available paths and select one explicitly:
 
 ```bash
-arashi list
+aw list
 cd -- "<selected-worktree-path>"
 ```
 
 If you want an `fzf` helper, keep selection and execution as separate steps:
 
 ```bash
-arashi list | fzf > /tmp/arashi-selected-worktree
+aw list | fzf > /tmp/arashi-selected-worktree
 read -r selected_worktree < /tmp/arashi-selected-worktree
 cd -- "$selected_worktree"
 ```
@@ -29,22 +29,22 @@ This avoids inline command substitution and keeps quoting explicit.
 
 ## Switch with Arashi
 
-Use `arashi shell --help` and `arashi switch --help` to confirm current shell and switch options. Common examples include:
+Use `aw shell --help` and `aw switch --help` to confirm current shell and switch options. Common examples include:
 
 ```bash
-arashi shell install
-arashi switch
-arashi switch --cd feature-auth
-arashi switch --repos docs
-arashi switch --all
-arashi switch --cursor feature-auth
-arashi switch --no-default-launch
+aw shell install
+aw switch
+aw switch --cd feature-auth
+aw switch --repos docs
+aw switch --all
+aw switch --cursor feature-auth
+aw switch --no-default-launch
 ```
 
 ## Connect with sesh
 
 ```bash
-arashi switch --sesh
+aw switch --sesh
 ```
 
 ## Optional Keybinds
@@ -55,9 +55,9 @@ Avoid command-substitution keybinds that execute unsanitized output directly.
 ## Expected Outcomes
 
 - selection flow changes shell to the selected worktree path.
-- `arashi switch` opens a terminal context for a selected worktree.
-- `arashi switch --cd` changes the current shell directory when shell integration is active.
-- `arashi switch --vscode|--cursor|--kiro` forces that IDE for one switch invocation.
-- `arashi switch --sesh` creates or switches via sesh in tmux.
-- if shell integration is inactive, `arashi switch --cd` warns and falls back to launch behavior.
-- `arashi switch --no-default-launch` bypasses configured switch launch defaults for one run.
+- `aw switch` opens a terminal context for a selected worktree.
+- `aw switch --cd` changes the current shell directory when shell integration is active.
+- `aw switch --vscode|--cursor|--kiro` forces that IDE for one switch invocation.
+- `aw switch --sesh` creates or switches via sesh in tmux.
+- if shell integration is inactive, `aw switch --cd` warns and falls back to launch behavior.
+- `aw switch --no-default-launch` bypasses configured switch launch defaults for one run.

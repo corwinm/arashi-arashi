@@ -63,13 +63,13 @@ const contract = {
   },
 };
 
-const docs = `# Install Arashi\n\n\`arashi\` remains the canonical command. \`aw\` is a shorter alias for \`arashi\` and is provided by npm and direct macOS, Linux, and Windows installers. Both names support shell integration and completion through the same native binary. Direct installation refuses destination and effective PATH collisions before mutation. Existing shell aliases and functions are a separate namespace conflict. Manual Windows installation requires arashi-windows-x64.exe, arashi, arashi.ps1, arashi.bat, aw, aw.ps1, and aw.bat. Manually placed wrappers have no direct-installer ownership ledger; deliberately move or remove them before installer migration.\n`;
+const docs = `# Install Arashi\n\nThe \`arashi\` executable remains supported for existing scripts and workflows. npm and direct macOS, Linux, and Windows installers provide both names. Both names support shell integration and completion through the same native binary. Direct installation refuses destination and effective PATH collisions before mutation. Existing shell aliases and functions are a separate namespace conflict. Manual Windows installation requires arashi-windows-x64.exe, arashi, arashi.ps1, arashi.bat, aw, aw.ps1, and aw.bat. Manually placed wrappers have no direct-installer ownership ledger; deliberately move or remove them before installer migration.\n`;
 const landingDocs = `# Arashi\n\nCoordinate Git worktrees across every repository in your stack.\n`;
-const gettingStartedDocs = `${docs}\n\`aw\` is a shorter alias for \`arashi\`. The macOS/Linux installer provides both \`arashi\` and \`aw\`. The PowerShell installer provides both \`arashi\` and \`aw\`. npm installs provide both \`arashi\` and \`aw\`. Run aw status. Refuse an unrelated existing \`aw\` command on PATH or at the destination. A manual wrapper is an unsupported interim workaround for older releases with no direct-installer ownership ledger; deliberately move or remove it.\n`;
-const shellDocs = `Shell integration supports both \`arashi\` and \`aw\` in one managed block, preserves an unrelated \`aw\` alias or function, and uses command arashi.\n`;
-const completionDocs = `Completion supports both \`arashi\` and \`aw\` through command arashi.\n`;
-const updateDocs = `An update updates both \`arashi\` and \`aw\`; \`arashi\` remains canonical.\n`;
-const skills = `Use canonical \`arashi --help\` for discovery and canonical entry commands. \`aw\` is supported shorthand for **Arashi Workspace** after npm or direct installation; it is not a Commander command alias or a second command vocabulary.\n`;
+const gettingStartedDocs = `${docs}\nThe \`arashi\` executable remains supported for existing scripts and workflows. The macOS/Linux installer provides both \`arashi\` and \`aw\`. The PowerShell installer provides both \`arashi\` and \`aw\`. npm installs provide both \`arashi\` and \`aw\`. Run aw status. Refuse an unrelated existing \`aw\` command on PATH or at the destination. A manual wrapper is an unsupported interim workaround for older releases with no direct-installer ownership ledger; deliberately move or remove it.\n`;
+const shellDocs = `Shell integration enables both installed executable names in one managed block, preserves an unrelated \`aw\` alias or function, and uses command aw.\n`;
+const completionDocs = `Completion supports both \`arashi\` and \`aw\` through command aw.\n`;
+const updateDocs = `An update refreshes both \`arashi\` and \`aw\`; both names continue to use the same release.\n`;
+const skills = `Use \`aw --help\` for discovery. The \`arashi\` executable remains supported for existing scripts and workflows, and installations provide both names through the same implementation. See https://arashi.haphazard.dev.\n`;
 
 async function fixture(): Promise<string> {
   const root = await mkdtemp(join(tmpdir(), "arashi-executable-contracts-"));
@@ -92,7 +92,7 @@ async function fixture(): Promise<string> {
     "repos/arashi-docs/public/commands/shell.md": shellDocs,
     "repos/arashi-docs/public/commands/completion.md": completionDocs,
     "repos/arashi-docs/public/commands/update.md": updateDocs,
-    "repos/arashi-docs/public/llms.txt": `\`aw\` is a shorter alias for \`arashi\`. See Getting started.\n`,
+    "repos/arashi-docs/public/llms.txt": `The \`arashi\` executable remains supported for existing scripts and workflows. See Getting started.\n`,
     "repos/arashi-docs/public/llms-full.txt": docs,
     "repos/arashi-skills/skills/arashi/references/commands/setup.md": skills,
     "repos/arashi-skills/skills/arashi/README.md": skills,
