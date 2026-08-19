@@ -2668,7 +2668,7 @@ async function markdownFiles(directory: string): Promise<string[]> {
     for (const entry of await readdir(path, { withFileTypes: true })) {
       const child = join(path, entry.name);
       if (entry.isDirectory()) await walk(child);
-      else if (entry.name.endsWith(".md")) result.push(child);
+      else if (/\.mdx?$/.test(entry.name)) result.push(child);
     }
   }
   try {
@@ -2677,6 +2677,78 @@ async function markdownFiles(directory: string): Promise<string[]> {
     /* Missing tree is diagnosed through coverage/reference checks. */
   }
   return result.sort();
+}
+
+function removedCreateBaseGuidanceContradiction(content: string): boolean {
+  const blocks = content
+    .replace(/```[\s\S]*?```/g, (block) => block.replace(/\n/g, " "))
+    .split(/\n{2,}/)
+    .flatMap((block) => block.split(/\n(?=\s*(?:[-*+] |\d+\. ))/))
+    .map((block) => block.replace(/\s+/g, " ").trim())
+    .filter(Boolean);
+  const contexts = blocks.flatMap((block, index) => {
+    if (/^#{1,6}\s/.test(block) && /defaults\.create\.baseBranch/i.test(block))
+      return [`${block} ${blocks[index + 1] ?? ""}`];
+    return block.split(/(?<=[.!?])\s+/);
+  });
+  const mention = /defaults\.create\.baseBranch/gi;
+  const rejection =
+    /\b(?:unsupported|no longer supported|removed|obsolete|invalid|forbidden|rejects?|rejected|replac(?:e|ed|ement)|migrat(?:e|ed|ion)|move(?:d)?)\b|\b(?:(?:do|does|is|are|was|were|will|must|should|can|may)\s+not|never|cannot|can't|must not)\b[^.!?]{0,50}\b(?:set|use|configure|add|put|place|accept|support|read|honor)\b[^.!?]{0,50}defaults\.create\.baseBranch|\b(?:instead of|rather than)\s*`?defaults\.create\.baseBranch|defaults\.create\.baseBranch[^.!?]{0,80}(?:\b(?:does not|never|cannot|can't|must not)\b[^.!?]{0,40}\b(?:appl(?:y|ies)|works?|accepts?|supports?|reads?|honors?|uses?)\b|\b(?:is|are|was|were)\s+not\s+(?:supported|accepted|used|read|honored|valid|allowed)\b)/i;
+  const actionBeforeMention =
+    /\b(?:set|use|configure|add|put|place|accepts?|supports?|reads?|uses?|honors?)\b/gi;
+  const affirmativeAfterMention =
+    /\b(?:can|may|should)\s+(?:still\s+)?(?:be\s+)?(?:use|used|set|configure|configured|add|added|accept|accepted|support|supported|read|honor|honored)|\b(?:is|remains?|stays?)\s+(?!not\b)(?:still\s+)?(?:supported|accepted|valid|allowed|used|read|honored)|\b(?:arashi|create|configuration|config)\s+(?:still\s+)?(?:accepts?|supports?|reads?|uses?|honors?)\b|\bstill\s+(?:applies|works|controls?|defines?|selects?|chooses?|determines?)\b|\bcontinues?\s+to\s+(?:control|define|set|select|choose|determine)\b/i;
+  const activeBehaviorAfterMention =
+    /\b(?:appl(?:y|ies)|works?|controls?|defines?|selects?|chooses?|determines?)\b/gi;
+
+  for (const context of contexts) {
+    for (const match of context.matchAll(mention)) {
+      const localIndex = match.index ?? 0;
+      const before = context.slice(0, localIndex);
+      const clauseStart = Math.max(
+        before.lastIndexOf("."),
+        before.lastIndexOf(";"),
+        before.lastIndexOf("!"),
+        before.lastIndexOf("?"),
+      );
+      const sameClauseBefore = before.slice(clauseStart + 1);
+      const after = context.slice(localIndex + match[0].length);
+
+      for (const action of sameClauseBefore.matchAll(actionBeforeMention)) {
+        const prefix = sameClauseBefore.slice(0, action.index).toLowerCase();
+        const suffix = sameClauseBefore.slice(
+          (action.index ?? 0) + action[0].length,
+        );
+        if (
+          /^(?:support|use)$/i.test(action[0]) &&
+          /^\s+(?:for|of)\b/i.test(suffix)
+        )
+          continue;
+        if (/\b(?:instead of|rather than)\s*`?$/i.test(suffix)) continue;
+        if (
+          !/\b(?:do|does|is|are|was|were|will|must|should|can|may)\s+not(?:\s+\w+){0,3}\s*$/.test(
+            prefix,
+          ) &&
+          !/\bnever(?:\s+\w+){0,2}\s*$/.test(prefix)
+        )
+          return true;
+      }
+
+      if (affirmativeAfterMention.test(after)) return true;
+      for (const action of after.matchAll(activeBehaviorAfterMention)) {
+        const prefix = after.slice(0, action.index).toLowerCase();
+        if (
+          !/\b(?:do|does|is|are|was|were|will|must|should|can|may)\s+not(?:\s+\w+){0,3}\s*$/.test(
+            prefix,
+          ) &&
+          !/\bnever(?:\s+\w+){0,2}\s*$/.test(prefix)
+        )
+          return true;
+      }
+      if (!rejection.test(context)) return true;
+    }
+  }
+  return false;
 }
 
 const workflowRunSteps = (workflow: string): string[] => {
@@ -3659,15 +3731,7 @@ export async function checkContracts(
     const repoProperties = object(repoDefinition.properties)
       ? repoDefinition.properties
       : {};
-    const legacyBaseBranch = object(createProperties.baseBranch)
-      ? createProperties.baseBranch
-      : undefined;
-    if (
-      !legacyBaseBranch ||
-      legacyBaseBranch.type !== "string" ||
-      legacyBaseBranch.minLength !== 1 ||
-      legacyBaseBranch.pattern !== createBaseBranchPattern
-    )
+    if ("baseBranch" in createProperties)
       add(
         d,
         "error",
@@ -3675,7 +3739,17 @@ export async function checkContracts(
         "REPOSITORY_BASE_CONFIG_SCHEMA_MISMATCH",
         paths.configSchema,
         "defaults.create.baseBranch",
-        "Schema v8 must preserve the validated deprecated create-only baseBranch field.",
+        "Schema v8 must reject the removed defaults.create.baseBranch field.",
+      );
+    if (createDefaults.additionalProperties !== false)
+      add(
+        d,
+        "error",
+        "schema",
+        "REPOSITORY_BASE_CONFIG_SCHEMA_MISMATCH",
+        paths.configSchema,
+        "defaults.create.additionalProperties",
+        "Schema v8 must reject unknown defaults.create properties, including the removed baseBranch key.",
       );
     const editorCreateDefinition = object(
       definitions.EditorCreateCommandDefaults,
@@ -3693,8 +3767,59 @@ export async function checkContracts(
         "REPOSITORY_BASE_CONFIG_SCHEMA_MISMATCH",
         paths.configSchema,
         "defaults.editors.<host>.create.baseBranch",
-        "The deprecated create-only baseBranch field must remain workspace-generic, not editor-scoped.",
+        "The removed create-only baseBranch field must not be editor-scoped.",
       );
+    if (editorCreateDefinition.additionalProperties !== false)
+      add(
+        d,
+        "error",
+        "schema",
+        "REPOSITORY_BASE_CONFIG_SCHEMA_MISMATCH",
+        paths.configSchema,
+        "defaults.editors.<host>.create.additionalProperties",
+        "Schema v8 must reject unknown editor-scoped create properties, including the removed baseBranch key.",
+      );
+
+    for (const [category, directory] of [
+      ["docs", "repos/arashi-docs/docs"],
+      ["docs", "repos/arashi-docs/public"],
+      ["skills", paths.skills],
+    ] as const) {
+      for (const file of await markdownFiles(join(root, directory))) {
+        const guidance = await readFile(file, "utf8");
+        if (removedCreateBaseGuidanceContradiction(guidance))
+          add(
+            d,
+            "error",
+            category,
+            "REPOSITORY_BASE_GUIDANCE_MISMATCH",
+            relative(root, file),
+            "defaults.create.baseBranch",
+            "Current guidance must reject the removed defaults.create.baseBranch key rather than recommend or describe legacy behavior.",
+          );
+      }
+    }
+    for (const relativePath of [
+      "repos/arashi/README.md",
+      "repos/arashi-docs/public/llms.txt",
+      "repos/arashi-docs/public/llms-full.txt",
+    ]) {
+      try {
+        const guidance = await readFile(join(root, relativePath), "utf8");
+        if (removedCreateBaseGuidanceContradiction(guidance))
+          add(
+            d,
+            "error",
+            "docs",
+            "REPOSITORY_BASE_GUIDANCE_MISMATCH",
+            relativePath,
+            "defaults.create.baseBranch",
+            "Current guidance must reject the removed defaults.create.baseBranch key rather than recommend or describe legacy behavior.",
+          );
+      } catch (error) {
+        if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+      }
+    }
 
     const metaRoute = object(configProperties.meta)
       ? configProperties.meta
