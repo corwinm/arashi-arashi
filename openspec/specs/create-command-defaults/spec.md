@@ -3,12 +3,10 @@
 ## Purpose
 
 Define how `arashi create` resolves configured defaults, host-specific behavior, explicit overrides, and interactive repository selection.
-
 ## Requirements
-
 ### Requirement: Resolve create defaults from configuration and CLI
 
-The system SHALL resolve `arashi create` launch/switch behavior from CLI flags, invocation context, and create defaults while resolving branch ancestry from the shared repository base policy. `defaults.create` SHALL control only create launch and switch behavior. Explicit `--base` and `--repo-base` values SHALL participate in the shared base-policy precedence. Editor-scoped create defaults SHALL continue to control only switch and launch behavior.
+The system SHALL resolve `arashi create` launch/switch behavior from CLI flags, invocation context, and supported create defaults while resolving branch ancestry from the shared repository base policy. `defaults.create` SHALL control only create launch and switch behavior and MUST NOT accept a `baseBranch` property. Explicit `--base` and `--repo-base` values SHALL participate in shared create/clone base-policy precedence. Editor-scoped create defaults SHALL continue to control only switch and launch behavior.
 
 #### Scenario: Terminal invocation applies generic create defaults
 
@@ -29,9 +27,14 @@ The system SHALL resolve `arashi create` launch/switch behavior from CLI flags, 
 
 #### Scenario: Create-only defaults cannot own a base
 
-- **WHEN** canonical configuration places `baseBranch` under `defaults.create`
-- **THEN** Arashi treats it only as deprecated migration input
-- **AND** directs the user to root `baseBranch`
+- **WHEN** configuration places `baseBranch` under `defaults.create`
+- **THEN** Arashi rejects the removed property before repository discovery, hooks, or Git mutation
+- **AND** directs the user to root `baseBranch`, or to a repository override when repository-specific behavior is intended
+
+#### Scenario: Remaining create defaults continue to work
+
+- **WHEN** `defaults.create` contains supported switch, launch, editor, terminal, or disposition settings without `baseBranch`
+- **THEN** Arashi normalizes and applies those settings under their existing precedence and safety boundaries
 
 ### Requirement: Support default auto-switch after create
 

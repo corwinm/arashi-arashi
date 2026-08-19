@@ -802,6 +802,11 @@ async function schemaV8Fixture(): Promise<string> {
 
 async function schemaV7Fixture(): Promise<string> {
   const root = await schemaV8Fixture();
+  const schemaPath = join(root, "repos/arashi/schema/config.schema.json");
+  const schema = JSON.parse(await readFile(schemaPath, "utf8"));
+  schema.definitions.CreateCommandDefaults.properties.baseBranch =
+    structuredClone(schema.definitions.Config.properties.baseBranch);
+  await writeFile(schemaPath, JSON.stringify(schema));
   const contractPath = join(root, "repos/arashi/contracts/cli-commands.json");
   const contract = JSON.parse(await readFile(contractPath, "utf8"));
   contract.schemaVersion = 7;
@@ -921,6 +926,104 @@ describe("cross-repository command contracts", () => {
     expect(result.ok, JSON.stringify(result.diagnostics, null, 2)).toBe(true);
   });
   test.each([
+    "The deprecated `defaults.create.baseBranch` value remains create-only and does not affect clone.",
+    "Set `defaults.create.baseBranch` to choose the create base.",
+    "`defaults.create.baseBranch` is the workspace-wide default used by create.",
+    "Although `defaults.create.baseBranch` was removed from the schema, create still accepts it.",
+    "`defaults.create.baseBranch` was removed from the schema, but you can still use it.",
+    "`defaults.create.baseBranch` was removed from the schema but continues to control create.",
+    "The removed `defaults.create.baseBranch` controls the create base.",
+    "`defaults.create.baseBranch` controls create, while editor-scoped defaults are unsupported.",
+    "- `defaults.create.baseBranch` was removed.\n- `defaults.create.baseBranch` controls the create base",
+  ])(
+    "rejects removed create-base guidance on companion skill surfaces: %s",
+    async (claim) => {
+      const root = await schemaV8Fixture();
+      const path = join(
+        root,
+        "repos/arashi-skills/skills/arashi/references/commands/workspace.md",
+      );
+      await writeFile(path, `${await readFile(path, "utf8")}\n${claim}\n`);
+
+      expect((await checkContracts(root)).diagnostics).toContainEqual(
+        expect.objectContaining({
+          code: "REPOSITORY_BASE_GUIDANCE_MISMATCH",
+          source:
+            "repos/arashi-skills/skills/arashi/references/commands/workspace.md",
+        }),
+      );
+    },
+  );
+
+  test("rejects removed create-base guidance on MDX surfaces", async () => {
+    const root = await schemaV8Fixture();
+    const path = join(root, "repos/arashi-docs/docs/index.mdx");
+    await writeFile(
+      path,
+      "Set `defaults.create.baseBranch` to choose the create base.\n",
+    );
+
+    expect((await checkContracts(root)).diagnostics).toContainEqual(
+      expect.objectContaining({
+        code: "REPOSITORY_BASE_GUIDANCE_MISMATCH",
+        source: "repos/arashi-docs/docs/index.mdx",
+      }),
+    );
+  });
+
+  test.each([
+    "repos/arashi/README.md",
+    "repos/arashi-docs/public/llms.txt",
+    "repos/arashi-docs/public/llms-full.txt",
+  ])(
+    "rejects removed create-base guidance on generated and CLI surface %s",
+    async (source) => {
+      const root = await schemaV8Fixture();
+      await writeFile(
+        join(root, source),
+        "`defaults.create.baseBranch` controls create.\n",
+      );
+
+      expect((await checkContracts(root)).diagnostics).toContainEqual(
+        expect.objectContaining({
+          code: "REPOSITORY_BASE_GUIDANCE_MISMATCH",
+          source,
+        }),
+      );
+    },
+  );
+
+  test("allows explicit rejection and negation of the removed create-base key", async () => {
+    const root = await schemaV8Fixture();
+    const path = join(
+      root,
+      "repos/arashi-skills/skills/arashi/references/commands/workspace.md",
+    );
+    await writeFile(
+      path,
+      `${await readFile(path, "utf8")}
+\`defaults.create.baseBranch\` never applies. Do not set \`defaults.create.baseBranch\`. Replace \`defaults.create.baseBranch\` with root \`baseBranch\`; it is no longer supported.
+Configuration supports root \`baseBranch\`; \`defaults.create.baseBranch\` was removed.
+Configuration does not support \`defaults.create.baseBranch\`.
+Support for \`defaults.create.baseBranch\` was removed.
+Use of \`defaults.create.baseBranch\` is forbidden.
+\`defaults.create.baseBranch\` is not supported.
+Use root \`baseBranch\` instead of \`defaults.create.baseBranch\`.
+
+## \`defaults.create.baseBranch\`
+
+This property is unsupported; migrate to root \`baseBranch\`.
+`,
+    );
+
+    expect(
+      (await checkContracts(root)).diagnostics.filter(
+        (diagnostic) => diagnostic.code === "REPOSITORY_BASE_GUIDANCE_MISMATCH",
+      ),
+    ).toEqual([]);
+  });
+
+  test.each([
     ["precedence", (policy: any) => policy.precedence.reverse()],
     ["meta selector", (policy: any) => (policy.options.metaSelector = "meta")],
     [
@@ -971,10 +1074,20 @@ describe("cross-repository command contracts", () => {
   });
   test.each([
     [
-      "missing legacy create field",
+      "reintroduced removed create field",
       (schema: any) =>
-        delete schema.definitions.CreateCommandDefaults.properties.baseBranch,
+        (schema.definitions.CreateCommandDefaults.properties.baseBranch = {
+          minLength: 1,
+          pattern: ".+",
+          type: "string",
+        }),
       "defaults.create.baseBranch",
+    ],
+    [
+      "permissive create defaults",
+      (schema: any) =>
+        (schema.definitions.CreateCommandDefaults.additionalProperties = true),
+      "defaults.create.additionalProperties",
     ],
     [
       "editor-scoped legacy field",
@@ -982,6 +1095,12 @@ describe("cross-repository command contracts", () => {
         (schema.definitions.EditorCreateCommandDefaults.properties.baseBranch =
           { type: "string" }),
       "defaults.editors.<host>.create.baseBranch",
+    ],
+    [
+      "permissive editor create defaults",
+      (schema: any) =>
+        (schema.definitions.EditorCreateCommandDefaults.additionalProperties = true),
+      "defaults.editors.<host>.create.additionalProperties",
     ],
     [
       "missing meta route",
