@@ -3,9 +3,7 @@
 ## Purpose
 
 Define the canonical CLI-derived command contract and the deterministic checks that keep documentation, skills guidance, and VS Code command integrations aligned across Arashi repositories.
-
 ## Requirements
-
 ### Requirement: CLI-derived command contract
 
 The CLI repository SHALL generate a deterministic command contract from registered commands plus typed semantic policy, including the shared base-policy configuration paths, migration, option relationships, selectors, precedence, command scope, resolution/reporting rules, and stable source vocabulary.
@@ -399,22 +397,38 @@ The meta-repository SHALL semantically compare the canonical CLI-derived command
 
 ### Requirement: Create base-branch contracts remain synchronized across repositories
 
-The shared base-policy contract SHALL publish root/meta/child configuration paths, legacy migration, configured and standalone scope, `--base`/`--repo-base` syntax, selector vocabulary, precedence, local-then-origin resolution, create/clone application, pre-mutation failure, reuse semantics, dry-run/JSON reporting, and prohibited hook aliases. CLI schema/command artifacts, canonical docs exports, packaged skill records, and meta validation SHALL agree on that policy.
+The shared base-policy contract SHALL publish canonical root/meta/child configuration paths; removal and migration of `defaults.create.baseBranch`; configured and standalone scope; create/clone `--base` / `--repo-base` syntax, selectors, precedence, resolution, reuse, pre-mutation failure, and reporting; status upstream/base/default distinctions; configured pull and no-config upstream fallback; no-upstream push baseline without destination changes; handoff/doctor diagnostics; unavailable-target failure; and same-target de-duplication with role-complete structured output. CLI schema/command/JSON artifacts, canonical and generated docs exports, packaged skill records, and meta validation SHALL agree on that policy.
 
 #### Scenario: Shared policy is synchronized
 
 - **WHEN** CLI, docs, skills, and meta contract checks run
-- **THEN** all surfaces agree on configuration paths, option syntax, precedence, create/clone semantics, selectors, sources, and failure boundaries
+- **THEN** all surfaces agree on configuration paths, option syntax, precedence, per-command base semantics, role distinctions, sources, fallback, failure, de-duplication, and standalone boundaries
 
-#### Scenario: One companion keeps create-only semantics
+#### Scenario: One companion retains the removed key
 
-- **WHEN** a companion artifact still recommends only `defaults.create.baseBranch` or one branch shared by every repository
+- **WHEN** a schema, type, generated contract, doc, skill, or checker still accepts or recommends `defaults.create.baseBranch`
 - **THEN** cross-repository validation fails with the mismatched field and repository
+- **AND** canonical migration guidance identifies root or repository-specific `baseBranch`
+
+#### Scenario: Status or diagnostics conflate branch roles
+
+- **WHEN** a companion replaces upstream/default information with configured-base state or collapses same-target JSON roles
+- **THEN** semantic validation fails before coordinated delivery
+
+#### Scenario: Pull or push semantics drift
+
+- **WHEN** a companion claims configured pull falls back after configured-base failure, or claims push changes its destination to configured base
+- **THEN** semantic validation fails with the affected command and contract field
 
 #### Scenario: Clone semantics drift
 
 - **WHEN** docs or skill guidance omits workspace/per-child clone bases or claims a coordinated child is checked out on the base instead of the coordinated target
 - **THEN** semantic validation fails before coordinated delivery
+
+#### Scenario: Standalone semantics drift
+
+- **WHEN** a companion claims persisted configured-base policy changes implicit standalone status, pull, push, handoff, or doctor
+- **THEN** semantic validation fails with the affected repository and command
 
 ### Requirement: Authoritative coordinated validation composes stable child aggregates
 

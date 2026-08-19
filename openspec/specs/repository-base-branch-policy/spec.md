@@ -3,24 +3,22 @@
 ## Purpose
 
 Define how configured workspaces select shared and per-repository Git base branches for create and clone, including CLI precedence, legacy migration, coordinated clone alignment, and stable result reporting.
-
 ## Requirements
-
 ### Requirement: Configure one shared base policy with repository overrides
 
-Configured workspaces SHALL accept optional root `baseBranch`, optional `meta.baseBranch`, and optional `repos.<name>.baseBranch` values. Root `baseBranch` SHALL be the workspace fallback for both configured `create` and `clone`; meta and child values SHALL override that fallback only for their owning repositories. Every configured value MUST be a valid logical Git branch name.
+Configured workspaces SHALL accept optional root `baseBranch`, optional `meta.baseBranch`, and optional `repos.<name>.baseBranch` values. Root `baseBranch` SHALL be the workspace fallback for configured base-aware commands; meta and child values SHALL override that fallback only for their owning repositories. Every configured value MUST be a valid logical Git branch name.
 
 #### Scenario: Workspace default applies everywhere
 
 - **WHEN** configuration defines root `baseBranch` as `integration`
 - **AND** no repository override or CLI override applies
-- **THEN** configured create uses `integration` for the meta repository and every selected child
-- **AND** clone uses `integration` for every selected missing child
+- **THEN** configured create and clone use `integration` for every selected repository
+- **AND** status, pull, no-upstream push comparison, handoff, and doctor resolve `integration` as each selected repository's configured base
 
 #### Scenario: Meta and children use different bases
 
 - **WHEN** root `baseBranch` is `main`, `meta.baseBranch` is `meta/integration`, and `repos.api.baseBranch` is `api/integration`
-- **THEN** configured create resolves the meta repository from `meta/integration`
+- **THEN** every configured base-aware command resolves the meta repository from `meta/integration`
 - **AND** resolves child `api` from `api/integration`
 - **AND** resolves children without an override from `main`
 
@@ -28,7 +26,7 @@ Configured workspaces SHALL accept optional root `baseBranch`, optional `meta.ba
 
 - **WHEN** any root, meta, or child `baseBranch` is empty, whitespace-only, non-string, or not a valid Git branch name
 - **THEN** configuration validation fails with the exact owning configuration path
-- **AND** no repository discovery, hook, clone, branch, worktree, or ignore mutation runs
+- **AND** no repository discovery, hook, clone, fetch, branch, worktree, or ignore mutation runs
 
 ### Requirement: Support invocation-wide and per-repository CLI overrides
 
@@ -61,7 +59,7 @@ Configured `create` and `clone` SHALL accept `--base <branch>` as an invocation-
 
 ### Requirement: Resolve effective bases with deterministic precedence
 
-For each selected repository, Arashi SHALL resolve the effective base in this order: repository-specific CLI override, invocation-wide `--base`, repository-specific configuration, root `baseBranch`, then (for configured create only) deprecated `defaults.create.baseBranch`, then existing omitted-base behavior. A higher-precedence source SHALL replace lower-precedence values for that repository only.
+For each selected repository, Arashi SHALL resolve persisted configured base policy in this order: repository-specific configuration, root `baseBranch`, then absent. For create and clone only, repository-specific CLI override and invocation-wide `--base` SHALL precede persisted policy in that order. A higher-precedence source SHALL replace lower-precedence values for that repository only. No command SHALL read `defaults.create.baseBranch` or expose a legacy source.
 
 #### Scenario: Invocation-wide CLI overrides repository config
 
@@ -75,33 +73,17 @@ For each selected repository, Arashi SHALL resolve the effective base in this or
 - **THEN** child `api` uses `api/release`
 - **AND** other selected children without repository CLI overrides use `release`
 
+#### Scenario: Diagnostics use persisted policy rather than create CLI policy
+
+- **WHEN** status, pull, push, handoff, or doctor resolves a configured base
+- **THEN** it uses the owning repository override and then root fallback
+- **AND** it does not invent invocation base flags or create-default precedence
+
 #### Scenario: No base policy is configured or passed
 
-- **WHEN** root, meta, child, and CLI base values are all absent
-- **THEN** configured create and clone retain their pre-policy omitted-base behavior
-
-### Requirement: Migrate the create-only legacy default safely
-
-Arashi SHALL continue accepting `defaults.create.baseBranch` as deprecated create-only compatibility input and SHALL emit one actionable migration diagnostic naming root `baseBranch`. The legacy key SHALL NOT affect clone until the user explicitly migrates it. If root `baseBranch` and the legacy key are both present with different values, configuration validation MUST fail rather than choosing silently.
-
-#### Scenario: Legacy create default is the only configured value
-
-- **WHEN** configuration contains only `defaults.create.baseBranch: "integration"`
-- **THEN** configured create uses `integration` as its workspace-wide compatibility base
-- **AND** configured clone retains its previous remote-default behavior
-- **AND** Arashi emits one deprecation diagnostic explaining that migration to root `baseBranch` will make the value shared by create and clone
-
-#### Scenario: Legacy and canonical values conflict
-
-- **WHEN** root `baseBranch` and `defaults.create.baseBranch` contain different values
-- **THEN** configuration validation fails before repository or Git operations
-- **AND** identifies both paths and the required migration
-
-#### Scenario: Legacy and canonical values agree
-
-- **WHEN** both paths contain the same valid value
-- **THEN** Arashi uses the canonical shared value once for create and clone
-- **AND** emits the migration diagnostic without reporting a conflict
+- **WHEN** root, meta, child, and applicable CLI base values are all absent
+- **THEN** create and clone retain their omitted-base behavior
+- **AND** status, pull, push, handoff, and doctor retain their established no-configured-base behavior
 
 ### Requirement: Apply effective bases to clone without losing coordinated alignment
 
@@ -134,15 +116,44 @@ Normal configured clone SHALL clone each selected missing child at its effective
 
 ### Requirement: Report the effective repository policy
 
-Human dry-run/help and machine-readable results SHALL identify each selected repository's effective base and source using stable source values `repository-cli`, `cli`, `repository-config`, `workspace-config`, or `legacy-omitted`. JSON errors SHALL remain one-document output and SHALL not mix human text on stdout.
+Human dry-run/help and machine-readable base-aware results SHALL identify each selected repository's effective base and source using stable source values `repository-cli`, `cli`, `repository-config`, `workspace-config`, or `omitted` as applicable to the command. Comparison records SHALL additionally identify whether the configured-base target is available and its concrete remote/ref. JSON errors SHALL remain one-document output and SHALL not mix human text on stdout.
 
 #### Scenario: Create JSON uses mixed sources
 
 - **WHEN** configured create resolves selected repositories from mixed CLI and configuration sources
 - **THEN** its JSON result identifies each repository's normalized requested branch, resolved ref/OID where applicable, and exact source
 
+#### Scenario: Diagnostic JSON reports configured base
+
+- **WHEN** status, handoff, or doctor evaluates a configured repository base
+- **THEN** structured output identifies the logical branch, source, concrete comparison target, and available or unavailable state
+- **AND** no legacy source value is emitted
+
 #### Scenario: Clone reports policy failures structurally
 
 - **WHEN** JSON clone encounters invalid selectors or unavailable effective bases
 - **THEN** stdout contains exactly one structured error document naming all affected selected repositories
 - **AND** human diagnostics do not contaminate stdout
+
+### Requirement: Reject the removed create-only base property before workspace work
+
+Configured validation MUST reject `defaults.create.baseBranch` as unsupported and MUST provide actionable migration guidance to root `baseBranch`, or to the owning `meta.baseBranch` / `repos.<name>.baseBranch` for a repository-specific policy. Validation MUST occur before repository discovery, hook discovery or execution, managed-ignore reconciliation, network access, or Git mutation. `defaults.create` SHALL remain valid for its non-base launch and switch properties.
+
+#### Scenario: Removed legacy property is present alone
+
+- **WHEN** configuration contains `defaults.create.baseBranch: "integration"`
+- **THEN** validation fails and identifies the exact unsupported path
+- **AND** the error directs the user to root `baseBranch`
+- **AND** no repository discovery, hook, fetch, clone, branch, worktree, or ignore operation runs
+
+#### Scenario: Removed legacy property accompanies canonical policy
+
+- **WHEN** configuration contains `defaults.create.baseBranch` together with root or repository `baseBranch`
+- **THEN** validation rejects the unsupported legacy property rather than comparing, normalizing, or choosing between values
+- **AND** no deprecation compatibility diagnostic or legacy source is emitted
+
+#### Scenario: Non-base create defaults remain valid
+
+- **WHEN** `defaults.create` contains only supported launch or switch settings
+- **THEN** configuration validation accepts those settings
+- **AND** branch ancestry is resolved independently from canonical base policy
