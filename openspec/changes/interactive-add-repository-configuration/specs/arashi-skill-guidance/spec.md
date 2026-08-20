@@ -2,7 +2,7 @@
 
 ### Requirement: Packaged skill teaches optional repository onboarding during add
 
-The authored and packaged Arashi skill SHALL teach eligible human `aw add` onboarding in the focused workspace/repository command reference while routing copy/symlink and hook details to their existing configuration/create and hook references. Guidance SHALL preserve default-no minimal add, non-interactive/JSON/force suppression, canonical repository ownership, unselected content-free suggestions, manual path validation and dependency warnings, user-supplied hook commands, sanitized lifecycle/interpreter summaries, one final save, cancellation rollback, and the #316 existing-entry scope boundary.
+The authored and packaged Arashi skill SHALL teach eligible human `aw add` onboarding in the focused workspace/repository command reference while routing copy/symlink and hook details to their existing configuration/create and hook references. Guidance SHALL preserve default-no minimal add, non-interactive/JSON/force suppression, canonical repository ownership, unselected content-free suggestions, manual path validation and dependency warnings, exclusive inline-or-executable-file hook choice, exact active paths, safe no-op scaffolds, runtime-ready permissions without rename/chmod activation, no overwrite, user-supplied inline commands, sanitized inline/script summaries, one final config save, transaction-owned script rollback, and the #316 existing-entry scope boundary.
 
 #### Scenario: Agent adds a repository interactively
 
@@ -19,8 +19,10 @@ The authored and packaged Arashi skill SHALL teach eligible human `aw add` onboa
 #### Scenario: Agent handles hook input
 
 - **WHEN** the user selects repository hooks
-- **THEN** the agent requires user-supplied commands in canonical lifecycle/interpreter shapes
-- **AND** never repeats hook bodies in summaries, diagnostics, or reports
+- **THEN** the agent offers one inline command or editable active native script per lifecycle
+- **AND** requires user-supplied inline commands in canonical lifecycle/interpreter shapes
+- **AND** explains the exact active path, safe no-op scaffold, and immediate executable readiness without rename/chmod activation
+- **AND** never repeats hook or generated-script bodies in summaries, diagnostics, or reports
 
 #### Scenario: Agent needs to edit existing config
 
@@ -34,6 +36,6 @@ A focused onboarding guidance checker SHALL remain directly executable, SHALL be
 
 #### Scenario: Authored or packaged onboarding guidance drifts
 
-- **WHEN** source or extracted guidance loses or contradicts prompt eligibility, field scope, suggestion secrecy, user command ownership, sanitized summary, atomic persistence, cancellation, or #316 boundaries
+- **WHEN** source or extracted guidance loses or contradicts prompt eligibility, field/action scope, suggestion secrecy, exclusive inline/file choice, exact active path/no-op/executable semantics, no-overwrite ownership, user command ownership, sanitized summary, persistence, cancellation, or #316 boundaries
 - **THEN** the owning source/package aggregate fails with a stable diagnostic
 - **AND** no feature-specific workflow step is required

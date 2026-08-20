@@ -2,7 +2,7 @@
 
 ### Requirement: Coordinated contracts enforce interactive add onboarding semantics
 
-Maintained CLI guidance and typed/generated command metadata SHALL be the authoritative CLI producers for optional add-onboarding eligibility and behavior; the existing generated configuration JSON Schema SHALL remain authoritative for canonical repository field shapes. Coordinated validation SHALL normalize those producers and compare them with canonical website docs, generated agent-readable exports, and authored plus extracted-package Arashi skill guidance for default-no/minimal decline, non-TTY/JSON/force suppression, repository-only copy/symlink/hooks scope, configured-versus-unset editor metadata, unselected bounded content-free suggestions, user-supplied hooks, sanitized summaries, complete-candidate validation, one final save, controlled cancellation/rollback, and #316 scope separation.
+Maintained CLI guidance and typed/generated command metadata SHALL be the authoritative CLI producers for optional add-onboarding eligibility and behavior; the existing generated configuration JSON Schema SHALL remain authoritative for canonical repository field shapes, and canonical lifecycle contracts plus the add scaffold producer SHALL remain authoritative for native active paths, safe no-op content, and permissions. Coordinated validation SHALL normalize those producers and compare them with canonical website docs, generated agent-readable exports, and authored plus extracted-package Arashi skill guidance for default-no/minimal decline, non-TTY/JSON/force suppression, repository-only copy/symlink/hook scope, configured-versus-unset editor metadata, unselected bounded content-free suggestions, exclusive inline-or-file source choice, exact active paths and executable readiness without manual activation, no overwrite/ownership-safe rollback, user-supplied inline hooks, sanitized summaries, complete-candidate/script-plan validation, one final config save, controlled cancellation, and #316 scope separation.
 
 #### Scenario: Companion surfaces agree
 
@@ -12,15 +12,15 @@ Maintained CLI guidance and typed/generated command metadata SHALL be the author
 
 #### Scenario: Controlled onboarding mismatch is rejected
 
-- **WHEN** an out-of-repository fixture changes one eligibility, default, ownership, suggestion, validation, secrecy, persistence, cancellation, or future-scope semantic
+- **WHEN** an out-of-repository fixture changes one eligibility, default, ownership, suggestion, inline/file, active-path/no-op/permission, validation, secrecy, persistence, cancellation, or future-scope semantic
 - **THEN** focused or coordinated validation fails with a stable diagnostic naming the owning surface and mismatch
 - **AND** real coordinated worktrees remain unchanged
 
 #### Scenario: Hook canary reaches contract validation
 
-- **WHEN** a controlled fixture supplies a unique inline-hook command body
-- **THEN** semantic contracts can verify lifecycle/interpreter presence as required
-- **AND** no generated artifact, normalized diagnostic, or checker output contains the body or a derivative
+- **WHEN** a controlled fixture supplies a unique inline-hook command body or generated-script canary
+- **THEN** semantic contracts can verify inline lifecycle/interpreter presence or script lifecycle/path/executable state as required
+- **AND** no generated artifact, normalized diagnostic, or checker output contains a body or derivative
 
 ### Requirement: Onboarding checker registration preserves stable workflow topology
 

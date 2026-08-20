@@ -8,7 +8,7 @@ After cloning and inspecting a repository but before configuration persistence, 
 
 - **WHEN** a user runs `aw add` with TTY stdin/stdout and without `--json` or `--force`
 - **AND** accepts the default-no repository setup prompt
-- **THEN** Arashi presents one concise checklist for copy paths, symlink paths, and inline lifecycle hooks
+- **THEN** Arashi presents one concise checklist for copy paths, symlink paths, and lifecycle hooks
 - **AND** prompts only for selected sections
 
 #### Scenario: Eligible user declines onboarding
@@ -25,7 +25,7 @@ After cloning and inspecting a repository but before configuration persistence, 
 
 ### Requirement: The repository editor has explicit canonical field and scope metadata
 
-Arashi SHALL represent the onboarding fields through a reusable typed configuration-editor model whose descriptors identify canonical repository ownership, configuration path, configured-versus-unset state, display metadata, accepted value shape, sensitivity, validation adapter, and sanitized projection. `add` SHALL consume only descriptors for direct repository `copy`, `symlink`, and `hooks.<lifecycle>` fields. The model MUST NOT infer prompt behavior directly from JSON Schema and MUST remain usable by follow-up #316 without implementing existing-entry editing in this change.
+Arashi SHALL represent onboarding through a reusable typed configuration-editor model whose descriptors identify canonical repository ownership, configuration path or native-file action, configured-versus-unset state, display metadata, accepted value/source shape, sensitivity, validation adapter, and sanitized projection. `add` SHALL consume only descriptors for direct repository `copy`, `symlink`, and lifecycle hook inline-or-file choices. The model MUST NOT infer prompt behavior directly from JSON Schema and MUST remain usable by follow-up #316 without implementing existing-entry editing in this change.
 
 #### Scenario: New repository begins with unset optional fields
 
@@ -95,9 +95,9 @@ Arashi SHALL discover likely local-file suggestions only from the canonical clon
 - **THEN** onboarding keeps manual path entry available
 - **AND** emits at most a bounded human diagnostic without exposing contents or paths outside the repository
 
-### Requirement: Inline hook collection uses canonical lifecycle and interpreter shapes
+### Requirement: Hook onboarding offers one canonical inline or executable file source
 
-Selected repository inline hooks SHALL use exactly `pre-create`, `post-create`, `pre-remove`, and `post-remove`. For each selected lifecycle, Arashi SHALL collect either Bash shorthand or a non-empty explicit map drawn only from `bash`, `powershell`, and `cmd`, and SHALL validate the result through canonical inline-hook normalization. Every command body MUST be supplied or confirmed by the user; Arashi MUST NOT infer, generate, or pre-fill executable commands from repository files, setup scripts, package metadata, or lockfiles.
+Selected repository hooks SHALL use exactly `pre-create`, `post-create`, `pre-remove`, and `post-remove`. For each selected lifecycle, Arashi SHALL offer exactly one source mode: (a) inline Bash shorthand or a non-empty explicit map drawn only from `bash`, `powershell`, and `cmd`, validated through canonical inline-hook normalization; or (b) a host-native editable script containing a fixed safe no-op scaffold at that repository-owned lifecycle's exact canonical active file location. Arashi MUST NOT infer or pre-fill executable behavior from repository files, setup scripts, package metadata, or lockfiles.
 
 #### Scenario: User supplies Bash shorthand
 
@@ -111,15 +111,44 @@ Selected repository inline hooks SHALL use exactly `pre-create`, `post-create`, 
 - **THEN** the candidate retains only non-empty canonical `bash`, `powershell`, and/or `cmd` members
 - **AND** rejects empty or unsupported members through the relevant hook prompt
 
+#### Scenario: User chooses editable script files
+
+- **WHEN** the user selects file mode for one or more lifecycles
+- **THEN** the plan uses `.sh` on POSIX or exactly one `.ps1` on Windows and a fixed successful no-op scaffold
+- **AND** maps configured create scripts from the active configuration root to `.arashi/hooks/<lifecycle>.<repo><ext>`
+- **AND** maps configured remove scripts from the configured target repository path resolved by the runtime resolver to `.arashi/hooks/<lifecycle><ext>`
+- **AND** linked-parent remove scripts therefore reside in the active child worktree rather than the canonical clone
+- **AND** persists no inline value for those lifecycles
+
+#### Scenario: Generated script is immediately executable and safe
+
+- **WHEN** add successfully creates a planned hook script
+- **THEN** the complete script is atomically visible at the exact active filename without a rename step
+- **AND** POSIX `.sh` mode is `0755` while Windows `.ps1` is runtime-ready under the canonical executor
+- **AND** its unedited body emits no output, performs no repository or worktree mutation, and exits successfully
+- **AND** human output says the file is active, safe as generated, and ready for manual editing
+
+#### Scenario: Hook source already exists or collides
+
+- **WHEN** a selected lifecycle already has an inline value, active native source, destination collision, ambiguous native candidates, symlinked parent, or another unsafe destination
+- **THEN** Arashi does not overwrite or create another source
+- **AND** returns a bounded field-attributed choice or transaction failure without reading source contents
+
+#### Scenario: A parent path changes during installation
+
+- **WHEN** any configuration-root, target-repository, `.arashi`, or `hooks` directory component is replaced, symlinked, or changes identity between planning and installation
+- **THEN** directory-handle-anchored no-follow installation fails closed without creating an active hook at the substituted path
+- **AND** platforms where those guarantees cannot be proven fail before active-file creation
+
 #### Scenario: Setup script was detected
 
 - **WHEN** add detected or created a setup script before onboarding
 - **THEN** Arashi may mention the script name as context
 - **AND** does not read it to generate, pre-fill, or silently confirm an inline command
 
-### Requirement: Hook bodies remain secret across every output boundary
+### Requirement: Hook bodies and generated script contents remain secret across every output boundary
 
-Arashi MUST treat entered hook command bodies as sensitive executable text. Human list views, prompt summaries, success output, cancellation output, errors, diagnostics, logs, JSON envelopes, snapshots, generated command contracts, docs, and semantic-check diagnostics MUST identify at most lifecycle and interpreter presence and MUST NOT include raw, masked, truncated, escaped, hashed, or length-derived command-body data.
+Arashi MUST treat entered hook command bodies as sensitive executable text and MUST NOT print generated script contents. Human list views, prompt summaries, success output, cancellation output, errors, diagnostics, logs, JSON envelopes, snapshots, generated command contracts, docs, and semantic-check diagnostics MUST identify at most inline lifecycle/interpreter presence or generated-script lifecycle/path/executable state and MUST NOT include raw, masked, truncated, escaped, hashed, or length-derived command-body data.
 
 #### Scenario: Final summary includes hooks
 
@@ -138,15 +167,21 @@ Arashi MUST treat entered hook command bodies as sensitive executable text. Huma
 - **WHEN** tests enter a unique hook-body canary and capture stdout, stderr, JSON, logs, snapshots, contracts, and generated guidance
 - **THEN** the canary and its encoded or truncated derivatives are absent from every captured surface
 
+#### Scenario: Final summary includes generated scripts
+
+- **WHEN** the plan contains one or more generated scripts
+- **THEN** the final summary lists lifecycle, exact active path, safe-no-op state, and executable-ready state
+- **AND** does not print generated contents
+
 ### Requirement: Onboarding validates one complete in-memory candidate before one save
 
-Arashi SHALL collect all selected answers into an isolated candidate, run canonical complete-config normalization and semantic validation in memory, display one concise sanitized summary, and request one final confirmation before persistence. Prompt callbacks MUST NOT save partial answers. An accepted onboarding flow SHALL call configuration persistence at most once through add's existing expected-byte concurrency boundary.
+Arashi SHALL collect all selected answers into an isolated candidate and immutable script plan, run canonical complete-config normalization plus active-path safety validation in memory, display one concise sanitized summary, and request one final confirmation before mutation. Prompt callbacks MUST NOT save partial answers or create scripts. An accepted onboarding flow SHALL call configuration persistence at most once through add's existing expected-byte concurrency boundary and SHALL atomically install only confirmed safe no-op scripts under the same add-owned transaction through directory-handle-anchored no-follow/no-replace operations.
 
 #### Scenario: Mixed configuration is confirmed
 
-- **WHEN** the user selects copy, symlink, and hook sections, supplies valid values, and accepts final confirmation
-- **THEN** Arashi validates one complete candidate and persists one repository entry containing all selected canonical values
-- **AND** performs one final save rather than section-level writes
+- **WHEN** the user selects copy, symlink, inline hook, and file hook choices, supplies valid values, and accepts final confirmation
+- **THEN** Arashi validates one complete candidate and script plan, persists one repository entry containing selected canonical values, and creates only selected active safe no-op scripts
+- **AND** performs one final config save rather than section-level writes
 
 #### Scenario: Final confirmation is declined
 
@@ -162,7 +197,7 @@ Arashi SHALL collect all selected answers into an isolated candidate, run canoni
 
 ### Requirement: Prompt cancellation participates in add rollback
 
-Ctrl+C or another controlled prompt cancellation at any onboarding stage after the user opts in SHALL cancel add through its existing controlled failure and rollback path. Arashi SHALL attempt to restore config, clone/worktree/branch, setup-script, and managed-ignore state according to current invocation ownership and final-observation rules. Validation retry is not cancellation, and top-level onboarding decline remains minimal success.
+Ctrl+C or another controlled prompt cancellation at any onboarding stage after the user opts in SHALL cancel add through its existing controlled failure and rollback path. Arashi SHALL attempt to restore config, invocation-created byte-and-mode-identical scripts, clone/worktree/branch, setup-script, and managed-ignore state according to current invocation ownership and final-observation rules. Validation retry is not cancellation, and top-level onboarding decline remains minimal success.
 
 #### Scenario: User interrupts a section prompt
 

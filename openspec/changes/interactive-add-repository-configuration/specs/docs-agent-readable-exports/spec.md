@@ -2,7 +2,7 @@
 
 ### Requirement: Agent-readable exports include optional add onboarding guidance
 
-Canonical website generation SHALL include optional repository setup during `aw add` in generated Markdown routes, `/llms.txt` discovery, and `/llms-full.txt` using the same eligibility, default-no, canonical field ownership, unselected suggestion, source-secrecy, user-supplied-hook, final-confirmation, single-write, cancellation, and #316 scope boundary as maintained website guidance.
+Canonical website generation SHALL include optional repository setup during `aw add` in generated Markdown routes, `/llms.txt` discovery, and `/llms-full.txt` using the same eligibility, default-no, canonical field/action ownership, unselected suggestion, exclusive inline-or-executable-file source choice, exact active paths, safe no-op content, runtime-ready permissions with no rename/chmod activation, no-overwrite/rollback ownership, source-secrecy, user-supplied-inline-hook, final-confirmation, single-config-write, cancellation, and #316 scope boundary as maintained website guidance.
 
 #### Scenario: Agent discovers add onboarding
 
@@ -18,5 +18,5 @@ Canonical website generation SHALL include optional repository setup during `aw 
 
 #### Scenario: Export leaks or invents sensitive behavior
 
-- **WHEN** an authored or generated agent surface includes a hook command body, claims content inspection, automatic selection, inferred commands, partial persistence, or generic schema-driven prompts
+- **WHEN** an authored or generated agent surface includes a hook command/generated-script body, claims content inspection, automatic selection, inferred non-no-op behavior, manual rename/chmod activation, overwrite behavior, partial persistence, or generic schema-driven prompts
 - **THEN** registered docs semantic validation identifies the contradiction and exits unsuccessfully

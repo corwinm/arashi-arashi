@@ -2,7 +2,7 @@
 
 ### Requirement: Add persists repository configuration in the active parent branch
 
-In coordinated linked mode, `arashi add` SHALL persist the new repository entry only in the active parent worktree's configuration after both canonical and active child paths are materialized successfully and optional onboarding has produced a complete validated candidate. The single persisted entry SHALL contain the existing config-relative `path` and `gitUrl` plus only user-confirmed canonical repository `copy`, `symlink`, and `hooks` values. Direct-main and configured-bare modes SHALL use the same candidate and single-write rule at their existing configuration authority.
+In coordinated linked mode, `arashi add` SHALL persist the new repository entry only in the active parent worktree's configuration after both canonical and active child paths are materialized successfully and optional onboarding has produced a complete validated candidate and safe active-script plan. The single persisted entry SHALL contain the existing config-relative `path` and `gitUrl` plus only user-confirmed canonical repository `copy`, `symlink`, and inline `hooks` values; file-mode lifecycles SHALL remain file-owned and absent from inline config. Direct-main and configured-bare modes SHALL use the same candidate, native-file topology, and single-write rule at their existing configuration authority.
 
 #### Scenario: Linked add succeeds
 
@@ -14,6 +14,7 @@ In coordinated linked mode, `arashi add` SHALL persist the new repository entry 
 
 - **WHEN** canonical clone and active child worktree creation succeed and the user confirms a valid onboarding candidate
 - **THEN** Arashi adds the complete repository entry to the active parent's `.arashi/config.json` in one save
+- **AND** atomically installs only confirmed active safe no-op create scripts at the active configuration root and remove scripts at the runtime-resolved configured target repository path with runtime-ready permissions
 - **AND** does not modify the canonical parent checkout's tracked configuration
 
 #### Scenario: Materialization fails before config persistence
@@ -36,7 +37,7 @@ In coordinated linked mode, `arashi add` SHALL persist the new repository entry 
 
 ### Requirement: Add rollback owns both repository locations and final state
 
-Coordinated `arashi add` SHALL track invocation-owned clone, branch, worktree, config, setup-script, and managed-ignore mutations and SHALL roll them back in reverse dependency order without deleting pre-existing state. Configuration rollback ownership SHALL compare the complete invocation-persisted repository entry, including confirmed `copy`, `symlink`, and sanitized-in-output but exact-in-memory `hooks` values, rather than assuming an entry with matching `path` and `gitUrl` remains invocation-owned after a concurrent edit.
+Coordinated `arashi add` SHALL track invocation-owned clone, branch, worktree, config, active hook-script, setup-script, and managed-ignore mutations and SHALL roll them back in reverse dependency order without deleting pre-existing or user-modified state. Configuration rollback ownership SHALL compare the complete invocation-persisted repository entry, including confirmed `copy`, `symlink`, and sanitized-in-output but exact-in-memory `hooks` values, rather than assuming an entry with matching `path` and `gitUrl` remains invocation-owned after a concurrent edit. Script rollback SHALL remove only exact planned paths that remain byte-and-mode-identical regular files created by this invocation.
 
 #### Scenario: Worktree creation fails after canonical clone
 
@@ -49,7 +50,7 @@ Coordinated `arashi add` SHALL track invocation-owned clone, branch, worktree, c
 #### Scenario: Onboarding cancels after repository materialization
 
 - **WHEN** canonical clone and any active child worktree succeed but a selected onboarding prompt or final confirmation is cancelled
-- **THEN** Arashi performs no configuration write and attempts to remove invocation-owned setup-script, linked worktree, branch, clone, and managed-ignore state in dependency-safe order
+- **THEN** Arashi performs no configuration or hook-script write and attempts to remove invocation-owned setup-script, linked worktree, branch, clone, and managed-ignore state in dependency-safe order
 - **AND** reports final observed state without revealing entered hook bodies
 
 #### Scenario: Config write fails after both child paths exist
@@ -67,16 +68,22 @@ Coordinated `arashi add` SHALL track invocation-owned clone, branch, worktree, c
 - **THEN** rollback preserves the newer unowned entry rather than deleting it based only on matching `path` and `gitUrl`
 - **AND** reports incomplete restoration without exposing hook bodies
 
+#### Scenario: User changes an invocation-created hook script before rollback
+
+- **WHEN** a later failure starts rollback after a generated script was edited, chmodded, replaced, or changed into a symlink
+- **THEN** rollback preserves that path rather than deleting user-modified or unowned state
+- **AND** reports incomplete cleanup with the script path but no script contents
+
 #### Scenario: Cleanup is incomplete
 
-- **WHEN** Arashi cannot remove an invocation-created worktree, ref, clone, setup script, or restore configuration/ignore state
+- **WHEN** Arashi cannot remove an invocation-created worktree, ref, clone, byte-and-mode-identical active hook script, setup script, or restore configuration/ignore state
 - **THEN** the command reports the initiating failure plus each cleanup/restoration failure
 - **AND** does not delete the canonical clone when a linked child path or worktree metadata still depends on its Git common directory
 - **AND** reports final observed canonical path, active path, branch, config, and managed-ignore state without claiming complete rollback
 
 #### Scenario: Pre-existing state is encountered
 
-- **WHEN** a path, branch, worktree, config entry, setup script, or ignore rule existed before the command
+- **WHEN** a path, branch, worktree, config entry, hook script, setup script, or ignore rule existed before the command
 - **THEN** rollback does not remove, reset, or rewrite that state
 
 ### Requirement: Direct and bare add behavior remains compatible
@@ -106,4 +113,4 @@ Topology-aware add SHALL preserve existing direct-main and configured-bare behav
 
 - **WHEN** users invoke `add` with `--name`, `--create-setup`, `--force`, or `--json`
 - **THEN** those options retain their current meanings in both direct and coordinated materialization modes
-- **AND** `--force` and `--json` suppress onboarding while `--create-setup` remains separate from inline hooks
+- **AND** `--force` and `--json` suppress onboarding while `--create-setup` remains separate from both inline hooks and generated active no-op lifecycle scripts

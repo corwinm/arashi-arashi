@@ -2,7 +2,7 @@
 
 ### Requirement: Public docs explain optional add onboarding proportionately
 
-Canonical website onboarding, add-command, and configuration guidance SHALL explain that eligible human `aw add` invocations offer one default-no repository setup flow for canonical direct `copy`, `symlink`, and repository inline lifecycle hooks before the final configuration write. Guidance SHALL distinguish top-level decline from cancellation, state that automation/non-TTY/`--json`/`--force` preserve minimal add, explain that suggestions are unselected and content-free, and route exhaustive field, rollback, and security semantics to their owning configuration/hook/materialization references.
+Canonical website onboarding, add-command, and configuration guidance SHALL explain that eligible human `aw add` invocations offer one default-no repository setup flow for canonical direct `copy`, `symlink`, and repository lifecycle hooks before final mutation. Hook guidance SHALL offer an exclusive inline command or editable active native script per lifecycle, explain that generated scripts are installed at exact canonical filenames as safe no-ops with runtime-ready permissions and require no rename/chmod activation, and distinguish active-configuration-root repository-specific create paths from runtime-resolved configured-target remove paths, including the active child worktree in linked mode. Guidance SHALL distinguish top-level decline from cancellation, state that automation/non-TTY/`--json`/`--force` preserve minimal add, explain that suggestions are unselected and content-free, and route exhaustive field, rollback, and security semantics to their owning references.
 
 #### Scenario: User onboards a repository
 
@@ -19,8 +19,10 @@ Canonical website onboarding, add-command, and configuration guidance SHALL expl
 #### Scenario: User configures hooks
 
 - **WHEN** docs describe lifecycle-hook onboarding
-- **THEN** they list canonical repository lifecycles and Bash/platform-variant shapes and require user-supplied commands
-- **AND** summaries identify lifecycle/interpreter presence without hook bodies
+- **THEN** they list canonical repository lifecycles and the exclusive inline-or-file choice
+- **AND** inline guidance uses canonical Bash/platform variants and user-supplied commands
+- **AND** file guidance describes exact active paths, safe no-op scaffolds, no-overwrite behavior, immediate executable readiness, and manual editing without rename/chmod activation
+- **AND** summaries identify inline lifecycle/interpreter presence or generated-script lifecycle/path/executable state without bodies or generated contents
 
 #### Scenario: User needs later configuration changes
 
@@ -30,7 +32,7 @@ Canonical website onboarding, add-command, and configuration guidance SHALL expl
 
 ### Requirement: Docs onboarding semantics use stable aggregate validation
 
-A focused docs semantic checker SHALL be directly executable and registered under the existing fail-closed docs aggregate. It SHALL validate maintained Markdown and generated exports for prompt eligibility, default-no/minimal decline, canonical repository field scope, unselected content-free suggestions, user-supplied hooks, sanitized summaries, single final write, cancellation, and #316 scope separation.
+A focused docs semantic checker SHALL be directly executable and registered under the existing fail-closed docs aggregate. It SHALL validate maintained Markdown and generated exports for prompt eligibility, default-no/minimal decline, canonical repository field/action scope, unselected content-free suggestions, exclusive inline-or-file hooks, exact active paths, safe no-op content, runtime-ready permissions/no manual activation, no-overwrite/rollback ownership, user-supplied inline commands, sanitized summaries, one config save, cancellation, and #316 scope separation.
 
 #### Scenario: Maintained onboarding docs drift
 
