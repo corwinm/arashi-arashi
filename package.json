@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "version": "0.0.0",
-  "packageManager": "pnpm@11.20.0",
+  "packageManager": "pnpm@11.22.0",
   "scripts": {
     "contracts:check": "node --experimental-strip-types scripts/run-contract-checks.ts",
     "contracts:check:ci": "node --experimental-strip-types scripts/run-contract-checks.ts --prevalidated-children",
