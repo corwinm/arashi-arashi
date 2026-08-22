@@ -1,5 +1,8 @@
-## ADDED Requirements
+# interactive-repository-configuration Specification
 
+## Purpose
+Define the optional, transactional repository-configuration flow offered by `aw add`, including eligibility, supported fields, hook sources, safe file materialization, confirmation, persistence, and rollback behavior.
+## Requirements
 ### Requirement: Add offers optional repository configuration only in eligible human invocations
 
 After cloning and inspecting a repository but before configuration persistence, `aw add` SHALL offer optional repository-owned worktree setup only when stdin and stdout are TTYs and neither `--json` nor `--force` is active. The top-level confirmation MUST default to no. Declining it SHALL continue add with the existing minimal `path` and `gitUrl` entry and SHALL NOT be treated as cancellation.
@@ -75,13 +78,25 @@ Copy and symlink answers SHALL be direct repository-relative string arrays using
 
 ### Requirement: Ignored local path discovery is bounded, advisory, and content-free
 
-Arashi SHALL discover likely local-file suggestions only from the canonical cloned main checkout that owns future materialization sources. Discovery MUST be deterministic, root-only, metadata-only, bounded in entries and output, limited to explicit likely-local name patterns plus Git ignore classification, and MUST NOT open, hash, preview, recursively traverse, or print file contents. Suggestions SHALL remain unselected and manual entry SHALL remain available.
+Arashi SHALL discover likely local-file suggestions only from clone-surviving state in the canonical main checkout that owns future materialization sources: bounded root metadata plus a fixed bounded set of likely-local names classified by the checkout's applicable Git ignore rules. Discovery MUST be deterministic, root-only, metadata-only, bounded in entries and output, and MUST NOT open, hash, preview, recursively traverse, or print candidate file contents. Suggestions SHALL remain unselected, SHALL be rendered with terminal control characters escaped, and manual entry SHALL remain available.
 
 #### Scenario: Likely ignored local files exist
 
 - **WHEN** the canonical checkout root contains ignored `.env` variants or other approved likely-local candidates
 - **THEN** Arashi presents their repository-relative paths as unselected suggestions
 - **AND** does not read or display their contents
+
+#### Scenario: Fresh clone has only ignore rules and tracked templates
+
+- **WHEN** ignored local files did not survive cloning but the canonical checkout's Git ignore rules classify a fixed likely-local name such as `.env`
+- **THEN** Arashi presents that repository-relative name as an unselected suggestion without requiring the file to exist yet
+- **AND** does not infer candidate names from repository content or select the suggestion automatically
+
+#### Scenario: A candidate name contains terminal controls
+
+- **WHEN** root metadata contains an ignored likely-local name with a newline, escape byte, or another terminal control
+- **THEN** the interactive prompt renders a bounded escaped representation rather than the raw control bytes
+- **AND** manual canonical validation remains authoritative for any value the user enters
 
 #### Scenario: A large ignored tree exists
 
@@ -137,8 +152,10 @@ Selected repository hooks SHALL use exactly `pre-create`, `post-create`, `pre-re
 #### Scenario: A parent path changes during installation
 
 - **WHEN** any configuration-root, target-repository, `.arashi`, or `hooks` directory component is replaced, symlinked, or changes identity between planning and installation
-- **THEN** directory-handle-anchored no-follow installation fails closed without creating an active hook at the substituted path
-- **AND** platforms where those guarantees cannot be proven fail before active-file creation
+- **THEN** Arashi's pre-publication and post-publication path validation detects the changed or symlinked component when observable and fails the transaction
+- **AND** Arashi never overwrites an existing destination and removes only an invocation-created file whose recorded identity, bytes, and mode remain unchanged
+- **AND** documentation acknowledges the residual local race when another process with workspace write access substitutes an ancestor between validation and atomic publication
+- **AND** documentation also acknowledges that pure Node/Bun cannot conditionally unlink by file identity, leaving a narrow residual race if another local writer replaces a rollback path after its final ownership check and before unlink
 
 #### Scenario: Setup script was detected
 
@@ -175,7 +192,7 @@ Arashi MUST treat entered hook command bodies as sensitive executable text and M
 
 ### Requirement: Onboarding validates one complete in-memory candidate before one save
 
-Arashi SHALL collect all selected answers into an isolated candidate and immutable script plan, run canonical complete-config normalization plus active-path safety validation in memory, display one concise sanitized summary, and request one final confirmation before mutation. Prompt callbacks MUST NOT save partial answers or create scripts. An accepted onboarding flow SHALL call configuration persistence at most once through add's existing expected-byte concurrency boundary and SHALL atomically install only confirmed safe no-op scripts under the same add-owned transaction through directory-handle-anchored no-follow/no-replace operations.
+Arashi SHALL collect all selected answers into an isolated candidate and immutable script plan, run canonical complete-config normalization plus active-path safety validation in memory, display one concise sanitized summary, and request one final confirmation before mutation. Prompt callbacks MUST NOT save partial answers or create scripts. An accepted onboarding flow SHALL call configuration persistence at most once through add's existing expected-byte concurrency boundary and SHALL install only confirmed complete safe no-op scripts under the same add-owned transaction using private preparation, atomic publication, no-replace destination semantics, symlink rejection, and pre/post-publication path validation.
 
 #### Scenario: Mixed configuration is confirmed
 
@@ -242,3 +259,4 @@ Maintained tests SHALL exercise the real prompt adapter with terminal byte seque
 - **WHEN** the repository's canonical test command executes onboarding PTY coverage
 - **THEN** raw terminal inputs drive the actual Inquirer-backed prompt path without unresolved promises or symbolic key shortcuts
 - **AND** every required success, retry, decline, cancellation, and secrecy assertion passes
+
