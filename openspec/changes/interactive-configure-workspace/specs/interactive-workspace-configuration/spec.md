@@ -58,11 +58,19 @@ For every supported descriptor, Arashi SHALL label the canonical field as `Confi
 - **THEN** the editor-specific field remains labeled `Not configured`
 - **AND** effective state follows the canonical editor-scoped resolver rather than claiming unsupported inheritance from the workspace create default
 
-#### Scenario: Switch mode uses contextual automatic behavior
+#### Scenario: Switch mode uses the runtime omission default
 
 - **WHEN** `defaults.switch.mode` is absent
 - **THEN** the field remains labeled `Not configured`
-- **AND** Arashi labels its effective behavior as built-in `auto` without claiming a fixed runtime launcher or parent-shell result
+- **AND** Arashi labels its effective behavior as built-in `launch`
+- **AND** does not confuse omission with explicitly configured `auto`, whose runtime result remains context-sensitive
+
+#### Scenario: Normalization injects a compatibility default
+
+- **WHEN** a supported field such as `worktreesDir` is absent from the parsed persisted JSON but appears in the normalized runtime model
+- **THEN** configured presence remains `Not configured` based on the persisted document
+- **AND** the normalized value is reported only as separately labeled effective state
+- **AND** inspection does not rewrite the file
 
 #### Scenario: Meta base inherits workspace policy
 
@@ -166,7 +174,7 @@ Before mutation, Arashi SHALL canonically normalize and validate the complete ca
 
 ### Requirement: Configure performs one concurrency-checked transaction
 
-A confirmed edit SHALL install planned active files through the existing private-preparation, atomic no-replace, ownership-checked transaction and SHALL perform at most one expected-byte configuration save through the canonical persistence boundary. Validation, retries, and prompts SHALL not mutate disk. Concurrent configuration changes MUST preserve the newer bytes. Rollback SHALL remove only invocation-owned unchanged active files, and any concurrently retained repository entry SHALL retain referenced materialization.
+A confirmed edit SHALL acquire the same generalized workspace transaction lock used by `aw add`, install planned active files through the existing private-preparation, atomic no-replace, ownership-checked transaction, and perform at most one expected-byte configuration save through the canonical persistence boundary. Add and configure MUST NOT use independent command-specific locks for configuration/file publication. Validation, retries, and prompts SHALL not mutate disk. Concurrent configuration changes MUST preserve the newer bytes. Rollback SHALL remove only invocation-owned unchanged active files, and any concurrently retained repository entry SHALL retain referenced materialization fields.
 
 #### Scenario: Confirmed edit succeeds
 
@@ -185,6 +193,19 @@ A confirmed edit SHALL install planned active files through the existing private
 - **WHEN** installation fails after one or more planned files were published
 - **THEN** the transaction removes only unchanged invocation-owned files and leaves config bytes unchanged
 - **AND** preserves pre-existing, edited, replaced, symlinked, or ownership-ambiguous paths
+
+#### Scenario: Configuration persistence changes bytes and then fails
+
+- **WHEN** the one canonical save changes configuration bytes and then reports failure
+- **THEN** Arashi restores the original snapshot only while current bytes still equal transaction-owned output
+- **AND** preserves any concurrently changed newer bytes
+- **AND** rolls back only unchanged invocation-owned active files
+
+#### Scenario: Add and configure overlap
+
+- **WHEN** `aw add` and a confirmed `aw configure` target the same configured workspace concurrently
+- **THEN** both operations serialize through one canonical workspace transaction lock
+- **AND** neither can publish files or configuration while the other owns that transaction boundary
 
 #### Scenario: Candidate has no persisted or active-file changes
 

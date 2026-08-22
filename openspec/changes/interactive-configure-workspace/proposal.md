@@ -21,6 +21,8 @@ Arashi validates `.arashi/config.json`, but users still need schema knowledge an
 ### Modified Capabilities
 
 - `interactive-repository-configuration`: Extends the shared repository editor from new-repository onboarding to existing repository configuration while retaining the #274 path, hook, active-file, validation, and safety contracts.
+- `inline-lifecycle-hook-configuration`: Narrows the non-disclosure rule only for visible configure entry and the exact final serialized candidate preview while keeping every ordinary, diagnostic, cancellation, and JSON surface body-free.
+- `machine-readable-cli-output`: Classifies `aw configure --json` as a single-envelope, stdout-isolated, sanitized inspection mode that never prompts or mutates.
 - `docs-workflow-guidance-sections`: Adds concise public guidance for inspecting and changing supported configuration through `aw configure`.
 - `docs-agent-readable-exports`: Includes canonical `aw configure` behavior in generated Markdown and LLM discovery surfaces.
 - `arashi-skill-guidance`: Teaches agents to prefer the interactive command for supported existing-workspace edits while preserving direct JSON guidance for unsupported fields.

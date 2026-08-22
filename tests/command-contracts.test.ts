@@ -131,6 +131,81 @@ const addMaterializationContract = {
     "setupScriptCreated",
   ],
 };
+const configureContract = {
+  actions: ["keep", "edit", "clear"],
+  descriptors: {
+    commandDefaults: [
+      "defaults.create.switch",
+      "defaults.create.launch",
+      "defaults.switch.mode",
+    ],
+    editorDefaults: [
+      "defaults.editors.vscode.create.switch",
+      "defaults.editors.vscode.create.launch",
+      "defaults.editors.cursor.create.switch",
+      "defaults.editors.cursor.create.launch",
+      "defaults.editors.kiro.create.switch",
+      "defaults.editors.kiro.create.launch",
+    ],
+    meta: ["meta.baseBranch"],
+    repository: [
+      "groups",
+      "baseBranch",
+      "copy",
+      "symlink",
+      "pre-create",
+      "post-create",
+      "pre-remove",
+      "post-remove",
+    ],
+    workspace: [
+      "reposDir",
+      "worktreesDir",
+      "baseBranch",
+      "sync.timeoutSeconds",
+    ],
+    workspaceHooks: [
+      "hooks.timeout",
+      "hooks.scripts.pre-create",
+      "hooks.scripts.post-create",
+      "hooks.scripts.pre-remove",
+      "hooks.scripts.post-remove",
+    ],
+  },
+  invocation: {
+    editing: "tty-stdin-and-stdout",
+    json: "sanitized-inspection-only",
+  },
+  loading: "exact-bytes-strict-no-migration-or-repair",
+  noOp: "preserve-original-bytes-before-confirmation",
+  preview: {
+    activeFiles: "separate-body-free-list",
+    config: "exact-serialized-json-including-inline-bodies",
+  },
+  scopes: [
+    "workspace-settings",
+    "workspace-hooks",
+    "command-defaults",
+    "editor-defaults",
+    "meta-policy",
+    "repository",
+  ],
+  secrecy: {
+    inlineEntry: "visible-plaintext",
+    ordinaryAndJson: "lifecycle-and-interpreter-presence-only",
+  },
+  state: {
+    effective: ["inherited", "built-in"],
+    persisted: ["configured", "not-configured"],
+  },
+  transaction: {
+    activeFiles: "atomic-no-replace-with-owned-rollback",
+    configSavesAtMost: 1,
+    expectedBytes: true,
+    lock: "shared-workspace-add-configure-lock",
+    nativeFiles: "metadata-only-observe-keep-skip-never-overwrite",
+  },
+} as const;
 const addMaterializationGuidance = [
   "canonical clone",
   "child's default branch",
@@ -664,7 +739,10 @@ async function schemaV5Fixture(): Promise<string> {
   contract.schemaVersion = 5;
   delete contract.root;
   contract.commands = contract.commands
-    .filter((command: any) => !command.path.startsWith("completion"))
+    .filter(
+      (command: any) =>
+        command.path !== "configure" && !command.path.startsWith("completion"),
+    )
     .map((command: any) => {
       delete command.aliasPaths;
       command.arguments.forEach((argument: any) => {
@@ -740,6 +818,9 @@ async function schemaV6Fixture(): Promise<string> {
   );
   const cliContract = JSON.parse(await readFile(cliContractPath, "utf8"));
   cliContract.schemaVersion = 6;
+  cliContract.commands = cliContract.commands.filter(
+    (command: { path: string }) => command.path !== "configure",
+  );
   const create = cliContract.commands.find(
     (command: { path: string }) => command.path === "create",
   );
@@ -747,6 +828,13 @@ async function schemaV6Fixture(): Promise<string> {
     (entry: { long?: string }) => entry.long !== "--base",
   );
   await writeFile(cliContractPath, JSON.stringify(cliContract));
+  const vscodePolicyPath = join(
+    root,
+    "repos/arashi-vscode/contracts/command-policy.json",
+  );
+  const vscodePolicy = JSON.parse(await readFile(vscodePolicyPath, "utf8"));
+  delete vscodePolicy.cliCommands.configure;
+  await writeFile(vscodePolicyPath, JSON.stringify(vscodePolicy));
   await writeFile(
     join(root, ".github/workflows/cross-repo-command-contracts.yml"),
     `jobs:
@@ -776,13 +864,17 @@ async function schemaV8Fixture(): Promise<string> {
     "repos/arashi-docs/docs/workflows/standalone.md",
     "repos/arashi-docs/docs/workflows/json-automation.md",
     "repos/arashi-docs/scripts/check-create-base-docs.ts",
+    "repos/arashi-docs/scripts/check-configure-docs.ts",
     "repos/arashi-docs/scripts/generate-agent-exports.ts",
     "repos/arashi-docs/scripts/semantic-doc-checks.json",
     "repos/arashi-docs/.github/workflows/docs-validate.yml",
     "repos/arashi-skills/contracts/create-base-branch.json",
     "repos/arashi-skills/scripts/create-base-guidance-selftest.mjs",
+    "repos/arashi-skills/scripts/configure-workspace-guidance-selftest.mjs",
+    "repos/arashi-skills/scripts/guidance-checkers.json",
     "repos/arashi-skills/.github/workflows/security-audit.yml",
     "repos/arashi-skills/.github/workflows/release-security-gate.yml",
+    "repos/arashi-vscode/contracts/command-policy.json",
   ];
   for (const relativePath of copies) {
     const target = join(root, relativePath);
@@ -924,6 +1016,207 @@ describe("cross-repository command contracts", () => {
       ),
     ).toEqual([]);
     expect(result.ok, JSON.stringify(result.diagnostics, null, 2)).toBe(true);
+  });
+
+  test("normalizes the complete canonical configure policy and companion classifications", async () => {
+    const result = await checkContracts(await schemaV8Fixture());
+    expect(
+      result.diagnostics.filter(
+        (diagnostic) =>
+          diagnostic.code.startsWith("CONFIGURE_") ||
+          diagnostic.code.includes("CONFIGURE"),
+      ),
+    ).toEqual([]);
+    expect(result.ok, JSON.stringify(result.diagnostics, null, 2)).toBe(true);
+  });
+
+  test.each([
+    ["scopes", (policy: any) => policy.scopes.reverse()],
+    ["descriptors", (policy: any) => policy.descriptors.repository.pop()],
+    [
+      "configured-effective-state",
+      (policy: any) => policy.state.effective.reverse(),
+    ],
+    ["keep-edit-clear", (policy: any) => policy.actions.splice(1, 1)],
+    [
+      "tty-json-invocation",
+      (policy: any) => (policy.invocation.json = "interactive-mutation"),
+    ],
+    ["strict-loading", (policy: any) => (policy.loading = "normalized-only")],
+    ["semantic-no-op", (policy: any) => (policy.noOp = "confirm-then-save")],
+    ["exact-preview", (policy: any) => (policy.preview.config = "summary")],
+    [
+      "separate-active-file-plan",
+      (policy: any) => (policy.preview.activeFiles = "inline-with-config"),
+    ],
+    [
+      "body-bearing-views",
+      (policy: any) =>
+        (policy.secrecy.ordinaryAndJson = "includes-inline-bodies"),
+    ],
+    [
+      "shared-expected-byte-transaction",
+      (policy: any) => (policy.transaction.expectedBytes = false),
+    ],
+    [
+      "single-save-transaction",
+      (policy: any) => (policy.transaction.configSavesAtMost = 2),
+    ],
+    [
+      "shared-workspace-lock",
+      (policy: any) => (policy.transaction.lock = "configure-only-lock"),
+    ],
+    [
+      "native-file-safety",
+      (policy: any) => (policy.transaction.nativeFiles = "overwrite-existing"),
+    ],
+  ])("rejects controlled configure %s drift", async (_axis, mutate) => {
+    const root = await schemaV8Fixture();
+    const contractPath = join(root, "repos/arashi/contracts/cli-commands.json");
+    const contract = JSON.parse(await readFile(contractPath, "utf8"));
+    const configure = contract.commands.find(
+      (command: { path: string }) => command.path === "configure",
+    );
+    mutate(configure.semantics.configure);
+    await writeFile(contractPath, JSON.stringify(contract));
+
+    expect((await checkContracts(root)).diagnostics).toContainEqual(
+      expect.objectContaining({
+        code: "CONFIGURE_CLI_POLICY_MISMATCH",
+        source: "repos/arashi/contracts/cli-commands.json",
+      }),
+    );
+  });
+
+  test("requires docs and skills coverage with a reasoned VS Code exclusion", async () => {
+    const root = await schemaV8Fixture();
+    const contractPath = join(root, "repos/arashi/contracts/cli-commands.json");
+    const contract = JSON.parse(await readFile(contractPath, "utf8"));
+    const configure = contract.commands.find(
+      (command: { path: string }) => command.path === "configure",
+    );
+    configure.semantics.docs = { expectation: "excluded", reason: "omitted" };
+    configure.semantics.skills = { expectation: "excluded", reason: "omitted" };
+    configure.semantics.vscode = { expectation: "excluded", reason: "" };
+    await writeFile(contractPath, JSON.stringify(contract));
+
+    const diagnostics = (await checkContracts(root)).diagnostics;
+    expect(diagnostics).toContainEqual(
+      expect.objectContaining({
+        code: "CONFIGURE_COMPANION_POLICY_MISMATCH",
+        subject: "docs",
+      }),
+    );
+    expect(diagnostics).toContainEqual(
+      expect.objectContaining({
+        code: "CONFIGURE_COMPANION_POLICY_MISMATCH",
+        subject: "skills",
+      }),
+    );
+    expect(diagnostics).toContainEqual(
+      expect.objectContaining({
+        code: "CONFIGURE_COMPANION_POLICY_MISMATCH",
+        subject: "vscode",
+      }),
+    );
+  });
+
+  test.each([
+    [
+      "docs",
+      "repos/arashi-docs/scripts/semantic-doc-checks.json",
+      "check-configure-docs.ts",
+      "DOCS_CONFIGURE_CHECK_UNREACHABLE",
+    ],
+    [
+      "skills source and package",
+      "repos/arashi-skills/scripts/guidance-checkers.json",
+      "scripts/configure-workspace-guidance-selftest.mjs",
+      "SKILLS_CONFIGURE_CHECK_UNREACHABLE",
+    ],
+  ])(
+    "requires registered configure checker reachability for %s",
+    async (_surface, manifestPath, entry, code) => {
+      const root = await schemaV8Fixture();
+      const absolute = join(root, manifestPath);
+      const manifest = JSON.parse(await readFile(absolute, "utf8"));
+      await writeFile(
+        absolute,
+        JSON.stringify(manifest.filter((item: string) => item !== entry)),
+      );
+
+      expect((await checkContracts(root)).diagnostics).toContainEqual(
+        expect.objectContaining({ code, source: manifestPath }),
+      );
+    },
+  );
+
+  test("invokes the registered docs configure checker for controlled no-op drift", async () => {
+    const root = await schemaV8Fixture();
+    const guidancePath = join(
+      root,
+      "repos/arashi-docs/docs/workflows/config.md",
+    );
+    const guidance = await readFile(guidancePath, "utf8");
+    expect(guidance).toContain("exits before final confirmation or save");
+    await writeFile(
+      guidancePath,
+      guidance.replace(
+        "exits before final confirmation or save",
+        "continues to final confirmation and save",
+      ),
+    );
+
+    expect(
+      (await checkContractsWithFocusedAcceptance(root)).diagnostics,
+    ).toContainEqual(
+      expect.objectContaining({ code: "DOCS_CONFIGURE_CHECK_FAILED" }),
+    );
+  }, 30_000);
+
+  test("invokes configure guidance checks in source and extracted-package flows", async () => {
+    const root = await schemaV8Fixture();
+    const guidancePath = join(
+      root,
+      "repos/arashi-skills/skills/arashi/references/commands/workspace.md",
+    );
+    const guidance = await readFile(guidancePath, "utf8");
+    expect(guidance).toContain(
+      "reports no changes before final mutation confirmation",
+    );
+    await writeFile(
+      guidancePath,
+      guidance.replace(
+        "reports no changes before final mutation confirmation",
+        "reports no changes after final mutation confirmation",
+      ),
+    );
+
+    const diagnostics = (await checkContractsWithFocusedAcceptance(root))
+      .diagnostics;
+    expect(diagnostics).toContainEqual(
+      expect.objectContaining({ code: "SKILLS_CONFIGURE_CHECK_FAILED" }),
+    );
+    expect(diagnostics).toContainEqual(
+      expect.objectContaining({
+        code: "SKILLS_CONFIGURE_PACKAGE_CHECK_FAILED",
+      }),
+    );
+  }, 30_000);
+
+  test("the configure fixture itself matches the expected canonical policy", async () => {
+    const root = await schemaV8Fixture();
+    const contract = JSON.parse(
+      await readFile(
+        join(root, "repos/arashi/contracts/cli-commands.json"),
+        "utf8",
+      ),
+    );
+    expect(
+      contract.commands.find(
+        (command: { path: string }) => command.path === "configure",
+      ).semantics.configure,
+    ).toEqual(configureContract);
   });
   test.each([
     "The deprecated `defaults.create.baseBranch` value remains create-only and does not affect clone.",

@@ -48,9 +48,11 @@ Repository `path` and `gitUrl` are selection/identity context only. Root `$schem
 
 Inspection records contain `configured: true|false`, an optional safe persisted display value, and a separate optional effective record with `source` (`inherited` or `built-in`) and value. Absence remains absence; effective resolution never mutates the candidate.
 
+Configured presence is projected from the parsed original JSON document before normalization injects compatibility defaults such as `worktreesDir`. The same bytes are independently normalized and validated into the canonical candidate model. This dual projection prevents an inherited or built-in value from being mislabeled as persisted while preserving canonical validation and serialization for edits.
+
 The action controller asks explicitly for keep, edit, or clear. Text entry is used only after edit is chosen. Clear deletes the canonical persisted leaf and prunes only empty optional containers. Required `reposDir` can be edited or kept but not cleared. A pre-existing active native file is external active state, not a persisted field: configure never deletes or overwrites it and offers keep/skip rather than clear. Every operation returns a new candidate.
 
-Built-in resolvers use the same constants and precedence functions as runtime consumers where available. `worktreesDir` resolves to `.arashi/worktrees`; sync and lifecycle timeout fields resolve to their canonical 300-second and 300000-millisecond defaults. Repository and meta base inheritance delegates to canonical workspace/repository base policy. Create defaults resolve to switch `false` and launch `none`; editor create defaults remain editor-scoped rather than inventing fallback to workspace create defaults. Unset switch mode is presented as built-in `auto` without claiming one context-independent runtime result.
+Built-in resolvers use the same constants and precedence functions as runtime consumers where available. `worktreesDir` resolves to `.arashi/worktrees`; sync and lifecycle timeout fields resolve to their canonical 300-second and 300000-millisecond defaults. Repository and meta base inheritance delegates to canonical workspace/repository base policy. Create defaults resolve to switch `false` and launch `none`; editor create defaults remain editor-scoped rather than inventing fallback to workspace create defaults. Unset switch mode is presented as built-in `launch`; explicitly configured `auto` remains context-sensitive and is not collapsed into one launch result during inspection.
 
 **Alternative considered:** use blank input for keep and a magic token for clear. Rejected as ambiguous, hard to discover, and unsafe for plaintext command bodies.
 
@@ -82,9 +84,9 @@ If canonical serialized bytes still equal the original snapshot and no active fi
 
 **Alternative considered:** summarize selected changes. Rejected because the issue requires the preview to match persisted JSON, including plaintext inline commands.
 
-### 6. Use one configure-owned transaction and preserve newer bytes
+### 6. Share the canonical workspace transaction lock and preserve newer bytes
 
-Interactive configure reads the original config bytes under the existing lock/snapshot boundary. Before mutation it reacquires the lock and compares current bytes to the snapshot. A mismatch fails without overwrite. Under transaction ownership it revalidates active paths, privately prepares and no-replace publishes planned files, then calls canonical config persistence at most once with the normalized candidate. Installation failure rolls back invocation-owned unchanged files and leaves config unchanged. Save failure rolls back files while preserving current/newer config bytes.
+Interactive configure reads the original config bytes through the configured-workspace snapshot boundary. Before mutation it acquires the same generalized workspace transaction lock used by `aw add` and compares current bytes to the snapshot. Add and configure therefore cannot concurrently own config/file publication under command-specific locks. A mismatch fails without overwrite. Under transaction ownership configure revalidates active paths, privately prepares and no-replace publishes planned files, then calls canonical config persistence at most once with the normalized candidate. Installation failure rolls back invocation-owned unchanged files and leaves config unchanged. If config persistence changes bytes and then reports failure, rollback restores the original config only while the current bytes still match transaction-owned output; otherwise it preserves the newer bytes. Script rollback likewise preserves concurrently changed files.
 
 No prompt, retry, inspection, or final decline writes config or files. Existing active files are never overwritten. Rollback uses the existing identity/bytes/mode ownership ledger and preserves ambiguous or concurrently changed paths and referenced repository materialization.
 

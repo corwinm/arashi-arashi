@@ -324,6 +324,13 @@ function hasAffirmativeClaim(content: string, pattern: RegExp): boolean {
     .some((clause) => pattern.test(clause) && !claimNegation.test(clause));
 }
 
+function withoutConfigureBodyBearingException(content: string): string {
+  return content.replace(
+    /visible plaintext command entry[^.\n]{0,120}exact final preview[^.\n]{0,100}the only views?[^.\n]{0,100}include inline command bodies?\./gi,
+    "",
+  );
+}
+
 const guidanceRequirementDefinitions: readonly GuidanceRequirement[] = [
   {
     code: "INLINE_GUIDANCE_OWNERSHIP_MISMATCH",
@@ -481,7 +488,7 @@ const guidanceRequirementDefinitions: readonly GuidanceRequirement[] = [
           content,
         )) &&
       !hasAffirmativeClaim(
-        content,
+        withoutConfigureBodyBearingException(content),
         /(?:outcomes?|previews?|diagnostics?|logs?)[^.\n]{0,120}(?:print|include|reveal|disclose|show|contain)[^.\n]{0,100}(?:inline\s+(?:snippet|command)|snippet\s+text|command\s+text)/i,
       ),
   },
