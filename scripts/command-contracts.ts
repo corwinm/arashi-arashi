@@ -411,15 +411,6 @@ const addMaterializationGuidanceRequirements: Array<{
 }> = [
   {
     category: "docs",
-    source: paths.cliReadme,
-    phrases: [
-      "canonical clone",
-      "active linked parent worktree",
-      "coordinated branch",
-    ],
-  },
-  {
-    category: "docs",
     source: "repos/arashi-docs/docs/commands/add.md",
     phrases: [
       "linked parent worktree",
@@ -464,6 +455,35 @@ const addMaterializationGuidanceRequirements: Array<{
       "`tracked` scope",
       "`none`",
       "retains the canonical clone",
+    ],
+  },
+];
+const completionGuidanceRequirements: Array<{
+  phrases: readonly string[];
+  source: string;
+}> = [
+  {
+    source: "repos/arashi-docs/docs/commands/shell.md",
+    phrases: [
+      'eval "$(command aw shell init bash)"',
+      "source <(command aw completion bash)",
+      'eval "$(command aw shell init zsh)"',
+      "source <(command aw completion zsh)",
+      "command aw shell init fish | source",
+      "command aw completion fish | source",
+      "wrapper-only",
+    ],
+  },
+  {
+    source: "repos/arashi-docs/docs/commands/completion.md",
+    phrases: [
+      "local and read-only",
+      "200 ms whole-query budget",
+      "network requests",
+      "workspace state",
+      "hooks",
+      "prompt",
+      "child operations",
     ],
   },
 ];
@@ -4941,42 +4961,28 @@ export async function checkContracts(
     typeof contract?.schemaVersion === "number" &&
     contract.schemaVersion >= 6
   ) {
-    let cliReadme = "";
-    try {
-      cliReadme = await readFile(join(root, paths.cliReadme), "utf8");
-    } catch {
-      // The missing README is reported through the same semantic diagnostic below.
-    }
-    const normalizedReadme = cliReadme.toLowerCase();
-    const readmeRequirements = [
-      'eval "$(command aw shell init bash)"',
-      "source <(command aw completion bash)",
-      'eval "$(command aw shell init zsh)"',
-      "source <(command aw completion zsh)",
-      "command aw shell init fish | source",
-      "command aw completion fish | source",
-      "wrapper-only",
-      "local and read-only",
-      "200 ms whole-query budget",
-      "no network requests",
-      "hooks",
-      "prompts",
-      "workspace mutations",
-      "child operations",
-    ];
-    const missingReadmeRequirements = readmeRequirements.filter(
-      (requirement) => !normalizedReadme.includes(requirement.toLowerCase()),
-    );
-    if (missingReadmeRequirements.length > 0)
-      add(
-        d,
-        "error",
-        "docs",
-        "CLI_README_COMPLETION_INVALID",
-        paths.cliReadme,
-        "shell completion",
-        `CLI README completion guidance is missing: ${missingReadmeRequirements.join(", ")}.`,
+    for (const requirement of completionGuidanceRequirements) {
+      let content = "";
+      try {
+        content = await readFile(join(root, requirement.source), "utf8");
+      } catch {
+        // Missing guidance is reported through the same semantic diagnostic below.
+      }
+      const normalized = content.toLowerCase();
+      const missing = requirement.phrases.filter(
+        (phrase) => !normalized.includes(phrase.toLowerCase()),
       );
+      if (missing.length > 0)
+        add(
+          d,
+          "error",
+          "docs",
+          "COMPLETION_GUIDANCE_INVALID",
+          requirement.source,
+          "shell completion",
+          `Canonical completion guidance is missing: ${missing.join(", ")}.`,
+        );
+    }
 
     if (contract?.schemaVersion === 6) {
       const cliCompletionGates = [
