@@ -420,6 +420,47 @@ Do not store credentials or API tokens in inline snippets or hook input.
     expect(JSON.parse(result.stdout)).toEqual({ diagnostics: [], ok: true });
   });
 
+  test("allows only configure plaintext entry and its exact final preview to bear inline bodies", async () => {
+    const configureDisclosure = `${guidance}
+Visible plaintext command entry and the exact final preview are the only views that include inline command bodies.
+Selection screens, ordinary previews, diagnostics, cancellation, JSON, and active-file plans remain body-free.
+`;
+    const root = await fixture({
+      "repos/arashi-docs/public/llms-full.txt": configureDisclosure,
+    });
+
+    const result = run(root);
+
+    expect(result.status, output(result)).toBe(0);
+    expect(JSON.parse(result.stdout)).toEqual({ diagnostics: [], ok: true });
+  });
+
+  test.each([
+    "Selection screens include inline command bodies.",
+    "Setting lists include inline command bodies.",
+    "Cancellation output includes inline command bodies.",
+    "JSON inspection includes inline command bodies.",
+    "Active-file plans include inline command bodies.",
+  ])(
+    "rejects an extra body-bearing configure view: %s",
+    async (contradiction) => {
+      const contradictoryDisclosure = `${guidance}
+Visible plaintext command entry and the exact final preview are the only views that include inline command bodies.
+${contradiction}
+`;
+      const root = await fixture({
+        "repos/arashi-docs/public/llms-full.txt": contradictoryDisclosure,
+      });
+
+      const result = run(root);
+
+      expect(result.status).not.toBe(0);
+      expect(diagnosticCodes(result), output(result)).toContain(
+        "INLINE_GUIDANCE_SOURCE_DISCLOSURE_MISMATCH",
+      );
+    },
+  );
+
   test.each([
     [
       "dedicated producer identity",

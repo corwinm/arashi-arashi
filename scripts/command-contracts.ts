@@ -2,7 +2,7 @@ import { access, cp, mkdtemp, readFile, readdir, rm } from "node:fs/promises";
 import { execFile } from "node:child_process";
 import { tmpdir } from "node:os";
 import { join, relative } from "node:path";
-import { promisify } from "node:util";
+import { isDeepStrictEqual, promisify } from "node:util";
 
 export type Severity = "error" | "info";
 export interface Diagnostic {
@@ -62,6 +62,11 @@ const paths = {
     "repos/arashi-skills/contracts/create-base-branch.json",
   skillsCreateBaseCheck:
     "repos/arashi-skills/scripts/create-base-guidance-selftest.mjs",
+  docsConfigureCheck: "repos/arashi-docs/scripts/check-configure-docs.ts",
+  docsSemanticChecks: "repos/arashi-docs/scripts/semantic-doc-checks.json",
+  skillsConfigureCheck:
+    "repos/arashi-skills/scripts/configure-workspace-guidance-selftest.mjs",
+  skillsGuidanceChecks: "repos/arashi-skills/scripts/guidance-checkers.json",
 } as const;
 const docsAggregate = "pnpm --dir repos/arashi-docs validate:semantic-docs";
 const skillsSourceAggregate =
@@ -75,6 +80,81 @@ const skillsArchiveExtract =
 const skillsPackageAggregate =
   "node repos/arashi-skills/scripts/validate-guidance.mjs --skill-root package-check/skills/arashi";
 const createBaseBranchPattern = String.raw`^(?!HEAD$)(?!origin/(?:HEAD$|-))(?![-/.])(?!.*(?:/\.|//|\.\.|@\{))(?!.*\.lock(?:/|$))(?!.*[/.]$)[^\u0000-\u0020\u007F~^:?*\[\\]+$`;
+const configureSemanticPolicy: Obj = {
+  actions: ["keep", "edit", "clear"],
+  descriptors: {
+    commandDefaults: [
+      "defaults.create.switch",
+      "defaults.create.launch",
+      "defaults.switch.mode",
+    ],
+    editorDefaults: [
+      "defaults.editors.vscode.create.switch",
+      "defaults.editors.vscode.create.launch",
+      "defaults.editors.cursor.create.switch",
+      "defaults.editors.cursor.create.launch",
+      "defaults.editors.kiro.create.switch",
+      "defaults.editors.kiro.create.launch",
+    ],
+    meta: ["meta.baseBranch"],
+    repository: [
+      "groups",
+      "baseBranch",
+      "copy",
+      "symlink",
+      "pre-create",
+      "post-create",
+      "pre-remove",
+      "post-remove",
+    ],
+    workspace: [
+      "reposDir",
+      "worktreesDir",
+      "baseBranch",
+      "sync.timeoutSeconds",
+    ],
+    workspaceHooks: [
+      "hooks.timeout",
+      "hooks.scripts.pre-create",
+      "hooks.scripts.post-create",
+      "hooks.scripts.pre-remove",
+      "hooks.scripts.post-remove",
+    ],
+  },
+  invocation: {
+    editing: "tty-stdin-and-stdout",
+    json: "sanitized-inspection-only",
+  },
+  loading: "exact-bytes-strict-no-migration-or-repair",
+  noOp: "preserve-original-bytes-before-confirmation",
+  preview: {
+    activeFiles: "separate-body-free-list",
+    config: "exact-serialized-json-including-inline-bodies",
+  },
+  scopes: [
+    "workspace-settings",
+    "workspace-hooks",
+    "command-defaults",
+    "editor-defaults",
+    "meta-policy",
+    "repository",
+  ],
+  secrecy: {
+    inlineEntry: "visible-plaintext",
+    ordinaryAndJson: "lifecycle-and-interpreter-presence-only",
+  },
+  state: {
+    effective: ["inherited", "built-in"],
+    persisted: ["configured", "not-configured"],
+  },
+  transaction: {
+    activeFiles: "atomic-no-replace-with-owned-rollback",
+    configSavesAtMost: 1,
+    expectedBytes: true,
+    lock: "shared-workspace-add-configure-lock",
+    nativeFiles: "metadata-only-observe-keep-skip-never-overwrite",
+  },
+};
 export const createBaseSemanticPolicy: Obj = {
   ownership: "command",
   persisted: false,
@@ -710,6 +790,109 @@ const optionMap = (command: Obj): Map<string, Obj> =>
       return long ? [[long, option] as const] : [];
     }),
   );
+
+function checkConfigurePolicy(
+  command: Obj | undefined,
+  docsChecks: unknown,
+  skillsChecks: unknown,
+  diagnostics: Diagnostic[],
+): void {
+  if (!command) {
+    add(
+      diagnostics,
+      "error",
+      "schema",
+      "CONFIGURE_CLI_POLICY_MISMATCH",
+      paths.contract,
+      "configure",
+      "Schema v8 must publish the canonical configure command and semantic policy.",
+    );
+    return;
+  }
+  const semantics = object(command.semantics) ? command.semantics : {};
+  const json = object(semantics.json) ? semantics.json : {};
+  const standalone = object(semantics.standalone) ? semantics.standalone : {};
+  if (
+    !isDeepStrictEqual(semantics.configure, configureSemanticPolicy) ||
+    json.support !== "full" ||
+    standalone.support !== "configured-only"
+  )
+    add(
+      diagnostics,
+      "error",
+      "schema",
+      "CONFIGURE_CLI_POLICY_MISMATCH",
+      paths.contract,
+      "configure",
+      "Configure scopes, descriptors, configured/effective state, keep/edit/clear actions, TTY/JSON inspection, exclusive body-bearing views, exact preview, separate active-file plan, and shared expected-byte transaction must match the canonical CLI policy exactly.",
+    );
+
+  const optionNames = commandOptionNames(command);
+  if (!sameStrings(optionNames, ["--help", "--json"]))
+    add(
+      diagnostics,
+      "error",
+      "schema",
+      "CONFIGURE_CLI_POLICY_MISMATCH",
+      paths.contract,
+      "configure.options",
+      "Configure must expose only help and sanitized JSON inspection, without broad non-interactive mutation flags.",
+    );
+
+  for (const surface of ["docs", "skills"] as const) {
+    const companion = object(semantics[surface]) ? semantics[surface] : {};
+    if (companion.expectation !== "required")
+      add(
+        diagnostics,
+        "error",
+        surface,
+        "CONFIGURE_COMPANION_POLICY_MISMATCH",
+        paths.contract,
+        surface,
+        `Configure requires ${surface} semantic coverage.`,
+      );
+  }
+  const vscode = object(semantics.vscode) ? semantics.vscode : {};
+  if (
+    vscode.expectation !== "excluded" ||
+    !text(vscode.reason) ||
+    !/terminal|interactive/i.test(vscode.reason)
+  )
+    add(
+      diagnostics,
+      "error",
+      "vscode",
+      "CONFIGURE_COMPANION_POLICY_MISMATCH",
+      paths.contract,
+      "vscode",
+      "Configure must carry a reasoned VS Code exclusion tied to its terminal-owned interactive workflow.",
+    );
+
+  const docsEntries = Array.isArray(docsChecks) ? docsChecks : [];
+  if (!docsEntries.includes("check-configure-docs.ts"))
+    add(
+      diagnostics,
+      "error",
+      "docs",
+      "DOCS_CONFIGURE_CHECK_UNREACHABLE",
+      paths.docsSemanticChecks,
+      "check-configure-docs.ts",
+      "The stable docs semantic aggregate must register the configure checker.",
+    );
+  const skillsEntries = Array.isArray(skillsChecks) ? skillsChecks : [];
+  if (
+    !skillsEntries.includes("scripts/configure-workspace-guidance-selftest.mjs")
+  )
+    add(
+      diagnostics,
+      "error",
+      "skills",
+      "SKILLS_CONFIGURE_CHECK_UNREACHABLE",
+      paths.skillsGuidanceChecks,
+      "scripts/configure-workspace-guidance-selftest.mjs",
+      "The stable source and extracted-package skill aggregates must register the configure checker.",
+    );
+}
 const commonAliases = new Map([
   ["--verbose", "-v"],
   ["--force", "-f"],
@@ -1718,6 +1901,27 @@ async function json(
       source: path,
       subject: path,
       message: `Cannot parse JSON object: ${error instanceof Error ? error.message : String(error)}`,
+    });
+  }
+}
+async function jsonStringArray(
+  root: string,
+  path: string,
+  diagnostics: Diagnostic[],
+): Promise<string[] | undefined> {
+  try {
+    const value: unknown = JSON.parse(await readFile(join(root, path), "utf8"));
+    if (!Array.isArray(value) || value.some((entry) => !text(entry)))
+      throw new Error("root must be an array of strings");
+    return value;
+  } catch (error) {
+    diagnostics.push({
+      severity: "error",
+      category: "schema",
+      code: "SCHEMA_INVALID",
+      source: path,
+      subject: path,
+      message: `Cannot parse JSON string array: ${error instanceof Error ? error.message : String(error)}`,
     });
   }
 }
@@ -3076,6 +3280,33 @@ async function runPackagedCompletionChecker(
   }
 }
 
+async function runPackagedConfigureChecker(
+  root: string,
+  diagnostics: Diagnostic[],
+): Promise<void> {
+  const temporaryRoot = await mkdtemp(
+    join(tmpdir(), "arashi-configure-package-check-"),
+  );
+  const skillRoot = join(temporaryRoot, "skills/arashi");
+  try {
+    await cp(join(root, paths.skills), skillRoot, { recursive: true });
+    await runFocusedChecker(
+      root,
+      {
+        category: "skills",
+        checker: paths.skillsConfigureCheck,
+        code: "SKILLS_CONFIGURE_PACKAGE_CHECK_FAILED",
+        cwd: "repos/arashi-skills",
+        args: ["--skill-root", skillRoot],
+      },
+      diagnostics,
+      true,
+    );
+  } finally {
+    await rm(temporaryRoot, { force: true, recursive: true });
+  }
+}
+
 export async function checkContracts(
   root = process.cwd(),
   options: CheckContractsOptions = {},
@@ -3102,6 +3333,14 @@ export async function checkContracts(
   const skillsSwitchConfig = await json(root, paths.skillsSwitchConfig, d);
   const policy = await json(root, paths.policy, d);
   const manifest = await json(root, paths.manifest, d);
+  const docsSemanticChecks =
+    contract?.schemaVersion === 8
+      ? await jsonStringArray(root, paths.docsSemanticChecks, d)
+      : undefined;
+  const skillsGuidanceChecks =
+    contract?.schemaVersion === 8
+      ? await jsonStringArray(root, paths.skillsGuidanceChecks, d)
+      : undefined;
   const cliCreateConfigValid = validateCreateConfigContract(
     cliCreateConfig,
     paths.cliCreateConfig,
@@ -3492,6 +3731,13 @@ export async function checkContracts(
       );
     }
   }
+  if (contract?.schemaVersion === 8)
+    checkConfigurePolicy(
+      commands.get("configure"),
+      docsSemanticChecks,
+      skillsGuidanceChecks,
+      d,
+    );
   checkAddMaterializationContract(commands.get("add"), d);
   if (
     typeof contract?.schemaVersion === "number" &&
@@ -3912,17 +4158,21 @@ export async function checkContracts(
         ? command.semantics.docs
         : {};
     if (p.expectation === "required") {
-      if (!(await exists(join(root, paths.docs, `${name}.md`))))
+      const requiredPage = `${paths.docs}/${name}.md`;
+      if (!(await exists(join(root, requiredPage))))
         add(
           d,
           "error",
           "docs",
           "DOCS_PAGE_MISSING",
-          `${paths.docs}/${name}.md`,
+          requiredPage,
           name,
           "Required canonical command page is missing.",
         );
-      if (!new RegExp(`(?:\\./|/)?commands/${name}(?:\\.md|/|\\))`).test(index))
+      const indexPattern = new RegExp(
+        `(?:\\./|/)?commands/${name}(?:\\.md|/|\\))`,
+      );
+      if (!indexPattern.test(index))
         add(
           d,
           "error",
@@ -4010,6 +4260,7 @@ export async function checkContracts(
         : {};
     const expectation = skillsPolicy.expectation;
     const entry = covered.get(name);
+    if (name === "configure" && expectation === "required") continue;
     if (expectation === "excluded" && !entry) {
       add(
         d,
@@ -4505,6 +4756,26 @@ export async function checkContracts(
           },
         ]
       : []),
+    ...(contract?.schemaVersion === 8
+      ? [
+          {
+            category: "docs" as const,
+            checker: paths.docsConfigureCheck,
+            cwd: "repos/arashi-docs",
+            failureCode: "DOCS_CONFIGURE_CHECK_FAILED",
+            unreachableCode: "DOCS_CONFIGURE_CHECK_UNREACHABLE",
+            command: docsAggregate,
+          },
+          {
+            category: "skills" as const,
+            checker: paths.skillsConfigureCheck,
+            cwd: "repos/arashi-skills",
+            failureCode: "SKILLS_CONFIGURE_CHECK_FAILED",
+            unreachableCode: "SKILLS_CONFIGURE_CHECK_UNREACHABLE",
+            command: skillsSourceAggregate,
+          },
+        ]
+      : []),
   ];
   let workflow = "";
   try {
@@ -4846,6 +5117,8 @@ export async function checkContracts(
   ) {
     await runPackagedCompletionChecker(root, d);
   }
+  if (contract?.schemaVersion === 8 && options.runFocusedCheckers !== false)
+    await runPackagedConfigureChecker(root, d);
 
   await checkKittyGuidance(root, d);
   await checkAddMaterializationGuidance(root, d);

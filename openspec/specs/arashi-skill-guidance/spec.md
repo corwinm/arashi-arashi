@@ -3,7 +3,9 @@
 ## Purpose
 
 Define how the Arashi skill package keeps its top-level skill guidance minimal while directing detailed workflow instructions to reference files and canonical docs.
+
 ## Requirements
+
 ### Requirement: Minimal skill entry point
 
 The Arashi skill package SHALL keep `skills/arashi/SKILL.md` focused on skill routing, universal operating rules, and links to detailed references rather than duplicating workflow manuals, command-family details, canonical-doc indexes, or exhaustive command parameters.
@@ -642,13 +644,13 @@ Installed Arashi skill routing, tutorials, command references, troubleshooting, 
 
 ### Requirement: Packaged skill teaches optional repository onboarding during add
 
-The authored and packaged Arashi skill SHALL teach eligible human `aw add` onboarding in the focused workspace/repository command reference while routing copy/symlink and hook details to their existing configuration/create and hook references. Guidance SHALL preserve default-no minimal add, non-interactive/JSON/force suppression, canonical repository ownership, unselected content-free suggestions, manual path validation and dependency warnings, exclusive inline-or-executable-file hook choice, exact active paths, safe no-op scaffolds, runtime-ready permissions without rename/chmod activation, no overwrite, user-supplied inline commands, sanitized inline/script summaries, one final config save, transaction-owned script rollback, and the #316 existing-entry scope boundary.
+The authored and packaged Arashi skill SHALL teach eligible human `aw add` onboarding in the focused workspace/repository command reference while routing copy/symlink and hook details to their existing configuration/create and hook references. Guidance SHALL preserve default-no minimal add, non-interactive/JSON/force suppression, canonical repository ownership, unselected content-free suggestions, manual path validation and dependency warnings, exclusive inline-or-executable-file hook choice, exact active paths, safe no-op scaffolds, runtime-ready permissions without rename/chmod activation, no overwrite, user-supplied inline commands, sanitized inline/script summaries, one final config save, transaction-owned script rollback, and the boundary that existing-entry editing belongs to `aw configure` rather than add.
 
 #### Scenario: Agent adds a repository interactively
 
 - **WHEN** an agent follows installed guidance for an eligible human add invocation
 - **THEN** it can explain or operate the optional section checklist and final confirmation without selecting values on the user's behalf
-- **AND** it does not configure workspace hooks or unsupported fields
+- **AND** it does not configure workspace hooks, unsupported fields, or existing entries through add
 
 #### Scenario: Agent handles local-file suggestions
 
@@ -666,9 +668,9 @@ The authored and packaged Arashi skill SHALL teach eligible human `aw add` onboa
 
 #### Scenario: Agent needs to edit existing config
 
-- **WHEN** the requested task is to inspect or update an already registered repository or workspace setting
-- **THEN** the skill does not misuse `aw add` for that task
-- **AND** identifies follow-up #316 as the future interactive editor scope while retaining current direct-config guidance until it ships
+- **WHEN** the requested task is to inspect or update an already registered repository or supported workspace setting
+- **THEN** the skill does not misuse `aw add` and instead routes the user to `aw configure`
+- **AND** retains direct-config guidance for unsupported canonical fields
 
 ### Requirement: Authored and extracted onboarding guidance is aggregate-checked
 
@@ -679,3 +681,25 @@ A focused onboarding guidance checker SHALL remain directly executable, SHALL be
 - **WHEN** source or extracted guidance loses or contradicts prompt eligibility, field/action scope, suggestion secrecy, exclusive inline/file choice, exact active path/no-op/executable semantics, no-overwrite ownership, user command ownership, sanitized summary, persistence, cancellation, or #316 boundaries
 - **THEN** the owning source/package aggregate fails with a stable diagnostic
 - **AND** no feature-specific workflow step is required
+
+### Requirement: Packaged skill guidance routes supported edits through configure
+
+The authored and extracted Arashi skill SHALL direct agents to use `aw configure` for supported existing-workspace inspection and human-confirmed edits, list the supported scope families, distinguish persisted from effective state, and preserve direct config editing for unsupported canonical fields. Guidance SHALL state that interactive editing requires a TTY and `--json` is sanitized inspection only.
+
+#### Scenario: Agent needs to inspect configuration
+
+- **WHEN** an agent follows packaged workspace command guidance
+- **THEN** it can use `aw configure --json` for stable non-mutating supported-field inspection
+- **AND** knows that inline command bodies are intentionally omitted
+
+#### Scenario: Agent needs to change configuration
+
+- **WHEN** a supported interactive edit is appropriate
+- **THEN** guidance routes the user to `aw configure` and its final confirmation
+- **AND** does not invent non-interactive setters or describe the command as schema-derived
+
+#### Scenario: Release package is validated
+
+- **WHEN** the canonical skill archive is built and extracted
+- **THEN** source and package aggregates enforce the same configure guidance
+- **AND** stale or missing packaged guidance fails before publication
