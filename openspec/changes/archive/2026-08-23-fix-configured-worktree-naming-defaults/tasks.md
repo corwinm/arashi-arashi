@@ -26,5 +26,5 @@
 ## 4. Meta Validation and Closeout
 
 - [x] 4.1 Record the final merged child SHA in the meta handoff/evidence, re-run the coordinated repository revision report, and verify the meta change points to that exact child revision.
-- [x] 4.2 Run `openspec validate fix-configured-worktree-naming-defaults --strict`, meta format check, typecheck, full tests, cross-repository contract checks, and `git diff --check`.
+- [ ] 4.2 Run `openspec validate fix-configured-worktree-naming-defaults --strict`, meta format check, typecheck, full tests, cross-repository contract checks, and `git diff --check`.
 - [x] 4.3 Archive and sync the completed OpenSpec change only after the child merge, validate the canonical specs strictly, inspect the final meta diff, and deliver the meta PR last without rewriting issue history or migrating worktrees.
