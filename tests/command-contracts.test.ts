@@ -1825,16 +1825,47 @@ This property is unsupported; migrate to root \`baseBranch\`.
       }),
     );
   });
-  test("rejects incomplete CLI README completion guidance", async () => {
+  test("rejects incomplete canonical completion guidance", async () => {
     const root = await schemaV6Fixture();
     await writeFile(
-      join(root, "repos/arashi/README.md"),
-      "# Arashi\n\nRun `aw completion bash`.\n",
+      join(root, "repos/arashi-docs/docs/commands/completion.md"),
+      "# Completion\n\nRun `aw completion bash`.\n",
     );
     expect((await checkContracts(root)).diagnostics).toContainEqual(
       expect.objectContaining({
-        code: "CLI_README_COMPLETION_INVALID",
-        source: "repos/arashi/README.md",
+        code: "COMPLETION_GUIDANCE_INVALID",
+        source: "repos/arashi-docs/docs/commands/completion.md",
+      }),
+    );
+  });
+  test("rejects polarity reversal in canonical completion safety guidance", async () => {
+    const root = await schemaV6Fixture();
+    const path = join(root, "repos/arashi-docs/docs/commands/completion.md");
+    const content = await readFile(path, "utf8");
+    await writeFile(
+      path,
+      content.replace(
+        "It does not perform network requests or mutate workspace state. It does not execute hooks, does not prompt, and does not start child operations.",
+        "It performs network requests and mutates workspace state. It executes hooks, prompts, and starts child operations.",
+      ),
+    );
+    expect((await checkContracts(root)).diagnostics).toContainEqual(
+      expect.objectContaining({
+        code: "COMPLETION_GUIDANCE_INVALID",
+        source: "repos/arashi-docs/docs/commands/completion.md",
+      }),
+    );
+  });
+  test("rejects incomplete canonical shell activation guidance", async () => {
+    const root = await schemaV6Fixture();
+    await writeFile(
+      join(root, "repos/arashi-docs/docs/commands/shell.md"),
+      "# Shell\n\nRun `aw shell install`.\n",
+    );
+    expect((await checkContracts(root)).diagnostics).toContainEqual(
+      expect.objectContaining({
+        code: "COMPLETION_GUIDANCE_INVALID",
+        source: "repos/arashi-docs/docs/commands/shell.md",
       }),
     );
   });
