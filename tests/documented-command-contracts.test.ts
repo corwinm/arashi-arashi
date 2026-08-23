@@ -89,6 +89,20 @@ describe("coordinated primary documented command contract", () => {
     ).toHaveLength(3);
   });
 
+  test("recognizes configure as part of the documented command vocabulary", () => {
+    expect(
+      findPreferredArashiInvocations(
+        "Inspect settings with `arashi configure --json`.",
+        "configure.md",
+      ),
+    ).toEqual([
+      expect.objectContaining({
+        code: "PREFERRED_COMMAND_SPELLING",
+        source: "configure.md",
+      }),
+    ]);
+  });
+
   test("rejects quoted executable invocations without matching quoted identifiers", () => {
     expect(
       findPreferredArashiInvocations(

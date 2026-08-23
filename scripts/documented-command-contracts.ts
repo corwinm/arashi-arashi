@@ -5,6 +5,7 @@ const commands = [
   "add",
   "clone",
   "completion",
+  "configure",
   "create",
   "doctor",
   "exec",
