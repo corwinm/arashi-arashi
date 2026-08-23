@@ -67,8 +67,8 @@
 - [x] 8.2 Commit and push docs changes, open the cross-linked child PR, and verify exact head/base/files, generation/deploy/semantic CI, and eligible review threads.
 - [x] 8.3 Commit and push skills changes, open the cross-linked child PR, and verify exact head/base/files, source/archive/package/security CI, and eligible review threads.
 - [x] 8.4 Commit and push the `arashi-vscode` command-policy exclusion, open and cross-link PR #36, and verify exact head/base/files plus macOS, Ubuntu, and Windows CI.
-- [ ] 8.5 Mark only evidenced OpenSpec tasks complete, commit/push the meta change, open the cross-linked non-closing proposal PR, and verify strict/meta/coordinated exact-head CI.
-- [ ] 8.6 Report live current-head CI and remaining blockers without merging, auto-merging, archiving, or force-pushing unless separately authorized.
+- [x] 8.5 Mark only evidenced OpenSpec tasks complete, commit/push the meta change, open the cross-linked non-closing proposal PR, and verify strict/meta/coordinated exact-head CI.
+- [x] 8.6 Report live current-head CI and remaining blockers without merging, auto-merging, archiving, or force-pushing unless separately authorized.
 
 ## 9. Merge and archive closeout
 
