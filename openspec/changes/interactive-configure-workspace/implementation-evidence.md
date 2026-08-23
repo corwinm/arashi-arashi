@@ -1,13 +1,13 @@
 # Implementation evidence
 
-## Exact child revisions
+## Exact child merge revisions
 
-The coordinated child pull requests are open, cleanly mergeable, and verified at these exact heads:
+The coordinated child pull requests were squash-merged and the final parent verification used these exact `main` revisions:
 
-- CLI: `corwinm/arashi#157` — `000096585c8d19d060a238ca2a2603e24286cc03`
-- Docs: `corwinm/arashi-docs#89` — `6f8721b6c072b5064aa7c065618a0b874a39a5c7`
-- Skills: `corwinm/arashi-skills#69` — `7c7cedaae13348e2e4b889f99c293a56913d0c61`
-- VS Code: `corwinm/arashi-vscode#36` — `5b0a3d7cae1a7040d0aa1cf79a7fa70d41c6beae`
+- CLI: `corwinm/arashi#157` — `fefa426850ad819ae72c1d2a2274586646512fa9`
+- Docs: `corwinm/arashi-docs#89` — `b2e24458149132be402a7764e7e1106d6ac26966`
+- Skills: `corwinm/arashi-skills#69` — `5aeb0b6e50dcabf9bace11b16bf72c9b0bbeee45`
+- VS Code: `corwinm/arashi-vscode#36` — `156df9f5456c7712a36aec599a2c33aa9b26f9eb`
 
 ## Child verification
 
