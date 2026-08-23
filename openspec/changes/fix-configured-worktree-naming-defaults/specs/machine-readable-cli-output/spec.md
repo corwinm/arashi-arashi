@@ -7,7 +7,7 @@ Configured `create --json` success, dry-run, and destination-collision failure e
 #### Scenario: Bare create JSON reports corrected destination
 
 - **WHEN** configured bare create for repository component `example` and branch `feature/auth` succeeds with `--json`
-- **THEN** `data.repositories[].worktreePath` reports the parent destination beneath the effective base as `example-feature/auth`
+- **THEN** `data.repositories[].worktreePath` reports the parent destination beneath the effective base as `example/feature/auth`
 - **AND** child records in `data.repositories[]` report destinations rooted at that exact parent destination plus each configured child path
 
 #### Scenario: Non-bare dry-run JSON matches human preview

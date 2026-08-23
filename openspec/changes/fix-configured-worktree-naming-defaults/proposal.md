@@ -4,8 +4,8 @@ Configured worktree destination naming currently applies the bare and non-bare t
 
 ## What Changes
 
-- Correct newly planned configured parent destinations so bare repositories use `<canonical repository naming component>-<branch>` and non-bare repositories use `<branch>` beneath the effective `worktreesDir` base.
-- Resolve the repository component exclusively through the existing `worktreeName`/canonical configured-name authority; do not infer it from filesystem basenames.
+- Correct newly planned configured parent destinations so bare repositories use `<canonical repository naming component>/<branch>` and non-bare repositories use `<branch>` beneath the effective `worktreesDir` base.
+- Resolve the repository component through the existing `worktreeName`/canonical configured-name authority, omitting a conventional terminal `.git` from the bare-source fallback; do not substitute a linked-checkout or clone-directory basename.
 - Derive coordinated child destinations from the same corrected authoritative parent destination while preserving each child's configured path beneath it.
 - Preserve slash-containing branch hierarchy, standalone `.worktrees/<branch>` behavior, and custom-root semantics in which `worktreesDir` changes only the base.
 - Require human, dry-run, and JSON create output to report the same resolved destination and require destination collision checks before hooks, branches, worktrees, directories, or other filesystem mutation.

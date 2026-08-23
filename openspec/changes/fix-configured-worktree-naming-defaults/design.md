@@ -10,7 +10,7 @@ Existing worktrees may already use either old layout. Their lifecycle must conti
 
 **Goals:**
 
-- Make newly created configured bare parents resolve beneath the effective base as `<canonical repository naming component>-<branch>`.
+- Make newly created configured bare parents resolve beneath the effective base as `<canonical repository naming component>/<branch>`.
 - Make newly created configured non-bare parents resolve beneath the effective base as `<branch>`.
 - Use one immutable authoritative parent destination for parent planning, child path construction, preflight, execution, and all output renderers.
 - Detect destination collisions before any create mutation.
@@ -29,14 +29,18 @@ Existing worktrees may already use either old layout. Their lifecycle must conti
 
 The destination resolver first computes the existing normalized effective `worktreesDir` base. It then appends:
 
-- bare configured parent: `<repository-component>-<branch>`;
+- bare configured parent: `<repository-component>/<branch>`;
 - non-bare configured parent: `<branch>`.
 
-A custom `worktreesDir` replaces only the base calculation. It cannot select or suppress the topology naming rule. For repository component `example`, branch `feature/auth`, and base `<root>`, the results are `<root>/example-feature/auth` for bare and `<root>/feature/auth` for non-bare.
+A custom `worktreesDir` replaces only the base calculation. It cannot select or suppress the topology naming rule. For repository component `example`, branch `feature/auth`, and base `<root>`, the results are `<root>/example/feature/auth` for bare and `<root>/feature/auth` for non-bare.
+
+When the bare source directory supplies the fallback naming component, a conventional terminal `.git` suffix is omitted so sibling source `/projects/example.git` and its default worktree namespace `/projects/example/` do not overlap. An explicit canonical `worktreeName` remains authoritative.
 
 The branch is passed through unchanged to the established path join, so slash-containing branches retain nested hierarchy. No slugging or separator rewriting is introduced.
 
 Alternative rejected: encoding repository identity into `worktreesDir` would conflate user-selected placement with the topology default and make explicit roots behave differently from defaults.
+
+Alternative rejected: concatenating repository and branch with `-` is not an injective namespace when slash branches are preserved. Repository `example` with branch `feature/auth` and repository `example-feature` with branch `auth` would both resolve to `example-feature/auth`.
 
 ### 2. Reuse canonical configured naming authority
 
@@ -77,7 +81,7 @@ Unit and integration coverage includes bare/non-bare configured parents, explici
 - **[A new destination can differ from a prior dry-run implementation]** → Build every renderer and execution from one frozen plan and compare exact paths in tests.
 - **[Old and new layouts can coexist]** → Treat Git metadata as lifecycle authority and test list, status, switch, and remove against pre-existing old-layout registrations.
 - **[Slash branches create nested directories]** → Preserve the existing behavior deliberately and test rollback/collision boundaries around intermediate parents.
-- **[Shared bare bases can already contain a destination]** → Run complete collision checks before hooks or mutation and never choose an alternate name silently.
+- **[Shared bare bases can already contain a destination]** → Give each bare repository a dedicated namespace, run complete collision checks before hooks or mutation, and never choose an alternate name silently.
 - **[Platform path APIs can conceal host-only assumptions]** → Add platform-neutral cases and real native CI acceptance on all supported operating systems.
 
 ## Migration Plan

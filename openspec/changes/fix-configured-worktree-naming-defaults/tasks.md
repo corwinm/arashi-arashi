@@ -1,12 +1,13 @@
 ## 1. CLI Regression Coverage (RED)
 
-- [x] 1.1 Add focused destination-resolver tests proving configured bare parents use `<canonical repository naming component>-<branch>` and configured non-bare parents use `<branch>` beneath the effective base.
-- [x] 1.2 Add canonical-name tests proving resolved `worktreeName` wins, configured-name fallback is stable, and checkout/filesystem basenames are never consulted.
+- [x] 1.1 Add focused destination-resolver tests proving configured bare parents use `<canonical repository naming component>/<branch>` and configured non-bare parents use `<branch>` beneath the effective base.
+- [x] 1.2 Add canonical-name tests proving resolved `worktreeName` wins, the bare-source fallback omits a conventional terminal `.git`, and linked-checkout/clone-directory basenames never override that authority.
 - [x] 1.3 Add configured path tests for simple and slash-containing branches, default and custom `worktreesDir` bases, POSIX/Windows separators, and nested coordinated children beneath the exact same authoritative parent.
 - [x] 1.4 Add human, dry-run, and single-document JSON create tests proving success uses `data.repositories[].worktreePath`, dry-run uses `data.dryRunOutcome.plannedWorktrees[]`, collision failures use `error.details.conflict`, all modes report the same resolved parent and child destinations without recalculating paths per renderer, and parent/selected-child records preserve deterministic plan order.
 - [x] 1.5 Add preflight collision tests proving path or Git-registration conflicts block before managed-ignore writes, workspace/repository hooks, branch creation, `git worktree add`, directory creation, or other filesystem mutation, with no silent alternate destination; cover multiple simultaneous collisions and assert that the first record in deterministic plan order is reported.
 - [x] 1.6 Add real-Git compatibility coverage that registers existing worktrees under the inverted legacy layouts and proves list, status, switch, and remove remain metadata-driven, operable, and non-migrating.
-- [x] 1.7 Exercise the corrected bare/non-bare parent and child paths through built-CLI native macOS, Linux, and Windows acceptance before merge.
+- [ ] 1.7 Exercise the corrected bare/non-bare parent and child paths through built-CLI native macOS, Linux, and Windows acceptance before merge.
+- [x] 1.8 Add real-Git and resolver coverage proving the bare fallback omits a terminal `.git`, stays outside the bare Git directory, and cannot alias an adjacent repository/branch component pair.
 
 ## 2. CLI Implementation (GREEN)
 
@@ -17,9 +18,9 @@
 
 ## 3. CLI Validation and Child-First Delivery
 
-- [ ] 3.1 Run focused path/planner/create/output/lifecycle tests, native acceptance, and the full Arashi CLI test suite.
+- [x] 3.1 Run focused path/planner/create/output/lifecycle tests, native acceptance, and the full Arashi CLI test suite.
 - [x] 3.2 Run CLI format check, lint, typecheck, generated-schema/contract freshness checks, build, and `git diff --check` after the final source edit.
-- [x] 3.3 Correct the stale configured non-bare clone example in `arashi-docs`, regenerate and drift-check its agent-readable exports, and run the docs validation aggregate; review CLI/skill wording and leave unaffected standalone guidance unchanged.
+- [x] 3.3 Correct stale configured path examples in `arashi-docs`, document the bare namespace, regenerate and drift-check its agent-readable exports, and run the docs validation aggregate; review CLI/skill wording and leave unaffected standalone guidance unchanged.
 - [ ] 3.4 Independently review the exact child diff, address blocking findings, commit and open the child implementation PR with issue #323 linkage, verify exact-head CI on macOS/Linux/Windows, and merge the child before meta closeout.
 
 ## 4. Meta Validation and Closeout

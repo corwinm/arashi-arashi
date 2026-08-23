@@ -2,13 +2,26 @@
 
 ### Requirement: Worktree creation uses a single resolved base path
 
-All commands that create configured worktrees MUST derive destinations from a shared normalized effective `worktreesDir` base and a single authoritative configured topology naming rule. A newly created configured bare parent SHALL use `<canonical repository naming component>-<branch>` beneath that base; a newly created configured non-bare parent SHALL use `<branch>` beneath that base. The repository component MUST be the existing resolved `worktreeName` when present and otherwise the repository's canonical configured name, and MUST NOT be guessed from filesystem paths. The branch value SHALL retain the existing natural path behavior, including slash-separated hierarchy. A custom `worktreesDir` SHALL change only the base and SHALL NOT change the topology naming rule.
+All commands that create configured worktrees MUST derive destinations from a shared normalized effective `worktreesDir` base and a single authoritative configured topology naming rule. A newly created configured bare parent SHALL use `<canonical repository naming component>/<branch>` beneath that base; a newly created configured non-bare parent SHALL use `<branch>` beneath that base. The repository component MUST be the existing resolved `worktreeName` when present and otherwise the repository's canonical configured name, with a conventional terminal `.git` suffix omitted when the bare source directory supplies the fallback name, and MUST NOT otherwise be guessed from filesystem paths. The branch value SHALL retain the existing natural path behavior, including slash-separated hierarchy. A custom `worktreesDir` SHALL change only the base and SHALL NOT change the topology naming rule.
 
-#### Scenario: Configured bare parent uses repository-prefixed branch path
+#### Scenario: Configured bare parent uses a repository namespace
 
 - **WHEN** configured create plans branch `feature/auth` for a bare parent whose canonical repository naming component is `example`
-- **THEN** the parent destination beneath the effective worktree base is `example-feature/auth`
+- **THEN** the parent destination beneath the effective worktree base is `example/feature/auth`
 - **AND** the branch remains `feature/auth`
+
+#### Scenario: Bare source suffix does not overlap the worktree namespace
+
+- **WHEN** configured create plans branch `main` for bare source directory `<base>/example.git` without an explicit `worktreeName`
+- **THEN** the fallback repository namespace is `<base>/example`
+- **AND** the parent destination is `<base>/example/main`
+- **AND** no checked-out files are placed beneath `<base>/example.git`
+
+#### Scenario: Bare repository and branch components cannot alias
+
+- **WHEN** repository `example` plans branch `feature/auth` and repository `example-feature` plans branch `auth` beneath the same effective base
+- **THEN** their destinations are respectively `example/feature/auth` and `example-feature/auth`
+- **AND** the destinations are distinct
 
 #### Scenario: Configured non-bare parent uses branch path
 
