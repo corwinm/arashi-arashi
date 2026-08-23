@@ -21,10 +21,10 @@
 - [x] 3.1 Run focused path/planner/create/output/lifecycle tests, native acceptance, and the full Arashi CLI test suite.
 - [x] 3.2 Run CLI format check, lint, typecheck, generated-schema/contract freshness checks, build, and `git diff --check` after the final source edit.
 - [x] 3.3 Correct stale configured path examples in `arashi-docs`, document the bare namespace, regenerate and drift-check its agent-readable exports, and run the docs validation aggregate; review CLI/skill wording and leave unaffected standalone guidance unchanged.
-- [ ] 3.4 Independently review the exact child diff, address blocking findings, commit and open the child implementation PR with issue #323 linkage, verify exact-head CI on macOS/Linux/Windows, and merge the child before meta closeout.
+- [x] 3.4 Independently review the exact child diff, address blocking findings, commit and open the child implementation PR with issue #323 linkage, verify exact-head CI on macOS/Linux/Windows, and merge the child before meta closeout.
 
 ## 4. Meta Validation and Closeout
 
-- [ ] 4.1 Record the final merged child SHA in the meta handoff/evidence, re-run the coordinated repository revision report, and verify the meta change points to that exact child revision.
-- [ ] 4.2 Run `openspec validate fix-configured-worktree-naming-defaults --strict`, meta format check, typecheck, full tests, cross-repository contract checks, and `git diff --check`.
-- [ ] 4.3 Archive and sync the completed OpenSpec change only after the child merge, validate the canonical specs strictly, inspect the final meta diff, and deliver the meta PR last without rewriting issue history or migrating worktrees.
+- [x] 4.1 Record the final merged child SHA in the meta handoff/evidence, re-run the coordinated repository revision report, and verify the meta change points to that exact child revision.
+- [x] 4.2 Run `openspec validate fix-configured-worktree-naming-defaults --strict`, meta format check, typecheck, full tests, cross-repository contract checks, and `git diff --check`.
+- [x] 4.3 Archive and sync the completed OpenSpec change only after the child merge, validate the canonical specs strictly, inspect the final meta diff, and deliver the meta PR last without rewriting issue history or migrating worktrees.

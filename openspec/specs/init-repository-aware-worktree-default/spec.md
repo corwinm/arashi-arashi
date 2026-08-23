@@ -2,7 +2,6 @@
 
 ## Purpose
 Define repository-aware configured-init defaults, canonical bare-root resolution, preference and override precedence, rollback safety, and downstream worktree placement behavior.
-
 ## Requirements
 ### Requirement: Configured init resolves repository type and canonical bare root
 Configured `arashi init` SHALL use Git to classify an existing repository and SHALL canonicalize a bare invocation to Git's absolute bare repository directory before reading or writing configuration.
@@ -113,16 +112,20 @@ Configured init SHALL derive dry-run preview, ordinary success output, structure
 - **AND** does not report a repository-type recalculation
 
 ### Requirement: Bare initialized create uses the persisted sibling base
-A configured bare repository initialized with the repository-aware default SHALL use the persisted parent base for subsequent create operations while retaining the existing branch-only bare path strategy.
 
-#### Scenario: Created bare worktree is a sibling
-- **WHEN** a real bare repository with a committed branch is initialized without `--worktrees-dir` and then creates `feature/example`
-- **THEN** the worktree is created under the canonical bare repository parent using the existing bare branch-only layout
+A configured bare repository initialized with the repository-aware default SHALL use the persisted parent base for subsequent create operations and SHALL place each new parent worktree at `<canonical repository naming component>/<branch>` beneath that base. The repository component SHALL use the existing resolved `worktreeName` or canonical configured-name authority, omitting a conventional terminal `.git` suffix from the fallback bare source name, rather than otherwise guessing from the filesystem.
+
+#### Scenario: Created bare worktree is a repository-qualified sibling
+
+- **WHEN** a real bare repository whose canonical repository naming component is `example` is initialized without `--worktrees-dir` and then creates `feature/auth`
+- **THEN** the worktree is created at `<canonical-bare-parent>/example/feature/auth`
 - **AND** no checked-out worktree is created beneath the bare Git repository
 
 #### Scenario: Explicit bare base is used by create
+
 - **WHEN** a bare repository is initialized with an explicit valid worktree base and then creates a branch
 - **THEN** create uses the persisted explicit base rather than the parent default
+- **AND** applies the same `<canonical repository naming component>/<branch>` rule beneath it
 
 ### Requirement: Init rollback excludes unsafe and non-applicable paths from residual-state ownership
 Configured init SHALL retain managed-ignore state only for applicable safe managed paths that survive rollback and SHALL never treat a pre-existing parent or bare-root administrative path as invocation-owned residual state.

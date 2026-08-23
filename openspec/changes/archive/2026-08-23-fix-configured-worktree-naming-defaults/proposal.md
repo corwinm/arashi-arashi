@@ -27,6 +27,6 @@ None.
 ## Impact
 
 - **CLI repository:** configured destination planning, repository-name resolution reuse, coordinated child path projection, pre-mutation conflict checks, human/dry-run/JSON rendering, and cross-platform tests.
-- **Documentation repository:** correct the stale configured non-bare clone-worktree example and regenerate agent-readable exports.
+- **Documentation repository:** correct the stale configured non-bare clone-worktree example, document the bare namespace, and regenerate agent-readable exports.
 - **Meta repository:** OpenSpec artifacts and validation only.
 - **Compatibility:** the corrected rule applies only to destinations for newly created configured worktrees. Existing worktrees are neither renamed nor migrated; standalone behavior is unchanged.

@@ -20,7 +20,7 @@ Existing worktrees may already use either old layout. Their lifecycle must conti
 
 - Renaming or migrating an existing worktree or Git registration.
 - Adding a configurable naming policy, template engine, slash-flattening policy, alternate collision name, or path-length shortening scheme.
-- Guessing repository identity from directory basenames, `.git` paths, remotes, or surrounding filesystem layout.
+- Guessing repository identity from linked-checkout or clone-directory basenames, Git administrative paths, remotes, or surrounding filesystem layout beyond the documented bare-source fallback.
 - Changing configured child repository paths or standalone `.worktrees/<branch>` placement.
 
 ## Decisions
@@ -46,7 +46,7 @@ Alternative rejected: concatenating repository and branch with `-` is not an inj
 
 The planner receives the already resolved repository naming component: `worktreeName` when configured/resolved, otherwise the canonical configured repository name. It must not inspect a checkout basename or derive a name from the filesystem. That same value feeds path planning, diagnostics, tests, and output.
 
-Alternative rejected: filesystem basename fallback can vary between clones, aliases, linked worktrees, and platform path spellings and would create a second repository identity contract.
+Alternative rejected: linked-checkout or clone-directory basename fallback can vary between clones, aliases, linked worktrees, and platform path spellings and would create a second repository identity contract.
 
 ### 3. Freeze one authoritative parent destination for coordinated planning
 
