@@ -1088,6 +1088,33 @@ describe("cross-repository command contracts", () => {
     );
   });
 
+  test.each([
+    [
+      "json support",
+      (semantics: any) => (semantics.json.support = "unsupported"),
+    ],
+    [
+      "standalone support",
+      (semantics: any) => (semantics.standalone.support = "full"),
+    ],
+  ])("rejects controlled configure generic %s drift", async (_axis, mutate) => {
+    const root = await schemaV8Fixture();
+    const contractPath = join(root, "repos/arashi/contracts/cli-commands.json");
+    const contract = JSON.parse(await readFile(contractPath, "utf8"));
+    const configure = contract.commands.find(
+      (command: { path: string }) => command.path === "configure",
+    );
+    mutate(configure.semantics);
+    await writeFile(contractPath, JSON.stringify(contract));
+
+    expect((await checkContracts(root)).diagnostics).toContainEqual(
+      expect.objectContaining({
+        code: "CONFIGURE_CLI_POLICY_MISMATCH",
+        source: "repos/arashi/contracts/cli-commands.json",
+      }),
+    );
+  });
+
   test("requires docs and skills coverage with a reasoned VS Code exclusion", async () => {
     const root = await schemaV8Fixture();
     const contractPath = join(root, "repos/arashi/contracts/cli-commands.json");

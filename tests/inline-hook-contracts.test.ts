@@ -436,6 +436,32 @@ Selection screens, ordinary previews, diagnostics, cancellation, JSON, and activ
   });
 
   test.each([
+    "Selection screens include inline command bodies.",
+    "Setting lists include inline command bodies.",
+    "Cancellation output includes inline command bodies.",
+    "JSON inspection includes inline command bodies.",
+    "Active-file plans include inline command bodies.",
+  ])(
+    "rejects an extra body-bearing configure view: %s",
+    async (contradiction) => {
+      const contradictoryDisclosure = `${guidance}
+Visible plaintext command entry and the exact final preview are the only views that include inline command bodies.
+${contradiction}
+`;
+      const root = await fixture({
+        "repos/arashi-docs/public/llms-full.txt": contradictoryDisclosure,
+      });
+
+      const result = run(root);
+
+      expect(result.status).not.toBe(0);
+      expect(diagnosticCodes(result), output(result)).toContain(
+        "INLINE_GUIDANCE_SOURCE_DISCLOSURE_MISMATCH",
+      );
+    },
+  );
+
+  test.each([
     [
       "dedicated producer identity",
       "repos/arashi/contracts/inline-lifecycle-hooks.json",

@@ -314,7 +314,7 @@ const containsAll = (content: string, values: readonly string[]): boolean =>
   values.every((value) => content.includes(value));
 
 const claimNegation =
-  /\b(?:cannot|can't|do not|does not|must not|never|no|not|without)\b/i;
+  /\b(?:cannot|can't|do not|does not|must not|never|no|not|without|body-free)\b/i;
 
 function hasAffirmativeClaim(content: string, pattern: RegExp): boolean {
   return content
@@ -325,10 +325,15 @@ function hasAffirmativeClaim(content: string, pattern: RegExp): boolean {
 }
 
 function withoutConfigureBodyBearingException(content: string): string {
-  return content.replace(
-    /visible plaintext command entry[^.\n]{0,120}exact final preview[^.\n]{0,100}the only views?[^.\n]{0,100}include inline command bodies?\./gi,
-    "",
-  );
+  return content
+    .replace(
+      /visible plaintext command entry and the exact final preview are the only views? that include inline command bodies?\./gi,
+      "",
+    )
+    .replace(
+      /at final confirmation, the exact serialized candidate JSON contains the same bytes that save will persist, including plaintext persisted inline commands\./gi,
+      "",
+    );
 }
 
 const guidanceRequirementDefinitions: readonly GuidanceRequirement[] = [
@@ -489,7 +494,7 @@ const guidanceRequirementDefinitions: readonly GuidanceRequirement[] = [
         )) &&
       !hasAffirmativeClaim(
         withoutConfigureBodyBearingException(content),
-        /(?:outcomes?|previews?|diagnostics?|logs?)[^.\n]{0,120}(?:print|include|reveal|disclose|show|contain)[^.\n]{0,100}(?:inline\s+(?:snippet|command)|snippet\s+text|command\s+text)/i,
+        /(?:outcomes?|previews?|diagnostics?|logs?|selection screens?|setting lists?|cancellations?(?: output)?|JSON(?: inspection| output)?|active-file (?:lists?|plans?))[^.\n]{0,120}(?:print|include|reveal|disclose|show|contain)[^.\n]{0,100}(?:inline\s+(?:snippet|command)|snippet\s+text|command\s+text)/i,
       ),
   },
   {

@@ -810,7 +810,13 @@ function checkConfigurePolicy(
     return;
   }
   const semantics = object(command.semantics) ? command.semantics : {};
-  if (!isDeepStrictEqual(semantics.configure, configureSemanticPolicy))
+  const json = object(semantics.json) ? semantics.json : {};
+  const standalone = object(semantics.standalone) ? semantics.standalone : {};
+  if (
+    !isDeepStrictEqual(semantics.configure, configureSemanticPolicy) ||
+    json.support !== "full" ||
+    standalone.support !== "configured-only"
+  )
     add(
       diagnostics,
       "error",
@@ -4152,9 +4158,7 @@ export async function checkContracts(
         ? command.semantics.docs
         : {};
     if (p.expectation === "required") {
-      const configureOwner = "repos/arashi-docs/docs/workflows/config.md";
-      const requiredPage =
-        name === "configure" ? configureOwner : `${paths.docs}/${name}.md`;
+      const requiredPage = `${paths.docs}/${name}.md`;
       if (!(await exists(join(root, requiredPage))))
         add(
           d,
@@ -4165,10 +4169,9 @@ export async function checkContracts(
           name,
           "Required canonical command page is missing.",
         );
-      const indexPattern =
-        name === "configure"
-          ? /\/workflows\/config\/(?:#[^)\s]+)?(?:\)|\s|$)/
-          : new RegExp(`(?:\\./|/)?commands/${name}(?:\\.md|/|\\))`);
+      const indexPattern = new RegExp(
+        `(?:\\./|/)?commands/${name}(?:\\.md|/|\\))`,
+      );
       if (!indexPattern.test(index))
         add(
           d,
