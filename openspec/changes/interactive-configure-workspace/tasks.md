@@ -59,11 +59,11 @@
 - [x] 7.2 Recreate docs exports and extracted skill package in required order, then run meta unit/type/format/contracts gates and strict OpenSpec validation.
 - [x] 7.3 Reconcile durable #274 future-scope requirements so archived docs, skill, and shared-editor specs describe shipped configure behavior without weakening add's boundary.
 - [x] 7.4 Self-review each repository's complete base-to-head diff for scope, canonical reuse, inline-body boundaries, transaction ownership, generated artifacts, and drive-by changes.
-- [x] 7.5 Run independent repository-aware spec-compliance review before code/content-quality review on each exact clean child/meta head; batch supported findings and allow one exact-head confirmation cycle.
+- [ ] 7.5 Run independent repository-aware spec-compliance review before code/content-quality review on each exact clean child/meta head; batch supported findings and allow one exact-head confirmation cycle.
 
 ## 8. Open and validate coordinated PRs
 
-- [ ] 8.1 Commit and push CLI changes, open the child PR with a non-closing issue reference, and verify exact head/base/files, CI, and eligible review threads.
+- [x] 8.1 Commit and push CLI changes, open the child PR with a non-closing issue reference, and verify exact head/base/files, CI, and eligible review threads.
 - [x] 8.2 Commit and push docs changes, open the cross-linked child PR, and verify exact head/base/files, generation/deploy/semantic CI, and eligible review threads.
 - [x] 8.3 Commit and push skills changes, open the cross-linked child PR, and verify exact head/base/files, source/archive/package/security CI, and eligible review threads.
 - [ ] 8.4 Mark only evidenced OpenSpec tasks complete, commit/push the meta change, open the cross-linked non-closing proposal PR, and verify strict/meta/coordinated exact-head CI.
