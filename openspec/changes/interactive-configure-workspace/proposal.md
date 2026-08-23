@@ -33,5 +33,6 @@ Arashi validates `.arashi/config.json`, but users still need schema knowledge an
 - **CLI (`repos/arashi`)**: new command registration and implementation, generalized editor descriptors/adapters, prompt and transaction orchestration, sanitized JSON inspection, PTY/unit/integration tests, command contracts, README guidance, and generated completion/contract artifacts.
 - **Docs (`repos/arashi-docs`)**: configuration and command guidance, generated agent-readable exports, and repository-local semantic checks.
 - **Skills (`repos/arashi-skills`)**: focused workspace command guidance plus authored/extracted-package checks.
+- **VS Code (`repos/arashi-vscode`)**: explicit command-policy classification retaining `configure` as a terminal-owned interactive workflow rather than adding an incomplete editor mapping.
 - **Meta repository**: OpenSpec deltas, coordinated contract fixtures/checkers, and child-first delivery evidence.
 - No config schema expansion, generic schema-derived editor, implicit mutation, broad non-interactive setters, crash-safe replacement claim, native-helper expansion, or new filesystem-race guarantee is introduced.
