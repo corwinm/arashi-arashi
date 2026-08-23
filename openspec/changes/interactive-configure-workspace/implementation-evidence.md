@@ -29,6 +29,6 @@ At the final parent candidate:
 - strict OpenSpec validation and `git diff --check` passed;
 - exact-head review corrections reject both extra body-bearing views hidden in configure guidance and contradictory generic JSON/standalone classifications.
 
-The exact committed parent head receives a final independent review and current-head CI read-back before closeout.
+Closeout requires a current-head CI read-back and no unresolved review threads; those remote checks do not alter this committed evidence.
 
 No merge, auto-merge, archive, or force-push was performed while preparing this evidence.
