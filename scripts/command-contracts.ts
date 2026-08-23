@@ -459,6 +459,7 @@ const addMaterializationGuidanceRequirements: Array<{
   },
 ];
 const completionGuidanceRequirements: Array<{
+  forbiddenPhrases?: readonly string[];
   phrases: readonly string[];
   source: string;
 }> = [
@@ -479,11 +480,14 @@ const completionGuidanceRequirements: Array<{
     phrases: [
       "local and read-only",
       "200 ms whole-query budget",
-      "network requests",
-      "workspace state",
-      "hooks",
-      "prompt",
-      "child operations",
+      "It does not perform network requests or mutate workspace state.",
+      "It does not execute hooks, does not prompt, and does not start child operations.",
+    ],
+    forbiddenPhrases: [
+      "performs network requests",
+      "mutates workspace state",
+      "executes hooks",
+      "starts child operations",
     ],
   },
 ];
@@ -4972,7 +4976,10 @@ export async function checkContracts(
       const missing = requirement.phrases.filter(
         (phrase) => !normalized.includes(phrase.toLowerCase()),
       );
-      if (missing.length > 0)
+      const forbidden = (requirement.forbiddenPhrases ?? []).filter((phrase) =>
+        normalized.includes(phrase.toLowerCase()),
+      );
+      if (missing.length > 0 || forbidden.length > 0)
         add(
           d,
           "error",
@@ -4980,7 +4987,16 @@ export async function checkContracts(
           "COMPLETION_GUIDANCE_INVALID",
           requirement.source,
           "shell completion",
-          `Canonical completion guidance is missing: ${missing.join(", ")}.`,
+          [
+            missing.length > 0
+              ? `Canonical completion guidance is missing: ${missing.join(", ")}.`
+              : "",
+            forbidden.length > 0
+              ? `Canonical completion guidance contradicts the safety contract: ${forbidden.join(", ")}.`
+              : "",
+          ]
+            .filter(Boolean)
+            .join(" "),
         );
     }
 
