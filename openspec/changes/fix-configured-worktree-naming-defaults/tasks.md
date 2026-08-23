@@ -6,7 +6,7 @@
 - [x] 1.4 Add human, dry-run, and single-document JSON create tests proving success uses `data.repositories[].worktreePath`, dry-run uses `data.dryRunOutcome.plannedWorktrees[]`, collision failures use `error.details.conflict`, all modes report the same resolved parent and child destinations without recalculating paths per renderer, and parent/selected-child records preserve deterministic plan order.
 - [x] 1.5 Add preflight collision tests proving path or Git-registration conflicts block before managed-ignore writes, workspace/repository hooks, branch creation, `git worktree add`, directory creation, or other filesystem mutation, with no silent alternate destination; cover multiple simultaneous collisions and assert that the first record in deterministic plan order is reported.
 - [x] 1.6 Add real-Git compatibility coverage that registers existing worktrees under the inverted legacy layouts and proves list, status, switch, and remove remain metadata-driven, operable, and non-migrating.
-- [ ] 1.7 Wire built-CLI acceptance for corrected bare/non-bare parent and child paths into native macOS, Linux, and Windows validation before production implementation.
+- [ ] 1.7 Exercise the corrected bare/non-bare parent and child paths through built-CLI native macOS, Linux, and Windows acceptance before merge.
 
 ## 2. CLI Implementation (GREEN)
 
