@@ -69,12 +69,27 @@ async function checkSchema() {
   const required = Array.isArray(config.required) ? config.required : [];
   const defects = [
     config.additionalProperties !== false && "Config must remain closed",
-    !object(properties.worktreeNaming) && "Config must expose worktreeNaming",
+    !exact(properties.worktreeNaming, {
+      $ref: "#/definitions/WorktreeNamingConfig",
+      description: "Optional filesystem naming policy for configured create",
+    }) && "Config.worktreeNaming must reference the naming definition",
     required.includes("worktreeNaming") &&
       "worktreeNaming must remain optional",
+    Array.isArray(naming.required) &&
+      naming.required.length > 0 &&
+      "worktreeNaming fields must remain optional",
     naming.additionalProperties !== false && "worktreeNaming must be closed",
     !exact(Object.keys(namingProperties).sort(), ["branchSlashes", "style"]) &&
       "worktreeNaming fields drifted",
+    !object(namingProperties.style) ||
+    namingProperties.style.$ref !== "#/definitions/WorktreeNamingStyle"
+      ? "style must reference WorktreeNamingStyle"
+      : false,
+    !object(namingProperties.branchSlashes) ||
+    namingProperties.branchSlashes.$ref !==
+      "#/definitions/WorktreeNamingBranchSlashes"
+      ? "branchSlashes must reference WorktreeNamingBranchSlashes"
+      : false,
     !exact(style.enum, ["default", "branch", "repo-branch"]) &&
       "style enum drifted",
     !exact(slashes.enum, ["preserve", "flatten"]) &&
@@ -109,10 +124,9 @@ const detailedSources = [
   "repos/arashi-docs/public/llms-full.txt",
   "repos/arashi-skills/skills/arashi/references/commands/create.md",
 ];
-const compactSources = [
-  "repos/arashi/docs/configuration.md",
-  "repos/arashi-docs/public/llms.txt",
-];
+const cliSource = "repos/arashi/docs/configuration.md";
+const compactExportSource = "repos/arashi-docs/public/llms.txt";
+const compactSources = [cliSource, compactExportSource];
 const normalize = (content: string) =>
   content.replaceAll("`", "").replace(/\s+/g, " ").toLowerCase();
 function checkCore(source: string, content: string, detailed: boolean) {
@@ -137,6 +151,13 @@ function checkCore(source: string, content: string, detailed: boolean) {
       /omitt[^.\n]{0,240}default[^.\n]{0,160}preserve|omitt[^.\n]{0,240}preserve[^.\n]{0,160}default/i.test(
         content,
       ),
+    ],
+    [
+      "direct JSON-only scope",
+      plain.includes(".arashi/config.json") &&
+        plain.includes("direct") &&
+        plain.includes("not available") &&
+        plain.includes("aw configure"),
     ],
     [
       "exact branch identity",
@@ -191,19 +212,50 @@ function checkCore(source: string, content: string, detailed: boolean) {
           `missing ${topology} ${style} ${slashes} -> ${destination}`,
         );
     }
+  if (source === compactExportSource) {
+    for (const [topology, style, slashes, destination] of rows) {
+      const fragment = `${topology} ${style} + ${slashes} | ${destination}`;
+      if (!plain.includes(fragment)) {
+        add(
+          "WORKTREE_NAMING_MATRIX_MISMATCH",
+          source,
+          `missing ${topology} ${style} ${slashes} -> ${destination}`,
+        );
+      }
+    }
+  }
+  if (source === cliSource) {
+    for (const fragment of [
+      "branch produces feature/auth (or feature-auth when flattened)",
+      "repo-branch produces repo-feature/auth (or repo-feature-auth)",
+      "default uses the branch path for a non-bare configured repository and repo/feature/auth for a bare configured repository",
+    ]) {
+      if (!plain.includes(fragment)) {
+        add(
+          "WORKTREE_NAMING_MATRIX_MISMATCH",
+          source,
+          `missing exact CLI mapping: ${fragment}`,
+        );
+      }
+    }
+  }
   const contradictions = [
-    /style[^.\n]*(?:accepts?|supports?)[^.\n]*(?:current|custom|template)/i,
-    /branchslashes[^.\n]*(?:accepts?|supports?)[^.\n]*(?:strip|remove|custom)/i,
+    /style[^.\n]*(?:accepts?|supports?|includes?)[^.\n]*(?:current|custom|template|ticket)/i,
+    /`style`\s*:[^.\n]*(?:current|custom|template|ticket)/i,
+    /\bstyle\b\s+(?:is|values?\s+are)[^.\n]*(?:current|custom|template|ticket)/i,
+    /(?:another|additional)[^.\n]*style[^.\n]*(?:current|custom|template|ticket)/i,
+    /branchslashes[^.\n]*(?:accepts?|supports?|includes?)[^.\n]*(?:strip|remove|custom)/i,
+    /omitt[^.\n]{0,80}style[^.\n]{0,80}(?:selects?|uses?|means?)\s+`?(?:branch|repo-branch)\b/i,
+    /omitt[^.\n]{0,80}branchslashes[^.\n]{0,80}(?:selects?|uses?|means?)\s+`?(?:flatten|remove|strip)\b/i,
+    /(?<!not )available\s+(?:through|in)\s+interactive\s+`?aw configure/i,
+    /interactive\s+`?aw configure`?[^.\n]*(?:can|may|will)[^.\n]*(?:edit|configure)[^.\n]*worktreenaming/i,
+    /direct\s+json\s+edit(?:ing)?[^.\n]*(?:unnecessary|not required)/i,
     /(?:rewrites?|changes?)[^.\n]*git branch[^.\n]*feature-auth/i,
-    /(?:collision|conflict)[^.\n]*(?:may|can|will|retries?)[^.\n]*(?:append|use|choose)[^.\n]*suffix/i,
-    /(?:renames?|moves?|relocates?)[^.\n]*existing[^.\n]*worktree/i,
+    /(?:collision|conflict)[^.\n]*(?:may|can|will|retries?|falls?\s+back|chooses?)[^.\n]*(?:append|use|choose|suffix|another|alternate)/i,
+    /(?:naming|this setting)[^.\n]*(?:renames?|moves?|relocates?)[^.\n]*existing[^.\n]*worktree|(?:renames?|moves?|relocates?)[^.\n]*existing\s+registered\s+worktree/i,
     /standalone[^.\n]*(?:uses?|honors?|follows?)[^.\n]*worktreenaming/i,
   ];
-  if (
-    !source.endsWith("llms-full.txt") &&
-    !source.endsWith("llms.txt") &&
-    contradictions.some((pattern) => pattern.test(content))
-  )
+  if (contradictions.some((pattern) => pattern.test(content)))
     add(
       "WORKTREE_NAMING_GUIDANCE_CONTRADICTION",
       source,

@@ -147,6 +147,20 @@ describe("worktree naming cross-repository contract", () => {
         },
       ],
       [
+        "nested style required",
+        (schema) => {
+          schema.definitions.WorktreeNamingConfig.required = ["style"];
+        },
+      ],
+      [
+        "detached naming definition",
+        (schema) => {
+          schema.definitions.Config.properties.worktreeNaming = {
+            type: "string",
+          };
+        },
+      ],
+      [
         "style enum",
         (schema) => {
           schema.definitions.WorktreeNamingStyle.enum = ["default", "branch"];
@@ -235,6 +249,51 @@ describe("worktree naming cross-repository contract", () => {
       ],
     ];
     for (const [label, oldText, newText] of drifts) {
+      const root = await fixture();
+      await replace(root, source, oldText, newText);
+      expectRejected(root, label);
+    }
+  }, 20_000);
+  test("rejects polarity, closed-value, default, CLI destination, and generated contradictions", async () => {
+    const drifts: [string, string, string, string][] = [
+      [
+        "interactive reversal",
+        "repos/arashi-docs/docs/workflows/config.md",
+        "not available in interactive `aw configure`",
+        "available through interactive `aw configure`; direct JSON editing is unnecessary",
+      ],
+      [
+        "custom style",
+        "repos/arashi-docs/docs/workflows/config.md",
+        "`style`: `default | branch | repo-branch`",
+        "`style`: `default | branch | repo-branch | custom`",
+      ],
+      [
+        "wrong omission default",
+        "repos/arashi-docs/docs/workflows/config.md",
+        "Omitting `style` means `default`",
+        "Omitting `style` selects `repo-branch`",
+      ],
+      [
+        "CLI destination drift",
+        "repos/arashi/docs/configuration.md",
+        "`repo-feature/auth` (or `repo-feature-auth`)",
+        "`wrong-feature/auth` (or `wrong-feature-auth`)",
+      ],
+      [
+        "generated compact contradiction",
+        "repos/arashi-docs/public/llms.txt",
+        "Omitting `style` means `default`",
+        "Omitting `style` means `default`. Another valid style is `custom`",
+      ],
+      [
+        "skill contradiction",
+        "repos/arashi-skills/skills/arashi/references/commands/create.md",
+        "`default`, `branch`, and `repo-branch`",
+        "`default`, `branch`, `repo-branch`, and `custom`",
+      ],
+    ];
+    for (const [label, source, oldText, newText] of drifts) {
       const root = await fixture();
       await replace(root, source, oldText, newText);
       expectRejected(root, label);
