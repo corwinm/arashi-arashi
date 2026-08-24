@@ -4,7 +4,7 @@
 
 ### Requirement: Install shell integration into supported startup files
 
-The system SHALL provide `arashi shell install` to add or update one Arashi-managed block in supported shell startup files. For Bash and Zsh the managed block SHALL load the wrapper and separately source `command arashi completion <shell>`; for Fish it SHALL separately source both command outputs through native pipelines. `arashi shell init <shell>` SHALL remain wrapper-only. When installation replaces an older managed block, it SHALL remove stale wrapper and completion activation lines from that block together and write the current pair without duplicates. The system SHALL also provide the separate ownership-aware `arashi shell uninstall` command defined below.
+The system SHALL provide `arashi shell install` to add or update one Arashi-managed block in supported shell startup files. For Bash and Zsh the managed block SHALL load the wrapper and separately source `command arashi completion <shell>`; for Fish it SHALL separately source both command outputs through native pipelines. `arashi shell init <shell>` SHALL remain wrapper-only. When installation replaces an older managed block, it SHALL remove stale wrapper and completion activation lines from that block together and write the current pair without duplicates. The system SHALL also provide the separate conservative `arashi shell uninstall` command defined below.
 
 #### Scenario: Install writes managed shell integration
 
@@ -51,66 +51,54 @@ The system SHALL provide `arashi shell install` to add or update one Arashi-mana
 
 ## ADDED Requirements
 
-### Requirement: Shell-only uninstall removes only exact complete managed blocks
+### Requirement: Shell-only uninstall removes one exact complete managed block
 
-Arashi SHALL expose equivalent `aw shell uninstall` and `arashi shell uninstall` commands. The command MUST inspect only the startup file selected by the same deterministic supported-shell policy as shell install, MUST remove only a complete Arashi-managed block bounded by exactly one canonical begin marker and one later canonical end marker, and MUST preserve every byte before and after the owned range. The marker pair owns its interior so current and historical generated bodies remain removable without semantic body parsing. It MUST reject malformed, partial, nested, overlapping, reversed, or duplicate marker state before writing the candidate.
+Arashi SHALL expose equivalent `aw shell uninstall` and `arashi shell uninstall` commands. The command SHALL inspect only the startup target selected by the same deterministic supported-shell policy as shell install, remove only one complete range bounded by exactly one canonical begin marker and one later canonical end marker, and preserve every byte before and after the range. Missing markers SHALL be a no-op. Orphaned, duplicate, nested, overlapping, or reversed markers SHALL refuse before writing.
 
 #### Scenario: One exact managed block exists
 
-- **WHEN** the deterministic target contains exactly one complete canonically marked Arashi block
-- **THEN** dry-run identifies that exact block without mutation
-- **AND** confirmed apply removes exactly its bytes while preserving all outside bytes byte-for-byte
+- **WHEN** the deterministic target contains exactly one complete canonical Arashi marker pair
+- **THEN** dry-run identifies the exact range without mutation
+- **AND** confirmed apply removes only that range while preserving every outside byte
 
 #### Scenario: No managed block exists
 
-- **WHEN** all deterministic candidates contain no managed markers
-- **THEN** the command reports no managed integration to remove
-- **AND** no startup file is created, rewritten, or deleted
+- **WHEN** the deterministic target contains no Arashi marker
+- **THEN** shell uninstall reports nothing to remove
+- **AND** does not create, rewrite, or delete a startup file
 
-#### Scenario: Marker state is malformed
+#### Scenario: Marker state is ambiguous
 
-- **WHEN** a candidate has a missing marker, duplicate marker or block, nesting, overlap, or reversed marker order
-- **THEN** the command exits non-zero before writing any candidate
-- **AND** identifies the affected path without printing unrelated file contents
+- **WHEN** the deterministic target contains orphaned, duplicate, nested, overlapping, or reversed markers
+- **THEN** shell uninstall exits non-zero before writing
+- **AND** does not scan other profile-like files for alternatives
 
-#### Scenario: Similar file exists outside deterministic candidates
+### Requirement: Shell uninstall uses conservative human consent
 
-- **WHEN** another profile or startup-like file contains Arashi text outside the finite supported candidate set
-- **THEN** shell uninstall does not scan, report, or mutate that file
-
-### Requirement: Shell uninstall uses product confirmation and inspection policy
-
-Shell uninstall SHALL require human confirmation unless `--yes` or `-y` is supplied; `--dry-run`/`-n` and `--json`/`-j` SHALL inspect without prompting or mutation; and JSON combined with yes SHALL be rejected before mutation. The command SHALL never remove executable payload, PATH state, workspace configuration, repositories, worktrees, or project files.
+Shell uninstall SHALL support `--dry-run`/`-n` and `--yes`/`-y`, use default-no confirmation for interactive apply, require `--yes` for non-interactive apply, and SHALL NOT expose uninstall JSON or force options. Shell-only removal SHALL never touch executable payload, PATH state, ownership manifests, workspaces, repositories, worktrees, project files, or Git metadata.
 
 #### Scenario: User declines shell removal
 
-- **WHEN** a valid plan is shown and the user declines confirmation
-- **THEN** all startup-file bytes remain unchanged
-- **AND** the executable installation and project state remain untouched
+- **WHEN** one valid block is planned and the user declines confirmation
+- **THEN** every startup-file byte and all product/project state remain unchanged
 
-#### Scenario: Shell uninstall runs in JSON mode
+#### Scenario: Shell-only apply succeeds
 
-- **WHEN** `aw shell uninstall --json` inspects valid or malformed state
-- **THEN** stdout contains exactly one stable result or error envelope
-- **AND** no prompt, profile write, or product uninstall occurs
+- **WHEN** one valid block is preflighted and the user confirms
+- **THEN** only the exact marker-through-marker bytes are removed
+- **AND** executable, PATH, manifest, workspace, and project state remain unchanged
 
-### Requirement: Full direct uninstall removes only verified managed integration
+### Requirement: Direct product uninstall includes only exact safe managed blocks
 
-Whole-product direct uninstall SHALL inspect the deterministic finite supported startup-file candidate set and include every complete uniquely marked Arashi-managed block, including runtime shell integration installed after the direct installer wrote its ledger. Marker ownership authorizes only marker-through-marker removal, never whole-file ownership. Any partial, malformed, reversed, nested, overlapping, duplicate, unreadable, symlinked, or race-changed candidate SHALL block the whole transaction before payload mutation. Unmarked shell text and files outside the finite candidate set SHALL be preserved.
+A valid current official direct uninstall SHALL inspect only deterministic supported startup targets and may remove complete unique canonical Arashi marker ranges. Any malformed or ambiguous marker state SHALL block shell mutation before payload mutation; unmarked shell text and files outside the deterministic target set SHALL remain unchanged.
 
-#### Scenario: Complete managed block remains present
+#### Scenario: Exact block remains during product uninstall
 
-- **WHEN** a deterministic candidate contains one complete canonical marker pair
-- **THEN** confirmed full uninstall removes it transactionally
-- **AND** rollback restores the exact prior startup-file bytes if a later pre-commit phase fails
+- **WHEN** direct product preflight finds one complete canonical marker pair in a deterministic target
+- **THEN** the human plan identifies that exact block for removal
+- **AND** preserves all outside profile bytes
 
-#### Scenario: Managed marker grammar is ambiguous
+#### Scenario: Product uninstall finds malformed markers
 
-- **WHEN** a deterministic candidate has ambiguous or malformed marker state
-- **THEN** full uninstall fails closed before changing integration or payload
-- **AND** directs the user to reinstall, migrate, or perform bounded manual remediation
-
-#### Scenario: Unmarked integration predates the direct install
-
-- **WHEN** equivalent shell text existed before installation without the exact managed marker pair
-- **THEN** full uninstall preserves it unchanged
+- **WHEN** direct product preflight finds ambiguous marker grammar
+- **THEN** it refuses before changing shell, PATH, manifest, or payload state

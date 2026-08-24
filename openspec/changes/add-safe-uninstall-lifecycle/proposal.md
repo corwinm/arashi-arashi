@@ -1,44 +1,56 @@
+# Change: Add a conservative uninstall MVP
+
 ## Why
 
-Arashi's official direct installers can add a multi-entrypoint executable payload, persistent PATH state, and managed shell integration, but users currently have no ownership-aware way to reverse those changes. Ad-hoc deletion is unsafe because the current ledger proves only alias ownership and does not distinguish installer-added PATH/profile state from pre-existing user state; a first-class uninstall lifecycle is needed before Arashi can promise clean, trustworthy removal.
+Arashi has official install and update paths but no official removal path. Users currently have to infer which executable files, package-manager state, PATH line, or shell block to remove, which risks deleting project data or corrupting an installation they do not own.
+
+The first proposal attempted to solve every historical install, transaction phase, recovery state, JSON consumer, hosted-helper trust boundary, documentation export, and packaged-agent workflow at once. That scope is disproportionate to the immediate need. This revision defines a smaller fail-closed MVP: remove only state proven by a current official direct-install manifest, delegate confidently identified package-manager installs, and refuse legacy/manual/modified/ambiguous state.
 
 ## What Changes
 
-- Add `aw uninstall` / `arashi uninstall` with human confirmation, `--dry-run`, `--yes`, and inspection-only JSON behavior; preserve every workspace, repository, worktree, and project configuration file.
-- Add hosted POSIX and PowerShell uninstall scripts so a verified direct installation can be removed when the CLI binary is unavailable or must exit before its own payload is deleted.
-- Expand direct-installer ownership metadata from alias-only schema v1 to a versioned whole-installation contract covering every payload destination plus only those PATH/profile mutations Arashi actually created.
-- Make direct uninstall a preflighted, retryable transaction: reject ambiguous or modified ownership, remove only proven state, roll back recoverably on failure, preserve unrelated neighbors, and support deterministic retry after interruption or partial completion.
-- Intercept npm-managed uninstall at the shared JavaScript package boundary, delegate removal only to a confidently detected owning package manager, and otherwise return exact manual commands without deleting package-manager-owned files directly.
-- Add `aw shell uninstall` / `arashi shell uninstall` to remove only complete, unambiguous Arashi-managed integration blocks while preserving all surrounding startup-file bytes.
-- Add `/uninstall` and `/uninstall.ps1` hosted routes, command and installation guidance, generated agent-readable exports, packaged skill guidance, completion, generated CLI policy, and coordinated semantic validation.
-- Treat legacy alias-only ledgers, manual installs, malformed state, modified payloads, pre-existing PATH entries, and ambiguous package managers as fail-closed migration or manual-remediation cases rather than adopting or deleting them.
+- Add equivalent `aw uninstall` and `arashi uninstall` commands with `--dry-run` and `--yes`.
+- Add equivalent `aw shell uninstall` and `arashi shell uninstall` commands for exact managed shell blocks.
+- Add a minimal schema-v2 direct-install manifest containing exact installed files and the exact installer-added PATH mutation.
+- Update official POSIX and PowerShell installers to write that manifest for new or refreshed direct installations.
+- Bundle standalone POSIX and PowerShell uninstall helpers with release artifacts so direct removal remains available when the CLI cannot run.
+- Detect confidently owned npm, pnpm, Yarn classic, Bun, and Vite+ global installs and delegate to exactly one owning package manager.
+- Preflight all direct-install state before mutation, retain the manifest until cleanup succeeds, and allow reruns to treat already-absent manifest-listed files as completed work.
+- Preserve workspaces, repositories, worktrees, `.arashi.yaml`, Git metadata, configuration, unrelated profile bytes, and unrelated install-directory content.
+- Synchronize command discovery, completions, release packaging, checksums, concise CLI docs, and proportional public documentation.
+
+## Explicit Non-Goals
+
+- No uninstall `--json` contract in this MVP.
+- No generalized transaction journal, tombstones, rollback engine, or phase API.
+- No automatic adoption or migration of schema-v1, manual, partial, or ambiguous installations.
+- No force bypass for modified or unproven files.
+- No helper downloaded dynamically during uninstall and no separate remote-helper trust protocol.
+- No automatic cleanup of every historical installer variation.
+- No new packaged-skill uninstall workflow or feature-specific docs/skills semantic-checking framework.
 
 ## Capabilities
 
 ### New Capabilities
 
-- `cli-uninstallation`: User-facing uninstall command behavior, channel detection, confirmation/inspection contracts, preserved data boundaries, results, and recovery guidance.
-- `installer-ownership-lifecycle`: Whole-installation ownership schema, hosted uninstall scripts, preflight, deferred self-removal, transactional deletion, rollback, interruption, and retry semantics across POSIX and Windows.
+- `cli-uninstallation`: Conservative channel-aware product uninstall planning, consent, delegation, direct helper handoff, refusal, and preservation.
+- `installer-ownership-lifecycle`: Minimal current-direct-install manifest, preflight, manifest-last cleanup, and rerunnable partial progress.
 
 ### Modified Capabilities
 
-- `executable-aliases`: Extend direct-install ownership from aliases to the complete canonical-plus-alias payload and keep uninstall parity through both executable names.
-- `windows-powershell-installer`: Record removable Windows payload/PATH ownership and add native deferred uninstall with rollback and fresh-shell acceptance.
-- `npm-binary-installation`: Intercept uninstall before native first-use dispatch and delegate only to a confidently detected owning package manager.
-- `shell-integration`: Add safe managed-block removal separate from whole-product uninstall.
-- `shell-completions`: Include the new top-level and shell subcommands through the canonical generated completion model.
-- `machine-readable-cli-output`: Define inspection-only uninstall JSON envelopes, stdout isolation, stable errors, and apply rejection.
-- `cli-option-conventions`: Publish uninstall confirmation, dry-run, JSON, and conflict policy through the typed command contract.
-- `cross-repo-command-contracts`: Require docs, generated exports, packaged skills, completion, and reasoned VS Code exclusion to agree with the uninstall contract.
-- `docs-workflow-guidance-sections`: Document safe channel-specific removal, migration/refusal cases, shell-only removal, and preserved user data.
-- `docs-agent-readable-exports`: Propagate uninstall guidance and hosted recovery routes to generated Markdown and LLM exports.
-- `arashi-skill-guidance`: Teach agents to inspect first, preserve project state, and use the channel-appropriate official removal path without broad filesystem deletion.
+- `executable-aliases`: Package both executable names and bundled uninstall helpers as one current direct-install payload.
+- `windows-powershell-installer`: Write the minimal Windows direct-install manifest and package/run the PowerShell helper.
+- `npm-binary-installation`: Intercept uninstall before native dispatch and delegate to one confidently proven package manager.
+- `shell-integration`: Add exact managed-block-only shell uninstall while preserving all canonical install scenarios.
+- `shell-completions`: Discover and generate completion for the new command paths and options.
+- `cross-repo-command-contracts`: Publish the new command inventory and semantics from the CLI producer.
+- `docs-workflow-guidance-sections`: Add concise install/removal/troubleshooting guidance and hosted static helper routes without a new semantic-checker framework.
 
 ## Impact
 
-- `repos/arashi`: command registration and typed/generated contracts; npm wrapper/package-manager mapping; POSIX and PowerShell installers/uninstallers; ownership ledger migration; shell integration; completion; release/package assets; direct/npm/native Windows acceptance tests.
-- `repos/arashi-docs`: uninstall command and installation guidance, Netlify hosted-script redirects, semantic checks, and generated public/LLM exports.
-- `repos/arashi-skills`: smallest setup/troubleshooting references, semantic source/package checks, and regenerated packaged skill artifact.
-- Meta-repository: OpenSpec deltas plus a registered coordinated uninstall-contract checker and controlled mismatch fixtures.
-- `repos/arashi-vscode` is intentionally unchanged at runtime; the generated command policy and coordinated checker must record that machine installation removal is outside editor-command scope.
-- No project configuration schema, workspace topology, repository content, or worktree data is removed or migrated.
+- **Repositories:** `arashi`, `arashi-docs`, and this coordinating meta-repository.
+- **CLI:** New product and shell-only uninstall commands; no uninstall JSON mode.
+- **Installers/releases:** Minimal manifest v2 and bundled POSIX/PowerShell helpers.
+- **Legacy users:** A schema-v1 or unmanifested direct install must be refreshed with the current official installer before automatic removal.
+- **Safety:** Automatic deletion remains limited to exact current manifest-owned files, one exact installer-added PATH mutation, and exact managed shell blocks.
+
+Tracks #329.

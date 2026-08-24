@@ -1,68 +1,45 @@
-## 1. RED: Ownership and public command contracts
+## 1. RED: Reduced ownership and command contract
 
-- [ ] 1.1 Add failing closed-schema tests for POSIX and Windows ledger v2 payload roles, hashes, directory provenance, created-versus-pre-existing mutations, unknown fields, duplicate/escaping paths, symlinks/reparse points, and unsupported platforms.
-- [ ] 1.2 Add failing installer/update migration tests for v1-to-v2 complete payload replacement, v2 provenance carry-forward, refusal of malformed/manual/modified state, and preservation of unproven historical PATH/profile/shell state.
-- [ ] 1.3 Add failing command registration and wrapper tests for `aw`/`arashi uninstall`, `shell uninstall`, pre-native interception, `-n/-j/-y` parity, JSON/yes rejection, non-TTY confirmation, and no workspace discovery.
-- [ ] 1.4 Add failing exact JSON schema tests for all channels, nullable fields, arrays, owner commands, actions, warnings, preserved scopes, every transaction error phase including `preflighted`/`backed-up`, equal-target `path < profile < shell` ordering, stdout isolation, and structured errors.
-- [ ] 1.5 Add failing generated-contract and completion freshness tests for both commands, aliases/conflicts, inspection-only JSON, workspace independence, docs/skills requirements, and reasoned VS Code exclusion.
+- [ ] 1.1 Add failing tests for the closed minimal manifest: schema/channel/platform, exact file roles/digests, duplicate or escaping paths, unknown fields, symlinks/reparse points, and installer PATH provenance.
+- [ ] 1.2 Add failing tests proving present modified files refuse, absent manifest-listed files are rerunnable no-ops, all blockers precede mutation, and the manifest is removed last.
+- [ ] 1.3 Add failing wrapper-boundary tests for exact npm, pnpm, Yarn classic, Bun, and Vite+ global removal argv; conflicting/unsupported evidence must refuse without direct deletion.
+- [ ] 1.4 Add failing command discovery and option tests for `uninstall` and `shell uninstall` through both executable names with only `--dry-run`/`-n` and `--yes`/`-y`; uninstall JSON and force options remain unsupported.
 
-## 2. RED: Shell, package-manager, and transaction safety
+## 2. RED: Platform helpers and shell removal
 
-- [ ] 2.1 Add failing byte-level shell tests for current/legacy complete blocks, absence, newline/separator variants, outside-byte preservation, selected shell target, finite full-uninstall candidates, and duplicate/orphan/reversed/nested/race/symlink failures.
-- [ ] 2.2 Add failing owner-detection tests for npm, pnpm, Yarn, Bun, and Vite+; exact uninstall argv; conflicting/unknown/unavailable evidence; deterministic candidate guidance; and neutral working-directory delegation.
-- [ ] 2.3 Add failing packed-package process tests proving both shims intercept uninstall without downloading a native binary, require consent, keep JSON non-mutating, propagate manager exits, and never directly delete package-owned files.
-- [ ] 2.4 Add failing direct planner tests for exact ledger/payload/PATH/profile/shell preflight, deterministic plans, unrelated-neighbor preservation, modified/legacy/manual refusal, transaction-path collisions, and revalidation races.
-- [ ] 2.5 Add failing journal tests for every phase, durable transitions, exact backups, interruption/retry, post-ledger retry authority, missing-without-evidence refusal, rollback success/failure, tri-state observation, completed-journal cleanup, repeated already-absent success, partial-state idempotency/refusal, and empty-created-directory removal.
-- [ ] 2.6 Add failing POSIX helper integration tests for standalone recovery with the CLI unavailable, parent-PID wait/timeout, HUP/INT/TERM interruption, detached self-removal, exact profile rewrites, injected phase failures, retained recovery evidence, and script self-cleanup.
-- [ ] 2.7 Add failing PowerShell 5.1/native Windows tests for standalone recovery with the CLI unavailable, locked self-removal, exact User PATH provenance/removal, fresh PowerShell/CMD/Git Bash observation, interruption, rollback/retry, reparse refusal, broadcast warnings, and test-state restoration.
+- [ ] 2.1 Add failing POSIX helper tests for explicit/default install directory, complete preflight, default-no confirmation, `--dry-run`, `--yes`, modified-file refusal, exact PATH bytes, absent owned files, manifest-last cleanup, parent wait, and temporary self-cleanup.
+- [ ] 2.2 Add equivalent PowerShell contract tests for exact user-PATH entry spelling/scope, `created: false` preservation, reparse-point refusal, parent wait, and temporary self-cleanup.
+- [ ] 2.3 Add failing shell-only tests for one exact complete managed block, missing no-op, malformed/duplicate/nested/reversed refusal, outside-byte preservation, deterministic targets, and executable/PATH/project preservation.
+- [ ] 2.4 Add failing integration tests proving direct product uninstall removes only manifest-owned files, exact safe PATH state, and exact managed blocks while preserving workspaces, repositories, worktrees, `.arashi.yaml`, Git metadata, unrelated profile bytes, and unrelated install-directory files.
+- [ ] 2.5 Add failing CLI-unavailable tests that execute the bundled POSIX/PowerShell helper without invoking the installed CLI.
 
-## 3. RED: Documentation, skills, routes, and coordination
+## 3. GREEN: Minimal manifest and installers
 
-- [ ] 3.1 Add failing CLI documentation tests for dedicated uninstall command-list pages, command help examples, installer/recovery scripts, migration, and project-preservation guidance.
-- [ ] 3.2 Add failing docs semantic/freshness fixtures for canonical workflow pages, Netlify route forms, command indexes, generated Markdown routes, `/llms.txt`, and `/llms-full.txt`.
-- [ ] 3.3 Add failing skill source and extracted-package fixtures for channel detection, inspection/consent, shell-only scope, exact manager commands, migration, project preservation, and rejection of broad deletion.
-- [ ] 3.4 Add failing meta controlled-mismatch fixtures and reachability tests for CLI contract, docs, generated exports, packaged skill, completion, hosted routes, and intentional VS Code exclusion through stable aggregates.
-- [ ] 3.5 Record focused RED evidence for tasks 1.1-3.4 before editing production code, authored docs, generated artifacts, or semantic checker implementations.
+- [ ] 3.1 Implement the shared manifest parser, validator, deterministic planner, and manifest-last apply semantics.
+- [ ] 3.2 Update `scripts/install.sh` to install the current POSIX payload/helper and atomically write the minimal manifest without claiming pre-existing PATH state.
+- [ ] 3.3 Update `scripts/install.ps1` to install the current Windows payload/helper and atomically write equivalent user-PATH provenance.
+- [ ] 3.4 Make an official reinstall/refresh replace the complete direct payload and establish schema v2; refuse to adopt unknown pre-existing files or persistent mutations.
 
-## 4. Implement ownership and direct-uninstall core
+## 4. GREEN: Commands, delegation, and helpers
 
-- [ ] 4.1 Implement the typed closed ledger-v2 producer/parser/validator and generated executable-distribution ownership policy from the RED fixtures.
-- [ ] 4.2 Expand POSIX and PowerShell install/update transactions to write v2 atomically, preserve mutation provenance, migrate valid v1 only through complete replacement, and refuse unsafe state.
-- [ ] 4.3 Implement workspace-independent channel discovery, direct planning, deterministic human/JSON rendering, stable errors, confirmation precedence, and equivalent `aw`/`arashi` registration.
-- [ ] 4.4 Implement the durable journal, exact backups, phase engine, revalidation, rollback, retry, final observation, and conservative empty-directory handling.
-- [ ] 4.5 Implement POSIX and PowerShell uninstall helpers, hosted recovery options, parent-exit handoff, helper cleanup, and release packaging/checksum ownership.
-- [ ] 4.6 Run focused ownership, planner, journal, POSIX, and PowerShell GREEN tests and reconcile every failure without weakening safety assertions.
+- [ ] 4.1 Register `aw uninstall`/`arashi uninstall` and `aw shell uninstall`/`arashi shell uninstall` with human dry-run/consent behavior and no uninstall JSON mode.
+- [ ] 4.2 Intercept package-manager uninstall before native first-use dispatch and delegate exactly once to the proven owner.
+- [ ] 4.3 Implement bundled POSIX and PowerShell helpers using the shared manifest contract and explicit/deterministic install-directory lookup only.
+- [ ] 4.4 Implement temporary helper staging, parent-PID wait, local manifest revalidation, manifest-last cleanup, and narrow temporary self-removal.
+- [ ] 4.5 Implement exact managed shell-block removal and integrate safe exact blocks into direct product removal without scanning arbitrary files.
 
-## 5. Implement shell and package-manager paths
+## 5. Generated contracts, release assets, and proportional docs
 
-- [ ] 5.1 Extract the shared strict marker scanner/byte-preserving rewriter and implement confirmed `shell uninstall` plus finite full-uninstall shell discovery.
-- [ ] 5.2 Refactor package-manager detection to operation-neutral evidence and implement exact npm/pnpm/Yarn/Bun/Vite+ delegation, ambiguity guidance, and neutral-cwd spawn behavior.
-- [ ] 5.3 Intercept uninstall in the shared JavaScript wrapper before first-use native dispatch and preserve both generated shim paths.
-- [ ] 5.4 Run focused shell, owner-detection, and packed-package GREEN suites through real process boundaries.
+- [ ] 5.1 Update typed command discovery/semantics and regenerate CLI command contracts and Bash/Zsh/Fish/PowerShell completion.
+- [ ] 5.2 Update executable-distribution, package-release, checksum, and release-archive producers so each platform includes its bundled helper.
+- [ ] 5.3 Add concise CLI README/install/command documentation covering channel detection, inspection/consent, exact manager commands, legacy refresh, refusal, helper recovery, and preserved data.
+- [ ] 5.4 Add proportional public uninstall and shell-uninstall pages plus static POSIX/PowerShell helper routes using existing docs generation/validation infrastructure.
+- [ ] 5.5 Do not add packaged-skill uninstall guidance, uninstall JSON exports, or new feature-specific docs/skills semantic frameworks in this MVP.
 
-## 6. Generate CLI contracts and completion
+## 6. Verification and delivery
 
-- [ ] 6.1 Add typed command/option/JSON/docs/skills/completion/VS Code policy and regenerate `contracts/cli-commands.json` through its producer.
-- [ ] 6.2 Advance executable-distribution ownership through its typed producer and regenerate checked-in artifacts; never hand-edit generated JSON.
-- [ ] 6.3 Regenerate Bash, Zsh, Fish, and PowerShell completion and verify real-shell parity for both executable names without lifecycle side effects.
-- [ ] 6.4 Run CLI contract, schema, completion, typecheck, lint, build, and focused process tests; verify second generation is byte-stable.
-
-## 7. Implement docs, skills, routes, and semantic enforcement
-
-- [ ] 7.1 Add CLI-local command docs and README installation/removal guidance, keeping exhaustive transactional internals in contracts rather than user prose.
-- [ ] 7.2 Add website uninstall and shell-uninstall command pages, proportional install/troubleshooting workflow guidance, all four Netlify routes, indexes, and canonical exact manager commands.
-- [ ] 7.3 Regenerate Markdown routes, `/llms.txt`, and `/llms-full.txt`; add the focused docs checker to the stable fail-closed aggregate and satisfy controlled fixtures.
-- [ ] 7.4 Update the smallest authored skill installation/troubleshooting reference, package it, register focused semantic checking, and satisfy source plus extracted-package fixtures without expanding `SKILL.md` unnecessarily.
-- [ ] 7.5 Add the meta registered uninstall checker and satisfy coordinated controlled-mismatch and aggregate-reachability tests without feature-specific workflow steps.
-- [ ] 7.6 Run canonical docs validation, docs stable aggregate, skills source/package aggregates, and meta local/CI contract entrypoints against coordinated branches.
-
-## 8. Review, PRs, and pre-archive delivery gates
-
-- [ ] 8.1 Perform a read-only pre-commit review of each exact staged child diff against the approved design/specs and surrounding call sites; resolve supported findings before each commit.
-- [ ] 8.2 Run the final full CLI suite plus POSIX installer/uninstaller acceptance after the final source edit; preserve exact logs and verify all child worktrees are clean after commits.
-- [ ] 8.3 Run independent complete spec-compliance review, then bounded code/content-quality review, reconciling blockers with new focused RED tests before fixes.
-- [ ] 8.4 Push and open cross-linked CLI, docs, and skills PRs early with non-closing references to issue #329; keep the proposal/meta PR open and as the sole eventual closing owner.
-- [ ] 8.5 Verify each child PR exact head, complete CI, eligible feedback across comments/reviews/threads, mergeability, and reviewed contract evidence.
-- [ ] 8.6 Run exact-version published POSIX/npm acceptance against `/uninstall` and both entrypoints; preserve all workspace/project/unrelated fixture bytes.
-- [ ] 8.7 Run the same-version manual native Windows acceptance for `/uninstall.ps1`, locked self-removal, persistent PATH, fresh PowerShell/CMD/Git Bash resolution, rollback, and host-state restoration.
-- [ ] 8.8 After approved child merges, verify child `main` contains reviewed heads, rerun coordinated meta validation against actual child `main`, reconcile all implementation evidence in this checklist, and confirm every pre-archive task is truthfully complete before OpenSpec archive/sync and final meta closeout.
+- [ ] 6.1 Run focused RED/GREEN suites, full CLI tests, typecheck, lint, formatting, command/completion/distribution freshness, POSIX installer/helper tests, and native Windows installer/helper acceptance.
+- [ ] 6.2 Stage only owned files and perform the destructive lifecycle self-review: complete preflight, exact identity, symlink/reparse refusal, package-manager boundary, manifest-last retry, shell/profile byte preservation, user-data preservation, and truthful partial-failure output.
+- [ ] 6.3 Run strict OpenSpec validation and an independent scope/spec review against the reduced non-goals before implementation commits.
+- [ ] 6.4 Open child PRs, cross-link issue #329 and proposal PR, verify exact-head CI, and merge child-first.
+- [ ] 6.5 Archive the OpenSpec change, synchronize canonical capabilities, merge the meta PR last, verify issue closure, and clean the coordinated worktree/branches.

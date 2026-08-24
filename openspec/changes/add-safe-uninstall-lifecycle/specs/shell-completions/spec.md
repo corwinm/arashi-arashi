@@ -2,39 +2,17 @@
 
 ## ADDED Requirements
 
-### Requirement: Generated completion includes uninstall command surfaces
+### Requirement: Generated completion includes conservative uninstall paths
 
-Canonical CLI metadata and every generated Bash, Zsh, Fish, and PowerShell completion artifact SHALL include top-level `uninstall` and nested `shell uninstall` for both `aw` and `arashi`. Completion SHALL derive options and aliases from the typed command model, including `--dry-run`/`-n`, `--yes`/`-y`, and `--json`/`-j`, and SHALL NOT execute ownership discovery, scan profile files, invoke package managers, download a binary, prompt, or mutate state.
+Bash, Zsh, Fish, and PowerShell completion generated from live CLI discovery SHALL include `uninstall` and `shell uninstall` for both executable names. Product and shell-only uninstall SHALL expose `--dry-run`/`-n` and `--yes`/`-y`, and SHALL NOT advertise uninstall JSON or force options.
 
-#### Scenario: Top-level uninstall is completed
+#### Scenario: Product uninstall completion is requested
 
-- **WHEN** a user completes `aw un` or `arashi un` in a supported shell
-- **THEN** generated completion offers `uninstall` from canonical command metadata
-- **AND** both executable names expose equivalent option completion
+- **WHEN** completion is generated for either `aw uninstall` or `arashi uninstall`
+- **THEN** it offers only the live MVP options and their canonical aliases
 
-#### Scenario: Shell uninstall is completed
+#### Scenario: Shell uninstall completion is requested
 
-- **WHEN** a user completes after `aw shell` or `arashi shell`
-- **THEN** generated completion includes `uninstall` alongside existing shell subcommands
-- **AND** its options match the typed shell-uninstall contract
-
-#### Scenario: Completion runs where installation state is malformed
-
-- **WHEN** completion is requested with missing, legacy, malformed, or modified ownership state
-- **THEN** static command and option candidates are still returned safely
-- **AND** no uninstall preflight or mutation path runs
-
-### Requirement: Completion generation and real-shell acceptance enforce parity
-
-Source, checked-in generated artifacts, packaged outputs, and real-shell acceptance SHALL agree on the new command paths and options. Drift or a manually edited completion artifact MUST fail deterministic generation validation.
-
-#### Scenario: Generated artifact is stale
-
-- **WHEN** canonical metadata includes uninstall but a checked-in shell artifact omits it or exposes conflicting aliases
-- **THEN** completion generation validation exits unsuccessfully with the differing artifact
-
-#### Scenario: Real shells exercise both entrypoints
-
-- **WHEN** completion acceptance runs in supported real Bash, Zsh, Fish, and PowerShell environments
-- **THEN** `aw` and `arashi` produce equivalent uninstall command and option candidates
-- **AND** completion produces no filesystem or package-manager side effects
+- **WHEN** completion is generated below the `shell` command
+- **THEN** `uninstall` appears beside existing shell subcommands
+- **AND** generated completion freshness passes without hand-edited command tables

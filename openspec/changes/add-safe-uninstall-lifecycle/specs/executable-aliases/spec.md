@@ -2,36 +2,32 @@
 
 ## ADDED Requirements
 
-### Requirement: Canonical and alias payloads share v2 uninstall ownership
+### Requirement: Official direct payload includes one bundled uninstall helper
 
-Official direct installations SHALL treat the canonical executable, native binary, every canonical wrapper, and every `aw` alias wrapper as one schema-v2-owned payload. The ledger SHALL record every installed payload destination and SHA-256 hash, selected install directory, release, channel, and exact installer-created PATH/profile/shell mutations. The ledger itself is derived transactional metadata outside the payload array, and a deferred uninstall helper is transient verified execution state staged only when uninstall begins; neither is an install-time hashed payload destination. Alias marker or historical schema-v1 evidence alone SHALL NOT authorize update or deletion. Full uninstall invoked through either executable name MUST plan, confirm, remove, roll back, retry, and report equivalent state.
+Each official direct-install platform payload SHALL include the canonical executable/native payload, canonical `arashi` wrappers, `aw` alias wrappers, and exactly one platform-appropriate bundled uninstall helper. The schema-v2 manifest SHALL record each installed payload file with an exact role, relative destination, and digest. The helper is an installed release-owned file; the ownership manifest itself is metadata outside the hashed payload list.
 
-#### Scenario: Fresh POSIX install records complete payload
+#### Scenario: POSIX payload is installed
 
-- **WHEN** the official POSIX installer installs `arashi.bin`, `arashi`, and `aw`
-- **THEN** schema v2 records all three normalized destinations and hashes in one installation
-- **AND** neither canonical nor alias payload is represented only by a marker
+- **WHEN** the official POSIX installer installs a current release
+- **THEN** the manifest lists the executable/native payload, both executable-name wrappers, and the bundled POSIX helper
+- **AND** all listed destinations remain beneath the exact install directory
 
-#### Scenario: Fresh Windows install records complete payload
+#### Scenario: Windows payload is installed
 
-- **WHEN** the official Windows installer installs the native executable plus canonical and alias shell wrappers
-- **THEN** schema v2 records every installed destination and hash as one payload
-- **AND** records only PATH/profile/shell mutations created by that transaction
+- **WHEN** the official PowerShell installer installs a current release
+- **THEN** the manifest lists the executable, canonical and alias wrappers, and the bundled PowerShell helper
 
-#### Scenario: Legacy alias ledger is presented for uninstall
+#### Scenario: Payload member is modified
 
-- **WHEN** either entrypoint finds only schema-v1 alias ownership
-- **THEN** uninstall refuses before mutation with reinstall or migration guidance
-- **AND** does not adopt or delete canonical or alias files
+- **WHEN** any present manifest-listed executable, wrapper, alias, or helper digest differs
+- **THEN** direct uninstall refuses before deleting any payload member
 
-#### Scenario: Alias payload was modified
+### Requirement: Release artifacts publish uninstall helpers with the executable matrix
 
-- **WHEN** any recorded `aw`, `aw.ps1`, or `aw.bat` hash differs from schema v2
-- **THEN** whole-installation preflight fails before any canonical or alias deletion
-- **AND** all destinations remain unchanged
+Release packaging and checksums SHALL include the POSIX and PowerShell helper appropriate to each published platform archive, and generated executable-distribution contracts SHALL remain the source of truth for their names and roles.
 
-#### Scenario: Uninstall is invoked through both names
+#### Scenario: Release archive is assembled
 
-- **WHEN** equivalent valid direct-install fixtures run `aw uninstall --dry-run` and `arashi uninstall --dry-run`
-- **THEN** both report the same payload, mutations, preserved state, errors, and recovery contract
-- **AND** confirmed acceptance proves equivalent deferred full removal through each name
+- **WHEN** the release workflow builds a platform archive
+- **THEN** the archive contains the platform's bundled uninstall helper at the contract-defined path
+- **AND** checksum and archive-freshness validation cover that helper
