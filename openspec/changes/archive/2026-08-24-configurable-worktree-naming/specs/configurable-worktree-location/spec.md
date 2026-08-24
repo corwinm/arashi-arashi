@@ -1,43 +1,42 @@
-# configurable-worktree-location Specification
+## ADDED Requirements
 
-## Purpose
-TBD - created by archiving change add-config-option-for-worktrees-locations. Update Purpose after archive.
-## Requirements
-### Requirement: Workspace configuration defines worktree base location
-The system SHALL support a workspace configuration field that defines the base directory used for newly created worktrees, SHALL persist the repository-aware default selected by configured initialization, and SHALL retain `.arashi/worktrees/` as the compatibility fallback when an existing configuration omits the field.
+### Requirement: Workspace configuration defines a closed worktree naming policy
 
-#### Scenario: Explicit configured location is used
-- **WHEN** the workspace config provides a worktree location value
-- **THEN** new worktree paths are created under that configured base directory
+Configured workspace files SHALL accept an optional root `worktreeNaming` object with optional `style` and `branchSlashes` fields. `style` MUST accept only `default`, `branch`, or `repo-branch`; `branchSlashes` MUST accept only `preserve` or `flatten`. Omitted `worktreeNaming`, omitted nested fields, explicit `style: "default"`, and explicit `branchSlashes: "preserve"` SHALL preserve the corrected configured topology and natural slash behavior without automatically persisting or migrating omitted values. Invalid object shapes or unsupported values MUST fail configuration loading before destination planning, hooks, managed-ignore reconciliation, branch creation, worktree creation, directory creation, or any other mutation.
 
-#### Scenario: New bare initialization persists its selected default
-- **WHEN** configured initialization resolves a bare repository and the worktree-location option is omitted
-- **THEN** the workspace config persists `..` as the worktree base location
-- **AND** later commands use that configured value rather than re-inferring repository type
+#### Scenario: Omitted policy preserves corrected defaults
 
-#### Scenario: New non-bare initialization persists its selected default
-- **WHEN** configured initialization resolves a non-bare repository and the worktree-location option is omitted
-- **THEN** the workspace config persists `.arashi/worktrees` as the worktree base location
+- **WHEN** a configured workspace omits `worktreeNaming`
+- **THEN** a new bare parent uses `<canonical repository naming component>/<branch>` beneath the effective base
+- **AND** a new non-bare parent uses `<branch>` beneath the effective base
+- **AND** branch `/` separators remain directory boundaries
+- **AND** the omitted object is not automatically persisted
 
-#### Scenario: Legacy omitted configuration uses compatibility fallback
-- **WHEN** an existing workspace config does not provide a worktree location value
-- **THEN** the system MUST use `.arashi/worktrees/` as the compatibility base directory
-- **AND** reading the config does not automatically persist or migrate the omitted field
+#### Scenario: Explicit compatibility values match omission
 
-### Requirement: Relative path inputs are normalized consistently
-The system MUST normalize supported relative path inputs for worktree location, including optional trailing slash variants, before destination paths are used.
+- **WHEN** a configured workspace sets `worktreeNaming.style` to `default` and `worktreeNaming.branchSlashes` to `preserve`
+- **THEN** destination planning is exactly equivalent to the omitted policy for the same workspace, repository identity, and branch
+- **AND** the earlier inverted pre-#323 behavior is not restored
 
-#### Scenario: Dot path variants normalize to repository root
-- **WHEN** the configured location is `.` or `./`
-- **THEN** destination resolution treats both values as the same repository-root base path
+#### Scenario: Supported values are accepted independently
 
-#### Scenario: Managed directory variants normalize identically
-- **WHEN** the configured location is `.arashi/worktrees` or `.arashi/worktrees/`
-- **THEN** destination resolution treats both values as the same base path
+- **WHEN** a configured workspace supplies any supported `style` with either supported `branchSlashes` value while omitting or providing the other field
+- **THEN** configuration loading succeeds
+- **AND** every omitted nested field uses its compatibility value only in the effective runtime policy
 
-#### Scenario: Parent directory variant remains valid
-- **WHEN** the configured location is `../` (or equivalent trailing-slash form)
-- **THEN** destination resolution uses the workspace parent directory as the base path
+#### Scenario: Invalid naming configuration fails before mutation
+
+- **WHEN** `worktreeNaming` is not an object, contains an unsupported `style`, or contains an unsupported `branchSlashes` value
+- **THEN** configured create fails through the established invalid-configuration result rather than `WORKTREE_DESTINATION_COLLISION`
+- **AND** no destination plan, managed-ignore write, hook, branch, worktree, directory, Git registration, or configuration migration is produced
+
+#### Scenario: Generated schema closes the value sets
+
+- **WHEN** the generated configuration JSON Schema and published configuration examples are inspected
+- **THEN** the schema exposes optional root `worktreeNaming` with optional closed-enum `style` and `branchSlashes` properties
+- **AND** maintained guidance documents compatibility defaults, configured-only scope, and the fact that Git branch names are unchanged
+
+## MODIFIED Requirements
 
 ### Requirement: Worktree creation uses a single resolved base path
 
@@ -118,36 +117,6 @@ All commands that create configured worktrees MUST derive destinations from a sh
 - **THEN** each command uses the same normalized effective base and naming policy
 - **AND** command-specific rendering or execution does not introduce a competing destination calculation
 
-### Requirement: Default managed worktree directory is git-ignored
-The system SHALL ensure the active managed worktree location is effectively ignored by Git in an idempotent way when that location is an applicable safe repository-relative working-tree directory pattern, using configured lifecycle reconciliation and repository-local rules by default. Paths resolved from a canonical bare repository root are not working-tree paths and SHALL follow the bare non-worktree reporting contract instead.
-
-#### Scenario: Default path adds missing local ignore entry
-- **WHEN** the default managed location is active in a non-bare workspace, Git reports no effective ignore rule for `.arashi/worktrees/`, and no non-default scope is stored
-- **THEN** the system adds `.arashi/worktrees/` to the repository-local exclude file resolved through Git without duplicating entries
-- **AND** the system does not modify tracked `.gitignore`
-
-#### Scenario: Configured managed subdirectory adds missing local ignore entry
-- **WHEN** a non-default worktree location is configured as an applicable repository-relative working-tree subdirectory and Git reports no effective ignore rule for its normalized trailing-slash entry
-- **THEN** lifecycle reconciliation adds the normalized configured worktree directory entry to the active local-default ignore target without duplication
-
-#### Scenario: Existing effective ignore entry is preserved without duplication
-- **WHEN** Git reports that the normalized applicable worktree location is already ignored by a tracked, repository-local, or global rule
-- **THEN** initialization, pull, clone, and create flows complete without adding another ignore rule
-
-#### Scenario: Tracked scope adds missing tracked entry
-- **WHEN** the clone-local ignore preference is `tracked` and an applicable safe worktree location has no effective ignore rule
-- **THEN** lifecycle reconciliation adds the normalized location to workspace-root `.gitignore`
-
-#### Scenario: Unsafe broad locations are not auto-ignored
-- **WHEN** the configured worktree location resolves to repository root (`.` or `./`), an absolute path, or parent traversal (`../` variants)
-- **THEN** lifecycle reconciliation does not add a worktree-location pattern to tracked or repository-local ignore files
-- **AND** the unsafe skip is reported in the supported command output
-
-#### Scenario: Bare-root subdirectory is not a working-tree ignore candidate
-- **WHEN** configured init resolves a worktree location beneath a canonical bare repository root
-- **THEN** the path is reported as non-applicable to working-tree ignore rules
-- **AND** init does not inspect or mutate ignore files for that path
-
 ### Requirement: Implicit standalone mode uses a fixed worktree location
 
 The configurable worktree-location, configured topology, and `worktreeNaming` contracts SHALL remain authoritative only for configured workspaces, while implicit standalone workspaces SHALL use the fixed main-root `.worktrees` base and natural branch-relative destination.
@@ -219,39 +188,3 @@ The configured destination resolver and create lifecycle SHALL interpret Git bra
 - **THEN** each result preserves the same policy-defined component hierarchy using that platform's path representation
 - **AND** literal Git `/` separators are preserved or flattened according to configuration rather than host parsing accidents
 - **AND** repository naming is not inferred from platform-specific filesystem spellings
-
-### Requirement: Workspace configuration defines a closed worktree naming policy
-
-Configured workspace files SHALL accept an optional root `worktreeNaming` object with optional `style` and `branchSlashes` fields. `style` MUST accept only `default`, `branch`, or `repo-branch`; `branchSlashes` MUST accept only `preserve` or `flatten`. Omitted `worktreeNaming`, omitted nested fields, explicit `style: "default"`, and explicit `branchSlashes: "preserve"` SHALL preserve the corrected configured topology and natural slash behavior without automatically persisting or migrating omitted values. Invalid object shapes or unsupported values MUST fail configuration loading before destination planning, hooks, managed-ignore reconciliation, branch creation, worktree creation, directory creation, or any other mutation.
-
-#### Scenario: Omitted policy preserves corrected defaults
-
-- **WHEN** a configured workspace omits `worktreeNaming`
-- **THEN** a new bare parent uses `<canonical repository naming component>/<branch>` beneath the effective base
-- **AND** a new non-bare parent uses `<branch>` beneath the effective base
-- **AND** branch `/` separators remain directory boundaries
-- **AND** the omitted object is not automatically persisted
-
-#### Scenario: Explicit compatibility values match omission
-
-- **WHEN** a configured workspace sets `worktreeNaming.style` to `default` and `worktreeNaming.branchSlashes` to `preserve`
-- **THEN** destination planning is exactly equivalent to the omitted policy for the same workspace, repository identity, and branch
-- **AND** the earlier inverted pre-#323 behavior is not restored
-
-#### Scenario: Supported values are accepted independently
-
-- **WHEN** a configured workspace supplies any supported `style` with either supported `branchSlashes` value while omitting or providing the other field
-- **THEN** configuration loading succeeds
-- **AND** every omitted nested field uses its compatibility value only in the effective runtime policy
-
-#### Scenario: Invalid naming configuration fails before mutation
-
-- **WHEN** `worktreeNaming` is not an object, contains an unsupported `style`, or contains an unsupported `branchSlashes` value
-- **THEN** configured create fails through the established invalid-configuration result rather than `WORKTREE_DESTINATION_COLLISION`
-- **AND** no destination plan, managed-ignore write, hook, branch, worktree, directory, Git registration, or configuration migration is produced
-
-#### Scenario: Generated schema closes the value sets
-
-- **WHEN** the generated configuration JSON Schema and published configuration examples are inspected
-- **THEN** the schema exposes optional root `worktreeNaming` with optional closed-enum `style` and `branchSlashes` properties
-- **AND** maintained guidance documents compatibility defaults, configured-only scope, and the fact that Git branch names are unchanged
