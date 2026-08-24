@@ -10,8 +10,8 @@ Relevant existing foundations include configured `configurationRoot`/`executionR
 
 **Goals:**
 
-- Make `aw delete <repository>` the explicit inverse of configured `aw add` without changing `aw remove`.
-- Produce one immutable, sanitized plan used by human preview, JSON preview, confirmation, and guarded execution.
+- Make `aw delete [repository]` the explicit inverse of configured `aw add` without changing `aw remove`: an exact key is scriptable, while omission in a human TTY opens a configured-key checkbox multi-select.
+- Produce one immutable, sanitized plan per selected key; human batch preview/confirmation uses the complete ordered plan set, while JSON remains explicit-key single-target.
 - Identify the child repository by configuration plus Git common-directory identity, not directory naming conventions.
 - Protect every owned worktree, local ref, configuration byte snapshot, and candidate hook path before mutation.
 - Make irreversible phase ordering and partial failure truthful, deterministic, and safe to retry.
@@ -28,13 +28,15 @@ Relevant existing foundations include configured `configurationRoot`/`executionR
 
 ## Decisions
 
-### 1. Register a separate configured-only command
+### 1. Register a separate configured-only command with bounded interactive selection
 
-`delete` takes one exact canonical `repos` key and registers `-f, --force`, `-n, --dry-run`, and `-j, --json`. It has no alias under `remove`, accepts no fuzzy/path/branch interpretation, and rejects implicit standalone mode through the existing configured-command boundary.
+`delete` takes zero or one positional exact canonical `repos` key and registers `-f, --force`, `-n, --dry-run`, and `-j, --json`. An explicit key targets exactly one dependency. Omission in a human TTY reads only active configuration and opens one checkbox multi-select containing every configured child key in bytewise order. Selecting one or more keys invokes the same per-key planner as explicit use. Empty selection or cancellation exits `2` without topology planning, locking, or mutation. Omission in non-TTY or JSON mode returns `DELETE_SELECTION_REQUIRED` exit `2`; neither `--force` nor `--dry-run` invents a target. JSON remains explicit-key single-target. Delete has no alias under `remove`, accepts no fuzzy/path/branch interpretation, and rejects implicit standalone mode through the existing configured-command boundary.
 
-Exit status is `0` for success or dry-run, `2` for declined/cancelled or missing required destructive confirmation, and `1` for planning, structural safety, execution, or partial-failure errors. JSON mode is always non-interactive; mutating JSON therefore requires `--force`, while `--dry-run --json` does not.
+Selected keys are deduplicated and bytewise sorted. Every selected plan is constructed mutation-free before output. From the one exact initial config byte snapshot, planning deterministically computes a byte-exact expected before/after configuration chain for that key order; each repository's config phase validates its predicted input bytes and writes only its predicted output bytes, so a prior accepted config removal is not misclassified as an external concurrent edit. A planning/structural error in any key aborts the batch before confirmation; any Git-loss blocker aborts mutation without `--force`. Human dry-run renders every plan without confirmation. Human mutation renders combined scope and asks one default-no confirmation. Accepted execution acquires the shared lock once, revalidates the complete plan set, and executes repository transactions in bytewise key order. It stops on the first execution failure: earlier repository results remain completed, the failing repository retains its receipt/ledger, and later repositories remain not started. Retry guidance is per incomplete repository, never one interpolated aggregate shell command.
 
-Why: a separate noun and exact key keep destructive repository lifecycle distinct from worktree lifecycle and make shell completion bounded to configured names. A keep-files or fuzzy target mode would weaken the initial contract.
+Exit status is `0` for success or dry-run, `2` for empty/cancelled selection, omitted target outside a human TTY, declined confirmation, or missing required confirmation, and `1` for planning, structural safety, execution, or partial-failure errors. JSON mode is non-interactive and requires an explicit key; mutating JSON also requires `--force`, while explicit-key `--dry-run --json` does not.
+
+Why: a separate noun and exact-key choice set keep destructive repository lifecycle distinct from worktree lifecycle. Interactive omission improves discovery without fuzzy inference, while explicit-key automation and bounded completion remain deterministic. A keep-files or fuzzy target mode would weaken the contract.
 
 ### 2. Split planning from execution with closed typed records
 
@@ -108,7 +110,7 @@ Why: complete preflight limits irreversible surprises, while phase-local refresh
 
 ### 7. Make retries state-aware and partial failure explicit
 
-Each phase records `not-started`, `started`, `completed`, or `failed`, start/end order, sanitized error code/message, and item IDs. On failure the command returns `DELETE_PARTIAL_FAILURE` when any irreversible item completed, otherwise the specific planning/execution error. Human output names completed and surviving state plus one safe literal retry argument vector/guidance without emitting an interpolated shell string. JSON failure preserves the standard envelope and places `{plan, result}` at `error.details`.
+Each phase records `not-started`, `started`, `completed`, or `failed`, start/end order, sanitized error code/message, and item IDs. On failure the command returns `DELETE_PARTIAL_FAILURE` when any irreversible item completed, otherwise the specific planning/execution error. Human output names completed and surviving state plus one safe literal retry argument vector/guidance per incomplete repository without emitting an interpolated shell string. JSON failure preserves the standard envelope and places `{plan, result}` at `error.details`.
 
 Before the first destructive phase, accepted execution atomically creates owner-only resume provenance (`0600` on POSIX and platform-equivalent owner-only ACLs on Windows) at `<parent-common-dir>/.arashi-delete-receipts/<repositoryKeySha256>.json`. `repositoryKeySha256` is the lowercase SHA-256 of the exact UTF-8 repository key, so receipt location is independent of plan identity. `planId` is a deterministic SHA-256 of the closed projected plan plus non-secret authority digests. The receipt stores only exact plan identity, repository key, config digest, path/ref/OID identities, and completed phase prefix—never config bytes, hook bodies, inline commands, or environment values. Updates use expected-byte atomic replacement under the unchanged workspace lock. Multiple, malformed, permission-unsafe, or identity-mismatched receipts fail closed.
 
@@ -118,21 +120,21 @@ Why: filesystem deletion cannot be transactional, so honest resumability is safe
 
 ### 8. Confirmation and output disclose scope without secrets
 
-Human TTY mutation without `--force` prints repository key, canonical clone, every linked worktree and local ref, exact config field/file, workspace hook paths, Git-loss warnings, and preserved user-global hook paths, then asks one default-no destructive confirmation. A non-TTY mutation without `--force` fails before mutation with guidance to use `--dry-run` or `--force`. Decline/cancel leaves all state unchanged.
+Human TTY mutation without `--force` prints every selected repository key and each key's canonical clone, linked worktrees, local refs, exact config field/file, workspace hook paths, Git-loss warnings, and preserved user-global hook paths, then asks one default-no destructive confirmation for the complete batch. A non-TTY invocation without a target fails selection before planning; an explicit-target non-TTY mutation without `--force` fails confirmation before mutation with guidance to use `--dry-run` or `--force`. Selection cancellation, empty selection, or confirmation decline leaves all state unchanged.
 
 JSON uses the standard single-document envelope. Dry-run success returns `data.plan` and `data.result: null`; mutating success returns both; failure returns them at `error.details.plan` and `error.details.result`, using `null` when execution never began. Base fields are `workspace`, `repositoryKey`, `dryRun`, `force`, `confirmation`, `plan`, and `result`. Hook records expose only logical identity, path, kind, ownership, and status—not bytes, inline command bodies, environment values, or shell snippets.
 
 `plan` contains exactly `id`, `items`, and sorted `warnings`. `result` contains exactly `items`, `phases`, `retry`, and sorted `warnings`. `retry` contains `safe`, `argv`, and `guidance`; `argv` is an argument array or `null`, never a shell-interpolated command string. `workspace` uses the existing configured workspace JSON metadata fields (`mode`, `repositoriesBase`, `workspaceRoot`, and `worktreesBase`). `confirmation` is `not-required`, `confirmed`, `declined`, or `required`; JSON never uses `confirmed` or `declined` because it never prompts.
 
-Failure precedence is fixed: CLI parsing first; configured-workspace/config loading; exact key lookup; topology/path/hook/Git-inspection errors; complete plan construction; Git-loss refusal before any confirmation requirement; dry-run success; confirmation requirement or TTY prompt; post-lock plan invalidation/concurrent change; execution failure; and `DELETE_PARTIAL_FAILURE` whenever irreversible work completed. Dirty interactive or non-interactive mutation without `--force` returns `DELETE_GIT_DATA_LOSS` and does not prompt; a clean TTY mutation may prompt, while clean non-TTY/JSON mutation returns `DELETE_CONFIRMATION_REQUIRED`.
+Failure precedence is fixed: CLI parsing first; configured-workspace/config loading; target selection (explicit exact-key lookup or TTY checkbox outcome; omitted non-TTY/JSON target); topology/path/hook/Git inspection for every selected key; complete ordered plan-set construction; Git-loss refusal; dry-run success; confirmation requirement/prompt; post-lock plan-set invalidation/concurrent change; execution failure; and `DELETE_PARTIAL_FAILURE` whenever any irreversible item in the batch completed. Dirty selected mutation without `--force` returns `DELETE_GIT_DATA_LOSS` before confirmation. Clean explicit-target non-TTY/JSON mutation without force returns `DELETE_CONFIRMATION_REQUIRED`; TTY selection/confirmation cancellation returns `DELETE_CANCELLED`; omitted non-TTY/JSON target returns `DELETE_SELECTION_REQUIRED`. `DELETE_CONFIG_INVALID` wins before selection.
 
-Stable error codes are `CONFIGURED_WORKSPACE_REQUIRED`, `DELETE_REPOSITORY_NOT_FOUND`, `DELETE_CONFIG_INVALID`, `DELETE_TOPOLOGY_INVALID`, `DELETE_PATH_UNSAFE`, `DELETE_HOOK_AMBIGUOUS`, `DELETE_GIT_DATA_LOSS`, `DELETE_CONFIRMATION_REQUIRED`, `DELETE_CANCELLED`, `DELETE_CONCURRENT_CHANGE`, `DELETE_EXECUTION_FAILED`, and `DELETE_PARTIAL_FAILURE`.
+Stable error codes are `CONFIGURED_WORKSPACE_REQUIRED`, `DELETE_SELECTION_REQUIRED`, `DELETE_REPOSITORY_NOT_FOUND`, `DELETE_CONFIG_INVALID`, `DELETE_TOPOLOGY_INVALID`, `DELETE_PATH_UNSAFE`, `DELETE_HOOK_AMBIGUOUS`, `DELETE_GIT_DATA_LOSS`, `DELETE_CONFIRMATION_REQUIRED`, `DELETE_CANCELLED`, `DELETE_CONCURRENT_CHANGE`, `DELETE_EXECUTION_FAILED`, and `DELETE_PARTIAL_FAILURE`.
 
 Why: automation needs exact state, while hook/config secrecy must survive both successful and failed paths.
 
 ### 9. Companion behavior is generated and proportionate
 
-The CLI-derived command contract owns command registration, options, configured-only support, JSON/confirmation semantics, completion candidate class, docs/skills requirements, and explicit VS Code exclusion. Bash/Zsh/Fish completion offers exact configured repository keys for the delete argument and static options through the existing bounded local query.
+The CLI-derived command contract owns optional exact-key registration, omitted-target TTY multi-selection, options, configured-only support, JSON/confirmation semantics, completion candidate class, docs/skills requirements, and explicit VS Code exclusion. Bash/Zsh/Fish completion offers exact configured repository keys for the optional delete argument and static options through the existing bounded local query.
 
 CLI docs get a dedicated `delete` command-list page plus concise README/config/hook references. Website docs get one command page and one proportionate configured-workspace workflow cross-link; generated Markdown/LLM exports are regenerated. The packaged skill adds deletion procedure to the smallest configured-workspace reference and keeps `SKILL.md` minimal. Existing stable semantic aggregates and the meta registry enforce source/package/export alignment; no feature-specific workflow step is added unless workflow topology actually changes. VS Code remains explicitly excluded because this destructive command has no approved editor UI.
 

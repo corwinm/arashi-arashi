@@ -6,9 +6,15 @@ The authored and packaged Arashi skill SHALL teach delete in the smallest config
 
 #### Scenario: Agent is asked to delete a dependency
 
-- **WHEN** an agent receives an explicit request to remove one configured repository dependency
+- **WHEN** an agent receives an explicit request to remove one or more configured repository dependencies
 - **THEN** it uses `aw delete <repository> --dry-run` to review exact scope before a mutating invocation
 - **AND** does not hand-edit config, broad-delete paths/hooks, or substitute `aw remove`
+
+#### Scenario: Human wants to choose repositories interactively
+
+- **WHEN** the user asks to choose one or more configured dependencies rather than naming an exact key
+- **THEN** guidance uses human-TTY `aw delete` and explains the checkbox multi-select plus combined preview/confirmation
+- **AND** agents do not use omitted-target JSON/non-TTY invocation or infer a default repository
 
 #### Scenario: Agent lacks explicit destructive intent
 

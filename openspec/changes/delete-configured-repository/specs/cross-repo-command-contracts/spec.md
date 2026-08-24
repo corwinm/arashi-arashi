@@ -2,13 +2,13 @@
 
 ### Requirement: Command contracts publish configured repository deletion policy
 
-The canonical CLI-derived command contract SHALL register `delete`, its exact configured-repository argument, `-f`/`--force`, `-n`/`--dry-run`, and `-j`/`--json`, configured-only support, exact error/confirmation precedence and exits, structural-versus-overridable safety boundaries, closed JSON plan/result/item/phase/retry vocabulary, receipt-backed retry classification, completion candidate class, and docs/skills/VS Code companion decisions. The checked-in CLI command artifact SHALL remain deterministically generated and freshness-checked; executable-distribution identity SHALL remain unchanged because adding a Commander command does not add an executable.
+The canonical CLI-derived command contract SHALL register `delete`, its optional exact configured-repository argument, omitted-target human-TTY checkbox multi-selection, `-f`/`--force`, `-n`/`--dry-run`, and `-j`/`--json`, configured-only support, exact error/confirmation precedence and exits, structural-versus-overridable safety boundaries, closed JSON plan/result/item/phase/retry vocabulary, receipt-backed retry classification, completion candidate class, and docs/skills/VS Code companion decisions. The checked-in CLI command artifact SHALL remain deterministically generated and freshness-checked; executable-distribution identity SHALL remain unchanged because adding a Commander command does not add an executable.
 
 #### Scenario: Delete contract is generated
 
 - **WHEN** CLI command-contract generation runs
-- **THEN** `delete` appears once with the exact argument/options/aliases and typed semantic policy
-- **AND** the policy distinguishes dry-run, JSON non-interactivity, force implications, stable error/ledger vocabulary, and standalone rejection
+- **THEN** `delete` appears once with the exact optional argument/options/aliases and typed semantic policy
+- **AND** the policy distinguishes configuration-only multi-selection, empty/cancelled selection, omitted non-TTY/JSON targeting, combined preview/confirmation, dry-run, force implications, stable error/ledger vocabulary, and standalone rejection
 
 #### Scenario: Remove contract remains unchanged in meaning
 
@@ -28,7 +28,7 @@ Coordinated validation SHALL require a dedicated CLI command-list page, CLI READ
 #### Scenario: All companion surfaces agree
 
 - **WHEN** CLI, docs, exports, skills, and meta validation describe delete
-- **THEN** they agree on exact-key targeting, configured-only scope, preview-before-force workflow, non-overridable structural safety, data-loss disclosure, preserved global/shared/ignore state, partial failure/retry honesty, and remove distinction
+- **THEN** they agree on explicit exact-key and omitted-target TTY multi-selection, configured-only scope, preview-before-force workflow, non-overridable structural safety, data-loss disclosure, preserved global/shared/ignore state, partial failure/retry honesty, and remove distinction
 - **AND** validation exits successfully
 
 #### Scenario: Dedicated CLI command page is missing

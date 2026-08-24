@@ -2,7 +2,7 @@
 
 ### Requirement: Delete is the configured repository lifecycle inverse
 
-Arashi SHALL provide `aw delete <repository>` as the destructive inverse of configured `aw add`, SHALL interpret `<repository>` only as an exact canonical `repos.<repository>` key, and SHALL keep `aw remove` dedicated to branch/worktree removal. Delete SHALL reject implicit standalone/zero-config workspaces and SHALL NOT delete remote repositories or remote branches.
+Arashi SHALL provide `aw delete [repository]` as the destructive inverse of configured `aw add`, SHALL interpret an explicit `[repository]` only as one exact canonical `repos.<repository>` key, SHALL offer a human-TTY checkbox multi-select when the argument is omitted, and SHALL keep `aw remove` dedicated to branch/worktree removal. Delete SHALL reject implicit standalone/zero-config workspaces and SHALL NOT delete remote repositories or remote branches.
 
 #### Scenario: Exact configured key is selected
 
@@ -15,6 +15,43 @@ Arashi SHALL provide `aw delete <repository>` as the destructive inverse of conf
 - **WHEN** the exact configured repository key does not exist and no valid receipt proves the configuration-removal phase completed
 - **THEN** Arashi fails with `DELETE_REPOSITORY_NOT_FOUND`
 - **AND** performs no filesystem, Git, hook, configuration, ignore, or remote mutation
+
+#### Scenario: TTY invocation omits the key
+
+- **WHEN** a user runs `aw delete` in a human TTY from a configured workspace
+- **THEN** Arashi reads only active configuration and presents one checkbox multi-select of all configured child keys in bytewise order
+- **AND** every displayed choice name and value is exactly the key, with no description, path, Git URL, group, or other configuration metadata
+- **AND** selected values remain exact keys without fuzzy, path, branch, or alias interpretation
+
+#### Scenario: No configured child keys exist
+
+- **WHEN** `aw delete` is invoked in a configured workspace whose valid active `repos` map has no child keys
+- **THEN** Arashi returns `DELETE_REPOSITORY_NOT_FOUND` exit `1` without opening an empty prompt
+- **AND** performs no topology planning, locking, or mutation
+
+#### Scenario: Multiple configured keys are selected
+
+- **WHEN** the TTY user selects two or more repository keys
+- **THEN** Arashi deduplicates and bytewise-sorts them, constructs every per-key plan before confirmation, and shows one combined preview
+- **AND** one default-no confirmation accepts the complete immutable plan set
+
+#### Scenario: Multi-selection predicts configuration bytes
+
+- **WHEN** multiple keys are selected from one exact initial configuration snapshot
+- **THEN** planning computes a deterministic expected before/after config byte chain in bytewise key order
+- **AND** each later config phase accepts only the predicted bytes produced by prior accepted phases, while any other byte change returns `DELETE_CONCURRENT_CHANGE`
+
+#### Scenario: Selection is empty or cancelled
+
+- **WHEN** the TTY multi-select is cancelled or returns no keys
+- **THEN** Arashi exits `2` with `DELETE_CANCELLED`
+- **AND** performs no topology planning, locking, filesystem, Git, hook, configuration, ignore, or remote mutation
+
+#### Scenario: Omitted key cannot be selected interactively
+
+- **WHEN** the key is omitted in non-TTY or JSON mode, with or without `--force` or `--dry-run`
+- **THEN** Arashi exits `2` with `DELETE_SELECTION_REQUIRED`
+- **AND** requires one explicit exact key rather than inventing or defaulting a target
 
 #### Scenario: Standalone workspace invokes delete
 
@@ -219,9 +256,9 @@ Before confirmation, Arashi SHALL inspect every owned worktree for tracked, stag
 
 ### Requirement: Preview and confirmation use the accepted immutable plan
 
-`--dry-run` SHALL display/return the complete plan without mutation. A clean human TTY mutation without `--force` SHALL display the exact repository key, canonical clone, linked worktrees, local refs, config field/file, targeted local hook paths, protected Git state, and preserved global hook paths, then require one explicit default-no destructive confirmation. A dirty mutation without `--force` SHALL stop at Git-loss refusal; a clean non-TTY or JSON mutation without `--force` SHALL fail with confirmation guidance and SHALL NOT prompt.
+`--dry-run` SHALL display every selected complete plan without mutation. A clean human TTY mutation without `--force` SHALL display every selected key and each plan's canonical clone, linked worktrees, local refs, config field/file, targeted local hook paths, protected Git state, and preserved global hook paths, then require one explicit default-no destructive confirmation for the complete plan set. A dirty selected mutation without `--force` SHALL stop at Git-loss refusal; a clean explicit-key non-TTY or JSON mutation without `--force` SHALL fail with confirmation guidance and SHALL NOT prompt.
 
-Failure precedence SHALL be: CLI parse; configured workspace/config load; exact key lookup; topology/path/hook/Git inspection; complete plan; Git-loss refusal; dry-run success; confirmation requirement or prompt; post-lock invalidation/concurrent change; execution failure; partial failure after any irreversible completion. Therefore a dirty TTY/non-TTY/JSON mutation without `--force` SHALL return `DELETE_GIT_DATA_LOSS` exit `1` without prompting; only a clean TTY mutation may prompt, and a clean non-TTY/JSON mutation without force SHALL return `DELETE_CONFIRMATION_REQUIRED` exit `2`.
+Failure precedence SHALL be: CLI parse; configured workspace/config load; target selection (explicit exact-key lookup, TTY checkbox outcome, or omitted non-TTY/JSON refusal); topology/path/hook/Git inspection for every selected key; complete ordered plan set; Git-loss refusal; dry-run success; confirmation requirement or prompt; post-lock plan-set invalidation/concurrent change; execution failure; partial failure after any irreversible completion in the batch. Therefore a dirty selected mutation without `--force` SHALL return `DELETE_GIT_DATA_LOSS` exit `1` without prompting; only a clean human TTY mutation may prompt, and a clean explicit-key non-TTY/JSON mutation without force SHALL return `DELETE_CONFIRMATION_REQUIRED` exit `2`.
 
 #### Scenario: Dirty TTY mutation omits force
 
@@ -234,6 +271,12 @@ Failure precedence SHALL be: CLI parse; configured workspace/config load; exact 
 - **WHEN** a user runs `aw delete <repository> --dry-run`
 - **THEN** Arashi prints the deterministic complete plan and warnings
 - **AND** does not prompt, acquire/create a transaction lock, or mutate Git, filesystem, hooks, config, ignore state, or remotes
+
+#### Scenario: Human multi-select dry-run previews every target
+
+- **WHEN** a TTY user runs `aw delete --dry-run` and selects multiple keys
+- **THEN** Arashi prints every complete plan in bytewise key order without a confirmation prompt
+- **AND** selection and planning remain lock-free and mutation-free
 
 #### Scenario: Human TTY confirms
 
@@ -261,7 +304,7 @@ Failure precedence SHALL be: CLI parse; configured workspace/config load; exact 
 
 ### Requirement: Execution revalidates and orders destructive phases
 
-Read-only planning SHALL NOT acquire or create a transaction lock. After confirmation or `--force`, execution SHALL acquire and hold one workspace-common-directory transaction lock through final verification using the existing `.arashi-add.transaction.lock` on-disk identity so cooperating old/new add/configure/delete clients remain serialized. After full revalidation it SHALL atomically create an owner-only receipt (`0600` on POSIX and platform-equivalent owner-only ACLs on Windows) at `<parent-common-dir>/.arashi-delete-receipts/<repositoryKeySha256>.json`, where `repositoryKeySha256` is the lowercase SHA-256 of the exact UTF-8 repository key and is independent of plan ID; it SHALL update the completed phase prefix through expected-byte atomic writes, remove linked worktrees deepest-first, prune only owned stale metadata, quarantine/remove the canonical clone and planned workspace hooks, remove the exact configuration entry last under byte-identity validation, and delete the receipt only after final verification.
+Read-only selection/planning SHALL NOT acquire or create a transaction lock. After combined confirmation or `--force`, execution SHALL acquire and hold one workspace-common-directory transaction lock through final batch verification using the existing `.arashi-add.transaction.lock` on-disk identity so cooperating old/new add/configure/delete clients remain serialized. It SHALL revalidate the complete selected plan set, then execute per-repository transactions in bytewise key order. For each repository it SHALL atomically create an owner-only receipt (`0600` on POSIX and platform-equivalent owner-only ACLs on Windows) at `<parent-common-dir>/.arashi-delete-receipts/<repositoryKeySha256>.json`, where `repositoryKeySha256` is the lowercase SHA-256 of the exact UTF-8 repository key and is independent of plan ID; it SHALL update the completed phase prefix through expected-byte atomic writes, remove linked worktrees deepest-first, prune only owned stale metadata, quarantine/remove the canonical clone and planned workspace hooks, remove the exact configuration entry last under byte-identity validation, and delete that receipt only after per-repository final verification. It SHALL stop before later keys on the first failure.
 
 The receipt SHALL contain only deterministic plan identity, repository key, non-secret config digest, exact path/ref/OID identities, and completed phase prefix. It SHALL NOT contain config bytes, hook/inline bodies, environment values, or commit bodies. Multiple, malformed, permission-unsafe, or mismatched receipts SHALL fail closed.
 
@@ -276,6 +319,18 @@ The receipt SHALL contain only deterministic plan identity, repository key, non-
 - **WHEN** every accepted identity remains current and each phase succeeds
 - **THEN** all child linked worktrees/metadata and the canonical clone are gone, planned local hooks are gone, and only `repos.<repository>` is removed from active configuration
 - **AND** managed ignore, shared/global hooks, unrelated configuration, and remotes are unchanged
+
+#### Scenario: Multi-repository batch succeeds
+
+- **WHEN** every selected plan remains current and every per-repository transaction succeeds
+- **THEN** Arashi executes keys in bytewise order under one lock and reports each repository completed
+- **AND** performs no rediscovery or expansion beyond the accepted selected keys
+
+#### Scenario: Later repository fails in a batch
+
+- **WHEN** one repository transaction fails after an earlier selected repository completed
+- **THEN** Arashi returns `DELETE_PARTIAL_FAILURE`, preserves the earlier completed result and failing receipt/ledger, and marks all later repository transactions not started
+- **AND** emits separate safe retry argv or manual-review guidance for each incomplete repository rather than one aggregate shell command
 
 #### Scenario: Configuration changes after planning
 
@@ -348,7 +403,7 @@ Arashi SHALL return a phase and item ledger for every mutating execution, SHALL 
 
 ### Requirement: Human success and failure summaries are truthful and sanitized
 
-Human output SHALL summarize repository key, canonical clone, linked worktrees, configuration entry, local targeted hooks, preserved global paths, completed phases, surviving state, and retry guidance as applicable. It SHALL NOT print hook contents, inline commands, environment values, commit bodies, or unrelated configuration.
+Human output SHALL summarize every selected repository key and each key's canonical clone, linked worktrees, configuration entry, local targeted hooks, preserved global paths, completed phases, surviving state, and per-repository retry guidance as applicable. It SHALL NOT print hook contents, inline commands, environment values, commit bodies, or unrelated configuration.
 
 #### Scenario: Human success is rendered
 
@@ -359,5 +414,5 @@ Human output SHALL summarize repository key, canonical clone, linked worktrees, 
 #### Scenario: Human partial failure is rendered
 
 - **WHEN** deletion partially fails
-- **THEN** output distinguishes completed from surviving/failed state and gives one exact literal retry argument vector or manual-review guidance
+- **THEN** output distinguishes completed from surviving/failed state and gives one exact literal retry argument vector or manual-review guidance per incomplete repository
 - **AND** does not claim atomic rollback or full success

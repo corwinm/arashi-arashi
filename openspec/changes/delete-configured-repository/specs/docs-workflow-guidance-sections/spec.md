@@ -2,18 +2,18 @@
 
 ### Requirement: Canonical docs teach configured repository deletion proportionately
 
-CLI and website documentation SHALL provide a dedicated `delete` command reference and concise configured-workspace workflow guidance. Guidance SHALL distinguish `aw delete <repository>` from branch/worktree `aw remove`, require an exact configured key, recommend dry-run before force, explain TTY/non-TTY/JSON confirmation, identify deleted and preserved scope, and describe partial failure/retry honestly without duplicating internal lock or field-by-field ledger implementation.
+CLI and website documentation SHALL provide a dedicated `delete` command reference and concise configured-workspace workflow guidance. Guidance SHALL distinguish `aw delete [repository]` from branch/worktree `aw remove`, explain explicit exact-key targeting and omitted-target human-TTY checkbox multi-selection, recommend dry-run before force, explain selection/confirmation behavior in TTY/non-TTY/JSON modes, identify deleted and preserved scope, and describe per-repository partial failure/retry honestly without duplicating internal lock or field-by-field ledger implementation.
 
 #### Scenario: User needs to delete a dependency
 
 - **WHEN** a user opens command or configured-workspace guidance
-- **THEN** they can discover `aw delete <repository>` and a copy-pasteable `--dry-run` then confirmed/`--force` workflow
+- **THEN** they can discover both `aw delete` multi-selection and `aw delete <repository>` exact targeting with a copy-pasteable `--dry-run` then confirmed/`--force` workflow
 - **AND** guidance does not instruct them to hand-edit config or manually remove Git worktrees/clone paths
 
 #### Scenario: User distinguishes remove and delete
 
 - **WHEN** command indexes, README, or workflow docs mention destructive operations
-- **THEN** they state that `delete` removes one configured repository dependency while `remove` removes branch worktrees
+- **THEN** they state that `delete` removes one explicit or multiple interactively selected configured repository dependencies while `remove` removes branch worktrees
 - **AND** no alias or overloaded syntax is implied
 
 #### Scenario: User evaluates safety and force

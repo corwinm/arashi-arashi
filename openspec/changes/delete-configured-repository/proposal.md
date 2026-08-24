@@ -4,9 +4,9 @@
 
 ## What Changes
 
-- Add a distinct destructive `aw delete <repository>` command for configured repository dependencies; keep `aw remove` dedicated to branch/worktree removal.
+- Add a distinct destructive `aw delete [repository]` command for configured repository dependencies: an exact positional key selects one dependency, while an omitted key in a human TTY opens a checkbox multi-select for one or more configured repositories; keep `aw remove` dedicated to branch/worktree removal.
 - Add a reusable read-only deletion planner that resolves the active configuration authority, canonical child clone, every owned linked worktree and local branch, repository-targeted workspace hook files/templates, and preserved user-global hook guidance.
-- Add interactive confirmation, fail-closed non-TTY behavior, `--force`, `--dry-run`, and stable one-document `--json` plans/results.
+- Add mutation-free interactive repository multi-selection, one combined confirmation, fail-closed omitted-target behavior outside a human TTY, `--force`, `--dry-run`, and stable one-document single-target `--json` plans/results.
 - Enforce canonical Git topology, containment, symlink, repository-identity, dirty/unpublished-work, hook-ambiguity, and concurrent-configuration safety before mutation; `--force` bypasses only confirmation and Git data-loss guards.
 - Execute deterministic deepest-first removal with refreshed identity checks and a phase ledger that makes partial failure and retry state explicit; remove configuration only after repository/worktree deletion succeeds.
 - Synchronize CLI help/contracts/completions, CLI and website command/workflow docs and generated exports, packaged agent guidance, and coordinated semantic validation.
@@ -15,7 +15,7 @@
 
 ### New Capabilities
 
-- `configured-repository-deletion`: Planning, confirmation, safety, execution ordering, partial failure, retry, and topology behavior for deleting one configured repository dependency.
+- `configured-repository-deletion`: Target selection, planning, confirmation, safety, execution ordering, partial failure, retry, and topology behavior for deleting one or multiple configured repository dependencies.
 
 ### Modified Capabilities
 

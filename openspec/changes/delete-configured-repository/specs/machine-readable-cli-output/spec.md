@@ -2,9 +2,15 @@
 
 ### Requirement: Delete JSON uses one closed sanitized payload contract
 
-`aw delete <repository> --json` and `--dry-run --json` SHALL use the standard schema-version-1 single-document envelope. A successful delete `data` object SHALL contain exactly `workspace`, `repositoryKey`, `dryRun`, `force`, `confirmation`, `plan`, and `result`. `workspace` SHALL contain exactly `mode`, `repositoriesBase`, `workspaceRoot`, and `worktreesBase`. `repositoryKey` SHALL be the exact configured key; `dryRun` and `force` SHALL be booleans; `confirmation` SHALL be `not-required`, `confirmed`, `declined`, or `required`. JSON SHALL use only `not-required` or `required` because it never prompts.
+Explicit-key `aw delete <repository> --json` and `--dry-run --json` SHALL use the standard schema-version-1 single-document envelope. JSON SHALL NOT run omitted-target interactive selection and SHALL remain single-target. A successful delete `data` object SHALL contain exactly `workspace`, `repositoryKey`, `dryRun`, `force`, `confirmation`, `plan`, and `result`. `workspace` SHALL contain exactly `mode`, `repositoriesBase`, `workspaceRoot`, and `worktreesBase`. `repositoryKey` SHALL be the exact configured key; `dryRun` and `force` SHALL be booleans; `confirmation` SHALL be `not-required`, `confirmed`, `declined`, or `required`. JSON SHALL use only `not-required` or `required` because it never prompts.
 
-The closed delete payload type SHALL be reused in delete-specific `error.details`: all seven fields are present, `workspace` may be `null` only when configured workspace resolution failed, `plan` may be `null` only when no complete plan exists, and `result` may be `null` only when execution never created a ledger. The existing standalone `CONFIGURED_WORKSPACE_REQUIRED` error SHALL retain its canonical exact details `{command: "delete", mode: "standalone"}` rather than pretending a configured workspace payload exists. Canonical CLI parse errors retain their existing standard details.
+The closed delete payload type SHALL be reused in delete-specific `error.details`: all seven fields are present, `workspace` may be `null` only when configured workspace resolution failed, `plan` may be `null` only when no complete plan exists, and `result` may be `null` only when execution never created a ledger. The omitted-key JSON `DELETE_SELECTION_REQUIRED` error SHALL instead have exact details `{command: "delete", reason: "repository-required"}` because no repository payload can exist. The existing standalone `CONFIGURED_WORKSPACE_REQUIRED` error SHALL retain its canonical exact details `{command: "delete", mode: "standalone"}` rather than pretending a configured workspace payload exists. Canonical CLI parse errors retain their existing standard details.
+
+#### Scenario: JSON invocation omits repository
+
+- **WHEN** a user runs `aw delete --json` or `aw delete --dry-run --json`, with or without `--force`
+- **THEN** stdout contains exactly one `DELETE_SELECTION_REQUIRED` exit-`2` error envelope with exact details `{command: "delete", reason: "repository-required"}`
+- **AND** no prompt, target inference, topology planning, lock, or mutation occurs
 
 #### Scenario: JSON dry-run succeeds
 
@@ -121,9 +127,9 @@ A delete `result` SHALL contain exactly `items`, `phases`, `retry`, and `warning
 
 ### Requirement: Delete error precedence and exit vocabulary are stable
 
-After canonical CLI parsing, delete SHALL apply this precedence: configured workspace/config loading; exact configured-key lookup; topology/path/hook/Git inspection; complete plan construction; Git-loss refusal; dry-run success; confirmation requirement/prompt; post-lock invalidation or concurrent change; execution failure; partial failure after irreversible completion. It SHALL use existing `CONFIGURED_WORKSPACE_REQUIRED` for standalone refusal and delete-specific `DELETE_REPOSITORY_NOT_FOUND`, `DELETE_CONFIG_INVALID`, `DELETE_TOPOLOGY_INVALID`, `DELETE_PATH_UNSAFE`, `DELETE_HOOK_AMBIGUOUS`, `DELETE_GIT_DATA_LOSS`, `DELETE_CONFIRMATION_REQUIRED`, `DELETE_CANCELLED`, `DELETE_CONCURRENT_CHANGE`, `DELETE_EXECUTION_FAILED`, or `DELETE_PARTIAL_FAILURE`.
+After canonical CLI parsing, delete SHALL apply this precedence: configured workspace/config loading; target selection (explicit exact-key lookup, human-TTY checkbox outcome, or omitted non-TTY/JSON refusal); topology/path/hook/Git inspection for every selected key; complete ordered plan-set construction; Git-loss refusal; dry-run success; confirmation requirement/prompt; post-lock plan-set invalidation or concurrent change; execution failure; partial failure after irreversible completion anywhere in the batch. It SHALL use existing `CONFIGURED_WORKSPACE_REQUIRED` for standalone refusal and delete-specific `DELETE_SELECTION_REQUIRED`, `DELETE_REPOSITORY_NOT_FOUND`, `DELETE_CONFIG_INVALID`, `DELETE_TOPOLOGY_INVALID`, `DELETE_PATH_UNSAFE`, `DELETE_HOOK_AMBIGUOUS`, `DELETE_GIT_DATA_LOSS`, `DELETE_CONFIRMATION_REQUIRED`, `DELETE_CANCELLED`, `DELETE_CONCURRENT_CHANGE`, `DELETE_EXECUTION_FAILED`, or `DELETE_PARTIAL_FAILURE`.
 
-Successful dry-run, mutation, and receipt-proven idempotent completion SHALL exit `0`. Decline/cancel and clean non-interactive missing confirmation SHALL exit `2`. Every other listed failure SHALL exit `1`. `DELETE_PARTIAL_FAILURE` SHALL replace the initiating code whenever any irreversible item completed.
+Successful dry-run, mutation, and receipt-proven idempotent completion SHALL exit `0`. Empty/cancelled selection, omitted target outside a human TTY, decline/cancel, and clean non-interactive missing confirmation SHALL exit `2`. Every other listed failure SHALL exit `1`. `DELETE_PARTIAL_FAILURE` SHALL replace the initiating code whenever any irreversible item in the selected batch completed.
 
 #### Scenario: Configuration is invalid before key lookup
 

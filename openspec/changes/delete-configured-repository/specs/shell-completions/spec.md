@@ -2,7 +2,7 @@
 
 ### Requirement: Query workspace-aware candidates safely
 
-Arashi SHALL provide one shell-neutral internal completion query that accepts the current argument vector and cursor position without shell re-parsing and returns values with optional descriptions through a lossless machine-only record protocol. Typed completion policy SHALL map every dynamic slot explicitly: each registered `--only` value segment to repository names; each registered `--group` value segment to configured groups; `delete <repository>` to exact configured child repository keys; `switch [filter]` and `remove [target]` to branch/worktree names and paths, narrowed to exact worktree paths when `--path` is present; `move --from` and `move --to` to workspace branch/name/path references; `shell init [shell]` and `completion [shell]` to supported shells; and `create --conflict` plus any later explicitly classified finite-value option to its canonical constrained values. No command or option inherits dynamic completion merely because its value syntax resembles one of these slots.
+Arashi SHALL provide one shell-neutral internal completion query that accepts the current argument vector and cursor position without shell re-parsing and returns values with optional descriptions through a lossless machine-only record protocol. Typed completion policy SHALL map every dynamic slot explicitly: each registered `--only` value segment to repository names; each registered `--group` value segment to configured groups; optional `delete [repository]` to exact configured child repository keys; `switch [filter]` and `remove [target]` to branch/worktree names and paths, narrowed to exact worktree paths when `--path` is present; `move --from` and `move --to` to workspace branch/name/path references; `shell init [shell]` and `completion [shell]` to supported shells; and `create --conflict` plus any later explicitly classified finite-value option to its canonical constrained values. No command or option inherits dynamic completion merely because its value syntax resembles one of these slots.
 
 #### Scenario: Repository selector is active
 
@@ -16,7 +16,7 @@ Arashi SHALL provide one shell-neutral internal completion query that accepts th
 
 #### Scenario: Delete repository argument is active
 
-- **WHEN** completion is requested for `delete <repository>` from a configured parent, linked parent, or nested configured child invocation
+- **WHEN** completion is requested for optional `delete [repository]` from a configured parent, linked parent, or nested configured child invocation
 - **THEN** the query offers exact matching keys from the active `config.repos` authority
 - **AND** excludes meta/root identity, branch names, paths, fuzzy aliases, and implicit standalone repositories
 
