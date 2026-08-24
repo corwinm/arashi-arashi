@@ -73,11 +73,15 @@ async function checkSchema() {
       $ref: "#/definitions/WorktreeNamingConfig",
       description: "Optional filesystem naming policy for configured create",
     }) && "Config.worktreeNaming must reference the naming definition",
+    !exact(properties.version, {
+      $ref: "#/definitions/ConfigVersion",
+      description: "Configuration schema version for migrations",
+    }) && "Config.version must reference ConfigVersion",
     required.includes("worktreeNaming") &&
       "worktreeNaming must remain optional",
-    Array.isArray(naming.required) &&
-      naming.required.length > 0 &&
+    naming.required !== undefined &&
       "worktreeNaming fields must remain optional",
+    naming.type !== "object" && "worktreeNaming must remain an object",
     naming.additionalProperties !== false && "worktreeNaming must be closed",
     !exact(Object.keys(namingProperties).sort(), ["branchSlashes", "style"]) &&
       "worktreeNaming fields drifted",
@@ -90,10 +94,13 @@ async function checkSchema() {
       "#/definitions/WorktreeNamingBranchSlashes"
       ? "branchSlashes must reference WorktreeNamingBranchSlashes"
       : false,
+    style.type !== "string" && "style definition type drifted",
     !exact(style.enum, ["default", "branch", "repo-branch"]) &&
       "style enum drifted",
+    slashes.type !== "string" && "branchSlashes definition type drifted",
     !exact(slashes.enum, ["preserve", "flatten"]) &&
       "branchSlashes enum drifted",
+    version.type !== "string" && "configuration version type drifted",
     version.const !== "1.0.0" && "configuration version changed",
     JSON.stringify(schema).includes('"current"') &&
       "stale current naming style remains",
@@ -129,8 +136,65 @@ const compactExportSource = "repos/arashi-docs/public/llms.txt";
 const compactSources = [cliSource, compactExportSource];
 const normalize = (content: string) =>
   content.replaceAll("`", "").replace(/\s+/g, " ").toLowerCase();
+const rowKey = (topology: string, style: string, slashes: string) =>
+  `${topology.toLowerCase()}|${style.toLowerCase()}|${slashes.toLowerCase()}`;
+const expectedByKey = new Map(
+  rows.map(([topology, style, slashes, destination]) => [
+    rowKey(topology, style, slashes),
+    destination,
+  ]),
+);
+function checkConflictingRows(source: string, content: string) {
+  const unquoted = content.replaceAll("`", "");
+  for (const match of unquoted.matchAll(
+    /\b(non-bare|bare)\s+(default|branch|repo-branch)\s*\+\s*(preserve|flatten)\s*\|\s*([A-Za-z0-9][A-Za-z0-9_/-]*)/gi,
+  )) {
+    const key = rowKey(match[1]!, match[2]!, match[3]!);
+    const destination = match[4]?.toLowerCase();
+    const expected = expectedByKey.get(key);
+    if (expected !== undefined && destination !== expected) {
+      add(
+        "WORKTREE_NAMING_MATRIX_CONTRADICTION",
+        source,
+        `conflicting ${key} mapping: ${destination}`,
+      );
+    }
+  }
+  for (const line of unquoted.split("\n")) {
+    const cells = line
+      .split("|")
+      .map((cell) => cell.trim().toLowerCase())
+      .filter(Boolean);
+    let key: string | null = null;
+    let destination: string | null = null;
+    if (cells.length === 2) {
+      const match = cells[0]?.match(
+        /^(?:-\s*)?(non-bare|bare)\s+(default|branch|repo-branch)\s*\+\s*(preserve|flatten)$/,
+      );
+      if (match) {
+        key = rowKey(match[1]!, match[2]!, match[3]!);
+        destination = cells[1] ?? null;
+      }
+    } else if (
+      cells.length === 4 &&
+      /^(?:non-bare|bare)$/.test(cells[0] ?? "")
+    ) {
+      key = rowKey(cells[0]!, cells[1]!, cells[2]!);
+      destination = cells[3] ?? null;
+    }
+    const expected = key === null ? undefined : expectedByKey.get(key);
+    if (expected !== undefined && destination !== expected) {
+      add(
+        "WORKTREE_NAMING_MATRIX_CONTRADICTION",
+        source,
+        `conflicting ${key} mapping: ${destination}`,
+      );
+    }
+  }
+}
 function checkCore(source: string, content: string, detailed: boolean) {
   const plain = normalize(content);
+  checkConflictingRows(source, content);
   const requirements: [string, boolean][] = [
     [
       "root worktreeNaming scope",
@@ -238,17 +302,42 @@ function checkCore(source: string, content: string, detailed: boolean) {
         );
       }
     }
+    for (const statement of content.split(/(?<=[.!?])\s+|\n+/)) {
+      if (!/\brepo-branch\b/i.test(statement)) continue;
+      const candidates = [
+        ...statement.matchAll(/`([A-Za-z0-9_.-]+-feature(?:\/auth|-auth))`/gi),
+      ].map((match) => match[1]?.toLowerCase());
+      if (
+        candidates.some(
+          (candidate) =>
+            candidate !== undefined &&
+            candidate !== "repo-feature/auth" &&
+            candidate !== "repo-feature-auth",
+        )
+      ) {
+        add(
+          "WORKTREE_NAMING_MATRIX_CONTRADICTION",
+          source,
+          "conflicting CLI repo-branch destination",
+        );
+      }
+    }
   }
   const contradictions = [
     /style[^.\n]*(?:accepts?|supports?|includes?)[^.\n]*(?:current|custom|template|ticket)/i,
+    /\bstyle\b[^.\n]{0,80}\b(?:can|may)\s+(?:also\s+)?be\s+`?(?:current|custom|template|ticket)\b/i,
     /`style`\s*:[^.\n]*(?:current|custom|template|ticket)/i,
     /\bstyle\b\s+(?:is|values?\s+are)[^.\n]*(?:current|custom|template|ticket)/i,
     /(?:another|additional)[^.\n]*style[^.\n]*(?:current|custom|template|ticket)/i,
     /branchslashes[^.\n]*(?:accepts?|supports?|includes?)[^.\n]*(?:strip|remove|custom)/i,
-    /omitt[^.\n]{0,80}style[^.\n]{0,80}(?:selects?|uses?|means?)\s+`?(?:branch|repo-branch)\b/i,
-    /omitt[^.\n]{0,80}branchslashes[^.\n]{0,80}(?:selects?|uses?|means?)\s+`?(?:flatten|remove|strip)\b/i,
+    /omitt[^.\n]{0,80}style[^.\n]{0,80}(?:selects?|uses?|means?|defaults?\s+to)\s+`?(?:branch|repo-branch)\b/i,
+    /style[^.\n]{0,80}omitt[^.\n]{0,80}(?:selects?|uses?|means?|defaults?\s+to)\s+`?(?:branch|repo-branch)\b/i,
+    /omitt[^.\n]{0,80}branchslashes[^.\n]{0,80}(?:selects?|uses?|means?|defaults?\s+to)\s+`?(?:flatten|remove|strip)\b/i,
+    /branchslashes[^.\n]{0,80}omitt[^.\n]{0,80}(?:selects?|uses?|means?|defaults?\s+to)\s+`?(?:flatten|remove|strip)\b/i,
     /(?<!not )available\s+(?:through|in)\s+interactive\s+`?aw configure/i,
     /interactive\s+`?aw configure`?[^.\n]*(?:can|may|will)[^.\n]*(?:edit|configure)[^.\n]*worktreenaming/i,
+    /worktree\s+naming[^.\n]*(?:can|may|will)[^.\n]*(?:edit|configure)[^.\n]*interactive\s+`?aw configure/i,
+    /worktreenaming[^.\n]*(?:can|may|will)[^.\n]*(?:edit|configure)[^.\n]*interactive\s+`?aw configure/i,
     /direct\s+json\s+edit(?:ing)?[^.\n]*(?:unnecessary|not required)/i,
     /(?:rewrites?|changes?)[^.\n]*git branch[^.\n]*feature-auth/i,
     /(?:collision|conflict)[^.\n]*(?:may|can|will|retries?|falls?\s+back|chooses?)[^.\n]*(?:append|use|choose|suffix|another|alternate)/i,

@@ -153,6 +153,12 @@ describe("worktree naming cross-repository contract", () => {
         },
       ],
       [
+        "malformed nested required",
+        (schema) => {
+          schema.definitions.WorktreeNamingConfig.required = "style";
+        },
+      ],
+      [
         "detached naming definition",
         (schema) => {
           schema.definitions.Config.properties.worktreeNaming = {
@@ -176,6 +182,13 @@ describe("worktree naming cross-repository contract", () => {
         "current alias",
         (schema) => {
           schema.definitions.WorktreeNamingStyle.enum.push("current");
+        },
+      ],
+      [
+        "detached version definition",
+        (schema) => {
+          schema.definitions.Config.properties.version.$ref =
+            "#/definitions/WorktreeNamingStyle";
         },
       ],
       [
@@ -299,6 +312,52 @@ describe("worktree naming cross-repository contract", () => {
       expectRejected(root, label);
     }
   }, 20_000);
+  test("rejects additive matrix and natural-language semantic reversals", async () => {
+    const drifts: [string, string, string, string][] = [
+      [
+        "detailed conflicting row",
+        "repos/arashi-docs/docs/workflows/config.md",
+        "| Bare `default` + `preserve` | `example/feature/auth` |",
+        "| Bare `default` + `preserve` | `example/feature/auth` |\n| Bare `default` + `preserve` | `WRONG/path` |",
+      ],
+      [
+        "compact conflicting row",
+        "repos/arashi-docs/public/llms.txt",
+        "bare `default` + `preserve` | `example/feature/auth`;",
+        "bare `default` + `preserve` | `example/feature/auth`;\n- bare `default` + `preserve` | `WRONG/path`",
+      ],
+      [
+        "CLI additive destination",
+        "repos/arashi/docs/configuration.md",
+        "`repo-feature/auth` (or `repo-feature-auth`)",
+        "`repo-feature/auth` (or `repo-feature-auth`). `repo-branch` may instead be `wrong-feature/auth`",
+      ],
+      [
+        "natural custom style",
+        "repos/arashi-docs/docs/workflows/config.md",
+        "Omitting `style` means `default`",
+        "Omitting `style` means `default`. `style` can be `custom`",
+      ],
+      [
+        "natural omission reversal",
+        "repos/arashi-docs/public/llms-full.txt",
+        "Omitting `style` means `default`",
+        "Omitting `style` means `default`. When `style` is omitted, it defaults to `repo-branch`",
+      ],
+      [
+        "natural interactive reversal",
+        "repos/arashi-skills/skills/arashi/references/commands/create.md",
+        "`aw configure` does not expose worktree naming",
+        "`aw configure` does not expose worktree naming. Worktree naming can also be edited with interactive `aw configure`",
+      ],
+    ];
+    for (const [label, source, oldText, newText] of drifts) {
+      const root = await fixture();
+      await replace(root, source, oldText, newText);
+      expectRejected(root, label);
+    }
+  }, 20_000);
+
   test("rejects stale child checker registrations", async () => {
     for (const [source, identity] of [
       [
