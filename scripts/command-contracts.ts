@@ -514,6 +514,7 @@ const completionCandidates = new Map<string, Obj>([
   ["create.--editor-host", { choices: ["cursor", "kiro", "vscode"] }],
   ["create.--group", { candidateKind: "group" }],
   ["create.--only", { candidateKind: "repository" }],
+  ["delete.repository", { candidateKind: "configured-repository" }],
   ["exec.--group", { candidateKind: "group" }],
   ["exec.--only", { candidateKind: "repository" }],
   ["init.--ignore-scope", { choices: ["local", "tracked", "none"] }],

@@ -315,9 +315,28 @@ export async function checkExecutableDistributionContracts(
   }
 
   try {
-    const commander = await json(root, paths.commander);
-    const strings = collectStrings(commander);
-    const forbidden = strings.some((value) => value === "aw");
+    const commanderValue = await json(root, paths.commander);
+    const commander = object(commanderValue) ? commanderValue : {};
+    const commands = Array.isArray(commander.commands)
+      ? commander.commands.filter((value): value is JsonObject => object(value))
+      : [];
+    const forbidden = commands.some((command) => {
+      const path = command.path;
+      const aliases = Array.isArray(command.aliases) ? command.aliases : [];
+      const aliasPaths = Array.isArray(command.aliasPaths)
+        ? command.aliasPaths
+        : [];
+      return (
+        (typeof path === "string" &&
+          (path === "aw" || path.startsWith("aw "))) ||
+        aliases.some((value) => value === "aw") ||
+        aliasPaths.some(
+          (value) =>
+            typeof value === "string" &&
+            (value === "aw" || value.startsWith("aw ")),
+        )
+      );
+    });
     if (forbidden)
       add(
         "companion",
