@@ -2,7 +2,7 @@
 
 ### Requirement: Workspace configuration defines a closed worktree naming policy
 
-Configured workspace files SHALL accept an optional root `worktreeNaming` object with optional `style` and `branchSlashes` fields. `style` MUST accept only `current`, `branch`, or `repo-branch`; `branchSlashes` MUST accept only `preserve` or `flatten`. Omitted `worktreeNaming`, omitted nested fields, explicit `style: "current"`, and explicit `branchSlashes: "preserve"` SHALL preserve the corrected configured topology and natural slash behavior without automatically persisting or migrating omitted values. Invalid object shapes or unsupported values MUST fail configuration loading before destination planning, hooks, managed-ignore reconciliation, branch creation, worktree creation, directory creation, or any other mutation.
+Configured workspace files SHALL accept an optional root `worktreeNaming` object with optional `style` and `branchSlashes` fields. `style` MUST accept only `default`, `branch`, or `repo-branch`; `branchSlashes` MUST accept only `preserve` or `flatten`. Omitted `worktreeNaming`, omitted nested fields, explicit `style: "default"`, and explicit `branchSlashes: "preserve"` SHALL preserve the corrected configured topology and natural slash behavior without automatically persisting or migrating omitted values. Invalid object shapes or unsupported values MUST fail configuration loading before destination planning, hooks, managed-ignore reconciliation, branch creation, worktree creation, directory creation, or any other mutation.
 
 #### Scenario: Omitted policy preserves corrected defaults
 
@@ -14,7 +14,7 @@ Configured workspace files SHALL accept an optional root `worktreeNaming` object
 
 #### Scenario: Explicit compatibility values match omission
 
-- **WHEN** a configured workspace sets `worktreeNaming.style` to `current` and `worktreeNaming.branchSlashes` to `preserve`
+- **WHEN** a configured workspace sets `worktreeNaming.style` to `default` and `worktreeNaming.branchSlashes` to `preserve`
 - **THEN** destination planning is exactly equivalent to the omitted policy for the same workspace, repository identity, and branch
 - **AND** the earlier inverted pre-#323 behavior is not restored
 
@@ -40,11 +40,11 @@ Configured workspace files SHALL accept an optional root `worktreeNaming` object
 
 ### Requirement: Worktree creation uses a single resolved base path
 
-All commands that create configured worktrees MUST derive destinations from a shared normalized effective `worktreesDir` base, the normalized effective `worktreeNaming` policy, and one immutable ordered destination plan. The effective compatibility policy is `style: "current"` plus `branchSlashes: "preserve"`: a newly created configured bare parent uses `<canonical repository naming component>/<branch>` beneath the base and a newly created configured non-bare parent uses `<branch>`. `style: "branch"` removes the topology-dependent repository component; `style: "repo-branch"` prefixes the first branch filesystem component with `<canonical repository naming component>-` for both bare and non-bare parents. `branchSlashes: "preserve"` retains Git branch `/` separators as directory boundaries, while `branchSlashes: "flatten"` replaces those separators only in the filesystem branch representation with `-`. The requested Git branch value MUST remain exact for Git operations. The repository component MUST be the existing resolved `worktreeName` when present and otherwise the repository's canonical configured name, with a conventional terminal `.git` suffix omitted when the bare source directory supplies the fallback name, and MUST NOT otherwise be guessed from filesystem paths. A custom `worktreesDir` changes only the base and MUST NOT change the naming policy.
+All commands that create configured worktrees MUST derive destinations from a shared normalized effective `worktreesDir` base, the normalized effective `worktreeNaming` policy, and one immutable ordered destination plan. The effective compatibility policy is `style: "default"` plus `branchSlashes: "preserve"`: a newly created configured bare parent uses `<canonical repository naming component>/<branch>` beneath the base and a newly created configured non-bare parent uses `<branch>`. `style: "branch"` removes the topology-dependent repository component; `style: "repo-branch"` prefixes the first branch filesystem component with `<canonical repository naming component>-` for both bare and non-bare parents. `branchSlashes: "preserve"` retains Git branch `/` separators as directory boundaries, while `branchSlashes: "flatten"` replaces those separators only in the filesystem branch representation with `-`. The requested Git branch value MUST remain exact for Git operations. The repository component MUST be the existing resolved `worktreeName` when present and otherwise the repository's canonical configured name, with a conventional terminal `.git` suffix omitted when the bare source directory supplies the fallback name, and MUST NOT otherwise be guessed from filesystem paths. A custom `worktreesDir` changes only the base and MUST NOT change the naming policy.
 
 #### Scenario: Configured bare parent uses a repository namespace
 
-- **WHEN** configured create plans branch `feature/auth` for a bare parent whose canonical repository naming component is `example` with omitted policy or explicit `current` and `preserve`
+- **WHEN** configured create plans branch `feature/auth` for a bare parent whose canonical repository naming component is `example` with omitted policy or explicit `default` and `preserve`
 - **THEN** the parent destination beneath the effective worktree base is `example/feature/auth`
 - **AND** the Git branch remains `feature/auth`
 
@@ -57,13 +57,13 @@ All commands that create configured worktrees MUST derive destinations from a sh
 
 #### Scenario: Bare repository and branch components cannot alias
 
-- **WHEN** repository `example` plans branch `feature/auth` and repository `example-feature` plans branch `auth` beneath the same effective base using `current` and `preserve`
+- **WHEN** repository `example` plans branch `feature/auth` and repository `example-feature` plans branch `auth` beneath the same effective base using `default` and `preserve`
 - **THEN** their destinations are respectively `example/feature/auth` and `example-feature/auth`
 - **AND** the destinations are distinct
 
 #### Scenario: Configured non-bare parent uses branch path
 
-- **WHEN** configured create plans branch `feature/auth` for a non-bare parent with omitted policy or explicit `current` and `preserve`
+- **WHEN** configured create plans branch `feature/auth` for a non-bare parent with omitted policy or explicit `default` and `preserve`
 - **THEN** the parent destination beneath the effective worktree base is `feature/auth`
 - **AND** no repository component is repeated inside that base
 
@@ -102,7 +102,7 @@ All commands that create configured worktrees MUST derive destinations from a sh
 #### Scenario: Flatten applies only to the branch filesystem representation
 
 - **WHEN** repository `example` plans Git branch `feature/auth` with `branchSlashes: "flatten"`
-- **THEN** `branch` resolves to `feature-auth`, `repo-branch` resolves to `example-feature-auth`, configured bare `current` resolves to `example/feature-auth`, and configured non-bare `current` resolves to `feature-auth` beneath the effective base
+- **THEN** `branch` resolves to `feature-auth`, `repo-branch` resolves to `example-feature-auth`, configured bare `default` resolves to `example/feature-auth`, and configured non-bare `default` resolves to `feature-auth` beneath the effective base
 - **AND** every Git operation still receives branch `feature/auth`
 
 #### Scenario: Coordinated children use the authoritative parent
@@ -174,7 +174,7 @@ The effective configured naming policy SHALL apply only to destinations for newl
 
 ### Requirement: Configured destination behavior is portable
 
-The configured destination resolver and create lifecycle SHALL interpret Git branch `/` separators independently of host path separators and SHALL compose the effective naming policy with cross-platform path semantics. Native acceptance on macOS, Linux, and Windows SHALL cover configured bare and non-bare omission/current defaults, every explicit style, both slash policies, exact Git branch identity, and coordinated child placement. Platform-neutral integration coverage SHALL cover custom roots, slash-derived collision preflight, containment, output parity, standalone isolation, and existing-worktree compatibility.
+The configured destination resolver and create lifecycle SHALL interpret Git branch `/` separators independently of host path separators and SHALL compose the effective naming policy with cross-platform path semantics. Native acceptance on macOS, Linux, and Windows SHALL cover configured bare and non-bare omission/default defaults, every explicit style, both slash policies, exact Git branch identity, and coordinated child placement. Platform-neutral integration coverage SHALL cover custom roots, slash-derived collision preflight, containment, output parity, standalone isolation, and existing-worktree compatibility.
 
 #### Scenario: Native platform matrix runs
 

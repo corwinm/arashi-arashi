@@ -7,7 +7,7 @@ Generated Markdown command pages and full-document agent-readable exports SHALL 
 #### Scenario: Agent reads generated configuration or create guidance
 
 - **WHEN** generated command Markdown or the full agent-readable export contains configured worktree naming guidance
-- **THEN** it exposes both closed fields, their compatibility defaults, and exact current/branch/repo-branch preserve/flatten examples
+- **THEN** it exposes both closed fields, their compatibility defaults, and exact default/branch/repo-branch preserve/flatten examples
 - **AND** retains the canonical safety and compatibility qualifications
 
 #### Scenario: Generated export drifts from authored guidance

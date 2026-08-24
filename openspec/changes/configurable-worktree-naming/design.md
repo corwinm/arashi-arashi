@@ -11,7 +11,7 @@ The change crosses the CLI configuration model/schema, path planner, configured 
 **Goals:**
 
 - Accept only the closed `worktreeNaming.style` and `worktreeNaming.branchSlashes` value sets.
-- Make omission and explicit `current`/`preserve` equivalent to the corrected #323 defaults without persisting a migration.
+- Make omission and explicit `default`/`preserve` equivalent to the corrected #323 defaults without persisting a migration.
 - Keep Git branch names exact while deterministically mapping their `/` separators for filesystem placement.
 - Compute one immutable ordered destination plan before any create mutation and consume it everywhere.
 - Reject naming-derived path aliases and occupied destinations deterministically without inventing a suffix.
@@ -34,7 +34,7 @@ The change crosses the CLI configuration model/schema, path planner, configured 
 Add exported configuration types equivalent to:
 
 ```ts
-type WorktreeNamingStyle = "current" | "branch" | "repo-branch";
+type WorktreeNamingStyle = "default" | "branch" | "repo-branch";
 type WorktreeBranchSlashes = "preserve" | "flatten";
 
 interface WorktreeNamingConfig {
@@ -43,7 +43,7 @@ interface WorktreeNamingConfig {
 }
 ```
 
-`Config.worktreeNaming` is optional. Loading validates that the value is an object with only supported enum values. The effective policy is `{ style: "current", branchSlashes: "preserve" }`; normalization and persistence preserve omission rather than writing defaults into existing files. Invalid object shapes or enum values fail through the established invalid-configuration path before configured create planning or mutation.
+`Config.worktreeNaming` is optional. Loading validates that the value is an object with only supported enum values. The effective policy is `{ style: "default", branchSlashes: "preserve" }`; normalization and persistence preserve omission rather than writing defaults into existing files. Invalid object shapes or enum values fail through the established invalid-configuration path before configured create planning or mutation.
 
 The generated JSON Schema is produced from the typed model, keeps both nested properties optional, and rejects unsupported values. Maintained examples explain defaults rather than relying only on schema annotations.
 
@@ -57,7 +57,7 @@ For `branchSlashes: "preserve"`, the branch filesystem representation remains th
 
 | Style         | Non-bare                                                                                                                                                    | Bare                                             |
 | ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ |
-| `current`     | branch representation                                                                                                                                       | repository component, then branch representation |
+| `default`     | branch representation                                                                                                                                       | repository component, then branch representation |
 | `branch`      | branch representation                                                                                                                                       | branch representation                            |
 | `repo-branch` | repository component prefixed to the first branch component with `-`, followed by remaining preserved components; or one fully flattened prefixed component | same as non-bare                                 |
 
@@ -65,9 +65,9 @@ Examples for repository `example` and branch `feature/auth`:
 
 | Style              | Slash policy | Relative destination   |
 | ------------------ | ------------ | ---------------------- |
-| `current` non-bare | preserve     | `feature/auth`         |
-| `current` bare     | preserve     | `example/feature/auth` |
-| `current` bare     | flatten      | `example/feature-auth` |
+| `default` non-bare | preserve     | `feature/auth`         |
+| `default` bare     | preserve     | `example/feature/auth` |
+| `default` bare     | flatten      | `example/feature-auth` |
 | `branch`           | preserve     | `feature/auth`         |
 | `branch`           | flatten      | `feature-auth`         |
 | `repo-branch`      | preserve     | `example-feature/auth` |
@@ -75,7 +75,7 @@ Examples for repository `example` and branch `feature/auth`:
 
 The existing resolved `worktreeName`/canonical configured-name authority remains the repository component. A conventional terminal `.git` is omitted only by the existing bare fallback rule. The complete candidate is resolved beneath the effective worktree base and must remain contained by that base according to the existing configured destination safety semantics.
 
-**Alternative considered:** preserve repository and branch as separate path components for `repo-branch`. Rejected because the issue deliberately defines a hyphen-prefixed directory style and names it `repo-branch`; changing it to `repo/branch` would duplicate corrected bare `current` rather than provide the requested policy.
+**Alternative considered:** preserve repository and branch as separate path components for `repo-branch`. Rejected because the issue deliberately defines a hyphen-prefixed directory style and names it `repo-branch`; changing it to `repo/branch` would duplicate corrected bare `default` rather than provide the requested policy.
 
 ### 3. Extend the existing immutable destination plan rather than adding renderer-specific resolution
 
@@ -124,7 +124,7 @@ The CLI owns the generated JSON Schema and maintained README/config guidance. Th
 
 ## Migration Plan
 
-1. Add CLI RED tests for config normalization/schema, all style/slash combinations, corrected omission/current defaults, branch identity, containment, collisions, renderers, coordinated children, standalone, existing worktrees, and native platforms.
+1. Add CLI RED tests for config normalization/schema, all style/slash combinations, corrected omission/default defaults, branch identity, containment, collisions, renderers, coordinated children, standalone, existing worktrees, and native platforms.
 2. Implement configuration and the shared destination-policy helper, then route only the existing authoritative configured plan through it.
 3. Run focused and complete CLI validation and exact-head native CI; merge the CLI child PR first.
 4. Add authored docs and any necessary packaged guidance with RED drift checks, regenerate exports, validate packages/sites, and merge companion PRs.
@@ -134,7 +134,7 @@ Rollback is a normal code/docs revert. Because no configuration migration or exi
 
 ## Resolved Questions
 
-- **Meaning of bare `current`:** The live issue initially contained a stale hyphenated bare example that contradicted its `current === omission` requirement and merged #323. The issue body now defines bare `current + preserve` as `<repository>/<branch>`, bare `current + flatten` as `<repository>/<flattened-branch>`, and reserves the hyphen prefix for `repo-branch`.
+- **Meaning of bare `default`:** The live issue initially contained a stale hyphenated bare example that contradicted its `default === omission` requirement and merged #323. The issue body now defines bare `default + preserve` as `<repository>/<branch>`, bare `default + flatten` as `<repository>/<flattened-branch>`, and reserves the hyphen prefix for `repo-branch`.
 - **Interactive configuration:** The initial slice deliberately excludes interactive `aw configure` support. Canonical website and packaged guidance must say to edit `.arashi/config.json` directly so authored-config acceptance is not mistaken for a new interactive descriptor.
 
 No implementation questions remain. Invalid configuration, separator mapping, `repo-branch` composition, collision precedence, output fields, and compatibility boundaries are defined above.

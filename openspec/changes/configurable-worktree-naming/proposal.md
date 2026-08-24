@@ -4,7 +4,7 @@ Arashi's corrected topology defaults still leave configured worktree directory n
 
 ## What Changes
 
-- Add optional root-level `worktreeNaming.style` configuration with `current`, `branch`, and `repo-branch` values. Omission and explicit `current` preserve the corrected bare/non-bare topology defaults delivered for #323.
+- Add optional root-level `worktreeNaming.style` configuration with `default`, `branch`, and `repo-branch` values. Omission and explicit `default` preserve the corrected bare/non-bare topology defaults delivered for #323.
 - Add optional `worktreeNaming.branchSlashes` configuration with `preserve` and `flatten` values. Omission and explicit `preserve` retain slash-separated path hierarchy; `flatten` replaces branch `/` separators only in the filesystem naming component.
 - Resolve one exact configured parent/child destination plan before hooks, branch creation, worktree creation, managed-path writes, or other mutation, and reject deterministic filesystem or Git-registration collisions without suffixes or alternate names.
 - Reuse that authoritative plan for human output, dry-run output, JSON output, collision diagnostics, coordinated child placement, and execution while preserving the requested Git branch exactly.
@@ -21,7 +21,7 @@ None.
 
 - `configurable-worktree-location`: Add configured naming and slash policies while preserving corrected topology defaults, authoritative planning, collision safety, coordinated child layout, standalone isolation, existing-worktree compatibility, and cross-platform behavior.
 - `machine-readable-cli-output`: Make configured create success, dry-run, and collision JSON destinations reflect the selected naming policy without changing the established envelope, ordering, or destination field locations.
-- `init-repository-aware-worktree-default`: Qualify configured bare create's persisted-base destination as the omitted/`current` compatibility policy while allowing explicit `branch` and `repo-branch` styles beneath the same base.
+- `init-repository-aware-worktree-default`: Qualify configured bare create's persisted-base destination as the omitted/`default` compatibility policy while allowing explicit `branch` and `repo-branch` styles beneath the same base.
 - `docs-workflow-guidance-sections`: Require canonical authored configuration/create guidance for the closed policy, compatibility defaults, exact examples, JSON-authored scope, collision behavior, and unchanged Git branches.
 - `docs-agent-readable-exports`: Preserve the same naming-policy contract in generated Markdown and full-document agent exports.
 - `arashi-skill-guidance`: Add focused packaged workspace/create guidance without expanding the routing-only skill entry point.
