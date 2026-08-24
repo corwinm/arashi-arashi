@@ -4,5 +4,6 @@
   "scripts/check-executable-distribution-contracts.ts",
   "scripts/check-hook-contracts.ts",
   "scripts/check-inline-hook-contracts.ts",
-  "scripts/check-worktree-materialization-contracts.ts"
+  "scripts/check-worktree-materialization-contracts.ts",
+  "scripts/check-worktree-naming-contracts.ts"
 ]
