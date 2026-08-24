@@ -45,5 +45,5 @@
 
 - [x] 6.1 Refresh the meta branch against current `main`, verify merged child trees contain the reviewed surfaces, rerun strict OpenSpec validation plus coordinated schema/docs/skills checks against actual child `main`, and reconcile all proposal task evidence without prematurely checking archive/merge work.
 - [x] 6.2 Update the original proposal PR with the complete child PR/SHA set and final implementation evidence, perform one bounded exact-head semantic review of the complete OpenSpec artifact manifest, and require exact manifest identity plus green meta CI and zero eligible unresolved threads.
-- [ ] 6.3 Archive and sync `configurable-worktree-naming` only after all pre-archive tasks are complete, validate the canonical specs and archive diff, commit/push the archive on the same meta PR, and rerun exact-head meta gates.
+- [x] 6.3 Archive and sync `configurable-worktree-naming` only after all pre-archive tasks are complete, validate the canonical specs and archive diff, commit/push the archive on the same meta PR, and rerun exact-head meta gates.
 - [ ] 6.4 Merge the final meta PR with the only `Closes #322` reference after the atomic live guard, verify the returned merge SHA and issue closure, then remove the coordinated worktree/branches with `aw remove` and confirm all base repositories are clean and synchronized.
