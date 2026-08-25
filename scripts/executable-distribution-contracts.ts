@@ -27,8 +27,8 @@ const paths = {
 } as const;
 
 const expected = {
-  posixRelease: ["arashi", "aw"],
-  posixInstalled: ["arashi.bin", "arashi", "aw"],
+  posixRelease: ["arashi", "aw", "uninstall.sh"],
+  posixInstalled: ["arashi.bin", "arashi", "aw", "uninstall.sh"],
   windowsRelease: [
     "arashi",
     "arashi.ps1",
@@ -36,6 +36,7 @@ const expected = {
     "aw",
     "aw.ps1",
     "aw.bat",
+    "uninstall.ps1",
   ],
   windowsInstalled: [
     "arashi.bin.exe",
@@ -45,6 +46,7 @@ const expected = {
     "aw",
     "aw.ps1",
     "aw.bat",
+    "uninstall.ps1",
   ],
 } as const;
 
@@ -135,14 +137,14 @@ export async function checkExecutableDistributionContracts(
   }
 
   if (
-    get(contract, "schemaVersion") !== 1 ||
+    get(contract, "schemaVersion") !== 2 ||
     get(contract, "canonical") !== "arashi"
   )
     add(
       "distribution",
       "EXECUTABLE_IDENTITY_MISMATCH",
       paths.contract,
-      "Canonical executable identity must be arashi under schema version 1.",
+      "Canonical executable identity must be arashi under schema version 2.",
     );
 
   const alias = get(contract, "alias");
@@ -181,7 +183,7 @@ export async function checkExecutableDistributionContracts(
       "distribution",
       "EXECUTABLE_POSIX_PAYLOAD_MISMATCH",
       paths.contract,
-      "POSIX distribution must route arashi and aw wrappers to one arashi.bin payload.",
+      "POSIX distribution must route arashi and aw wrappers to one arashi.bin payload and include the managed uninstall helper.",
     );
 
   if (
@@ -199,7 +201,7 @@ export async function checkExecutableDistributionContracts(
       "distribution",
       "EXECUTABLE_WINDOWS_PAYLOAD_MISMATCH",
       paths.contract,
-      "Windows distribution must provide Git Bash, PowerShell, and CMD wrappers for both names around one arashi.bin.exe payload.",
+      "Windows distribution must provide Git Bash, PowerShell, and CMD wrappers for both names around one arashi.bin.exe payload and include the managed uninstall helper.",
     );
 
   const markers = get(contract, "ownership", "markers");
@@ -209,7 +211,7 @@ export async function checkExecutableDistributionContracts(
     !markerValues.every((marker) => marker === "arashi-managed-alias:aw:v1") ||
     get(contract, "ownership", "ledger", "name") !==
       ".arashi-managed-entrypoints.json" ||
-    get(contract, "ownership", "ledger", "schemaVersion") !== 1 ||
+    get(contract, "ownership", "ledger", "schemaVersion") !== 2 ||
     get(contract, "ownership", "collisionPolicy") !== "marker-and-ledger-hash"
   )
     add(

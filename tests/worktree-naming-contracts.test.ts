@@ -211,8 +211,8 @@ describe("worktree naming cross-repository contract", () => {
       [
         "missing integer constraint",
         (schema) =>
-          delete schema.definitions.WorktreeNamingConfig.properties.maxPathLength
-            .multipleOf,
+          delete schema.definitions.WorktreeNamingConfig.properties
+            .maxPathLength.multipleOf,
       ],
       [
         "minimum",
