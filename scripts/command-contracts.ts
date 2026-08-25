@@ -505,7 +505,7 @@ const sameStrings = (left: string[] | undefined, right: string[]): boolean =>
 const completionCandidates = new Map<string, Obj>([
   [
     "completion.shell",
-    { candidateKind: "shell", choices: ["bash", "fish", "zsh"] },
+    { candidateKind: "shell", choices: ["bash", "fish", "powershell", "zsh"] },
   ],
   [
     "create.--conflict",

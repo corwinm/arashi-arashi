@@ -24,12 +24,12 @@ const contract = {
     managedShellBlock: "arashi",
     packageName: "arashi",
   },
-  ledger: { name: ".arashi-managed-entrypoints.json", schemaVersion: 1 },
+  ledger: { name: ".arashi-managed-entrypoints.json", schemaVersion: 2 },
   nativeBinaries: { posix: "arashi.bin", windows: "arashi.bin.exe" },
   npmBins: { arashi: "./bin/arashi.js", aw: "./bin/arashi.js" },
   ownership: {
     collisionPolicy: "marker-and-ledger-hash",
-    ledger: { name: ".arashi-managed-entrypoints.json", schemaVersion: 1 },
+    ledger: { name: ".arashi-managed-entrypoints.json", schemaVersion: 2 },
     markers: {
       cmd: "arashi-managed-alias:aw:v1",
       posix: "arashi-managed-alias:aw:v1",
@@ -37,10 +37,10 @@ const contract = {
     },
   },
   posix: {
-    installed: ["arashi.bin", "arashi", "aw"],
-    releaseLaunchers: ["arashi", "aw"],
+    installed: ["arashi.bin", "arashi", "aw", "uninstall.sh"],
+    releaseLaunchers: ["arashi", "aw", "uninstall.sh"],
   },
-  schemaVersion: 1,
+  schemaVersion: 2,
   shellWrapperNames: ["arashi", "aw"],
   windows: {
     installed: [
@@ -51,6 +51,7 @@ const contract = {
       "aw",
       "aw.ps1",
       "aw.bat",
+      "uninstall.ps1",
     ],
     releaseLaunchers: [
       "arashi",
@@ -59,6 +60,7 @@ const contract = {
       "aw",
       "aw.ps1",
       "aw.bat",
+      "uninstall.ps1",
     ],
   },
 };
