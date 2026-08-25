@@ -27,5 +27,5 @@
 - [x] 4.1 Perform independent CLI spec/code/security review, reconcile verified findings, and run final child gates.
 - [x] 4.2 Commit, push, and open cross-linked non-closing CLI, docs, and skills PRs referencing `corwinm/arashi-arashi#333`; verify exact base/head/files and live CI/review threads.
 - [x] 4.3 Update the meta proposal with implementation evidence and child PRs, run strict OpenSpec/coordinated validation, commit/push, and open the non-closing meta PR.
-- [ ] 4.4 Merge child PRs only after exact-head approval and explicit merge authorization, then sync/archive the change on the exact meta head.
+- [x] 4.4 Merge child PRs only after exact-head approval and explicit merge authorization, then sync/archive the change on the exact meta head.
 - [ ] 4.5 Merge the final meta PR with the sole `Closes #333` reference only after exact-head gates, verify issue closure, and clean branches/worktrees.

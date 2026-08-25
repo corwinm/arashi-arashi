@@ -854,3 +854,13 @@ Focused delete semantic checkers SHALL be directly executable and registered thr
 
 - **WHEN** maintainers run the documented coordinated validation or authoritative CI runs
 - **THEN** both paths execute the same stable docs source/export, skills source/extracted-package, CLI contract, and meta aggregate stages exactly once according to existing prevalidated-child policy
+
+### Requirement: Coordinated validation binds path-budget contracts across repositories
+
+The meta aggregate SHALL validate the exact optional `worktreeNaming.maxPathLength` schema shape and bind it to canonical docs, generated exports, and packaged guidance semantics for full absolute configured destinations, UTF-16 measurement, deterministic eight-hex SHA-256 shortening, coordinated-child sizing, omission behavior, overflow failure, unchanged compatibility boundaries, and repository-content limitation.
+
+#### Scenario: One companion drifts from the CLI contract
+
+- **WHEN** an out-of-repository fixture changes the numeric field, measurement unit, hash length, destination scope, coordinated-child behavior, overflow code/details, or limitation on one maintained surface
+- **THEN** the coordinated checker rejects that fixture with an owner-specific diagnostic
+- **AND** validation does not modify any child repository

@@ -38,9 +38,9 @@ None.
 
 ## Implementation Evidence
 
-- CLI: https://github.com/corwinm/arashi/pull/165 at `0d92a60a45fa4edc0bf88208af6b42be5115562e`
-- Documentation: https://github.com/corwinm/arashi-docs/pull/95 at `c95f69ccc6f98ef3c2354f1657d744054469ba7b`
-- Packaged guidance: https://github.com/corwinm/arashi-skills/pull/73 at `c418875ecef3b5c8bbabbf2fef837c13296c5521`
+- CLI: https://github.com/corwinm/arashi/pull/165 merged as `5e4db469ae70c8e2b15bc607197ebc92b0163d2c`
+- Documentation: https://github.com/corwinm/arashi-docs/pull/95 merged as `a8cf4f8712261be8c129700b14e49ca75af1db2a`
+- Packaged guidance: https://github.com/corwinm/arashi-skills/pull/73 merged as `e1107791864512094d86bdf4f6135528aa1b9867`
 - CLI verification includes 2,768 passed and 17 skipped, schema drift, typecheck, lint, build, native materialization, canonical Windows short/long path identity handling, and an independent exact-head specification/security review.
 - Documentation verification includes 105 controlled semantic drifts, all 20 registered semantic checkers, Astro validation/build, links, accessibility, and domain checks.
 - Packaged-guidance verification includes 115 authored/package drift fixtures, all 19 registered guidance checkers, security, deterministic archive, registration, and workflow-composition gates.
