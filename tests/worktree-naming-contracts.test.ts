@@ -21,6 +21,53 @@ const sources = [
   "repos/arashi-skills/scripts/guidance-checkers.json",
 ] as const;
 
+const schemaSource = "repos/arashi/schema/config.schema.json";
+const cliGuidanceSource = "repos/arashi/docs/configuration.md";
+const pathBudgetGuidanceSources = [
+  cliGuidanceSource,
+  "repos/arashi-docs/docs/workflows/config.md",
+  "repos/arashi-docs/docs/commands/create.md",
+  "repos/arashi-docs/public/workflows/config.md",
+  "repos/arashi-docs/public/commands/create.md",
+  "repos/arashi-docs/public/llms-full.txt",
+  "repos/arashi-docs/public/llms.txt",
+  "repos/arashi-skills/skills/arashi/references/commands/create.md",
+] as const;
+const exactExampleSources = pathBudgetGuidanceSources.filter(
+  (source) => source !== "repos/arashi-docs/public/llms.txt",
+);
+const ownerCode = (source: string) => {
+  if (source === cliGuidanceSource)
+    return "WORKTREE_NAMING_CLI_GUIDANCE_MISMATCH";
+  if (source.startsWith("repos/arashi-skills/"))
+    return "WORKTREE_NAMING_SKILL_GUIDANCE_MISMATCH";
+  if (source.includes("/public/llms"))
+    return "WORKTREE_NAMING_DOCS_EXPORT_MISMATCH";
+  if (source.startsWith("repos/arashi-docs/public/"))
+    return "WORKTREE_NAMING_DOCS_GENERATED_MISMATCH";
+  return "WORKTREE_NAMING_DOCS_SOURCE_MISMATCH";
+};
+const exactPathBudgetExample = `\`\`\`json
+{
+  "worktreeNaming": {
+    "style": "repo-branch",
+    "branchSlashes": "flatten",
+    "maxPathLength": 180
+  }
+}
+\`\`\``;
+const pathBudgetContract = `${exactPathBudgetExample}
+
+Omitting \`style\` means \`default\`, and omitting \`branchSlashes\` means \`preserve\`.
+
+\`maxPathLength\` is an optional positive integer from 1 through 2,147,483,647. It limits each full absolute newly planned configured-worktree destination in UTF-16 code units, rather than limiting one folder component. Omitting \`maxPathLength\` preserves current path bytes; Arashi does not infer, persist, or migrate a platform or Windows default.
+
+If every selected destination fits the budget, its path remains exact. Only newly planned configured paths may shorten. When the budget is exceeded, Arashi shortens the generated parent namespace to a readable prefix followed by \`-\` and the first eight lowercase SHA-256 hexadecimal characters of the portable \`/\`-separated ordinary namespace. If the chosen destination collides, create fails deterministically instead of appending a suffix; it never appends a numeric suffix.
+
+Arashi sizes one authoritative parent against all selected coordinated child paths, even when selection excludes the parent; child-relative paths remain unchanged and children never shorten independently. Coordinated children remain under the planned parent path using their configured child paths. If fixed base and child topology leave fewer than nine UTF-16 code units for \`-<eight-hex-hash>\`, create reports \`WORKTREE_PATH_LENGTH_EXCEEDED\` before mutation. Its details contain exactly \`repositoryName\`, \`worktreePath\`, \`maxPathLength\`, and \`minimumPathLength\`; \`worktreePath\` is the ordinary absolute planned path and \`minimumPathLength\` is the shortest collision-resistant absolute length.
+
+The Git branch remains exactly \`feature/auth\`. Existing worktree paths are metadata-authoritative and are never renamed by this setting. Standalone \`.worktrees/<branch>\` placement is unchanged and ignores \`maxPathLength\`. The budget reserves space only for each worktree root; it cannot guarantee repository-internal file paths fit.`;
+
 async function fixture() {
   const root = await mkdtemp(
     join(tmpdir(), "arashi-worktree-naming-contract-"),
@@ -44,6 +91,27 @@ async function fixture() {
     join(root, "scripts/contract-checks.json"),
     `${JSON.stringify([checkerIdentity], null, 2)}\n`,
   );
+  return root;
+}
+async function canonicalFixture() {
+  const root = await fixture();
+  const schemaPath = join(root, schemaSource);
+  const schema = JSON.parse(await readFile(schemaPath, "utf8"));
+  schema.definitions.WorktreeNamingConfig.properties.maxPathLength = {
+    description:
+      "Maximum UTF-16 length of each absolute configured worktree destination",
+    maximum: 2147483647,
+    minimum: 1,
+    multipleOf: 1,
+    type: "number",
+  };
+  delete schema.definitions.WorktreeNamingConfig.required;
+  await writeFile(schemaPath, `${JSON.stringify(schema, null, 2)}\n`);
+  for (const source of pathBudgetGuidanceSources) {
+    const path = join(root, source);
+    const content = await readFile(path, "utf8");
+    await writeFile(path, `${content}\n\n${pathBudgetContract}\n`);
+  }
   return root;
 }
 const runFocused = (root: string) =>
@@ -71,7 +139,7 @@ async function replace(
   const path = join(root, source);
   const content = await readFile(path, "utf8");
   expect(content).toContain(oldText);
-  await writeFile(path, content.replace(oldText, newText));
+  await writeFile(path, content.replaceAll(oldText, newText));
 }
 function expectRejected(root: string, label: string) {
   const focused = runFocused(root);
@@ -84,6 +152,30 @@ function expectRejected(root: string, label: string) {
     aggregate.status,
     `${label} aggregate false green:\n${aggregate.stdout}${aggregate.stderr}`,
   ).not.toBe(0);
+}
+function focusedDiagnostics(root: string) {
+  const result = runFocused(root);
+  return {
+    diagnostics: JSON.parse(result.stdout).diagnostics as {
+      code: string;
+      message: string;
+      source: string;
+    }[],
+    result,
+  };
+}
+function expectOwnerDiagnostic(
+  root: string,
+  label: string,
+  source: string,
+  code: string,
+) {
+  expectRejected(root, label);
+  const { diagnostics } = focusedDiagnostics(root);
+  expect(
+    diagnostics,
+    `${label} lacks owner-specific diagnostic`,
+  ).toContainEqual(expect.objectContaining({ code, source }));
 }
 afterEach(async () =>
   Promise.all(
@@ -100,6 +192,207 @@ describe("worktree naming cross-repository contract", () => {
   });
   test("accepts the coordinated child heads through focused and aggregate paths", async () => {
     const root = await fixture();
+    expect(runFocused(root).status).toBe(0);
+    expect(runAggregate(root).status).toBe(0);
+  });
+  test("accepts a controlled canonical path-budget contract", async () => {
+    const root = await canonicalFixture();
+    expect(runFocused(root).status).toBe(0);
+    expect(runAggregate(root).status).toBe(0);
+  });
+  test("rejects maxPathLength schema removal, type, bounds, and required drift", async () => {
+    const mutations: [string, (schema: any) => void][] = [
+      [
+        "field removal",
+        (schema) =>
+          delete schema.definitions.WorktreeNamingConfig.properties
+            .maxPathLength,
+      ],
+      [
+        "missing integer constraint",
+        (schema) =>
+          delete schema.definitions.WorktreeNamingConfig.properties.maxPathLength
+            .multipleOf,
+      ],
+      [
+        "minimum",
+        (schema) =>
+          (schema.definitions.WorktreeNamingConfig.properties.maxPathLength.minimum = 0),
+      ],
+      [
+        "maximum",
+        (schema) =>
+          (schema.definitions.WorktreeNamingConfig.properties.maxPathLength.maximum = 2147483648),
+      ],
+      [
+        "required field",
+        (schema) =>
+          (schema.definitions.WorktreeNamingConfig.required = [
+            "maxPathLength",
+          ]),
+      ],
+    ];
+    for (const [label, mutate] of mutations) {
+      const root = await canonicalFixture();
+      const path = join(root, schemaSource);
+      const schema = JSON.parse(await readFile(path, "utf8"));
+      mutate(schema);
+      await writeFile(path, `${JSON.stringify(schema, null, 2)}\n`);
+      expectOwnerDiagnostic(
+        root,
+        label,
+        schemaSource,
+        "WORKTREE_NAMING_CLI_SCHEMA_MISMATCH",
+      );
+    }
+  }, 20_000);
+  test("rejects path-budget removal on every maintained guidance surface", async () => {
+    for (const source of pathBudgetGuidanceSources) {
+      const root = await canonicalFixture();
+      const path = join(root, source);
+      const content = await readFile(path, "utf8");
+      await writeFile(
+        path,
+        content
+          .replaceAll(pathBudgetContract, "")
+          .replaceAll(
+            /```json\n\{\n  "worktreeNaming": \{\n    "style": "repo-branch",\n    "branchSlashes": "flatten",\n    "maxPathLength": 180\n  \}\n\}\n```/g,
+            "",
+          )
+          .replaceAll(/^.*maxPathLength.*$/gm, ""),
+      );
+      expectOwnerDiagnostic(
+        root,
+        `removed ${source}`,
+        source,
+        ownerCode(source),
+      );
+    }
+  }, 30_000);
+  test("rejects exact nested maxPathLength example drift on docs and skill surfaces", async () => {
+    for (const source of exactExampleSources) {
+      const root = await canonicalFixture();
+      const path = join(root, source);
+      const content = await readFile(path, "utf8");
+      expect(content).toContain('"maxPathLength": 180');
+      await writeFile(
+        path,
+        content.replaceAll('"maxPathLength": 180', '"maxPathLength": 181'),
+      );
+      expectOwnerDiagnostic(
+        root,
+        `example drift ${source}`,
+        source,
+        ownerCode(source),
+      );
+    }
+  }, 30_000);
+  test("rejects semantic mutation on every maintained guidance surface", async () => {
+    for (const source of pathBudgetGuidanceSources) {
+      const root = await canonicalFixture();
+      const path = join(root, source);
+      const content = await readFile(path, "utf8");
+      expect(content).toContain(
+        "UTF-16 code units, rather than limiting one folder component",
+      );
+      await writeFile(
+        path,
+        content
+          .replaceAll("UTF-16", "Unicode-code-point")
+          .replaceAll(
+            "rather than limiting one folder component",
+            "and limits one folder component",
+          ),
+      );
+      expectOwnerDiagnostic(
+        root,
+        `measurement and scope drift ${source}`,
+        source,
+        ownerCode(source),
+      );
+    }
+  }, 30_000);
+  test("rejects additive path-budget contradictions on every maintained guidance surface", async () => {
+    const contradictions = [
+      "On Windows, omission automatically selects a maxPathLength default of 260.",
+      "The budget limits only the generated folder component, not the absolute configured destination.",
+      "Path length is measured in Unicode code points rather than UTF-16 code units.",
+      "A collision may append a numeric suffix after the eight-hex hash.",
+      "Each coordinated child shortens its parent namespace independently.",
+      "This setting guarantees that every repository-internal file path fits.",
+      "Changing maxPathLength renames existing registered worktrees.",
+      "Standalone .worktrees/<branch> creation also applies maxPathLength.",
+    ];
+    for (const source of pathBudgetGuidanceSources) {
+      for (const contradiction of contradictions) {
+        const root = await canonicalFixture();
+        const path = join(root, source);
+        const content = await readFile(path, "utf8");
+        await writeFile(path, `${content}\n${contradiction}\n`);
+        expectOwnerDiagnostic(
+          root,
+          `additive contradiction ${source}: ${contradiction}`,
+          source,
+          ownerCode(source),
+        );
+      }
+    }
+  }, 60_000);
+  test("rejects removal of condition-bound overflow semantics", async () => {
+    const failureContract =
+      "If fixed base and child topology leave fewer than nine UTF-16 code units for `-<eight-hex-hash>`, create reports `WORKTREE_PATH_LENGTH_EXCEEDED` before mutation.";
+    for (const source of pathBudgetGuidanceSources) {
+      const root = await canonicalFixture();
+      const path = join(root, source);
+      const content = await readFile(path, "utf8");
+      await writeFile(
+        path,
+        content
+          .replaceAll(failureContract, "")
+          .replaceAll(
+            "WORKTREE_PATH_LENGTH_EXCEEDED",
+            "WORKTREE_PATH_BUDGET_FAILED",
+          ),
+      );
+      expectOwnerDiagnostic(
+        root,
+        `overflow failure semantics ${source}`,
+        source,
+        ownerCode(source),
+      );
+    }
+
+    const root = await canonicalFixture();
+    const path = join(root, cliGuidanceSource);
+    const content = await readFile(path, "utf8");
+    await writeFile(
+      path,
+      content
+        .replaceAll(
+          "Its details contain exactly `repositoryName`, `worktreePath`, `maxPathLength`, and `minimumPathLength`; `worktreePath` is the ordinary absolute planned path and `minimumPathLength` is the shortest collision-resistant absolute length.",
+          "",
+        )
+        .replaceAll(
+          "and reports the repository, ordinary planned path, configured limit,\nand minimum required length",
+          "and reports no structured length context",
+        ),
+    );
+    expectOwnerDiagnostic(
+      root,
+      "CLI overflow details and meanings",
+      cliGuidanceSource,
+      ownerCode(cliGuidanceSource),
+    );
+  }, 30_000);
+  test("keeps canonical truthful-negation controls green", async () => {
+    const root = await canonicalFixture();
+    const controls =
+      "The budget does not limit only one folder component. Omission does not choose an automatic Windows default. Collisions never append a numeric suffix. Children never shorten independently. Existing registered worktrees are not renamed. Standalone creation does not apply the setting. Repository-internal file paths are not guaranteed to fit.";
+    for (const source of pathBudgetGuidanceSources) {
+      const path = join(root, source);
+      const content = await readFile(path, "utf8");
+      await writeFile(path, `${content}\n${controls}\n`);
+    }
     expect(runFocused(root).status).toBe(0);
     expect(runAggregate(root).status).toBe(0);
   });
