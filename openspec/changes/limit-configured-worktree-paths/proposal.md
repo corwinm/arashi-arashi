@@ -38,10 +38,10 @@ None.
 
 ## Implementation Evidence
 
-- CLI: https://github.com/corwinm/arashi/pull/165 at `0f23f3ca6e91b6ade6ae5f2c8da6a6d52fee41bd`
+- CLI: https://github.com/corwinm/arashi/pull/165 at `0d92a60a45fa4edc0bf88208af6b42be5115562e`
 - Documentation: https://github.com/corwinm/arashi-docs/pull/95 at `c95f69ccc6f98ef3c2354f1657d744054469ba7b`
-- Packaged guidance: https://github.com/corwinm/arashi-skills/pull/73 at `57936cb3670f91e2f418c49aacef52bdb31f01f0`
-- CLI verification includes focused and full Vitest suites, schema drift, typecheck, lint, build, native materialization, and an independent exact-head specification/security review.
+- Packaged guidance: https://github.com/corwinm/arashi-skills/pull/73 at `c418875ecef3b5c8bbabbf2fef837c13296c5521`
+- CLI verification includes 2,768 passed and 17 skipped, schema drift, typecheck, lint, build, native materialization, canonical Windows short/long path identity handling, and an independent exact-head specification/security review.
 - Documentation verification includes 105 controlled semantic drifts, all 20 registered semantic checkers, Astro validation/build, links, accessibility, and domain checks.
-- Packaged-guidance verification includes 114 authored/package drift fixtures, all 19 registered guidance checkers, security, deterministic archive, registration, and workflow-composition gates.
+- Packaged-guidance verification includes 115 authored/package drift fixtures, all 19 registered guidance checkers, security, deterministic archive, registration, and workflow-composition gates.
 - Coordinated validation includes strict OpenSpec validation, the worktree-naming contract checker, and 16 controlled cross-repository tests.
