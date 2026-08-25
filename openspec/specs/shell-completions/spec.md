@@ -3,9 +3,7 @@
 ## Purpose
 
 Define deterministic native Bash, Zsh, and Fish completion behavior derived from Arashi's canonical CLI metadata, including bounded read-only workspace candidates, shell integration, distribution parity, and real-shell acceptance.
-
 ## Requirements
-
 ### Requirement: Emit native completion programs
 
 Arashi SHALL provide `arashi completion <shell>` for `bash`, `zsh`, and `fish`, and each invocation SHALL write only deterministic, sourceable code for the requested shell to stdout. The emitted program SHALL register completion for direct `arashi` executable invocation and for the same-named wrapper function produced by `arashi shell init <shell>`.
@@ -79,7 +77,7 @@ The completion model SHALL derive command paths, subcommands, option spellings, 
 
 ### Requirement: Query workspace-aware candidates safely
 
-Arashi SHALL provide one shell-neutral internal completion query that accepts the current argument vector and cursor position without shell re-parsing and returns values with optional descriptions through a lossless machine-only record protocol. Typed completion policy SHALL map every dynamic slot explicitly: each registered `--only` value segment to repository names; each registered `--group` value segment to configured groups; `switch [filter]` and `remove [target]` to branch/worktree names and paths, narrowed to exact worktree paths when `--path` is present; `move --from` and `move --to` to workspace branch/name/path references; `shell init [shell]` and `completion [shell]` to supported shells; and `create --conflict` plus any later explicitly classified finite-value option to its canonical constrained values. No command or option inherits dynamic completion merely because its value syntax resembles one of these slots.
+Arashi SHALL provide one shell-neutral internal completion query that accepts the current argument vector and cursor position without shell re-parsing and returns values with optional descriptions through a lossless machine-only record protocol. Typed completion policy SHALL map every dynamic slot explicitly: each registered `--only` value segment to repository names; each registered `--group` value segment to configured groups; optional `delete [repository]` to exact configured child repository keys; `switch [filter]` and `remove [target]` to branch/worktree names and paths, narrowed to exact worktree paths when `--path` is present; `move --from` and `move --to` to workspace branch/name/path references; `shell init [shell]` and `completion [shell]` to supported shells; and `create --conflict` plus any later explicitly classified finite-value option to its canonical constrained values. No command or option inherits dynamic completion merely because its value syntax resembles one of these slots.
 
 #### Scenario: Repository selector is active
 
@@ -90,6 +88,12 @@ Arashi SHALL provide one shell-neutral internal completion query that accepts th
 
 - **WHEN** completion is requested for `--group` in a configured workspace
 - **THEN** the query offers configured group names that match the current comma-separated or repeated-value segment prefix
+
+#### Scenario: Delete repository argument is active
+
+- **WHEN** completion is requested for optional `delete [repository]` from a configured parent, linked parent, or nested configured child invocation
+- **THEN** the query offers exact matching keys from the active `config.repos` authority
+- **AND** excludes meta/root identity, branch names, paths, fuzzy aliases, and implicit standalone repositories
 
 #### Scenario: Worktree or branch argument is active
 
@@ -254,3 +258,37 @@ Completion invoked for an `aw` command line SHALL accept `aw` as the root token,
 - **WHEN** a clean packed npm installation runs `aw completion <shell>` with no native binary
 - **THEN** canonical first-use installation succeeds
 - **AND** stdout contains only the same sourceable artifact emitted by `arashi completion <shell>`
+
+### Requirement: Delete completion is read-only and bounded
+
+Delete candidate lookup SHALL read only the active workspace configuration needed to enumerate repository keys. It SHALL derive delete options and aliases from registered CLI metadata and SHALL NOT inspect candidate repository Git status, worktrees, refs, hooks, file contents, or remote state. It SHALL NOT prompt, lock, launch, run hooks, or mutate any workspace state.
+
+#### Scenario: Delete option is active
+
+- **WHEN** completion is requested after `aw delete api -`
+- **THEN** registered `--force`, `--dry-run`, `--json` and their command-local aliases are offered with canonical descriptions
+- **AND** no handwritten delete option inventory is required
+
+#### Scenario: Destructive plan would be unsafe
+
+- **WHEN** a configured repository is dirty, unpublished, missing, symlinked, or otherwise unsafe to delete
+- **THEN** completion may still offer its exact configured key
+- **AND** performs none of the destructive planner's Git/filesystem/hook probes
+
+#### Scenario: Standalone or unavailable workspace requests candidates
+
+- **WHEN** delete argument completion runs outside configured workspace state
+- **THEN** the dynamic query succeeds silently with no repository records
+- **AND** static command/option completion remains available
+
+#### Scenario: Configuration lookup fails or exceeds budget
+
+- **WHEN** active configuration cannot be loaded safely within the completion budget
+- **THEN** dynamic completion returns no records with empty stdout/stderr according to the existing silent-failure contract
+- **AND** no repair or fallback mutation occurs
+
+#### Scenario: Real-shell parity is exercised
+
+- **WHEN** Bash, Zsh, and Fish acceptance runs for both `aw` and `arashi`
+- **THEN** each executable/wrapper spelling offers equivalent delete keys/options with native insertion
+- **AND** tracked files, untracked files, refs, worktrees, config, hooks, and shell startup files remain unchanged

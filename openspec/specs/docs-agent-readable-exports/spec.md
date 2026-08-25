@@ -3,9 +3,7 @@
 ## Purpose
 
 Define the machine-readable documentation exports that help coding agents discover, fetch, and use Arashi documentation without scraping the full HTML site.
-
 ## Requirements
-
 ### Requirement: Docs SHALL publish a curated LLM entrypoint
 
 The docs site SHALL expose `/llms.txt` as a concise Markdown-oriented entrypoint for coding agents that summarizes Arashi and points to the highest-value docs pages and exports.
@@ -193,3 +191,28 @@ Generated Markdown routes, `/llms.txt`, and `/llms-full.txt` SHALL carry canonic
 - **WHEN** canonical configure guidance changes but generated exports are stale
 - **THEN** repository-local freshness or semantic validation fails
 - **AND** reports the owning generated surface
+
+### Requirement: Agent-readable exports preserve configured naming guidance
+
+Generated Markdown command pages and full-document agent-readable exports SHALL preserve the canonical authored `worktreeNaming` contract without stale topology examples or omitted safety qualifications. Generation and freshness checks MUST fail when closed values, compatibility defaults, exact representative destinations, unchanged Git branch identity, configured-only JSON-authored scope, collision behavior, existing-worktree compatibility, coordinated child placement, or standalone isolation drift from authored guidance.
+
+#### Scenario: Agent reads generated configuration or create guidance
+
+- **WHEN** generated command Markdown or the full agent-readable export contains configured worktree naming guidance
+- **THEN** it exposes both closed fields, their compatibility defaults, and exact default/branch/repo-branch preserve/flatten examples
+- **AND** retains the canonical safety and compatibility qualifications
+
+#### Scenario: Generated export drifts from authored guidance
+
+- **WHEN** generation or freshness validation observes a missing or contradictory naming-policy value, default, destination example, or safety qualification
+- **THEN** validation fails deterministically rather than publishing stale agent guidance
+
+### Requirement: Generated agent exports preserve configured path-budget semantics
+
+Generated Markdown command pages and full-document agent exports SHALL preserve the canonical `worktreeNaming.maxPathLength` example, numeric/measurement semantics, deterministic shortening rule, coordinated-plan behavior, impossible-budget failure, compatibility boundaries, and repository-content limitation. Freshness validation SHALL reject missing, stale, or contradictory generated claims.
+
+#### Scenario: Agent-readable exports are regenerated
+
+- **WHEN** canonical configuration/create guidance changes for path budgeting
+- **THEN** every maintained generated agent surface carries the same nested field and behavior
+- **AND** source-versus-generated validation fails if any required semantic is removed or reversed

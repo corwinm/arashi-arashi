@@ -897,38 +897,263 @@ Configured `status`, `pull`, `push`, `handoff`, and `doctor` JSON output SHALL r
 
 ### Requirement: Configured create JSON reports the authoritative destination plan
 
-Configured `create --json` success, dry-run, and destination-collision failure envelopes SHALL expose parent and child destinations from the same authoritative configured plan used by human output, collision preflight, and execution. The plan order SHALL be the configured parent first when selected, followed by selected child repositories in their deterministic discovery/filter order; excluding the parent SHALL leave the selected children in that same relative order. Successful execution SHALL preserve that order and the existing `data.repositories[]` record shape, reporting each destination at `data.repositories[].worktreePath`. Dry-run SHALL preserve `data.repositories` as the execution-result list and report prospective records in that same order at `data.dryRunOutcome.plannedWorktrees[]`, where every record contains `branchName`, `planStatus`, `repositoryName`, and `worktreePath`; `worktreePath` is an absolute string or `null` only when planning cannot resolve one. Destination preflight SHALL traverse this order. A collision SHALL use error code `WORKTREE_DESTINATION_COLLISION` and report exactly the first colliding plan record at `error.details.conflict` with `repositoryName` and absolute `worktreePath`; later collisions SHALL NOT replace or reorder that record. No replacement destination field or duplicate plan is introduced. The destination values SHALL reflect `<canonical repository naming component>/<branch>` for a configured bare parent and `<branch>` for a configured non-bare parent beneath the effective base, while preserving the standard one-document envelope and stdout-isolation contracts.
+Configured `create --json` success, dry-run, invalid-naming-configuration, and destination-collision failure envelopes SHALL preserve the established one-document stdout-isolation contract while reflecting the effective configured naming policy. Success, dry-run, and collision destinations MUST come from the same immutable authoritative configured plan used by human output, collision preflight, and execution. The plan order SHALL be the configured parent first when selected, followed by selected child repositories in deterministic discovery/filter order; excluding the parent SHALL leave selected children in that same relative order. Successful execution SHALL preserve that order and the existing `data.repositories[]` record shape, reporting each destination at `data.repositories[].worktreePath`. Dry-run SHALL preserve `data.repositories` as the execution-result list and report prospective records in that same order at `data.dryRunOutcome.plannedWorktrees[]`, where every record contains `branchName`, `planStatus`, `repositoryName`, and `worktreePath`; `worktreePath` is an absolute string or `null` only when planning cannot resolve one. Destination preflight SHALL traverse this order. A resolved collision SHALL use error code `WORKTREE_DESTINATION_COLLISION` and report exactly the first colliding plan record at `error.details.conflict` with `repositoryName` and absolute `worktreePath`; later collisions SHALL NOT replace or reorder that record. Invalid `worktreeNaming` SHALL instead use the established invalid-configuration envelope before a destination plan exists and SHALL NOT be mislabeled as a collision. No replacement destination field or duplicate plan is introduced. Destination values SHALL follow omission/default corrected topology, `branch`, or `repo-branch` style plus `preserve` or `flatten` slash policy exactly, while `branchName` continues reporting the unmodified Git branch.
 
 #### Scenario: Bare create JSON reports corrected destination
 
-- **WHEN** configured bare create for repository component `example` and branch `feature/auth` succeeds with `--json`
+- **WHEN** configured bare create for repository component `example` and branch `feature/auth` succeeds with `--json` under omitted policy or explicit `default` and `preserve`
 - **THEN** `data.repositories[].worktreePath` reports the parent destination beneath the effective base as `example/feature/auth`
+- **AND** `branchName` remains `feature/auth`
 - **AND** child records in `data.repositories[]` report destinations rooted at that exact parent destination plus each configured child path
 
 #### Scenario: Non-bare dry-run JSON matches human preview
 
-- **WHEN** configured non-bare create for branch `feature/auth` is previewed in human and `--dry-run --json` modes
+- **WHEN** configured non-bare create for branch `feature/auth` is previewed in human and `--dry-run --json` modes under omitted policy or explicit `default` and `preserve`
 - **THEN** human preview and `data.dryRunOutcome.plannedWorktrees[].worktreePath` report the same parent destination ending in `feature/auth`
 - **AND** neither reports a repository-prefixed destination
-- **AND** each prospective JSON record contains `branchName`, `planStatus`, `repositoryName`, and `worktreePath`, while `data.repositories` remains the execution-result list
+- **AND** each prospective JSON record contains exact `branchName: "feature/auth"`, `planStatus`, `repositoryName`, and `worktreePath`, while `data.repositories` remains the execution-result list
 - **AND** dry-run performs no mutation
+
+#### Scenario: Every configured naming policy changes values but not shape
+
+- **WHEN** configured create success and dry-run render the same repository `example` and Git branch `feature/auth` under every supported style and slash-policy combination
+- **THEN** destination values are respectively `feature/auth` or `example/feature/auth` for compatibility topology as applicable, `feature/auth` for `branch` preserve, `feature-auth` for `branch` flatten, `example-feature/auth` for `repo-branch` preserve, and `example-feature-auth` for `repo-branch` flatten
+- **AND** the existing envelope, record field names, record order, omission/null rules, and exact `branchName: "feature/auth"` remain unchanged
+- **AND** human preview, JSON dry-run, JSON success, and execution consume the same policy-specific plan
 
 #### Scenario: JSON collision result uses the planned destination
 
-- **WHEN** configured create JSON mode detects a parent or child destination collision
+- **WHEN** configured create JSON mode detects a parent or child destination collision, including a flattened-slash alias
 - **THEN** stdout contains exactly one failure envelope with code `WORKTREE_DESTINATION_COLLISION`
 - **AND** `error.details.conflict.repositoryName` and `error.details.conflict.worktreePath` identify the same resolved destination used by preflight
 - **AND** stderr is empty and tests confirm that managed-ignore files, hooks, branches, worktrees, directories, and other filesystem state were not mutated
 
+#### Scenario: Invalid naming config is distinct from collision JSON
+
+- **WHEN** configured create JSON loads malformed `worktreeNaming` or an unsupported nested value
+- **THEN** stdout contains exactly one established invalid-configuration failure envelope
+- **AND** the code is not `WORKTREE_DESTINATION_COLLISION` and `error.details.conflict` is absent
+- **AND** stderr is empty and no destination plan or mutation is produced
+
 #### Scenario: JSON ordering and multi-collision selection are deterministic
 
-- **WHEN** the configured parent and multiple selected child repositories are planned for JSON create
+- **WHEN** the configured parent and multiple selected child repositories are planned for JSON create under any supported naming policy
 - **THEN** success `data.repositories[]` and dry-run `data.dryRunOutcome.plannedWorktrees[]` place the selected parent first and preserve deterministic selected-child discovery/filter order
 - **AND WHEN** more than one destination in that ordered plan collides
 - **THEN** `error.details.conflict` identifies the first colliding plan record and later collisions do not change the reported record
 
 #### Scenario: Existing worktree JSON preserves registered path
 
-- **WHEN** a JSON-capable lifecycle command reports an existing worktree created under the prior inverted layout
-- **THEN** it reports the exact Git-registered path without rewriting it according to the corrected create rule
+- **WHEN** a JSON-capable lifecycle command reports an existing worktree created under a prior layout or a different configured naming policy
+- **THEN** it reports the exact Git-registered path without rewriting it according to the current effective policy
 - **AND** the envelope does not claim migration or rename activity
+
+### Requirement: Delete JSON uses one closed sanitized payload contract
+
+Explicit-key `aw delete <repository> --json` and `--dry-run --json` SHALL use the standard schema-version-1 single-document envelope. JSON SHALL NOT run omitted-target interactive selection and SHALL remain single-target. A successful delete `data` object SHALL contain exactly `workspace`, `repositoryKey`, `dryRun`, `force`, `confirmation`, `plan`, and `result`. `workspace` SHALL contain exactly `mode`, `repositoriesBase`, `workspaceRoot`, and `worktreesBase`. `repositoryKey` SHALL be the exact configured key; `dryRun` and `force` SHALL be booleans; `confirmation` SHALL be `not-required`, `confirmed`, `declined`, or `required`. JSON SHALL use only `not-required` or `required` because it never prompts.
+
+The closed delete payload type SHALL be reused in delete-specific `error.details`: all seven fields are present, `workspace` may be `null` only when configured workspace resolution failed, `plan` may be `null` only when no complete plan exists, and `result` may be `null` only when execution never created a ledger. The omitted-key JSON `DELETE_SELECTION_REQUIRED` error SHALL instead have exact details `{command: "delete", reason: "repository-required"}` because no repository payload can exist. The existing standalone `CONFIGURED_WORKSPACE_REQUIRED` error SHALL retain its canonical exact details `{command: "delete", mode: "standalone"}` rather than pretending a configured workspace payload exists. Canonical CLI parse errors retain their existing standard details.
+
+#### Scenario: JSON invocation omits repository
+
+- **WHEN** a user runs `aw delete --json` or `aw delete --dry-run --json`, with or without `--force`
+- **THEN** stdout contains exactly one `DELETE_SELECTION_REQUIRED` exit-`2` error envelope with exact details `{command: "delete", reason: "repository-required"}`
+- **AND** no prompt, target inference, topology planning, lock, or mutation occurs
+
+#### Scenario: JSON dry-run succeeds
+
+- **WHEN** a user runs `aw delete api --dry-run --json`
+- **THEN** stdout contains exactly one success envelope whose `data` has only the seven closed fields
+- **AND** `confirmation` is `not-required`, `plan` is complete, `result` is `null`, and no prompt/progress/human summary is emitted
+
+#### Scenario: Clean JSON mutation omits force
+
+- **WHEN** a clean plan is produced for `aw delete api --json` without `--force`
+- **THEN** stdout contains exactly one `DELETE_CONFIRMATION_REQUIRED` error envelope
+- **AND** `error.details` has the exact seven-field delete payload with `confirmation: "required"`, complete `plan`, and `result: null`
+
+#### Scenario: Planning fails after configured context exists
+
+- **WHEN** topology, path, hook, Git inspection, or config validation fails before a complete plan exists
+- **THEN** one delete-specific error envelope contains the exact seven-field details with `plan: null` and `result: null`
+- **AND** no open-ended diagnostic fields or secret source content are appended
+
+#### Scenario: Partial mutation fails
+
+- **WHEN** irreversible work completes before a later phase fails
+- **THEN** one `DELETE_PARTIAL_FAILURE` envelope contains the exact seven-field details with the accepted plan and complete result ledger
+- **AND** no second JSON document or human output is written to stdout
+
+### Requirement: Delete plans are exact deterministic records
+
+A delete `plan` SHALL contain exactly `id`, `items`, and `warnings`. `id` SHALL be a lowercase 64-hex SHA-256 over the canonical closed projected plan plus non-secret authority digests. `items` SHALL be ordered deterministically and `warnings` SHALL be deduplicated bytewise-sorted strings. Repeated planning over byte/identity-equivalent state SHALL return the same `id`, item IDs/order, and warnings.
+
+#### Scenario: Repeated dry-runs inspect unchanged state
+
+- **WHEN** two JSON dry-runs inspect identical config/Git/filesystem/hook state
+- **THEN** their plan objects are byte-equivalent after standard envelope timing fields are excluded
+
+#### Scenario: Authority state changes
+
+- **WHEN** exact config bytes, path identity, worktree registration, ref OID, hook metadata, or receipt state changes
+- **THEN** revalidation cannot silently reuse the previous plan identity
+
+### Requirement: Delete items have one exact common projection
+
+Every delete plan/result item SHALL contain exactly `id`, `kind`, `ownership`, `path`, `ref`, `oid`, `planned`, `completed`, `state`, `reasonCode`, and `message`. `kind` SHALL be `resume-receipt`, `canonical-clone`, `linked-worktree`, `worktree-metadata`, `local-ref`, `config-entry`, `workspace-hook`, or `preserved-global-hook`; `ownership` SHALL be `delete` or `preserve`; `path`, `ref`, `oid`, `reasonCode`, and `message` SHALL be strings or `null`; a non-null `oid` SHALL be the full immutable Git object ID. `planned` and `completed` SHALL be booleans. `state` SHALL be `planned`, `completed`, `preserved`, `blocked`, `failed`, or `not-started`. No additional or omitted fields are allowed.
+
+#### Scenario: Owned worktree is planned
+
+- **WHEN** dry-run includes an owned linked worktree
+- **THEN** its item has delete ownership, normalized absolute path, nullable ref/OID as applicable, `planned: true`, `completed: false`, `state: "planned"`, and null reason/message when unblocked
+
+#### Scenario: Resume receipt is planned
+
+- **WHEN** a mutating plan may require durable retry provenance
+- **THEN** one `resume-receipt` item exposes the exact transaction-receipt path without receipt/config contents
+
+#### Scenario: Preserved global hook is reported
+
+- **WHEN** a repository-specific user-global hook path exists
+- **THEN** its item has preserve ownership, `planned: false`, `completed: false`, and `state: "preserved"`
+- **AND** path/logical ref may be exposed but bytes are never exposed
+
+#### Scenario: Local branch, stash, or detached commit has no path
+
+- **WHEN** a branch, stash, or detached checked-out commit is represented
+- **THEN** `path` is `null`, `ref` is the complete canonical ref/detached identity, and `oid` is the full planned commit ID
+- **AND** names containing `/` remain unchanged
+
+#### Scenario: Local tag preserves object and peeled identities
+
+- **WHEN** a local tag is represented
+- **THEN** one `local-ref` item uses `ref: "refs/tags/<name>"` with the tag ref's exact object OID
+- **AND** one adjacent `local-ref` item uses `ref: "refs/tags/<name>^{}"` with the peeled commit OID; lightweight tags retain both deterministic records even when the OIDs are equal
+
+#### Scenario: Result records failure
+
+- **WHEN** one planned item fails
+- **THEN** it retains the same identity/kind/ownership/path/ref/OID and item position as the plan
+- **AND** `completed` is false, `state` is `failed`, and reason/message are sanitized strings
+
+### Requirement: Delete item and warning ordering is deterministic
+
+Delete items SHALL be ordered by phase. Linked worktrees SHALL be deepest physical descendant first with normalized-path bytewise ties; refs, hooks, and receipt/config records SHALL use canonical bytewise identity order within their phase. Warnings SHALL be deduplicated and bytewise sorted. Plan and result SHALL retain the same item IDs and order; execution SHALL NOT append an undisclosed destructive target.
+
+#### Scenario: Result is compared with the accepted plan
+
+- **WHEN** mutating execution returns a result
+- **THEN** every result item corresponds to the same-position plan item
+- **AND** changed targets cause invalidation rather than item insertion
+
+### Requirement: Delete results, phases, errors, and retry are closed
+
+A delete `result` SHALL contain exactly `items`, `phases`, `retry`, and `warnings`. `warnings` SHALL be deduplicated bytewise-sorted strings. Every phase SHALL contain exactly `name`, `state`, `itemIds`, `error`, `startedOrder`, and `completedOrder`. Phase `name` SHALL be one of `provenance`, `worktrees`, `metadata`, `canonical-clone`, `workspace-hooks`, `configuration`, or `verification`; phases SHALL occur in that exact order. Phase `state` SHALL be `not-started`, `started`, `completed`, or `failed`; `itemIds` SHALL be ordered strings; `error` SHALL be `null` or contain exactly string `code` and `message`; order fields SHALL be non-negative integers or `null`.
+
+`retry` SHALL contain exactly `safe`, `argv`, and `guidance`. `safe` SHALL be boolean; `argv` SHALL be an array of literal strings or `null`; `guidance` SHALL be sanitized prose. A safe human retry vector SHALL be exactly `["aw", "delete", repositoryKey, "--force"]`; a safe JSON retry vector SHALL be exactly `["aw", "delete", repositoryKey, "--force", "--json"]`. No shell-interpolated retry command string is permitted.
+
+#### Scenario: All phases complete
+
+- **WHEN** deletion and receipt cleanup succeed
+- **THEN** every phase is `completed`, non-applicable phases have empty `itemIds`, all delete-owned lifecycle items are completed, and retry is not required
+
+#### Scenario: Phase failure blocks dependents
+
+- **WHEN** a worktree phase fails
+- **THEN** that phase is failed and later phases remain not-started with null order fields
+- **AND** retry is safe only when the exact durable receipt remains valid/current
+
+#### Scenario: Receipt persistence becomes unsafe
+
+- **WHEN** receipt creation/update is malformed, ambiguous, permission-unsafe, or fails after irreversible work
+- **THEN** `retry.safe` is false, `argv` is null, and guidance requires manual inspection
+
+#### Scenario: No-mutation failure occurs
+
+- **WHEN** revalidation or provenance creation fails before irreversible work
+- **THEN** no owned destructive item is completed and the specific error is used rather than partial failure
+
+### Requirement: Delete error precedence and exit vocabulary are stable
+
+After canonical CLI parsing, delete SHALL apply this precedence: configured workspace/config loading; target selection (explicit exact-key lookup, human-TTY checkbox outcome, or omitted non-TTY/JSON refusal); topology/path/hook/Git inspection for every selected key; complete ordered plan-set construction; Git-loss refusal; dry-run success; confirmation requirement/prompt; post-lock plan-set invalidation or concurrent change; execution failure; partial failure after irreversible completion anywhere in the batch. It SHALL use existing `CONFIGURED_WORKSPACE_REQUIRED` for standalone refusal and delete-specific `DELETE_SELECTION_REQUIRED`, `DELETE_REPOSITORY_NOT_FOUND`, `DELETE_CONFIG_INVALID`, `DELETE_TOPOLOGY_INVALID`, `DELETE_PATH_UNSAFE`, `DELETE_HOOK_AMBIGUOUS`, `DELETE_GIT_DATA_LOSS`, `DELETE_CONFIRMATION_REQUIRED`, `DELETE_CANCELLED`, `DELETE_CONCURRENT_CHANGE`, `DELETE_EXECUTION_FAILED`, or `DELETE_PARTIAL_FAILURE`.
+
+Successful dry-run, mutation, and receipt-proven idempotent completion SHALL exit `0`. Empty/cancelled selection, omitted target outside a human TTY, decline/cancel, and clean non-interactive missing confirmation SHALL exit `2`. Every other listed failure SHALL exit `1`. `DELETE_PARTIAL_FAILURE` SHALL replace the initiating code whenever any irreversible item in the selected batch completed.
+
+#### Scenario: Configuration is invalid before key lookup
+
+- **WHEN** active configured state exists but cannot be parsed/validated
+- **THEN** delete returns `DELETE_CONFIG_INVALID` exit `1` before key-not-found, plan, Git-loss, or confirmation handling
+
+#### Scenario: Exact key is absent
+
+- **WHEN** valid active configuration lacks the key and no valid receipt proves a completed config-removal phase
+- **THEN** delete returns `DELETE_REPOSITORY_NOT_FOUND` exit `1` without destructive discovery/mutation
+
+#### Scenario: Dirty mutation omits force
+
+- **WHEN** a TTY, non-TTY, or JSON mutation plan has Git-loss blockers and omits `--force`
+- **THEN** delete returns `DELETE_GIT_DATA_LOSS` exit `1` before prompt/confirmation-required handling
+- **AND** the complete blocked plan is present when JSON details are available
+
+#### Scenario: Dirty dry-run omits force
+
+- **WHEN** JSON dry-run has Git-loss blockers and omits `--force`
+- **THEN** it succeeds exit `0` with the complete blocked plan and no result/mutation
+
+#### Scenario: Clean JSON mutation omits force
+
+- **WHEN** a clean JSON mutation omits `--force`
+- **THEN** delete returns `DELETE_CONFIRMATION_REQUIRED` exit `2`
+
+#### Scenario: TTY user declines
+
+- **WHEN** a clean TTY plan is declined or cancelled
+- **THEN** delete records `DELETE_CANCELLED`, exits `2`, and leaves all state unchanged
+
+#### Scenario: Concurrent state invalidates execution
+
+- **WHEN** exact config/Git/filesystem/hook/receipt identity changes after confirmation and before irreversible work
+- **THEN** delete returns `DELETE_CONCURRENT_CHANGE` exit `1` with no completed destructive item
+
+#### Scenario: Unexpected executor failure occurs before irreversible work
+
+- **WHEN** execution fails after provenance setup but before a destructive target completes
+- **THEN** delete returns `DELETE_EXECUTION_FAILED` exit `1` and removes the receipt when safely possible
+
+#### Scenario: Irreversible work precedes failure
+
+- **WHEN** any destructive target completes before a later failure
+- **THEN** delete returns `DELETE_PARTIAL_FAILURE` exit `1` with the exact plan/result and truthful safe/unsafe retry
+
+### Requirement: Delete JSON is sanitized and stdout-isolated
+
+Delete JSON SHALL expose paths, refs/OIDs, lifecycle names, receipt path/state, phase/error codes, and sanitized warnings needed for automation. It SHALL NOT expose hook contents, inline hook commands, inline environments, config bytes, receipt bytes, commit messages/bodies, credentials, or shell snippets. Spinner/progress/prompt/human summary output SHALL be suppressed in JSON mode; diagnostics SHALL remain inside the one envelope.
+
+#### Scenario: Secret canaries exist
+
+- **WHEN** config, hook, inline environment, commit, or receipt fixtures contain unique secret canaries
+- **THEN** success, refusal, planning failure, concurrent failure, partial failure, stdout, stderr, and retry guidance omit every canary
+
+### Requirement: Configured create JSON reports fitted paths and path-budget overflow
+
+Configured create human, dry-run, JSON, and execution surfaces SHALL consume the same authoritative fitted destination plan. Existing success and dry-run record shapes SHALL remain unchanged. A path budget that cannot fit fixed topology SHALL return one standard failure envelope with code `WORKTREE_PATH_LENGTH_EXCEEDED`, exact details `repositoryName`, `worktreePath`, `maxPathLength`, and `minimumPathLength`, and empty stderr in JSON mode.
+
+#### Scenario: JSON dry-run reports fitted destinations
+
+- **WHEN** configured create with `maxPathLength` shortens an authoritative parent destination and runs with `--dry-run --json`
+- **THEN** `data.dryRunOutcome.plannedWorktrees[].worktreePath` contains the exact final fitted absolute paths in deterministic plan order
+- **AND** each `branchName` remains the exact requested Git branch
+- **AND** human dry-run and later execution consume the same values
+
+#### Scenario: JSON overflow is structured and mutation-free
+
+- **WHEN** fixed selected topology cannot leave nine UTF-16 units for collision-resistant generated naming
+- **THEN** stdout contains exactly one failure envelope with code `WORKTREE_PATH_LENGTH_EXCEEDED`
+- **AND** `error.details` contains exactly `repositoryName`, `worktreePath`, `maxPathLength`, and `minimumPathLength`
+- **AND** stderr is empty and no configuration, ignore, hook, branch, worktree, directory, or registration mutation occurs
+
+#### Scenario: Existing collision contract uses the fitted path
+
+- **WHEN** the final fitted destination is occupied or registered incompatibly
+- **THEN** configured create retains `WORKTREE_DESTINATION_COLLISION`
+- **AND** collision details identify the exact fitted destination rather than the ordinary over-budget candidate

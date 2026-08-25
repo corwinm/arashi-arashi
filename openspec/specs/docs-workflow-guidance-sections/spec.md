@@ -3,9 +3,7 @@
 ## Purpose
 
 Define documentation requirements for discoverable workflow guidance covering hooks, configuration, integrations, and onboarding cross-links.
-
 ## Requirements
-
 ### Requirement: Docs SHALL provide dedicated workflow guidance for hooks, configuration, and integrations
 
 The documentation SHALL provide dedicated, discoverable guidance for hooks, configuration options, and integrations instead of requiring users to infer those workflows only from command-reference pages.
@@ -425,3 +423,112 @@ Canonical website guidance SHALL explain proportionately that `aw configure` ins
 - **WHEN** a user reads invocation guidance
 - **THEN** it states that `--json` is inspection-only and interactive editing requires a TTY
 - **AND** does not advertise broad non-interactive set or unset flags
+
+### Requirement: Canonical guidance documents configured worktree naming policy
+
+The documentation site SHALL provide discoverable authored configuration and create guidance for root `worktreeNaming.style` values `default`, `branch`, and `repo-branch` and `worktreeNaming.branchSlashes` values `preserve` and `flatten`. Guidance MUST define omission and explicit compatibility defaults, configured-only scope, direct `.arashi/config.json` authoring for this initial slice, exact bare/non-bare and slash examples, unchanged Git branch identity, deterministic collision behavior without alternate names, metadata-driven existing-worktree compatibility, coordinated child placement, and unchanged standalone behavior.
+
+#### Scenario: User authors naming configuration
+
+- **WHEN** a user reads canonical configuration guidance
+- **THEN** it shows the exact nested JSON shape and closed values
+- **AND** explains that omitted fields mean `default` and `preserve` without automatic persistence
+- **AND** states that the initial slice is edited directly in `.arashi/config.json` rather than through interactive `aw configure`
+
+#### Scenario: User compares exact destination styles
+
+- **WHEN** a user reads configured create guidance for repository `example` and branch `feature/auth`
+- **THEN** examples distinguish bare default `example/feature/auth`, bare default flatten `example/feature-auth`, branch preserve `feature/auth`, branch flatten `feature-auth`, repo-branch preserve `example-feature/auth`, and repo-branch flatten `example-feature-auth`
+- **AND** explain that Git still receives branch `feature/auth`
+
+#### Scenario: User encounters a naming collision or existing worktree
+
+- **WHEN** guidance explains flattened aliases, policy changes, coordinated children, or standalone worktrees
+- **THEN** it states that collisions fail at the exact destination without suffixes, existing registered paths are not renamed, child paths stay beneath the planned parent, and standalone remains `.worktrees/<branch>` with natural slash hierarchy
+
+### Requirement: Canonical docs teach configured repository deletion proportionately
+
+CLI and website documentation SHALL provide a dedicated `delete` command reference and concise configured-workspace workflow guidance. Guidance SHALL distinguish `aw delete [repository]` from branch/worktree `aw remove`, explain explicit exact-key targeting and omitted-target human-TTY checkbox multi-selection, recommend dry-run before force, explain selection/confirmation behavior in TTY/non-TTY/JSON modes, identify deleted and preserved scope, and describe per-repository partial failure/retry honestly without duplicating internal lock or field-by-field ledger implementation.
+
+#### Scenario: User needs to delete a dependency
+
+- **WHEN** a user opens command or configured-workspace guidance
+- **THEN** they can discover both `aw delete` multi-selection and `aw delete <repository>` exact targeting with a copy-pasteable `--dry-run` then confirmed/`--force` workflow
+- **AND** guidance does not instruct them to hand-edit config or manually remove Git worktrees/clone paths
+
+#### Scenario: User distinguishes remove and delete
+
+- **WHEN** command indexes, README, or workflow docs mention destructive operations
+- **THEN** they state that `delete` removes one explicit or multiple interactively selected configured repository dependencies while `remove` removes branch worktrees
+- **AND** no alias or overloaded syntax is implied
+
+#### Scenario: User evaluates safety and force
+
+- **WHEN** docs explain refusal or `--force`
+- **THEN** they state that force bypasses confirmation and disclosed Git data-loss guards only
+- **AND** path containment, symlink, topology, identity, hook ambiguity, and concurrent-config checks remain mandatory
+
+#### Scenario: User evaluates deletion scope
+
+- **WHEN** docs summarize the plan
+- **THEN** they identify canonical clone, all owned linked worktrees/local refs, exact config entry, and canonical local repository-targeted hook files/templates as deleted
+- **AND** identify unrelated config, managed-ignore policy, shared hooks, user-global hooks, remote repositories, and remote branches as preserved
+
+#### Scenario: User encounters partial failure
+
+- **WHEN** docs explain a failed delete after completed phases
+- **THEN** they direct the user to inspect the phase ledger/surviving state and retry the exact command when reported safe
+- **AND** do not claim atomic rollback or advise broad manual deletion
+
+### Requirement: Delete docs preserve automation and secrecy contracts
+
+Canonical JSON/automation guidance SHALL describe one-document output, non-interactive force requirements, stable plan/result and error-details locations, deterministic item/phase state, exit status, and hook-content secrecy. It SHALL direct automation to structured fields rather than human-output parsing.
+
+#### Scenario: Automation previews deletion
+
+- **WHEN** a user reads JSON guidance
+- **THEN** it shows `aw delete <repository> --dry-run --json` and identifies `data.plan` with `data.result: null`
+- **AND** explains that mutation uses `--force --json` and never prompts
+
+#### Scenario: Automation handles partial failure
+
+- **WHEN** a JSON delete partially fails
+- **THEN** guidance identifies `error.details.plan` and `error.details.result` as the accepted scope and phase ledger
+- **AND** does not recommend parsing stderr/human summaries
+
+#### Scenario: Hook secrecy is documented
+
+- **WHEN** docs describe hook items in plans/results
+- **THEN** they state that logical identity/path/status may appear while file contents and inline command bodies never do
+
+### Requirement: Canonical and generated delete guidance remain aligned
+
+Maintained website pages, command indexes/navigation, generated Markdown routes, `/llms.txt`, and `/llms-full.txt` SHALL expose the same delete scope, safety, confirmation, JSON, preservation, and retry semantics. Generated exports SHALL be regenerated from canonical sources and checked through the stable docs semantic aggregate.
+
+#### Scenario: Canonical delete guidance changes
+
+- **WHEN** a maintained delete or configured-workspace page changes
+- **THEN** generated agent-readable exports are regenerated
+- **AND** focused freshness/semantic checks reject stale or contradictory exports
+
+#### Scenario: Docs checker is registered
+
+- **WHEN** focused delete guidance validation is added
+- **THEN** the existing fail-closed docs aggregate and coordinated validation execute it
+- **AND** no feature-specific workflow step is added absent workflow-topology change
+
+### Requirement: Canonical docs explain configured path budgeting
+
+Canonical configuration and create guidance SHALL document optional `worktreeNaming.maxPathLength` with one exact nested JSON example, positive-integer validation, UTF-16 absolute-destination scope, deterministic readable-prefix plus eight-hex SHA-256 shortening, complete coordinated-child sizing, omission preservation, structured impossible-budget failure, unchanged Git branches/existing worktrees/standalone behavior, and the fact that repository-internal file paths are not guaranteed to fit.
+
+#### Scenario: User configures a Windows-oriented reserve
+
+- **WHEN** a user reads canonical configuration or create guidance
+- **THEN** the guidance explains that the numeric budget covers each absolute configured worktree root rather than one folder component
+- **AND** provides a copyable nested configuration example
+- **AND** does not claim that enabling this field or Windows long paths protects every downstream tool or repository file
+
+#### Scenario: Documentation preserves compatibility boundaries
+
+- **WHEN** path-budget guidance is generated or reviewed
+- **THEN** it states that omission preserves current names, only newly planned configured paths may shorten, children share one authoritative parent, Git branches stay exact, existing worktrees are not renamed, and standalone is unchanged
