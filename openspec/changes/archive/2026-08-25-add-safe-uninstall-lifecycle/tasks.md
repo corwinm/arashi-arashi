@@ -42,4 +42,4 @@
 - [x] 6.2 Stage only owned files and perform the destructive lifecycle self-review: complete preflight, exact identity, symlink/reparse refusal, package-manager boundary, manifest-last retry, shell/profile byte preservation, user-data preservation, and truthful partial-failure output.
 - [x] 6.3 Run strict OpenSpec validation and an independent scope/spec review against the reduced non-goals before implementation commits.
 - [x] 6.4 Open child PRs, cross-link issue #329 and proposal PR, verify exact-head CI, and merge child-first.
-- [x] 6.5 Archive the OpenSpec change, synchronize canonical capabilities, merge the meta PR last, verify issue closure, and clean the coordinated worktree/branches.
+- [ ] 6.5 Archive the OpenSpec change, synchronize canonical capabilities, merge the meta PR last, verify issue closure, and clean the coordinated worktree/branches.
