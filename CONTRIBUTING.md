@@ -4,94 +4,84 @@ Thanks for helping improve Arashi.
 
 ## Scope
 
-This repository is for planning artifacts:
+This repository owns cross-repository planning and canonical capability requirements:
 
-- `specs/` for feature specs, plans, tasks, research, and related docs
-- `docs/` for process documentation
+- `openspec/changes/` for proposals, designs, deltas, and implementation tasks
+- `openspec/specs/` for archived canonical requirements
+- `docs/` for workspace process guidance
 
-Implementation code changes belong in `repos/arashi/` (separate git repository with its own commits and pull requests).
+Implementation belongs in the affected repository under `repos/` and uses that repository's own commits and pull request.
 
-## Meta-Repository Development Toolchain
+## Setup
 
-Root validation uses Node.js 24.18.0 or later and pnpm 11.22.0. The root `.nvmrc` pins the development Node.js version above pnpm 11's Node.js 22.13 minimum, and `package.json` pins pnpm; enable Corepack before installing dependencies:
+Root validation uses Node.js 24.18.0 or later and pnpm 11.22.0:
 
 ```bash
 corepack enable
 pnpm install --frozen-lockfile
 ```
 
-## Tooling Requirement: Arashi CLI
-
-This workflow assumes you use the Arashi CLI to create and manage feature worktrees.
-
-Build and link the local CLI before starting feature work:
+Build and link the CLI when coordinated worktree commands are needed:
 
 ```bash
 cd repos/arashi
-bun install
-bun run build
-bun link
-```
-
-Verify:
-
-```bash
+pnpm install --frozen-lockfile
+pnpm run build
+pnpm link --global
 aw --version
 ```
 
-## Recommended Workflow
+## Workflow
 
-1. From the repository root, create a feature worktree with Arashi:
-
-   ```bash
-   aw create NNN-feature-name
-   ```
-
-2. Switch to the new worktree path (for example, from `aw list`):
+1. Create an issue or confirm the existing issue and affected repositories.
+2. Create a coordinated worktree when child repositories are affected:
 
    ```bash
-   cd "$(aw list | fzf)"
+   aw create issue-NNN-short-name --only arashi --no-launch --no-switch
    ```
 
-3. Open OpenCode in that feature worktree:
+   For meta-only work, use a normal Git branch/worktree because `aw --only` selects configured child repositories.
+
+3. Open OpenCode in the parent worktree.
+4. Explore unclear requirements with `/opsx-explore`.
+5. Create the complete change artifacts with `/opsx-propose <change-name>`.
+6. Validate and review the proposal before implementation:
 
    ```bash
-   opencode
+   openspec validate <change-name> --strict
    ```
 
-4. Run the spec-kit flow inside OpenCode:
-   - `/speckit.specify`
-   - `/speckit.clarify` (optional)
-   - `/speckit.plan`
-   - `/speckit.tasks`
-   - `/speckit.implement`
+7. Implement with `/opsx-apply <change-name>` and keep code in the owning child repository.
+8. Run repository-local checks plus the meta-repository checks below.
+9. Open cross-linked pull requests for every changed repository.
+10. Archive the OpenSpec change with `/opsx-archive <change-name>` after implementation is merged.
 
-5. Prefer Claude or Codex models for spec and implementation work.
-6. Keep spec and implementation links synchronized across PRs.
-
-## Quality Expectations
-
-For `repos/arashi/` pull requests, run:
+## Meta-Repository Validation
 
 ```bash
-bun run lint
-bun test
-bun run build
+openspec validate --all --strict
+pnpm run format:check
+pnpm run typecheck
+pnpm test
+pnpm run contracts:check
 ```
 
-When relevant, also run format checks:
+When child repositories changed, also run their documented validation commands. For the CLI:
 
 ```bash
-bun run format:check
+cd repos/arashi
+pnpm run format:check
+pnpm run lint
+pnpm run typecheck
+pnpm test
+pnpm run contract:check
+pnpm run build
 ```
 
 ## Pull Requests
 
-- Use Conventional Commits (`feat:`, `fix:`, `docs:`, `chore:`, and so on).
-- Keep PRs scoped to one feature where possible.
-- Link related specs and implementation PRs.
+- Use Conventional Commits.
+- Keep each pull request scoped to one issue where practical.
+- Link the issue, OpenSpec change, and companion pull requests.
+- Report exact validation results and any environment-limited checks.
 - Prefer squash merge with a clear final commit message.
-
-## Canonical Implementation Guide
-
-For implementation-repo specifics, use [`repos/arashi/CONTRIBUTING.md`](./repos/arashi/CONTRIBUTING.md).
