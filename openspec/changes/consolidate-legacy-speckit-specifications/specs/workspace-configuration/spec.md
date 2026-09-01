@@ -12,7 +12,7 @@ Configured commands SHALL resolve `.arashi/config.json` from the canonical works
 - **THEN** loading fails before command mutation with the configuration path and parse detail
 
 ### Requirement: Configuration persistence is human-readable and preserves unrelated state
-A configuration save SHALL create the owned `.arashi` directory when permitted, serialize deterministic indented JSON with a trailing newline, preserve schema-valid fields unrelated to the requested edit, and preserve unknown fields accepted for forward compatibility unless a separately specified migration removes them. Save failures SHALL leave the previous file recoverable and report the filesystem cause.
+A configuration save SHALL create the owned `.arashi` directory when permitted, serialize deterministic indented JSON, preserve schema-valid fields unrelated to the requested edit, and preserve unknown fields accepted for forward compatibility unless a separately specified migration removes them. Save failures SHALL report the filesystem cause and SHALL NOT claim that the requested configuration was saved.
 
 #### Scenario: One supported field changes
 - **WHEN** a command saves a validated change to one supported configuration field
@@ -20,7 +20,7 @@ A configuration save SHALL create the owned `.arashi` directory when permitted, 
 - **AND** the resulting file is deterministic indented JSON that can be loaded again
 
 #### Scenario: Save cannot complete
-- **WHEN** permissions, storage, or an atomic replacement failure prevents persistence
+- **WHEN** permissions, storage, or another filesystem failure prevents persistence
 - **THEN** the command reports the configuration path and underlying failure
 - **AND** does not claim that the requested configuration was saved
 

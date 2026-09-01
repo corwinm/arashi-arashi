@@ -13,11 +13,11 @@ Arashi human-readable output SHALL remain understandable without color and SHALL
 - **THEN** Arashi emits stable readable text without requiring color interpretation
 
 ### Requirement: Interactive cancellation is a non-mutating usage outcome
-A prompt cancelled before an accepted mutation plan SHALL exit with usage status `2`, SHALL identify cancellation without presenting it as an internal error, and SHALL perform no mutation that depends on the cancelled answer.
+A prompt cancelled before an accepted mutation plan SHALL follow the owning command's defined cancellation outcome, SHALL NOT present cancellation as an internal error, and SHALL perform no mutation that depends on the cancelled answer.
 
 #### Scenario: User cancels repository selection
 - **WHEN** the user cancels an interactive selector before confirming a command plan
-- **THEN** Arashi exits with status `2` and reports that selection was cancelled
+- **THEN** Arashi returns the owning command's defined cancellation outcome without reporting an internal error
 - **AND** no branch, worktree, configuration, hook, or repository mutation begins
 
 ### Requirement: Interrupted prompts restore terminal state
