@@ -611,7 +611,7 @@ async function fixture(): Promise<string> {
     "repos/arashi-docs/docs/commands/switch.md": "# Switch\n`--tab`\n",
     "repos/arashi-docs/docs/commands/index.md":
       "- [Add](/commands/add/)\n- [Create](/commands/create/)\n- [Init](/commands/init/)\n- [Switch](/commands/switch/)\n",
-    "repos/arashi-docs/docs/workflows/launch-disposition.md": docsTabContract,
+    "repos/arashi-docs/docs/reference/launching.md": docsTabContract,
     "repos/arashi-docs/scripts/check-tab-launch-docs.ts":
       "console.log('tab launch docs checker passed');\n",
     "repos/arashi-docs/package.json": {
@@ -725,7 +725,7 @@ async function schemaV5Fixture(): Promise<string> {
   for (const relativePath of [
     "repos/arashi/contracts/cli-commands.json",
     "repos/arashi-docs/contracts/cli-options.json",
-    "repos/arashi-docs/docs/workflows/launch-disposition.md",
+    "repos/arashi-docs/docs/reference/launching.md",
     "repos/arashi-skills/skills/arashi/references/commands.md",
     "repos/arashi-skills/skills/arashi/references/commands/workspace.md",
     "repos/arashi-skills/skills/arashi/references/commands/switch-and-launch.md",
@@ -792,7 +792,7 @@ async function schemaV6Fixture(): Promise<string> {
     "repos/arashi/README.md",
     "repos/arashi/contracts/cli-commands.json",
     "repos/arashi-docs/docs/commands",
-    "repos/arashi-docs/docs/workflows/config.md",
+    "repos/arashi-docs/docs/reference/configuration.md",
     "repos/arashi-docs/public",
     "repos/arashi-docs/package.json",
     "repos/arashi-docs/.github/workflows/docs-validate.yml",
@@ -861,8 +861,8 @@ async function schemaV8Fixture(): Promise<string> {
   const copies = [
     "repos/arashi/contracts/cli-commands.json",
     "repos/arashi/schema/config.schema.json",
-    "repos/arashi-docs/docs/workflows/standalone.md",
-    "repos/arashi-docs/docs/workflows/json-automation.md",
+    "repos/arashi-docs/docs/getting-started/standalone.md",
+    "repos/arashi-docs/docs/workflows/automation.md",
     "repos/arashi-docs/scripts/check-create-base-docs.ts",
     "repos/arashi-docs/scripts/check-configure-docs.ts",
     "repos/arashi-docs/scripts/generate-agent-exports.ts",
@@ -1180,10 +1180,7 @@ describe("cross-repository command contracts", () => {
 
   test("invokes the registered docs configure checker for controlled no-op drift", async () => {
     const root = await schemaV8Fixture();
-    const guidancePath = join(
-      root,
-      "repos/arashi-docs/docs/workflows/config.md",
-    );
+    const guidancePath = join(root, "repos/arashi-docs/public/llms.txt");
     const guidance = await readFile(guidancePath, "utf8");
     expect(guidance).toContain("exits before final confirmation or save");
     await writeFile(
@@ -2753,7 +2750,7 @@ This property is unsupported; migrate to root \`baseBranch\`.
   test.each([
     [
       "docs configured-launcher override drift",
-      "repos/arashi-docs/docs/workflows/launch-disposition.md",
+      "repos/arashi-docs/docs/reference/launching.md",
       (content: string) =>
         content.replace(
           "bypasses configured launcher defaults",
@@ -2763,7 +2760,7 @@ This property is unsupported; migrate to root \`baseBranch\`.
     ],
     [
       "docs create configured-launcher override drift",
-      "repos/arashi-docs/docs/workflows/launch-disposition.md",
+      "repos/arashi-docs/docs/reference/launching.md",
       (content: string) =>
         content.replace(
           "For create, create tab implies launch and switch, wins over `--no-launch` and `--no-switch`, and bypasses configured launcher defaults.",
@@ -2773,7 +2770,7 @@ This property is unsupported; migrate to root \`baseBranch\`.
     ],
     [
       "docs Terminal.app capability drift",
-      "repos/arashi-docs/docs/workflows/launch-disposition.md",
+      "repos/arashi-docs/docs/reference/launching.md",
       (content: string) =>
         content.replace(
           "| Terminal.app | New window | Unsupported | No supported true-tab automation |",
@@ -2783,21 +2780,21 @@ This property is unsupported; migrate to root \`baseBranch\`.
     ],
     [
       "docs Terminal.app guidance drift",
-      "repos/arashi-docs/docs/workflows/launch-disposition.md",
+      "repos/arashi-docs/docs/reference/launching.md",
       (content: string) =>
         content.replace("press Command-T manually", "create a tab somehow"),
       "DOCS_TAB_POLICY_MISMATCH",
     ],
     [
       "docs invalid Terminal.app path-substitution guidance",
-      "repos/arashi-docs/docs/workflows/launch-disposition.md",
+      "repos/arashi-docs/docs/reference/launching.md",
       (content: string) =>
         `${content}\nWithout shell integration, run \`cd "$(aw switch --no-cd --no-default-launch)"\`.\n`,
       "DOCS_TAB_POLICY_MISMATCH",
     ],
     [
       "docs default disposition drift",
-      "repos/arashi-docs/docs/workflows/launch-disposition.md",
+      "repos/arashi-docs/docs/reference/launching.md",
       (content: string) =>
         content.replace(
           "| Windows Terminal | New window | True tab |",
@@ -2807,7 +2804,7 @@ This property is unsupported; migrate to root \`baseBranch\`.
     ],
     [
       "docs missing old Ghostty row",
-      "repos/arashi-docs/docs/workflows/launch-disposition.md",
+      "repos/arashi-docs/docs/reference/launching.md",
       (content: string) =>
         content.replace(
           "| macOS Ghostty older than 1.3 or missing supported-version evidence | New window | Unsupported | No supported tab API |\n",
@@ -2817,7 +2814,7 @@ This property is unsupported; migrate to root \`baseBranch\`.
     ],
     [
       "docs launcher mapping",
-      "repos/arashi-docs/docs/workflows/launch-disposition.md",
+      "repos/arashi-docs/docs/reference/launching.md",
       (content: string) =>
         content.replace(
           "| WezTerm | New window | True tab |",
@@ -2827,7 +2824,7 @@ This property is unsupported; migrate to root \`baseBranch\`.
     ],
     [
       "docs unknown launcher row",
-      "repos/arashi-docs/docs/workflows/launch-disposition.md",
+      "repos/arashi-docs/docs/reference/launching.md",
       (content: string) =>
         content.replace(
           "| generic fallback | New terminal/platform window | Unsupported | No portable exact tab target |",
@@ -2837,13 +2834,13 @@ This property is unsupported; migrate to root \`baseBranch\`.
     ],
     [
       "docs JSON guard mode",
-      "repos/arashi-docs/docs/workflows/launch-disposition.md",
+      "repos/arashi-docs/docs/reference/launching.md",
       (content: string) => content.replace("`launch` mode", "`cd` mode"),
       "DOCS_TAB_POLICY_MISMATCH",
     ],
     [
       "docs no-fallback guarantee",
-      "repos/arashi-docs/docs/workflows/launch-disposition.md",
+      "repos/arashi-docs/docs/reference/launching.md",
       (content: string) =>
         content.replace(
           "never opens a window or falls through to another launcher",

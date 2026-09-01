@@ -53,17 +53,19 @@ const groups = {
     sources: ["repos/arashi/docs/configuration.md", "repos/arashi/README.md"],
   },
   docs: {
-    primary: "repos/arashi-docs/docs/workflows/config.md",
+    primary: "repos/arashi-docs/docs/reference/configuration.md",
     sources: [
-      "repos/arashi-docs/docs/workflows/config.md",
+      "repos/arashi-docs/docs/reference/configuration.md",
       "repos/arashi-docs/docs/commands/create.md",
+      "repos/arashi-docs/public/llms.txt",
     ],
   },
   generated: {
     primary: "repos/arashi-docs/public/llms-full.txt",
     sources: [
-      "repos/arashi-docs/public/workflows/config.md",
+      "repos/arashi-docs/public/reference/configuration.md",
       "repos/arashi-docs/public/commands/create.md",
+      "repos/arashi-docs/public/llms.txt",
       "repos/arashi-docs/public/llms-full.txt",
     ],
   },
