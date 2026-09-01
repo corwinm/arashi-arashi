@@ -22,4 +22,4 @@
 - [x] 4.1 Run strict validation for all OpenSpec items and compare delta capability directories with the proposal manifest
 - [x] 4.2 Run formatting, typechecking, tests, and cross-repository contract checks; compare failures with the clean-main baseline
 - [x] 4.3 Run stale-reference, path-count, and `git diff --check` audits and confirm only intentional archived/canonical history mentions Spec Kit
-- [ ] 4.4 Independently review both exact repository diffs and the migration matrix, address blockers, commit, push, and open coordinated issue-linked pull requests
+- [x] 4.4 Independently review both exact repository diffs and the migration matrix, address blockers, commit, push, and open coordinated issue-linked pull requests
