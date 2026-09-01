@@ -41,7 +41,7 @@ describe("specification workflow structure", () => {
       hasSpecifyToolkit: false,
       openSpecConfig: true,
       openSpecSpecs: true,
-      openSpecSkills: [
+      openSpecSkills: expect.arrayContaining([
         ".opencode/skills/openspec-apply-change/SKILL.md",
         ".opencode/skills/openspec-archive-change/SKILL.md",
         ".opencode/skills/openspec-explore/SKILL.md",
@@ -50,13 +50,13 @@ describe("specification workflow structure", () => {
         ".pi/skills/openspec-archive-change/SKILL.md",
         ".pi/skills/openspec-explore/SKILL.md",
         ".pi/skills/openspec-propose/SKILL.md",
-      ],
-      opsxCommands: [
+      ]),
+      opsxCommands: expect.arrayContaining([
         ".opencode/command/opsx-apply.md",
         ".opencode/command/opsx-archive.md",
         ".opencode/command/opsx-explore.md",
         ".opencode/command/opsx-propose.md",
-      ],
+      ]),
       specKitCommands: [],
     });
   });

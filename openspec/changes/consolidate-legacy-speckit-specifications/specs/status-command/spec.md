@@ -17,10 +17,10 @@ Configured `aw status` SHALL inspect the workspace repository plus selected conf
 - **THEN** staged, unstaged, untracked, and available upstream divergence details are shown for each evaluated repository
 
 ### Requirement: Status isolates repository-local inspection failures
-A missing or unreadable configured repository and a repository-local Git inspection failure SHALL be reported for that repository without hiding results from other evaluated repositories. Filters SHALL be validated before inspection, and JSON mode SHALL preserve the standard ordered structured result.
+A missing or unreadable configured repository SHALL follow the canonical output-mode visibility rules: it is omitted from default and short human output and reported in verbose and JSON output. A repository-local Git inspection failure SHALL be reported without hiding results from other evaluated repositories. Filters SHALL be validated before inspection, and JSON mode SHALL preserve the standard ordered structured result.
 
-#### Scenario: One configured repository is missing
-- **WHEN** one selected repository path is missing and another is inspectable
+#### Scenario: One configured repository is missing in verbose output
+- **WHEN** one selected repository path is missing, another is inspectable, and verbose output is requested
 - **THEN** status reports actionable missing-repository guidance and continues to report the inspectable repository
 
 #### Scenario: Status JSON includes a local failure
