@@ -2,21 +2,17 @@
 
 ### Requirement: Report the selected switch target unambiguously
 
-After a successful human-readable switch, the system SHALL identify the selected branch before any repository context, SHALL label repository identity explicitly, and SHALL report the selected absolute worktree path. The same selected-target-first ordering SHALL apply to every launched context and parent-shell directory switch.
+After a successful human-readable switch, the system SHALL identify the selected branch before any repository context, SHALL label repository identity explicitly, and SHALL report the selected absolute worktree path. Excluding the logger's success marker, launched-context success output SHALL use the exact template `Opened <mode> context for <branch> in repository <repository> at <absolute-path>`, and parent-shell directory-switch success output SHALL use the exact template `Prepared shell directory switch to <branch> in repository <repository> at <absolute-path>`.
 
 #### Scenario: Launched context reports selected target first
 
 - **WHEN** `arashi switch` successfully opens any supported terminal, managed-session, or editor context for a selected worktree
-- **THEN** the success output identifies the selected branch before repository context
-- **AND** labels the repository identity explicitly
-- **AND** reports the selected absolute worktree path
+- **THEN** the success message body is exactly `Opened <mode> context for <branch> in repository <repository> at <absolute-path>` using the selected candidate's values
 
 #### Scenario: Parent-shell directory switch reports selected target first
 
 - **WHEN** `arashi switch` successfully prepares a parent-shell directory change for a selected worktree
-- **THEN** the success output identifies the selected branch before repository context
-- **AND** labels the repository identity explicitly
-- **AND** reports the selected absolute worktree path
+- **THEN** the success message body is exactly `Prepared shell directory switch to <branch> in repository <repository> at <absolute-path>` using the selected candidate's values
 
 #### Scenario: Repository context disambiguates matching branches
 
