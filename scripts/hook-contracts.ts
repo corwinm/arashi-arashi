@@ -17,7 +17,7 @@ export interface HookContractResult {
 const surfaces = [
   { source: "repos/arashi/src/commands/init.ts", category: "cli" },
   { source: "repos/arashi/docs/hooks.md", category: "cli" },
-  { source: "repos/arashi-docs/docs/workflows/hooks.md", category: "docs" },
+  { source: "repos/arashi-docs/docs/reference/hooks.md", category: "docs" },
   { source: "repos/arashi-docs/public/llms-full.txt", category: "generated" },
   {
     source: "repos/arashi-skills/skills/arashi/references/hooks.md",

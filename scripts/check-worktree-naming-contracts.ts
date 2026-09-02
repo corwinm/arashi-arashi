@@ -139,9 +139,7 @@ const rows = [
   ["non-bare", "repo-branch", "flatten", "example-feature-auth"],
 ] as const;
 const detailedSources = [
-  "repos/arashi-docs/docs/workflows/config.md",
   "repos/arashi-docs/docs/commands/create.md",
-  "repos/arashi-docs/public/workflows/config.md",
   "repos/arashi-docs/public/commands/create.md",
   "repos/arashi-docs/public/llms-full.txt",
   "repos/arashi-skills/skills/arashi/references/commands/create.md",

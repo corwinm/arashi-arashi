@@ -84,13 +84,15 @@ async function fixture(): Promise<string> {
     "repos/arashi/contracts/cli-commands.json": `${JSON.stringify({ schemaVersion: 1, aliasPaths: [], commands: [{ path: "status", aliases: [] }] })}\n`,
     "repos/arashi-vscode/contracts/command-policy.json": `${JSON.stringify({ commands: ["arashi.status"], executableAliases: [] })}\n`,
     "repos/arashi-docs/docs/index.mdx": landingDocs,
-    "repos/arashi-docs/docs/getting-started/index.md": gettingStartedDocs,
+    "repos/arashi-docs/docs/getting-started/installation.md":
+      gettingStartedDocs,
     "repos/arashi-docs/docs/commands/shell.md": shellDocs,
     "repos/arashi-docs/docs/commands/completion.md": completionDocs,
     "repos/arashi-docs/docs/commands/update.md": updateDocs,
     "repos/arashi-docs/public/index.md": landingDocs,
     "repos/arashi-docs/public/getting-started.md": gettingStartedDocs,
-    "repos/arashi-docs/public/getting-started/installation.md": docs,
+    "repos/arashi-docs/public/getting-started/installation.md":
+      gettingStartedDocs,
     "repos/arashi-docs/public/commands/shell.md": shellDocs,
     "repos/arashi-docs/public/commands/completion.md": completionDocs,
     "repos/arashi-docs/public/commands/update.md": updateDocs,
@@ -395,8 +397,11 @@ describe("executable distribution contracts", () => {
   });
 
   test.each([
-    ["authored docs", "repos/arashi-docs/docs/getting-started/index.md"],
-    ["generated docs", "repos/arashi-docs/public/getting-started.md"],
+    ["authored docs", "repos/arashi-docs/docs/getting-started/installation.md"],
+    [
+      "generated docs",
+      "repos/arashi-docs/public/getting-started/installation.md",
+    ],
     ["llms index", "repos/arashi-docs/public/llms.txt"],
     ["llms full export", "repos/arashi-docs/public/llms-full.txt"],
     [

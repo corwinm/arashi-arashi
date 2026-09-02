@@ -346,6 +346,7 @@ const optionPolicies = {
 const docsTabContract = `# Window and Tab Launching
 
 \`--tab\` is a CLI-only, one-invocation request and does not create a persistent preference.
+Kitty uses a cross-process identity lock. A contender waits up to 10 seconds and never steals from a live owner. A dead owner can be recovered; malformed metadata is recoverable after 30 seconds. Ownership-safe release removes only the lock held by the current process.
 For \`switch\`, explicit tab intent overrides configured parent-shell cd, bypasses configured launcher defaults, and conflicts only with explicit \`--cd\`.
 For create, create tab implies launch and switch, wins over \`--no-launch\` and \`--no-switch\`, and bypasses configured launcher defaults.
 
@@ -611,7 +612,8 @@ async function fixture(): Promise<string> {
     "repos/arashi-docs/docs/commands/switch.md": "# Switch\n`--tab`\n",
     "repos/arashi-docs/docs/commands/index.md":
       "- [Add](/commands/add/)\n- [Create](/commands/create/)\n- [Init](/commands/init/)\n- [Switch](/commands/switch/)\n",
-    "repos/arashi-docs/docs/workflows/launch-disposition.md": docsTabContract,
+    "repos/arashi-docs/docs/reference/launching.md": docsTabContract,
+    "repos/arashi-docs/public/reference/launching.md": docsTabContract,
     "repos/arashi-docs/scripts/check-tab-launch-docs.ts":
       "console.log('tab launch docs checker passed');\n",
     "repos/arashi-docs/package.json": {
@@ -620,12 +622,12 @@ async function fixture(): Promise<string> {
       },
     },
     "repos/arashi-docs/docs/workflows/kitty.md":
-      "Kitty 0.43 or newer\n`allow_remote_control`\nexact Arashi worktree identity\nafter integrated IDE detection and before parent-shell `cd`\nlive only\n`.kitty-session`\n`aw remove` does not close Kitty windows or sessions\nno `--kitty` flag\ndoes not add Kitty to persistent Arashi launch configuration\n`LAUNCH_FAILED`\ndoes not fall back\ncreated worktrees remain available\ncross-process identity lock\n10 seconds\nlive owner\ndead owner\n30 seconds\nownership-safe release\n",
+      "Kitty 0.43 or newer\n`allow_remote_control`\nexact Arashi worktree identity\nafter integrated IDE detection and before parent-shell `cd`\nlive only\n`.kitty-session`\n`aw remove` does not close Kitty windows or sessions\nno `--kitty` flag\nnot added to persistent launch configuration\n`LAUNCH_FAILED`\ndoes not fall back\ncreated worktrees remain available\ncross-process identity lock\n10 seconds\nlive owner\ndead owner\n30 seconds\nownership-safe release\nOwnership-safe release\n",
     "repos/arashi-docs/public/workflows/kitty.md":
-      "Kitty 0.43 or newer\n`allow_remote_control`\nexact Arashi worktree identity\nafter integrated IDE detection and before parent-shell `cd`\nlive only\n`.kitty-session`\n`aw remove` does not close Kitty windows or sessions\nno `--kitty` flag\ndoes not add Kitty to persistent Arashi launch configuration\n`LAUNCH_FAILED`\ndoes not fall back\ncreated worktrees remain available\ncross-process identity lock\n10 seconds\nlive owner\ndead owner\n30 seconds\nownership-safe release\n",
+      "Kitty 0.43 or newer\n`allow_remote_control`\nexact Arashi worktree identity\nafter integrated IDE detection and before parent-shell `cd`\nlive only\n`.kitty-session`\n`aw remove` does not close Kitty windows or sessions\nno `--kitty` flag\nnot added to persistent launch configuration\n`LAUNCH_FAILED`\ndoes not fall back\ncreated worktrees remain available\ncross-process identity lock\n10 seconds\nlive owner\ndead owner\n30 seconds\nownership-safe release\nOwnership-safe release\n",
     "repos/arashi-docs/public/commands/add.md": addMaterializationGuidance,
     "repos/arashi-docs/public/llms-full.txt":
-      "Kitty 0.43 or newer\n`allow_remote_control`\nexact Arashi worktree identity\nafter integrated IDE detection and before parent-shell `cd`\nlive only\n`.kitty-session`\n`aw remove` does not close Kitty windows or sessions\nno `--kitty` flag\ndoes not add Kitty to persistent Arashi launch configuration\n`LAUNCH_FAILED`\ndoes not fall back\ncreated worktrees remain available\ncross-process identity lock\n10 seconds\nlive owner\ndead owner\n30 seconds\nownership-safe release\n" +
+      "Kitty 0.43 or newer\n`allow_remote_control`\nexact Arashi worktree identity\nafter integrated IDE detection and before parent-shell `cd`\nlive only\n`.kitty-session`\n`aw remove` does not close Kitty windows or sessions\nno `--kitty` flag\nnot added to persistent launch configuration\n`LAUNCH_FAILED`\ndoes not fall back\ncreated worktrees remain available\ncross-process identity lock\n10 seconds\nlive owner\ndead owner\n30 seconds\nownership-safe release\nOwnership-safe release\n" +
       addMaterializationGuidance,
     "repos/arashi-skills/contracts/command-coverage.json": {
       schemaVersion: 1,
@@ -689,7 +691,7 @@ async function fixture(): Promise<string> {
     "repos/arashi-skills/skills/arashi/references/workflows.md":
       "Kitty 0.43+\nexact Arashi-managed marker\nstable identity\n`<repo-name>: <branch-name>`\nsame managed Kitty flow\nlive-only\n`.kitty-session`\nRemoval does not close Kitty\npreserves every successfully created worktree\n",
     "repos/arashi-skills/skills/arashi/references/troubleshooting.md":
-      "Kitty 0.43+\nremote control\nLAUNCH_FAILED\nduplicate exact marked Kitty windows\ndoes not close ambiguous Kitty windows\npreserve the created worktrees\ncross-process identity lock\n10-second wait\nlive owner\ndead owner\n30 seconds\nownership-safe release\n",
+      "Kitty 0.43+\nremote control\nLAUNCH_FAILED\nduplicate exact marked Kitty windows\ndoes not close ambiguous Kitty windows\npreserve the created worktrees\ncross-process identity lock\n10-second wait\nlive owner\ndead owner\n30 seconds\nownership-safe release\nOwnership-safe release\n",
     "repos/arashi-vscode/contracts/command-policy.json": {
       schemaVersion: 1,
       cliCommands: {
@@ -725,7 +727,7 @@ async function schemaV5Fixture(): Promise<string> {
   for (const relativePath of [
     "repos/arashi/contracts/cli-commands.json",
     "repos/arashi-docs/contracts/cli-options.json",
-    "repos/arashi-docs/docs/workflows/launch-disposition.md",
+    "repos/arashi-docs/docs/reference/launching.md",
     "repos/arashi-skills/skills/arashi/references/commands.md",
     "repos/arashi-skills/skills/arashi/references/commands/workspace.md",
     "repos/arashi-skills/skills/arashi/references/commands/switch-and-launch.md",
@@ -792,7 +794,7 @@ async function schemaV6Fixture(): Promise<string> {
     "repos/arashi/README.md",
     "repos/arashi/contracts/cli-commands.json",
     "repos/arashi-docs/docs/commands",
-    "repos/arashi-docs/docs/workflows/config.md",
+    "repos/arashi-docs/docs/reference/configuration.md",
     "repos/arashi-docs/public",
     "repos/arashi-docs/package.json",
     "repos/arashi-docs/.github/workflows/docs-validate.yml",
@@ -861,8 +863,8 @@ async function schemaV8Fixture(): Promise<string> {
   const copies = [
     "repos/arashi/contracts/cli-commands.json",
     "repos/arashi/schema/config.schema.json",
-    "repos/arashi-docs/docs/workflows/standalone.md",
-    "repos/arashi-docs/docs/workflows/json-automation.md",
+    "repos/arashi-docs/docs/getting-started/standalone.md",
+    "repos/arashi-docs/docs/workflows/automation.md",
     "repos/arashi-docs/scripts/check-create-base-docs.ts",
     "repos/arashi-docs/scripts/check-configure-docs.ts",
     "repos/arashi-docs/scripts/generate-agent-exports.ts",
@@ -1180,10 +1182,7 @@ describe("cross-repository command contracts", () => {
 
   test("invokes the registered docs configure checker for controlled no-op drift", async () => {
     const root = await schemaV8Fixture();
-    const guidancePath = join(
-      root,
-      "repos/arashi-docs/docs/workflows/config.md",
-    );
+    const guidancePath = join(root, "repos/arashi-docs/public/llms.txt");
     const guidance = await readFile(guidancePath, "utf8");
     expect(guidance).toContain("exits before final confirmation or save");
     await writeFile(
@@ -2753,7 +2752,7 @@ This property is unsupported; migrate to root \`baseBranch\`.
   test.each([
     [
       "docs configured-launcher override drift",
-      "repos/arashi-docs/docs/workflows/launch-disposition.md",
+      "repos/arashi-docs/docs/reference/launching.md",
       (content: string) =>
         content.replace(
           "bypasses configured launcher defaults",
@@ -2763,7 +2762,7 @@ This property is unsupported; migrate to root \`baseBranch\`.
     ],
     [
       "docs create configured-launcher override drift",
-      "repos/arashi-docs/docs/workflows/launch-disposition.md",
+      "repos/arashi-docs/docs/reference/launching.md",
       (content: string) =>
         content.replace(
           "For create, create tab implies launch and switch, wins over `--no-launch` and `--no-switch`, and bypasses configured launcher defaults.",
@@ -2773,7 +2772,7 @@ This property is unsupported; migrate to root \`baseBranch\`.
     ],
     [
       "docs Terminal.app capability drift",
-      "repos/arashi-docs/docs/workflows/launch-disposition.md",
+      "repos/arashi-docs/docs/reference/launching.md",
       (content: string) =>
         content.replace(
           "| Terminal.app | New window | Unsupported | No supported true-tab automation |",
@@ -2783,21 +2782,21 @@ This property is unsupported; migrate to root \`baseBranch\`.
     ],
     [
       "docs Terminal.app guidance drift",
-      "repos/arashi-docs/docs/workflows/launch-disposition.md",
+      "repos/arashi-docs/docs/reference/launching.md",
       (content: string) =>
         content.replace("press Command-T manually", "create a tab somehow"),
       "DOCS_TAB_POLICY_MISMATCH",
     ],
     [
       "docs invalid Terminal.app path-substitution guidance",
-      "repos/arashi-docs/docs/workflows/launch-disposition.md",
+      "repos/arashi-docs/docs/reference/launching.md",
       (content: string) =>
         `${content}\nWithout shell integration, run \`cd "$(aw switch --no-cd --no-default-launch)"\`.\n`,
       "DOCS_TAB_POLICY_MISMATCH",
     ],
     [
       "docs default disposition drift",
-      "repos/arashi-docs/docs/workflows/launch-disposition.md",
+      "repos/arashi-docs/docs/reference/launching.md",
       (content: string) =>
         content.replace(
           "| Windows Terminal | New window | True tab |",
@@ -2807,7 +2806,7 @@ This property is unsupported; migrate to root \`baseBranch\`.
     ],
     [
       "docs missing old Ghostty row",
-      "repos/arashi-docs/docs/workflows/launch-disposition.md",
+      "repos/arashi-docs/docs/reference/launching.md",
       (content: string) =>
         content.replace(
           "| macOS Ghostty older than 1.3 or missing supported-version evidence | New window | Unsupported | No supported tab API |\n",
@@ -2817,7 +2816,7 @@ This property is unsupported; migrate to root \`baseBranch\`.
     ],
     [
       "docs launcher mapping",
-      "repos/arashi-docs/docs/workflows/launch-disposition.md",
+      "repos/arashi-docs/docs/reference/launching.md",
       (content: string) =>
         content.replace(
           "| WezTerm | New window | True tab |",
@@ -2827,7 +2826,7 @@ This property is unsupported; migrate to root \`baseBranch\`.
     ],
     [
       "docs unknown launcher row",
-      "repos/arashi-docs/docs/workflows/launch-disposition.md",
+      "repos/arashi-docs/docs/reference/launching.md",
       (content: string) =>
         content.replace(
           "| generic fallback | New terminal/platform window | Unsupported | No portable exact tab target |",
@@ -2837,13 +2836,13 @@ This property is unsupported; migrate to root \`baseBranch\`.
     ],
     [
       "docs JSON guard mode",
-      "repos/arashi-docs/docs/workflows/launch-disposition.md",
+      "repos/arashi-docs/docs/reference/launching.md",
       (content: string) => content.replace("`launch` mode", "`cd` mode"),
       "DOCS_TAB_POLICY_MISMATCH",
     ],
     [
       "docs no-fallback guarantee",
-      "repos/arashi-docs/docs/workflows/launch-disposition.md",
+      "repos/arashi-docs/docs/reference/launching.md",
       (content: string) =>
         content.replace(
           "never opens a window or falls through to another launcher",

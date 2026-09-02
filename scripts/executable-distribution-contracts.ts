@@ -376,8 +376,8 @@ export async function checkExecutableDistributionContracts(
   const docsOwnerGroups = [
     ["index.mdx", "index.md", []],
     [
-      "getting-started/index.md",
-      "getting-started.md",
+      "getting-started/installation.md",
+      "getting-started/installation.md",
       [
         "`arashi` executable remains supported for existing scripts and workflows",
         "macOS/Linux installer provides both `arashi` and `aw`",

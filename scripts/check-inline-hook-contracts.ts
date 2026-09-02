@@ -121,7 +121,7 @@ const guidanceSurfaces = [
     profile: "reference",
   },
   {
-    source: "repos/arashi-docs/docs/workflows/hooks.md",
+    source: "repos/arashi-docs/docs/reference/hooks.md",
     category: "docs",
     requirements: fullGuidanceRequirements,
     profile: "canonical",
