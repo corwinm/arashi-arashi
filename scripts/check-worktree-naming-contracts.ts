@@ -144,12 +144,17 @@ const detailedSources = [
   "repos/arashi-docs/public/llms-full.txt",
   "repos/arashi-skills/skills/arashi/references/commands/create.md",
 ];
+const pathBudgetOnlySources = [
+  "repos/arashi-docs/docs/reference/configuration.md",
+  "repos/arashi-docs/public/reference/configuration.md",
+] as const;
 const cliSource = "repos/arashi/docs/configuration.md";
 const compactExportSource = "repos/arashi-docs/public/llms.txt";
 const compactSources = [cliSource, compactExportSource];
 const pathBudgetSources = [
   cliSource,
   ...detailedSources,
+  ...pathBudgetOnlySources,
   compactExportSource,
 ] as const;
 const exactExampleSources = pathBudgetSources.filter(
@@ -555,6 +560,8 @@ async function checkGuidance() {
     checkCore(source, content, true);
     checkPathBudgetGuidance(source, content);
   }
+  for (const source of pathBudgetOnlySources)
+    checkPathBudgetGuidance(source, await read(source));
   for (const source of compactSources) {
     const content = await read(source);
     checkCore(source, content, false);

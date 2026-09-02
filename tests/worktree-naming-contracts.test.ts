@@ -10,7 +10,9 @@ const checkerIdentity = "scripts/check-worktree-naming-contracts.ts";
 const sources = [
   "repos/arashi/schema/config.schema.json",
   "repos/arashi/docs/configuration.md",
+  "repos/arashi-docs/docs/reference/configuration.md",
   "repos/arashi-docs/docs/commands/create.md",
+  "repos/arashi-docs/public/reference/configuration.md",
   "repos/arashi-docs/public/commands/create.md",
   "repos/arashi-docs/public/llms-full.txt",
   "repos/arashi-docs/public/llms.txt",
@@ -23,7 +25,9 @@ const schemaSource = "repos/arashi/schema/config.schema.json";
 const cliGuidanceSource = "repos/arashi/docs/configuration.md";
 const pathBudgetGuidanceSources = [
   cliGuidanceSource,
+  "repos/arashi-docs/docs/reference/configuration.md",
   "repos/arashi-docs/docs/commands/create.md",
+  "repos/arashi-docs/public/reference/configuration.md",
   "repos/arashi-docs/public/commands/create.md",
   "repos/arashi-docs/public/llms-full.txt",
   "repos/arashi-docs/public/llms.txt",
