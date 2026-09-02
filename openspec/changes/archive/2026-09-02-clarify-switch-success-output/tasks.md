@@ -17,4 +17,4 @@
 ## 4. OpenSpec Closeout
 
 - [x] 4.1 Reconcile implementation against this change, mark verified tasks complete, and validate OpenSpec.
-- [ ] 4.2 Archive the completed change, sync canonical specs, and open the final meta PR that closes issue #339.
+- [x] 4.2 Archive the completed change, sync canonical specs, and open the final meta PR that closes issue #339.
