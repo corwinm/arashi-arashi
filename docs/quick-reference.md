@@ -12,14 +12,10 @@ openspec/changes/<change>/
 openspec/specs/<capability>/spec.md   # Canonical after archive
 ```
 
-## OpenSpec Commands
+## OpenSpec Phases
 
-```text
-/opsx-explore
-/opsx-propose <change-name>
-/opsx-apply <change-name>
-/opsx-archive <change-name>
-```
+- **Pi / OpenCode:** `/opsx-explore`, `/opsx-propose <change-name>`, `/opsx-apply <change-name>`, `/opsx-archive <change-name>`
+- **Hermes:** request Explore, Propose, Apply, or Archive in plain language and name the change when applicable
 
 ```bash
 openspec list

@@ -1,4 +1,5 @@
 import { execFileSync } from "node:child_process";
+import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, test } from "vitest";
 
@@ -59,5 +60,17 @@ describe("specification workflow structure", () => {
       ]),
       specKitCommands: [],
     });
+  });
+
+  test("documents the OpenSpec workflow across supported agent interfaces", () => {
+    const contributing = readFileSync(
+      join(repositoryRoot, "CONTRIBUTING.md"),
+      "utf8",
+    );
+
+    expect(contributing).toContain("Pi");
+    expect(contributing).toContain("OpenCode");
+    expect(contributing).toContain("Hermes");
+    expect(contributing).not.toContain("Open OpenCode in the parent worktree");
   });
 });

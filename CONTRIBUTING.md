@@ -42,19 +42,22 @@ aw --version
 
    For meta-only work, use a normal Git branch/worktree because `aw --only` selects configured child repositories.
 
-3. Open OpenCode in the parent worktree.
-4. Explore unclear requirements with `/opsx-explore`.
-5. Create the complete change artifacts with `/opsx-propose <change-name>`.
+3. Start your preferred coding agent in the parent worktree.
+
+   Pi and OpenCode expose the checked-in `/opsx-*` prompts. With Hermes, request the same OpenSpec phase in plain language, such as `Use OpenSpec to propose <change-name>`.
+
+4. Explore unclear requirements with OpenSpec Explore.
+5. Create the complete change artifacts with OpenSpec Propose.
 6. Validate and review the proposal before implementation:
 
    ```bash
    openspec validate <change-name> --strict
    ```
 
-7. Implement with `/opsx-apply <change-name>` and keep code in the owning child repository.
+7. Implement with OpenSpec Apply and keep code in the owning child repository.
 8. Run repository-local checks plus the meta-repository checks below.
 9. Open cross-linked pull requests for every changed repository.
-10. Archive the OpenSpec change with `/opsx-archive <change-name>` after implementation is merged.
+10. Archive the OpenSpec change with OpenSpec Archive after implementation is merged.
 
 ## Meta-Repository Validation
 

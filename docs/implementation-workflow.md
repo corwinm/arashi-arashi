@@ -20,9 +20,11 @@ A parent commit cannot contain child-repository code. Commit and open a pull req
 
 ## 1. Define the Change
 
+Use the agent-native interface for each OpenSpec phase. Pi and OpenCode provide `/opsx-*` prompts; with Hermes, request the phase in plain language.
+
 1. Confirm the issue, current behavior, affected repositories, and acceptance criteria.
-2. Use `/opsx-explore` for unresolved questions.
-3. Run `/opsx-propose <change-name>`.
+2. Use OpenSpec Explore for unresolved questions.
+3. Use OpenSpec Propose to create the named change.
 4. Review:
    - `openspec/changes/<change-name>/proposal.md`
    - `design.md`
@@ -50,7 +52,7 @@ Before editing, record each repository's branch, exact head, and dirty state. Do
 
 ## 3. Implement
 
-Run `/opsx-apply <change-name>` or follow `tasks.md` directly.
+Use OpenSpec Apply or follow `tasks.md` directly.
 
 - Write tests before runtime behavior changes.
 - Keep source, tests, and repository-specific docs in the owning child repository.
@@ -90,6 +92,6 @@ Use each other child repository's `AGENTS.md` and package scripts for its exact 
 3. Push exact reviewed heads and open issue-linked pull requests.
 4. Verify remote CI on those heads.
 5. Merge child implementation first when the parent archives child-owned behavior.
-6. Run `/opsx-archive <change-name>` only after implementation is complete and approved.
+6. Use OpenSpec Archive only after implementation is complete and approved.
 
 The archived change is historical evidence; `openspec/specs/` is the post-archive canonical contract.

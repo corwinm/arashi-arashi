@@ -21,12 +21,14 @@ Planning and specification workspace for the Arashi project.
 
 ## OpenSpec Workflow
 
-1. Explore the problem with `/opsx-explore` when requirements are unclear.
-2. Create or refine a change with `/opsx-propose <change-name>`.
+Use the same phases from any coding agent. Pi and OpenCode provide the checked-in `/opsx-*` prompts; with Hermes, request the phase in plain language.
+
+1. Explore the problem with OpenSpec Explore when requirements are unclear.
+2. Create or refine a change with OpenSpec Propose.
 3. Review the generated proposal, design, capability deltas, and tasks.
-4. Implement approved tasks with `/opsx-apply <change-name>` in the repositories that own the changes.
+4. Implement approved tasks with OpenSpec Apply in the repositories that own the changes.
 5. Validate every touched repository and the OpenSpec change.
-6. Archive completed changes with `/opsx-archive <change-name>` after implementation is merged.
+6. Archive completed changes with OpenSpec Archive after implementation is merged.
 
 ## Repository Layout
 

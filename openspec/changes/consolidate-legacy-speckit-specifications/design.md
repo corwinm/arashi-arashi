@@ -105,7 +105,7 @@ A focused meta-repository test will assert that canonical OpenSpec paths and com
 1. Author and strictly validate all new and modified OpenSpec capability deltas.
 2. Add the structural regression test and prove it fails against the legacy tracked layout.
 3. Remove retired Spec Kit specs, toolkit, commands, and ignore rules.
-4. Rewrite active onboarding/process docs around `/opsx-propose`, `/opsx-apply`, and `/opsx-archive`, including the CLI repository's canonical contribution pointer.
+4. Rewrite active onboarding/process docs around the agent-neutral OpenSpec Explore, Propose, Apply, and Archive phases, including the CLI repository's canonical contribution pointer.
 5. Run strict OpenSpec validation, cross-repository stale-reference scans excluding intentional archives, formatting, typechecking, tests, and contract checks.
 6. Independently review both exact repository diffs and the migration matrix before coordinated delivery.
 
