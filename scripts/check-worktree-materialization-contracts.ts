@@ -130,6 +130,10 @@ function guidanceSupportsMaterialization(content: string): boolean {
     ) &&
     /copy[^.]{0,220}(?:independent|isolat)/i.test(normalized) &&
     /symlink[^.]{0,220}shar(?:e|ed|ing)/i.test(normalized) &&
+    /package-manager[^.]{0,220}(?:stores?|content-addressed)[^.]{0,220}per-worktree installs?/i.test(
+      normalized,
+    ) &&
+    /node_modules/i.test(normalized) &&
     /lifecycle hooks?[^.]{0,240}globs?[^.]{0,180}remapping[^.]{0,180}external sources?[^.]{0,180}interpolation/i.test(
       normalized,
     ) &&
