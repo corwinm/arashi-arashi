@@ -68,7 +68,16 @@ type RepositoryData = {
   default_branch?: string;
 };
 
-function githubMock(expectedRepository: string) {
+type GithubMockOptions = {
+  sourceFork?: boolean;
+  sourceForkRoot?: string;
+  commitSha?: string;
+};
+
+function githubMock(
+  expectedRepository: string,
+  options: GithubMockOptions = {},
+) {
   const branchShas = new Map([
     ["arashi", sha.arashi],
     ["arashi-docs", sha.docs],
@@ -81,15 +90,22 @@ function githubMock(expectedRepository: string) {
       repos: {
         get: async ({ owner, repo }: { owner: string; repo: string }) => {
           const fullName = `${owner}/${repo}`;
+          const isTriggerSource = fullName === "contributor/arashi";
           const data: RepositoryData = {
             full_name: fullName,
-            fork: fullName !== expectedRepository,
+            fork: isTriggerSource ? (options.sourceFork ?? true) : false,
             default_branch: "main",
           };
-          if (data.fork) data.source = { full_name: expectedRepository };
+          if (data.fork) {
+            data.source = {
+              full_name: options.sourceForkRoot ?? expectedRepository,
+            };
+          }
           return { data };
         },
-        getCommit: async ({ ref }: { ref: string }) => ({ data: { sha: ref } }),
+        getCommit: async ({ ref }: { ref: string }) => ({
+          data: { sha: options.commitSha ?? ref },
+        }),
         getBranch: async ({ repo }: { repo: string }) => ({
           data: { commit: { sha: branchShas.get(repo) } },
         }),
@@ -108,6 +124,7 @@ type ResolverOptions = {
   callerRepository?: string;
   workflowRepository?: string;
   workflowSha?: string;
+  githubMock?: GithubMockOptions;
 };
 
 async function runResolver(options: ResolverOptions = {}) {
@@ -161,7 +178,7 @@ async function runResolver(options: ResolverOptions = {}) {
       async function () {},
     ).constructor;
     await new AsyncFunction("github", "context", "core", script)(
-      githubMock("corwinm/arashi"),
+      githubMock("corwinm/arashi", options.githubMock),
       context,
       core,
     );
@@ -171,14 +188,27 @@ async function runResolver(options: ResolverOptions = {}) {
   }
 }
 
-async function runManifest(workflowTransform = (source: string) => source) {
-  const workflow = workflowTransform(await readFile(workflowPath, "utf8"));
+type ManifestOptions = {
+  workflowTransform?: (source: string) => string;
+  environment?: Record<string, string>;
+  checkoutHeads?: Record<string, string>;
+};
+
+async function runManifest(options: ManifestOptions = {}) {
+  const workflow = (options.workflowTransform ?? ((source) => source))(
+    await readFile(workflowPath, "utf8"),
+  );
   const script = extractScript(workflow, "Write revision manifest");
   let manifest = "";
   const summaries: string[] = [];
   const heads = new Map(
     revisions.map((entry) => [entry.logicalRepository, entry.sha]),
   );
+  for (const [repository, head] of Object.entries(
+    options.checkoutHeads ?? {},
+  )) {
+    heads.set(repository, head);
+  }
   const paths = new Map([
     ["meta", "arashi-arashi"],
     ["meta/repos/arashi", "arashi"],
@@ -209,22 +239,26 @@ async function runManifest(workflowTransform = (source: string) => source) {
     throw new Error(`unexpected module: ${module}`);
   };
   const previous = { ...process.env };
-  Object.assign(process.env, {
-    CHANGED_REPOSITORY: "arashi",
-    ARASHI_ARASHI_SOURCE: "corwinm/arashi-arashi",
-    ARASHI_ARASHI_SHA: sha.workflow,
-    ARASHI_SOURCE: "contributor/arashi",
-    ARASHI_SHA: sha.trigger,
-    ARASHI_DOCS_SOURCE: "corwinm/arashi-docs",
-    ARASHI_DOCS_SHA: sha.docs,
-    ARASHI_SKILLS_SOURCE: "corwinm/arashi-skills",
-    ARASHI_SKILLS_SHA: sha.skills,
-    ARASHI_VSCODE_SOURCE: "corwinm/arashi-vscode",
-    ARASHI_VSCODE_SHA: sha.vscode,
-    ARASHI_PRESENTATION_SOURCE: "corwinm/arashi-presentation",
-    ARASHI_PRESENTATION_SHA: sha.presentation,
-    GITHUB_STEP_SUMMARY: "/tmp/summary",
-  });
+  Object.assign(
+    process.env,
+    {
+      CHANGED_REPOSITORY: "arashi",
+      ARASHI_ARASHI_SOURCE: "corwinm/arashi-arashi",
+      ARASHI_ARASHI_SHA: sha.workflow,
+      ARASHI_SOURCE: "contributor/arashi",
+      ARASHI_SHA: sha.trigger,
+      ARASHI_DOCS_SOURCE: "corwinm/arashi-docs",
+      ARASHI_DOCS_SHA: sha.docs,
+      ARASHI_SKILLS_SOURCE: "corwinm/arashi-skills",
+      ARASHI_SKILLS_SHA: sha.skills,
+      ARASHI_VSCODE_SOURCE: "corwinm/arashi-vscode",
+      ARASHI_VSCODE_SHA: sha.vscode,
+      ARASHI_PRESENTATION_SOURCE: "corwinm/arashi-presentation",
+      ARASHI_PRESENTATION_SHA: sha.presentation,
+      GITHUB_STEP_SUMMARY: "/tmp/summary",
+    },
+    options.environment,
+  );
   try {
     const AsyncFunction = Object.getPrototypeOf(
       async function () {},
@@ -283,6 +317,21 @@ describe("cross-repository revision resolver", () => {
       { workflowRepository: "contributor/arashi-arashi" },
       "Unexpected workflow repository",
     ],
+    [
+      "non-fork source repository",
+      { githubMock: { sourceFork: false } },
+      "is not in the corwinm/arashi fork network",
+    ],
+    [
+      "wrong fork-network root",
+      { githubMock: { sourceForkRoot: "other/arashi" } },
+      "is not in the corwinm/arashi fork network",
+    ],
+    [
+      "commit API identity mismatch",
+      { githubMock: { commitSha: "5".repeat(40) } },
+      "did not resolve to",
+    ],
   ] as const)("rejects %s", async (_name, options, message) => {
     await expect(runResolver(options)).rejects.toThrow(message);
   });
@@ -305,12 +354,13 @@ describe("cross-repository revision manifest", () => {
 
   test("canonical comparison catches reordered repository definitions", async () => {
     const canonical = await runManifest();
-    const reordered = await runManifest((workflow) =>
-      workflow.replace(
-        '["arashi", "ARASHI", "meta/repos/arashi"],\n              ["arashi-docs", "ARASHI_DOCS", "meta/repos/arashi-docs"],',
-        '["arashi-docs", "ARASHI_DOCS", "meta/repos/arashi-docs"],\n              ["arashi", "ARASHI", "meta/repos/arashi"],',
-      ),
-    );
+    const reordered = await runManifest({
+      workflowTransform: (workflow) =>
+        workflow.replace(
+          '["arashi", "ARASHI", "meta/repos/arashi"],\n              ["arashi-docs", "ARASHI_DOCS", "meta/repos/arashi-docs"],',
+          '["arashi-docs", "ARASHI_DOCS", "meta/repos/arashi-docs"],\n              ["arashi", "ARASHI", "meta/repos/arashi"],',
+        ),
+    });
 
     expect(reordered.manifest).not.toBe(canonical.manifest);
     expect(
@@ -318,5 +368,30 @@ describe("cross-repository revision manifest", () => {
         (entry: { logicalRepository: string }) => entry.logicalRepository,
       ),
     ).not.toEqual(revisions.map((entry) => entry.logicalRepository));
+  });
+
+  test.each([
+    [
+      "missing revision",
+      { environment: { ARASHI_DOCS_SHA: "" } },
+      "Incomplete revision for arashi-docs",
+    ],
+    [
+      "malformed revision",
+      { environment: { ARASHI_DOCS_SHA: "not-a-sha" } },
+      "Incomplete revision for arashi-docs",
+    ],
+    [
+      "checked-out HEAD mismatch",
+      { checkoutHeads: { "arashi-docs": "9".repeat(40) } },
+      "arashi-docs checkout mismatch",
+    ],
+    [
+      "trigger omitted from manifest",
+      { environment: { CHANGED_REPOSITORY: "unknown" } },
+      "Trigger repository is missing",
+    ],
+  ] as const)("rejects %s", async (_name, options, message) => {
+    await expect(runManifest(options)).rejects.toThrow(message);
   });
 });
