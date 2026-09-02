@@ -25,5 +25,5 @@
 - [x] 4.2 Update `docs/cross-repo-command-contracts.md` and alignment checks for child invocation, fork/source identity, exact-revision reproduction, manifest/artifact retrieval, and artifact-archive digest meaning.
 - [x] 4.3 Record the final child merge SHAs in durable meta evidence and rerun the aggregate against those exact revisions.
 - [x] 4.4 Download a post-merge revision artifact, verify its JSON bytes, logical/source/SHA completeness, and GitHub-reported artifact-archive digest, and record the run URL.
-- [ ] 4.5 Reconcile all eligible review feedback, mark tasks only from post-edit evidence, archive and sync OpenSpec, and pass final exact-head meta gates.
+- [x] 4.5 Reconcile all eligible review feedback, mark tasks only from post-edit evidence, archive and sync OpenSpec, and pass final exact-head meta gates.
 - [ ] 4.6 Merge the final meta closeout, verify issue #346 closure, remove coordinated branches/worktrees, and confirm all six repositories are clean and synchronized.
