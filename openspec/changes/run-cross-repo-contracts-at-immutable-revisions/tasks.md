@@ -1,7 +1,7 @@
 ## 1. Proposal and RED Contract
 
 - [ ] 1.1 Validate the proposal, design, and `cross-repo-command-contracts` delta against issue #346 and the current workflow topology.
-- [ ] 1.2 Add meta RED tests for `workflow_call` logical/source/SHA validation, `job.workflow_repository`/`job.workflow_sha` coordinator binding, fork-source handling, immutable resolver outputs, explicit-source/SHA checkouts, complete deterministic manifests, strict artifact/digest reporting, and preserved direct triggers.
+- [ ] 1.2 Add meta RED tests for `workflow_call` logical/source/SHA validation against the caller event payload, `job.workflow_repository`/`job.workflow_sha` coordinator binding, fork-source handling, immutable resolver outputs, explicit-source/SHA checkouts, complete deterministic manifests, strict artifact/digest reporting, and preserved direct triggers.
 - [ ] 1.3 Add foundation controlled-drift fixtures that reject fresh meta-`main` resolution, floating or misattributed triggering-child checkout, unsupported or malformed invocation, omitted/duplicate revisions, permissive missing-file upload, empty upload digests, and log-only revision reporting.
 
 ## 2. Callable Meta Foundation

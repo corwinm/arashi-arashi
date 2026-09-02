@@ -2,7 +2,7 @@
 
 ### Requirement: Child repositories SHALL invoke authoritative cross-repository validation
 
-Each participating child repository SHALL invoke the public authoritative cross-repository workflow for pull requests and pushes to its default branch. The caller SHALL identify its trusted logical upstream repository from the supported fixed set and SHALL pass the actual event source repository plus the event's full child commit SHA without passing secrets. The called workflow SHALL validate the upstream caller identity and, when source differs from logical repository, SHALL validate that the public source belongs to the expected fork network.
+Each participating child repository SHALL invoke the public authoritative cross-repository workflow for pull requests and pushes to its default branch. The caller SHALL identify its trusted logical upstream repository from the supported fixed set and SHALL pass the actual event source repository plus the event's full child commit SHA without passing secrets. The called workflow SHALL validate the upstream caller identity, require the supplied source and SHA to equal the caller event payload, and, when source differs from logical repository, validate that the public source belongs to the expected fork network.
 
 #### Scenario: Child pull request changes a shared contract
 
@@ -50,7 +50,7 @@ Before any repository checkout or semantic checker execution, authoritative CI S
 
 #### Scenario: Invocation is malformed
 
-- **WHEN** the triggering logical repository is unsupported, caller identity is mismatched, the logical/source/SHA tuple is incomplete, the source is not the expected upstream or fork, the SHA is not a full lowercase hexadecimal commit identity, the called job workflow repository is unexpected, or a selected ref cannot be resolved
+- **WHEN** the triggering logical repository is unsupported, caller identity is mismatched, the logical/source/SHA tuple is incomplete or differs from the caller event payload, the source is not the expected upstream or fork, the SHA is not a full lowercase hexadecimal commit identity, the called job workflow repository is unexpected, or a selected ref cannot be resolved
 - **THEN** validation exits unsuccessfully before repository checkout and semantic checker execution
 
 ### Requirement: Cross-repository CI SHALL publish durable complete revision evidence

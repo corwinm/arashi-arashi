@@ -26,7 +26,7 @@ Cross-repository `repository_dispatch` would require distributing a PAT or GitHu
 
 ### Use a public reusable workflow
 
-The existing meta workflow will add `workflow_call` inputs for `changed_repository`, `changed_source_repository`, and `changed_sha`. Each child receives a minimal caller workflow for `pull_request` and pushes to `main`. The logical repository is the fixed upstream child; the source repository is `github.event.pull_request.head.repo.full_name` for pull requests and the upstream caller repository for `main` pushes.
+The existing meta workflow will add `workflow_call` inputs for `changed_repository`, `changed_source_repository`, and `changed_sha`. Each child receives a minimal caller workflow for `pull_request` and pushes to `main`. The logical repository is the fixed upstream child; the source repository is `github.event.pull_request.head.repo.full_name` for pull requests and the upstream caller repository for `main` pushes. The called workflow independently compares the supplied source and SHA with the caller event payload, so a modified caller cannot substitute a different commit from the same fork network.
 
 This keeps execution centralized while the check is reported on the child commit that caused it. It also avoids a shared write-capable credential. `repository_dispatch` was rejected because the built-in `GITHUB_TOKEN` cannot dispatch into another repository and distributing a PAT would widen the security boundary. The called workflow validates that `github.repository` is the expected upstream logical repository. When the source differs, it verifies through the GitHub API that the public source belongs to the expected fork network before fetching the exact head SHA from that source.
 
