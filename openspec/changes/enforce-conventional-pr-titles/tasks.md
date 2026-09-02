@@ -19,7 +19,7 @@
 
 ## 4. Delivery
 
-- [ ] 4.1 Complete an independent review of the full cross-repository change and reconcile findings.
-- [ ] 4.2 Open child pull requests with valid Conventional Commit titles and link issue #341 without a closing keyword.
+- [x] 4.1 Complete an independent review of the full cross-repository change and reconcile findings.
+- [x] 4.2 Open child pull requests with valid Conventional Commit titles and link issue #341 without a closing keyword.
 - [ ] 4.3 Verify exact-head child CI, including the new title checks.
 - [ ] 4.4 Archive the OpenSpec change, sync/validate canonical specs, update the meta pull request to close #341, and merge only after approval.
