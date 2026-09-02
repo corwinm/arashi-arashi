@@ -4,7 +4,7 @@ The meta-repository compares the generated CLI command contract with the canonic
 
 ## Run locally
 
-Populate all four `repos/*` checkouts, install the pinned private toolchain, then run:
+Populate all five `repos/*` checkouts, install the pinned private toolchain, then run:
 
 ```sh
 pnpm install --frozen-lockfile
@@ -51,10 +51,16 @@ This sequence validates source guidance and then the extracted `skills/arashi` s
 - `SWITCH_CONFIG_*`: keep the generated schema mode enum, canonical field, docs contract, and skill contract aligned. Deprecated launcher aliases are runtime migration inputs only and must not reappear in the canonical switch schema.
 - `CREATE_CONFIG_*`: keep the CLI create-launch manifest, generated schema, docs contract, and skill contract semantically identical. Legacy `launchMode`, `launch_mode`, and boolean `launch` remain runtime migration inputs only.
 - `VSCODE_*`: ensure mapping IDs exist in `package.json` contributions and classify extension-only navigation/panel commands explicitly.
-- CI prints all checked-out SHAs. Reproduce a failure by checking out those exact revisions into `repos/*`.
+- CI records all checked-out revisions in `cross-repo-revisions.json`. Reproduce a failure by checking out each recorded `sourceRepository` at its exact `sha` into the meta root or corresponding `repos/*` path.
 
-## CI trigger decision
+## CI invocation and revision evidence
 
-The authoritative workflow runs on meta-repository changes and manual dispatch. It validates each child repository’s `main` branch, which makes the durable contract check follow merged repository state and preserves child-before-meta merge ordering.
+The authoritative workflow runs directly for meta-repository pull requests, `main` pushes, and manual dispatches. A minimal read-only caller in each child repository also invokes it for pull requests and `main` pushes. Each caller passes its fixed logical upstream repository, the actual pull-request source repository, and the exact PR-head or push SHA. Fork pull requests therefore validate the fork commit while the coordinator separately verifies that the source belongs to the expected upstream fork network. No caller passes secrets.
 
-Child repositories do **not** dispatch the workflow yet: cross-repository authentication, independently named PR refs, and status reporting should be designed together in a follow-up. Child-local freshness/consistency gates remain independently useful in the meantime.
+The coordinator resolves every other repository once, checks out only full SHAs, and verifies every checkout before validation. Its `cross-repo-revisions.json` artifact contains a canonical `repositories` array of `logicalRepository`, `sourceRepository`, and `sha` entries plus the triggering entry. Download it with:
+
+```sh
+gh run download RUN_ID -R OWNER/REPOSITORY -n cross-repo-revisions
+```
+
+To reproduce a run, check out each listed `sourceRepository` at its listed `sha`; do not substitute a current branch tip. The workflow summary also reports the artifact-archive SHA-256 from GitHub's upload action. That digest covers the downloadable artifact archive, not the manifest file alone. Compare it with the artifact API's `digest` field or hash the downloaded archive bytes before extraction when verifying durable evidence.
