@@ -164,8 +164,8 @@ function validateFoundationWorkflow(source: string): string[] {
   requireFragment(
     diagnostics,
     source,
-    "ARTIFACT_DIGEST: ${{ steps.revision_artifact.outputs.digest }}",
-    "artifact digest output is not consumed",
+    "ARTIFACT_DIGEST: ${{ steps.revision_artifact.outputs.artifact-digest }}",
+    "GitHub artifact archive digest output is not consumed",
   );
   requireFragment(
     diagnostics,
