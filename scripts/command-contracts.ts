@@ -305,9 +305,18 @@ const kittyDocsGuidance = [
   "`.kitty-session`",
   "`aw remove` does not close Kitty windows or sessions",
   "no `--kitty` flag",
+  "not added to persistent launch configuration",
   "`LAUNCH_FAILED`",
   "does not fall back",
   "created worktrees remain available",
+] as const;
+const kittyLockGuidance = [
+  "cross-process identity lock",
+  "10 seconds",
+  "live owner",
+  "dead owner",
+  "30 seconds",
+  "Ownership-safe release",
 ] as const;
 const kittyGuidanceRequirements: Array<{
   category: "docs" | "skills";
@@ -328,6 +337,21 @@ const kittyGuidanceRequirements: Array<{
     category: "docs",
     source: "repos/arashi-docs/public/llms-full.txt",
     phrases: kittyDocsGuidance,
+  },
+  {
+    category: "docs",
+    source: "repos/arashi-docs/docs/reference/launching.md",
+    phrases: kittyLockGuidance,
+  },
+  {
+    category: "docs",
+    source: "repos/arashi-docs/public/reference/launching.md",
+    phrases: kittyLockGuidance,
+  },
+  {
+    category: "docs",
+    source: "repos/arashi-docs/public/llms-full.txt",
+    phrases: kittyLockGuidance,
   },
   {
     category: "skills",

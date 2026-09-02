@@ -346,6 +346,7 @@ const optionPolicies = {
 const docsTabContract = `# Window and Tab Launching
 
 \`--tab\` is a CLI-only, one-invocation request and does not create a persistent preference.
+Kitty uses a cross-process identity lock. A contender waits up to 10 seconds and never steals from a live owner. A dead owner can be recovered; malformed metadata is recoverable after 30 seconds. Ownership-safe release removes only the lock held by the current process.
 For \`switch\`, explicit tab intent overrides configured parent-shell cd, bypasses configured launcher defaults, and conflicts only with explicit \`--cd\`.
 For create, create tab implies launch and switch, wins over \`--no-launch\` and \`--no-switch\`, and bypasses configured launcher defaults.
 
@@ -612,6 +613,7 @@ async function fixture(): Promise<string> {
     "repos/arashi-docs/docs/commands/index.md":
       "- [Add](/commands/add/)\n- [Create](/commands/create/)\n- [Init](/commands/init/)\n- [Switch](/commands/switch/)\n",
     "repos/arashi-docs/docs/reference/launching.md": docsTabContract,
+    "repos/arashi-docs/public/reference/launching.md": docsTabContract,
     "repos/arashi-docs/scripts/check-tab-launch-docs.ts":
       "console.log('tab launch docs checker passed');\n",
     "repos/arashi-docs/package.json": {
@@ -620,12 +622,12 @@ async function fixture(): Promise<string> {
       },
     },
     "repos/arashi-docs/docs/workflows/kitty.md":
-      "Kitty 0.43 or newer\n`allow_remote_control`\nexact Arashi worktree identity\nafter integrated IDE detection and before parent-shell `cd`\nlive only\n`.kitty-session`\n`aw remove` does not close Kitty windows or sessions\nno `--kitty` flag\ndoes not add Kitty to persistent Arashi launch configuration\n`LAUNCH_FAILED`\ndoes not fall back\ncreated worktrees remain available\ncross-process identity lock\n10 seconds\nlive owner\ndead owner\n30 seconds\nownership-safe release\n",
+      "Kitty 0.43 or newer\n`allow_remote_control`\nexact Arashi worktree identity\nafter integrated IDE detection and before parent-shell `cd`\nlive only\n`.kitty-session`\n`aw remove` does not close Kitty windows or sessions\nno `--kitty` flag\nnot added to persistent launch configuration\n`LAUNCH_FAILED`\ndoes not fall back\ncreated worktrees remain available\ncross-process identity lock\n10 seconds\nlive owner\ndead owner\n30 seconds\nownership-safe release\nOwnership-safe release\n",
     "repos/arashi-docs/public/workflows/kitty.md":
-      "Kitty 0.43 or newer\n`allow_remote_control`\nexact Arashi worktree identity\nafter integrated IDE detection and before parent-shell `cd`\nlive only\n`.kitty-session`\n`aw remove` does not close Kitty windows or sessions\nno `--kitty` flag\ndoes not add Kitty to persistent Arashi launch configuration\n`LAUNCH_FAILED`\ndoes not fall back\ncreated worktrees remain available\ncross-process identity lock\n10 seconds\nlive owner\ndead owner\n30 seconds\nownership-safe release\n",
+      "Kitty 0.43 or newer\n`allow_remote_control`\nexact Arashi worktree identity\nafter integrated IDE detection and before parent-shell `cd`\nlive only\n`.kitty-session`\n`aw remove` does not close Kitty windows or sessions\nno `--kitty` flag\nnot added to persistent launch configuration\n`LAUNCH_FAILED`\ndoes not fall back\ncreated worktrees remain available\ncross-process identity lock\n10 seconds\nlive owner\ndead owner\n30 seconds\nownership-safe release\nOwnership-safe release\n",
     "repos/arashi-docs/public/commands/add.md": addMaterializationGuidance,
     "repos/arashi-docs/public/llms-full.txt":
-      "Kitty 0.43 or newer\n`allow_remote_control`\nexact Arashi worktree identity\nafter integrated IDE detection and before parent-shell `cd`\nlive only\n`.kitty-session`\n`aw remove` does not close Kitty windows or sessions\nno `--kitty` flag\ndoes not add Kitty to persistent Arashi launch configuration\n`LAUNCH_FAILED`\ndoes not fall back\ncreated worktrees remain available\ncross-process identity lock\n10 seconds\nlive owner\ndead owner\n30 seconds\nownership-safe release\n" +
+      "Kitty 0.43 or newer\n`allow_remote_control`\nexact Arashi worktree identity\nafter integrated IDE detection and before parent-shell `cd`\nlive only\n`.kitty-session`\n`aw remove` does not close Kitty windows or sessions\nno `--kitty` flag\nnot added to persistent launch configuration\n`LAUNCH_FAILED`\ndoes not fall back\ncreated worktrees remain available\ncross-process identity lock\n10 seconds\nlive owner\ndead owner\n30 seconds\nownership-safe release\nOwnership-safe release\n" +
       addMaterializationGuidance,
     "repos/arashi-skills/contracts/command-coverage.json": {
       schemaVersion: 1,
@@ -689,7 +691,7 @@ async function fixture(): Promise<string> {
     "repos/arashi-skills/skills/arashi/references/workflows.md":
       "Kitty 0.43+\nexact Arashi-managed marker\nstable identity\n`<repo-name>: <branch-name>`\nsame managed Kitty flow\nlive-only\n`.kitty-session`\nRemoval does not close Kitty\npreserves every successfully created worktree\n",
     "repos/arashi-skills/skills/arashi/references/troubleshooting.md":
-      "Kitty 0.43+\nremote control\nLAUNCH_FAILED\nduplicate exact marked Kitty windows\ndoes not close ambiguous Kitty windows\npreserve the created worktrees\ncross-process identity lock\n10-second wait\nlive owner\ndead owner\n30 seconds\nownership-safe release\n",
+      "Kitty 0.43+\nremote control\nLAUNCH_FAILED\nduplicate exact marked Kitty windows\ndoes not close ambiguous Kitty windows\npreserve the created worktrees\ncross-process identity lock\n10-second wait\nlive owner\ndead owner\n30 seconds\nownership-safe release\nOwnership-safe release\n",
     "repos/arashi-vscode/contracts/command-policy.json": {
       schemaVersion: 1,
       cliCommands: {

@@ -35,7 +35,6 @@ const guidanceGroups = [
     sources: [
       "repos/arashi-docs/docs/reference/configuration.md",
       "repos/arashi-docs/docs/commands/create.md",
-      "repos/arashi-docs/public/llms.txt",
     ],
   },
   {
