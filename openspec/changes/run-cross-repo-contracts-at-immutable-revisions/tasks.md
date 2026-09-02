@@ -14,8 +14,8 @@
 
 ## 3. Child Callers
 
-- [ ] 3.1 Add a minimal read-only pull-request and `main` caller workflow to `arashi` that passes the repository name and exact event SHA without secrets.
-- [ ] 3.2 Add equivalent caller workflows to `arashi-docs`, `arashi-skills`, `arashi-vscode`, and `arashi-presentation`.
+- [ ] 3.1 Add a minimal read-only pull-request and `main` caller workflow to `arashi` that passes the fixed logical upstream repository, actual event source repository, and exact PR-head or push SHA without secrets.
+- [ ] 3.2 Add equivalent three-input caller workflows to `arashi-docs`, `arashi-skills`, `arashi-vscode`, and `arashi-presentation`.
 - [ ] 3.3 Validate every child workflow locally and with repository contract checks, then open cross-linked child PRs against the merged callable foundation.
 - [ ] 3.4 Verify exact-head child CI and at least one real reusable-workflow invocation per caller before merging each child PR.
 
