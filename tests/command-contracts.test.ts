@@ -1020,6 +1020,30 @@ describe("cross-repository command contracts", () => {
     expect(result.ok, JSON.stringify(result.diagnostics, null, 2)).toBe(true);
   });
 
+  test("accepts an unfiltered pull request trigger as complete path coverage", async () => {
+    const root = await schemaV8Fixture();
+    const workflowPath = join(
+      root,
+      ".github/workflows/cross-repo-command-contracts.yml",
+    );
+    const workflow = await readFile(workflowPath, "utf8");
+    await writeFile(
+      workflowPath,
+      workflow.replace(
+        /  pull_request:\n    paths:\n(?:      - .+\n)+/,
+        "  pull_request:\n",
+      ),
+    );
+
+    const result = await checkContracts(root);
+    expect(
+      result.diagnostics.filter(
+        (diagnostic) =>
+          diagnostic.code === "CREATE_BASE_TRIGGER_PATH_UNREACHABLE",
+      ),
+    ).toEqual([]);
+  });
+
   test("normalizes the complete canonical configure policy and companion classifications", async () => {
     const result = await checkContracts(await schemaV8Fixture());
     expect(

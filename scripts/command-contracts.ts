@@ -3172,7 +3172,7 @@ const runsInOrder = (runs: string[], commands: string[]): boolean => {
   return true;
 };
 
-const workflowPullRequestPaths = (workflow: string): Set<string> => {
+const workflowPullRequestPaths = (workflow: string): Set<string> | null => {
   const lines = workflow.split(/\r?\n/);
   let onIndent = -1;
   let pullRequestIndent = -1;
@@ -3203,7 +3203,7 @@ const workflowPullRequestPaths = (workflow: string): Set<string> => {
     const item = line.match(/^\s*-\s*(["']?)(.*?)\1\s*(?:#.*)?$/);
     if (item) result.add(item[2]);
   }
-  return result;
+  return pullRequestIndent >= 0 && pathsIndent < 0 ? null : result;
 };
 
 const executableCheckerSource = (content: string): boolean =>
@@ -4968,7 +4968,7 @@ export async function checkContracts(
       "repos/arashi-skills/contracts/**",
       "repos/arashi-skills/.github/workflows/**",
     ])
-      if (!triggerPaths.has(requiredPath))
+      if (triggerPaths !== null && !triggerPaths.has(requiredPath))
         add(
           d,
           "error",
