@@ -11,6 +11,45 @@ const repositories = [
   "arashi_vscode",
   "arashi_presentation",
 ] as const;
+const childRepositories = [
+  "arashi",
+  "arashi-docs",
+  "arashi-skills",
+  "arashi-vscode",
+  "arashi-presentation",
+] as const;
+
+function expectedChildCaller(repository: (typeof childRepositories)[number]) {
+  return `name: Cross-repository command contracts
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  contracts:
+    uses: corwinm/arashi-arashi/.github/workflows/cross-repo-command-contracts.yml@main
+    with:
+      changed_repository: ${repository}
+      changed_source_repository: \${{ github.event.pull_request.head.repo.full_name || github.repository }}
+      changed_sha: \${{ github.event.pull_request.head.sha || github.sha }}
+`;
+}
+
+function validateChildCaller(
+  repository: (typeof childRepositories)[number],
+  source: string,
+) {
+  return source === expectedChildCaller(repository)
+    ? []
+    : [
+        `repos/${repository}/.github/workflows/cross-repo-command-contracts.yml must match the authoritative read-only caller`,
+      ];
+}
 
 function requireFragment(
   diagnostics: string[],
@@ -290,5 +329,57 @@ describe("cross-repository workflow foundation", () => {
         entry.includes(diagnostic),
       ),
     ).toBe(true);
+  });
+});
+
+describe("merged child callers", () => {
+  test.each(childRepositories)(
+    "%s has the authoritative caller workflow",
+    async (repository) => {
+      const source = await readFile(
+        `repos/${repository}/.github/workflows/cross-repo-command-contracts.yml`,
+        "utf8",
+      );
+      expect(validateChildCaller(repository, source)).toEqual([]);
+    },
+  );
+
+  test.each(childRepositories)(
+    "%s caller enforcement rejects removal and contract drift",
+    async (repository) => {
+      const source = await readFile(
+        `repos/${repository}/.github/workflows/cross-repo-command-contracts.yml`,
+        "utf8",
+      );
+      expect(validateChildCaller(repository, "")).toHaveLength(1);
+      expect(
+        validateChildCaller(
+          repository,
+          source.replace(
+            "github.event.pull_request.head.repo.full_name",
+            "github.repository",
+          ),
+        ),
+      ).toHaveLength(1);
+    },
+  );
+});
+
+describe("cross-repository revision documentation", () => {
+  test("documents caller identity, immutable reproduction, and artifact digest semantics", async () => {
+    const source = await readFile(
+      "docs/cross-repo-command-contracts.md",
+      "utf8",
+    );
+    for (const fragment of [
+      "actual pull-request source repository",
+      "exact PR-head or push SHA",
+      "gh run download RUN_ID -R OWNER/REPOSITORY -n cross-repo-revisions",
+      "logicalRepository",
+      "sourceRepository",
+      "artifact-archive SHA-256",
+    ]) {
+      expect(source).toContain(fragment);
+    }
   });
 });
