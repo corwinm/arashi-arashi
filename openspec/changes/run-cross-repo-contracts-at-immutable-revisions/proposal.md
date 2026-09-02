@@ -5,12 +5,12 @@ Cross-repository command validation currently runs only when the meta repository
 ## What Changes
 
 - Make the authoritative meta workflow callable from each participating public child repository without a shared PAT or release credential.
-- Pass the triggering child repository and full revision explicitly, validate them fail-closed, and check out that child at the immutable revision.
+- Pass the triggering child's trusted logical repository, actual source repository, and full revision explicitly; validate them fail-closed and check out that source at the immutable revision.
 - Add minimal pull-request and `main` caller workflows to every participating child repository.
-- Resolve every other repository once, record every exact revision in deterministic JSON, and use those checked-out revisions for the entire validation run.
+- Resolve every other repository once, bind the meta checkout to the called job's workflow repository and SHA, record logical/source identity plus every exact revision in deterministic JSON, and use those checked-out revisions for the entire validation run.
 - Publish the revision manifest to the job summary and as a digest-bearing workflow artifact.
 - Preserve direct meta pull-request, `main`, and manual runs, including matching coordinated child branches for meta pull requests.
-- Add controlled-drift tests for missing callers, floating triggering-child checkouts, incomplete manifests, and log-only revision reporting.
+- Add controlled-drift tests for missing callers, fresh meta-`main` lookups, floating or misattributed triggering-child checkouts, incomplete manifests, permissive artifact upload, and log-only revision reporting.
 
 ## Capabilities
 
