@@ -451,41 +451,13 @@ describe("coordinated local and workflow composition", () => {
     );
   });
 
-  test("authoritative workflow retains coordinated triggers and exact child revision reporting", async () => {
+  test("authoritative workflow always reports on pull requests and records exact child revisions", async () => {
     const workflow = await readFile(
       join(metaRoot, ".github/workflows/cross-repo-command-contracts.yml"),
       "utf8",
     );
-    for (const input of [
-      "scripts/**",
-      "tests/**",
-      "docs/**",
-      ".arashi/hooks/**",
-      "package.json",
-      "pnpm-lock.yaml",
-      "tsconfig.json",
-      "vitest.config.ts",
-      ".github/workflows/cross-repo-command-contracts.yml",
-      "repos/arashi/src/**",
-      "repos/arashi/schema/**",
-      "repos/arashi/contracts/**",
-      "repos/arashi/.github/workflows/**",
-      "repos/arashi-docs/docs/**",
-      "repos/arashi-docs/scripts/**",
-      "repos/arashi-docs/contracts/**",
-      "repos/arashi-docs/.github/workflows/**",
-      "repos/arashi-skills/skills/**",
-      "repos/arashi-skills/scripts/**",
-      "repos/arashi-skills/contracts/**",
-      "repos/arashi-skills/security/**",
-      "repos/arashi-skills/README.md",
-      "repos/arashi-skills/LICENSE",
-      "repos/arashi-skills/.github/workflows/**",
-    ]) {
-      expect(workflow, `missing trigger input ${input}`).toContain(
-        `"${input}"`,
-      );
-    }
+    expect(workflow).toMatch(/on:\n  pull_request:\n  push:/);
+    expect(workflow).not.toMatch(/pull_request:\n(?:    .+\n)*?    paths:/);
     expect(workflow).toContain('git -C "repos/$repo" rev-parse HEAD');
     expect(workflow).toMatch(
       /for repo in arashi arashi-docs arashi-skills arashi-vscode arashi-presentation/,
