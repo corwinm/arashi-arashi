@@ -456,12 +456,15 @@ describe("coordinated local and workflow composition", () => {
       join(metaRoot, ".github/workflows/cross-repo-command-contracts.yml"),
       "utf8",
     );
-    expect(workflow).toMatch(/on:\n  pull_request:\n  push:/);
-    expect(workflow).not.toMatch(/pull_request:\n(?:    .+\n)*?    paths:/);
-    expect(workflow).toContain('git -C "repos/$repo" rev-parse HEAD');
     expect(workflow).toMatch(
-      /for repo in arashi arashi-docs arashi-skills arashi-vscode arashi-presentation/,
+      /on:\n  workflow_call:[\s\S]+?  pull_request:\n  push:/,
     );
+    expect(workflow).not.toMatch(/pull_request:\n(?:    .+\n)*?    paths:/);
+    expect(workflow).toContain("jobContext.workflow_repository");
+    expect(workflow).toContain("jobContext.workflow_sha");
+    expect(workflow).toContain("name: Write revision manifest");
+    expect(workflow).toContain("name: cross-repo-revisions");
+    expect(workflow).toContain("if-no-files-found: error");
   });
 });
 

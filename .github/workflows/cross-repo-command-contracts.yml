@@ -1,6 +1,23 @@
 name: Cross-repository command contracts
 
 on:
+  workflow_call:
+    inputs:
+      changed_repository:
+        description: Trusted logical child repository name
+        required: false
+        type: string
+        default: ""
+      changed_source_repository:
+        description: Actual owner/repository containing the triggering commit
+        required: false
+        type: string
+        default: ""
+      changed_sha:
+        description: Full triggering child commit SHA
+        required: false
+        type: string
+        default: ""
   pull_request:
   push:
     branches: [main]
@@ -13,53 +30,322 @@ jobs:
   contracts:
     runs-on: ubuntu-latest
     steps:
+      - name: Resolve immutable revisions
+        id: revisions
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
+        env:
+          CHANGED_REPOSITORY: ${{ inputs.changed_repository }}
+          CHANGED_SOURCE_REPOSITORY: ${{ inputs.changed_source_repository }}
+          CHANGED_SHA: ${{ inputs.changed_sha }}
+          EVENT_NAME: ${{ github.event_name }}
+          HEAD_REF: ${{ github.head_ref }}
+          META_EVENT_SOURCE: ${{ github.event.pull_request.head.repo.full_name || github.repository }}
+          META_EVENT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          JOB_CONTEXT: ${{ toJSON(job) }}
+        with:
+          script: |
+            const shaPattern = /^[0-9a-f]{40}$/;
+            const expectedWorkflowRepository = "corwinm/arashi-arashi";
+            const childRepositories = [
+              "arashi",
+              "arashi-docs",
+              "arashi-skills",
+              "arashi-vscode",
+              "arashi-presentation",
+            ];
+            const changedRepository = process.env.CHANGED_REPOSITORY ?? "";
+            const changedSourceRepository = process.env.CHANGED_SOURCE_REPOSITORY ?? "";
+            const changedSha = process.env.CHANGED_SHA ?? "";
+            const jobContext = JSON.parse(process.env.JOB_CONTEXT ?? "{}");
+            const invocationValues = [
+              changedRepository,
+              changedSourceRepository,
+              changedSha,
+            ];
+            const called = invocationValues.some(Boolean);
+
+            function fail(message) {
+              core.setFailed(message);
+              throw new Error(message);
+            }
+
+            function splitRepository(repository) {
+              const parts = repository.split("/");
+              if (parts.length !== 2 || parts.some((part) => !part)) {
+                fail(`Invalid repository identity: ${repository}`);
+              }
+              return { owner: parts[0], repo: parts[1] };
+            }
+
+            function requireSha(sha, label) {
+              if (!shaPattern.test(sha)) fail(`${label} is not a full lowercase SHA`);
+              return sha;
+            }
+
+            async function validateSource(expectedRepository, sourceRepository, sha) {
+              const { owner, repo } = splitRepository(sourceRepository);
+              const sourceResponse = await github.rest.repos.get({ owner, repo });
+              const sourceRepositoryData = sourceResponse.data;
+              const normalizedExpected = expectedRepository.toLowerCase();
+              const normalizedSource = sourceRepositoryData.full_name.toLowerCase();
+              if (normalizedSource !== normalizedExpected) {
+                const forkRoot = sourceRepositoryData.source?.full_name?.toLowerCase();
+                if (!sourceRepositoryData.fork || forkRoot !== normalizedExpected) {
+                  fail(`${sourceRepository} is not in the ${expectedRepository} fork network`);
+                }
+              }
+              const commitResponse = await github.rest.repos.getCommit({
+                owner,
+                repo,
+                ref: requireSha(sha, `${sourceRepository} revision`),
+              });
+              if (commitResponse.data.sha !== sha) {
+                fail(`${sourceRepository} did not resolve to ${sha}`);
+              }
+              return sourceRepositoryData.full_name;
+            }
+
+            async function resolveBranch(repository, branch) {
+              const { owner, repo } = splitRepository(repository);
+              try {
+                const response = await github.rest.repos.getBranch({ owner, repo, branch });
+                return requireSha(response.data.commit.sha, `${repository}:${branch}`);
+              } catch (error) {
+                if (error.status === 404) return undefined;
+                throw error;
+              }
+            }
+
+            async function resolveDefaultBranch(repository) {
+              const { owner, repo } = splitRepository(repository);
+              const response = await github.rest.repos.get({ owner, repo });
+              const sha = await resolveBranch(repository, response.data.default_branch);
+              if (!sha) fail(`Default branch is missing for ${repository}`);
+              return sha;
+            }
+
+            if (jobContext.workflow_repository !== expectedWorkflowRepository) {
+              fail(`Unexpected workflow repository: ${jobContext.workflow_repository}`);
+            }
+            if (called && !invocationValues.every(Boolean)) {
+              fail("Child invocation requires logical repository, source repository, and SHA");
+            }
+            if (!called && invocationValues.some(Boolean)) {
+              fail("Direct meta invocation cannot provide partial child identity");
+            }
+            if (called && !childRepositories.includes(changedRepository)) {
+              fail(`Unsupported child repository: ${changedRepository}`);
+            }
+
+            const resolved = new Map();
+            if (called) {
+              const expectedCaller = `corwinm/${changedRepository}`;
+              const actualCaller = `${context.repo.owner}/${context.repo.repo}`;
+              if (actualCaller !== expectedCaller) {
+                fail(`Expected caller ${expectedCaller}, received ${actualCaller}`);
+              }
+              let eventSourceRepository;
+              let eventSha;
+              if (context.eventName === "pull_request") {
+                eventSourceRepository = context.payload.pull_request?.head.repo.full_name;
+                eventSha = context.payload.pull_request?.head.sha;
+              } else if (context.eventName === "push") {
+                eventSourceRepository = context.payload.repository?.full_name;
+                eventSha = context.sha;
+              } else {
+                fail(`Unsupported child caller event: ${context.eventName}`);
+              }
+              if (changedSourceRepository !== eventSourceRepository) {
+                fail(
+                  `Caller source ${changedSourceRepository} does not match event source ${eventSourceRepository}`,
+                );
+              }
+              if (changedSha !== eventSha) {
+                fail(`Caller SHA ${changedSha} does not match event SHA ${eventSha}`);
+              }
+              const workflowSha = requireSha(
+                jobContext.workflow_sha ?? "",
+                "Called workflow revision",
+              );
+              resolved.set("arashi-arashi", {
+                source: expectedWorkflowRepository,
+                sha: workflowSha,
+              });
+              const source = await validateSource(
+                expectedCaller,
+                changedSourceRepository,
+                changedSha,
+              );
+              resolved.set(changedRepository, { source, sha: changedSha });
+            } else {
+              const metaSource = await validateSource(
+                expectedWorkflowRepository,
+                process.env.META_EVENT_SOURCE ?? "",
+                process.env.META_EVENT_SHA ?? "",
+              );
+              resolved.set("arashi-arashi", {
+                source: metaSource,
+                sha: process.env.META_EVENT_SHA,
+              });
+            }
+
+            for (const repository of childRepositories) {
+              if (resolved.has(repository)) continue;
+              const source = `corwinm/${repository}`;
+              let sha;
+              if (!called && process.env.EVENT_NAME === "pull_request" && process.env.HEAD_REF) {
+                sha = await resolveBranch(source, process.env.HEAD_REF);
+              }
+              sha ??= await resolveDefaultBranch(source);
+              resolved.set(repository, { source, sha });
+            }
+
+            const outputNames = {
+              "arashi-arashi": "arashi_arashi",
+              arashi: "arashi",
+              "arashi-docs": "arashi_docs",
+              "arashi-skills": "arashi_skills",
+              "arashi-vscode": "arashi_vscode",
+              "arashi-presentation": "arashi_presentation",
+            };
+            for (const [repository, outputName] of Object.entries(outputNames)) {
+              const revision = resolved.get(repository);
+              if (!revision) fail(`Missing resolved revision for ${repository}`);
+              core.setOutput(`${outputName}_source`, revision.source);
+              core.setOutput(`${outputName}_sha`, revision.sha);
+            }
+
       - name: Check out meta-repository
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
+          repository: ${{ steps.revisions.outputs.arashi_arashi_source }}
+          ref: ${{ steps.revisions.outputs.arashi_arashi_sha }}
           path: meta
+          persist-credentials: false
       - name: Check out Arashi CLI
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
-          repository: corwinm/arashi
-          ref: main
+          repository: ${{ steps.revisions.outputs.arashi_source }}
+          ref: ${{ steps.revisions.outputs.arashi_sha }}
           path: meta/repos/arashi
+          persist-credentials: false
       - name: Check out Arashi docs
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
-          repository: corwinm/arashi-docs
-          ref: main
+          repository: ${{ steps.revisions.outputs.arashi_docs_source }}
+          ref: ${{ steps.revisions.outputs.arashi_docs_sha }}
           path: meta/repos/arashi-docs
+          persist-credentials: false
       - name: Check out Arashi skills
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
-          repository: corwinm/arashi-skills
-          ref: main
+          repository: ${{ steps.revisions.outputs.arashi_skills_source }}
+          ref: ${{ steps.revisions.outputs.arashi_skills_sha }}
           path: meta/repos/arashi-skills
+          persist-credentials: false
       - name: Check out Arashi VS Code
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
-          repository: corwinm/arashi-vscode
-          ref: main
+          repository: ${{ steps.revisions.outputs.arashi_vscode_source }}
+          ref: ${{ steps.revisions.outputs.arashi_vscode_sha }}
           path: meta/repos/arashi-vscode
+          persist-credentials: false
       - name: Check out Arashi presentation
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
-          repository: corwinm/arashi-presentation
-          ref: main
+          repository: ${{ steps.revisions.outputs.arashi_presentation_source }}
+          ref: ${{ steps.revisions.outputs.arashi_presentation_sha }}
           path: meta/repos/arashi-presentation
-      - name: Use matching coordinated child branches when available
-        shell: bash
-        run: |
-          set -euo pipefail
-          if [ -z "${GITHUB_HEAD_REF:-}" ]; then
-            exit 0
-          fi
-          for repo in arashi arashi-docs arashi-skills arashi-vscode arashi-presentation; do
-            if git -C "meta/repos/$repo" ls-remote --exit-code --heads origin "refs/heads/$GITHUB_HEAD_REF" >/dev/null 2>&1; then
-              git -C "meta/repos/$repo" fetch --depth=1 origin "refs/heads/$GITHUB_HEAD_REF"
-              git -C "meta/repos/$repo" checkout --detach FETCH_HEAD
-            fi
-          done
+          persist-credentials: false
+
+      - name: Write revision manifest
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
+        env:
+          CHANGED_REPOSITORY: ${{ inputs.changed_repository }}
+          ARASHI_ARASHI_SOURCE: ${{ steps.revisions.outputs.arashi_arashi_source }}
+          ARASHI_ARASHI_SHA: ${{ steps.revisions.outputs.arashi_arashi_sha }}
+          ARASHI_SOURCE: ${{ steps.revisions.outputs.arashi_source }}
+          ARASHI_SHA: ${{ steps.revisions.outputs.arashi_sha }}
+          ARASHI_DOCS_SOURCE: ${{ steps.revisions.outputs.arashi_docs_source }}
+          ARASHI_DOCS_SHA: ${{ steps.revisions.outputs.arashi_docs_sha }}
+          ARASHI_SKILLS_SOURCE: ${{ steps.revisions.outputs.arashi_skills_source }}
+          ARASHI_SKILLS_SHA: ${{ steps.revisions.outputs.arashi_skills_sha }}
+          ARASHI_VSCODE_SOURCE: ${{ steps.revisions.outputs.arashi_vscode_source }}
+          ARASHI_VSCODE_SHA: ${{ steps.revisions.outputs.arashi_vscode_sha }}
+          ARASHI_PRESENTATION_SOURCE: ${{ steps.revisions.outputs.arashi_presentation_source }}
+          ARASHI_PRESENTATION_SHA: ${{ steps.revisions.outputs.arashi_presentation_sha }}
+        with:
+          script: |
+            const { execFileSync } = require("node:child_process");
+            const { appendFileSync, writeFileSync } = require("node:fs");
+            const shaPattern = /^[0-9a-f]{40}$/;
+            const definitions = [
+              ["arashi-arashi", "ARASHI_ARASHI", "meta"],
+              ["arashi", "ARASHI", "meta/repos/arashi"],
+              ["arashi-docs", "ARASHI_DOCS", "meta/repos/arashi-docs"],
+              ["arashi-skills", "ARASHI_SKILLS", "meta/repos/arashi-skills"],
+              ["arashi-vscode", "ARASHI_VSCODE", "meta/repos/arashi-vscode"],
+              ["arashi-presentation", "ARASHI_PRESENTATION", "meta/repos/arashi-presentation"],
+            ];
+            const repositories = definitions.map(([logicalRepository, prefix, path]) => {
+              const sourceRepository = process.env[`${prefix}_SOURCE`];
+              const sha = process.env[`${prefix}_SHA`];
+              if (!sourceRepository || !shaPattern.test(sha ?? "")) {
+                core.setFailed(`Incomplete revision for ${logicalRepository}`);
+                throw new Error(`Incomplete revision for ${logicalRepository}`);
+              }
+              const head = execFileSync("git", ["-C", path, "rev-parse", "HEAD"], {
+                encoding: "utf8",
+              }).trim();
+              if (head !== sha) {
+                core.setFailed(`${logicalRepository} checkout is ${head}, expected ${sha}`);
+                throw new Error(`${logicalRepository} checkout mismatch`);
+              }
+              return { logicalRepository, sourceRepository, sha };
+            });
+            const changedRepository = process.env.CHANGED_REPOSITORY;
+            const trigger = changedRepository
+              ? repositories.find((entry) => entry.logicalRepository === changedRepository)
+              : repositories[0];
+            if (!trigger) {
+              core.setFailed("Trigger repository is missing from the revision manifest");
+              throw new Error("Trigger repository is missing");
+            }
+            const manifest = `${JSON.stringify(
+              { schemaVersion: 1, trigger, repositories },
+              null,
+              2,
+            )}\n`;
+            writeFileSync("meta/cross-repo-revisions.json", manifest);
+            appendFileSync(
+              process.env.GITHUB_STEP_SUMMARY,
+              `## Cross-repository revisions\n\n\`\`\`json\n${manifest}\`\`\`\n`,
+            );
+
+      - name: Upload revision manifest
+        id: revision_artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: cross-repo-revisions
+          path: meta/cross-repo-revisions.json
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Report revision artifact digest
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
+        env:
+          ARTIFACT_DIGEST: ${{ steps.revision_artifact.outputs.digest }}
+        with:
+          script: |
+            if (!process.env.ARTIFACT_DIGEST?.match(/^[0-9a-f]{64}$/)) {
+              core.setFailed("Revision artifact did not return a SHA-256 digest");
+              throw new Error("Missing or malformed revision artifact digest");
+            }
+            const artifactArchiveDigest = process.env.ARTIFACT_DIGEST;
+            await core.summary
+              .addRaw(`**Artifact archive digest:** \`sha256:${artifactArchiveDigest}\``)
+              .write();
+
       - uses: pnpm/setup@v2
         with:
           version: 11.22.0
@@ -68,13 +354,6 @@ jobs:
           cache-dependency-path: meta/pnpm-lock.yaml
           package-json-file: meta/package.json
           install: false
-      - name: Report revisions
-        working-directory: meta
-        run: |
-          for repo in arashi arashi-docs arashi-skills arashi-vscode arashi-presentation; do
-            printf '%s: ' "$repo"
-            git -C "repos/$repo" rev-parse HEAD
-          done
       - name: Install pinned checker toolchain
         working-directory: meta
         run: pnpm install --frozen-lockfile
