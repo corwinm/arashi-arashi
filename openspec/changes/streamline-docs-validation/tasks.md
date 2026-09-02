@@ -19,8 +19,8 @@
 
 - [x] 4.1 Run the focused contract test, full docs validation, Netlify build-command reproduction, Actionlint, formatting, and diff checks
 - [x] 4.2 Obtain independent review of the exact implementation diff and reconcile actionable findings
-- [ ] 4.3 Open and verify the docs implementation PR with exact-head GitHub Actions and Netlify deploy-preview evidence
-- [ ] 4.4 From the reviewed docs head, push a disposable exact-ref fixture using a reserved `.invalid` link, dispatch external-link health against that ref, verify matching `headSha` and a failed workflow diagnostic, delete the fixture branch, then dispatch the clean implementation ref and verify its `headSha` and successful conclusion
+- [x] 4.3 Open and verify the docs implementation PR with exact-head GitHub Actions and Netlify deploy-preview evidence
+- [x] 4.4 From the reviewed docs head, push a disposable exact-ref fixture using a reserved `.invalid` link, dispatch external-link health against that ref, verify matching `headSha` and a failed workflow diagnostic, delete the fixture branch, then dispatch the clean implementation ref and verify its `headSha` and successful conclusion
 - [ ] 4.5 Merge the child PR, then verify the default-branch GitHub run and Netlify production deploy both identify the docs merge SHA and smoke-test the public homepage, representative nested/generated routes, and install/uninstall redirects
 - [ ] 4.6 If production verification fails, deliver a revert PR and verify its merge SHA in GitHub Actions, Netlify production, and the public endpoint before continuing
 - [ ] 4.7 Only after successful production verification, archive and validate the OpenSpec change, commit the meta repository at the exact merged child head, open the meta PR, and merge it after exact-head checks pass
