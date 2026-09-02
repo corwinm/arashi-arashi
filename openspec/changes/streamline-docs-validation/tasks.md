@@ -18,7 +18,7 @@
 ## 4. Verification and delivery
 
 - [x] 4.1 Run the focused contract test, full docs validation, Netlify build-command reproduction, Actionlint, formatting, and diff checks
-- [ ] 4.2 Obtain independent review of the exact implementation diff and reconcile actionable findings
+- [x] 4.2 Obtain independent review of the exact implementation diff and reconcile actionable findings
 - [ ] 4.3 Open and verify the docs implementation PR with exact-head GitHub Actions and Netlify deploy-preview evidence
 - [ ] 4.4 From the reviewed docs head, push a disposable exact-ref fixture using a reserved `.invalid` link, dispatch external-link health against that ref, verify matching `headSha` and a failed workflow diagnostic, delete the fixture branch, then dispatch the clean implementation ref and verify its `headSha` and successful conclusion
 - [ ] 4.5 Merge the child PR, then verify the default-branch GitHub run and Netlify production deploy both identify the docs merge SHA and smoke-test the public homepage, representative nested/generated routes, and install/uninstall redirects
