@@ -8,76 +8,63 @@ Planning and specification workspace for the Arashi project.
 
 ## Overview
 
-This repository contains the planning artifacts used to guide implementation in project repositories under `repos/`.
-
-- Active change proposals, designs, and task breakdowns are authored in `openspec/changes/`.
-- Stable capability requirements live in `openspec/specs/`.
-- Earlier numbered specs remain in `specs/` as historical artifacts from the project's SpecKit-oriented start.
-- Implementation is done in `repos/arashi/`.
-- Companion repository content lives in `repos/arashi-skills/`.
+- Proposed changes, designs, and task breakdowns live in `openspec/changes/`.
+- Canonical capability requirements live in `openspec/specs/`.
+- Implementation is done in the affected repository under `repos/`.
 
 ## Repositories
 
-- Implementation: [github.com/corwinm/arashi](https://github.com/corwinm/arashi)
-- Specs and planning (this repo): [github.com/corwinm/arashi-arashi](https://github.com/corwinm/arashi-arashi)
+- CLI: [github.com/corwinm/arashi](https://github.com/corwinm/arashi)
+- Documentation: [arashi.haphazard.dev](https://arashi.haphazard.dev) · [source](https://github.com/corwinm/arashi-docs)
+- Specs and coordination: [github.com/corwinm/arashi-arashi](https://github.com/corwinm/arashi-arashi)
 - Presentation: [live deck](https://arashi-presentation.netlify.app/) · [source](https://github.com/corwinm/arashi-presentation)
 
 ## OpenSpec Workflow
 
-This repository started with a SpecKit-oriented workflow, but current planning work for the Arashi project now uses OpenSpec. Treat older `/speckit.*` references and numbered `specs/NNN-*` artifacts as historical context rather than the active path for new changes.
+Use the same phases from any coding agent. Pi and OpenCode provide the checked-in `/opsx-*` prompts; with Hermes, request the phase in plain language.
 
-1. Create or refine a change in `openspec/changes/` with `/opsx-propose <change-name>`.
-2. Review the generated proposal, design, specs, and tasks artifacts.
-3. Implement the pending tasks with `/opsx-apply <change-name>`.
-4. Make implementation changes in the affected repository under `repos/`.
-5. Validate the touched repos and keep planning artifacts/docs in sync.
+1. Explore the problem with OpenSpec Explore when requirements are unclear.
+2. Create or refine a change with OpenSpec Propose.
+3. Review the generated proposal, design, capability deltas, and tasks.
+4. Implement approved tasks with OpenSpec Apply in the repositories that own the changes.
+5. Validate every touched repository and the OpenSpec change.
+6. Archive completed changes with OpenSpec Archive after implementation is merged.
 
 ## Repository Layout
 
 ```text
 .
-├── openspec/            # Active OpenSpec changes and capability specs
-├── specs/               # Legacy numbered specs from the earlier SpecKit-oriented workflow
-├── repos/               # Project repositories (implementation lives here)
+├── openspec/
+│   ├── changes/          # Proposed and archived changes
+│   └── specs/            # Canonical capability requirements
+├── repos/                # Project repositories
 │   ├── arashi/
 │   ├── arashi-docs/
 │   ├── arashi-skills/
 │   ├── arashi-vscode/
 │   └── arashi-presentation/
-├── docs/                # Supporting process documentation
+├── docs/                 # Supporting process documentation
+├── tests/                # Meta-repository contract tests
 ├── CONTRIBUTING.md
 └── README.md
 ```
 
-## Framework Support Matrix (Spec-Driven Workflows)
+## Validation
 
-| Framework                | Support Level                | Scope                                                           | Caveats                                                                                   |
-| ------------------------ | ---------------------------- | --------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
-| OpenSpec                 | Current                      | Primary workflow for change proposals, design, specs, and tasks | Use `openspec/changes/` for active changes and `openspec/specs/` for capability baselines |
-| Spec-Kit                 | Historical                   | Earlier workflow used during initial project setup              | Legacy `specs/NNN-*` artifacts remain for reference, but new changes should use OpenSpec  |
-| Kiro                     | Supported with modifications | Works for story/task decomposition and implementation guidance  | Requires adapting command conventions and path references                                 |
-| Specification by Example | Experimental                 | Useful for acceptance-criteria shaping in specs                 | No dedicated automation in this repository                                                |
-| BDD (Gherkin-first)      | Not supported                | Can inform narrative requirements only                          | No native pipeline for feature file execution here                                        |
-
-## Contribution
-
-Use the canonical guide: [`CONTRIBUTING.md`](./CONTRIBUTING.md).
-
-Quick path:
-
-1. Build and link Arashi CLI from `repos/arashi/`.
-2. Create a feature worktree with `aw create NNN-feature-name`.
-3. Switch into that worktree and run `opencode`.
-4. Propose or update a change with `/opsx-propose <change-name>`.
-5. Implement the change tasks with `/opsx-apply <change-name>`.
-6. Prefer Claude or Codex models for spec and implementation work.
+```bash
+pnpm install --frozen-lockfile
+openspec validate --all --strict
+pnpm run format:check
+pnpm run typecheck
+pnpm test
+pnpm run contracts:check
+```
 
 For implementation-specific contribution steps, see [`repos/arashi/CONTRIBUTING.md`](./repos/arashi/CONTRIBUTING.md).
 
-## Badge Applicability Notes
+## Badge Applicability
 
-- npm, CI, and license badges above represent the implementation project in `repos/arashi`.
-- This specifications repository itself is documentation-focused and does not publish an npm package.
+The npm, CI, and license badges describe the CLI project in `repos/arashi/`. This coordination repository does not publish an npm package.
 
 ## License
 

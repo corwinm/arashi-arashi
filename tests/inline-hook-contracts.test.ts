@@ -318,7 +318,7 @@ const guidanceMismatchCases = [
 
 const guidanceSurfaces = [
   ["CLI-maintained docs", "repos/arashi/docs/hooks.md"],
-  ["canonical website docs", "repos/arashi-docs/docs/workflows/hooks.md"],
+  ["canonical website docs", "repos/arashi-docs/docs/reference/hooks.md"],
   ["generated agent export", "repos/arashi-docs/public/llms-full.txt"],
   ["authored skill", "repos/arashi-skills/skills/arashi/references/hooks.md"],
   [
@@ -342,7 +342,7 @@ async function fixture(overrides: Record<string, string> = {}) {
     "repos/arashi/scripts/contracts/inline-lifecycle-hooks.ts":
       "export const INLINE_LIFECYCLE_HOOK_CONTRACT_SCHEMA_VERSION = 1;\n",
     "repos/arashi/docs/hooks.md": guidance,
-    "repos/arashi-docs/docs/workflows/hooks.md": guidance,
+    "repos/arashi-docs/docs/reference/hooks.md": guidance,
     "repos/arashi-docs/public/llms-full.txt": guidance,
     "repos/arashi-skills/skills/arashi/references/hooks.md": guidance,
     "package-check/skills/arashi/references/hooks.md": guidance,

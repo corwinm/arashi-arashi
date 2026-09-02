@@ -91,7 +91,7 @@ const files: Record<string, string> = {
   "repos/arashi/src/lib/hooks.ts": `export interface LifecycleHookOutcome { hookName: string; scope: HookScope; workspaceMode: "configured" | "standalone"; hookStatus: HookOutcomeStatus; reasonCode: HookOutcomeReasonCode; message: string; repositoryId: string; sourceKind: "file" | "inline-config"; sourceOwnerKind: "repository" | "user-global" | "workspace"; sourceOwnerName: string | null; sourceScriptPath: string | null; executionPath: string | null; targetRepositoryName: string | null; targetRepositoryPath: string | null; targetWorktreePath: string | null; durationMs?: number; }`,
   "repos/arashi/src/commands/init.ts": `ARASHI_BRANCH_NAME ARASHI_REMOVE_TARGETS_JSON corepack pnpm --ignore-workspace install --frozen-lockfile ${hookInputGuidance}`,
   "repos/arashi/docs/hooks.md": `ARASHI_BRANCH_NAME ARASHI_REMOVE_TARGETS_JSON 300000 .ps1 .cmd .bat supported throughout 1.x ${hookInputGuidance}`,
-  "repos/arashi-docs/docs/workflows/hooks.md": `ARASHI_BRANCH_NAME ARASHI_REMOVE_TARGETS_JSON 300000 .ps1 .cmd .bat supported throughout 1.x ${hookInputGuidance}`,
+  "repos/arashi-docs/docs/reference/hooks.md": `ARASHI_BRANCH_NAME ARASHI_REMOVE_TARGETS_JSON 300000 .ps1 .cmd .bat supported throughout 1.x ${hookInputGuidance}`,
   "repos/arashi-docs/public/llms-full.txt": `ARASHI_BRANCH_NAME ARASHI_REMOVE_TARGETS_JSON 300000 .ps1 .cmd .bat supported throughout 1.x ${hookInputGuidance}`,
   "repos/arashi-skills/skills/arashi/references/hooks.md": `ARASHI_BRANCH_NAME ARASHI_REMOVE_TARGETS_JSON 300000 .ps1 .cmd .bat supported throughout 1.x ${hookInputGuidance}`,
   ".arashi/config.json": JSON.stringify({ hooks: { timeout: 300000 } }),
@@ -173,7 +173,7 @@ describe("cross-repository lifecycle-hook contract", () => {
 
   test("rejects a stale branch alias in any consumer", async () => {
     const root = await fixture({
-      "repos/arashi-docs/docs/workflows/hooks.md":
+      "repos/arashi-docs/docs/reference/hooks.md":
         "ARASHI_BRANCH ARASHI_REMOVE_TARGETS_JSON 300000 .ps1 .cmd .bat supported throughout 1.x",
     });
     const result = await checkHookContracts(root);
@@ -181,7 +181,7 @@ describe("cross-repository lifecycle-hook contract", () => {
     expect(result.diagnostics).toContainEqual(
       expect.objectContaining({
         code: "HOOK_STALE_BRANCH_ALIAS",
-        source: "repos/arashi-docs/docs/workflows/hooks.md",
+        source: "repos/arashi-docs/docs/reference/hooks.md",
       }),
     );
   });
@@ -396,7 +396,7 @@ path: meta/repos/arashi-vscode
   });
 
   test("rejects guidance without native shell coverage", async () => {
-    const source = "repos/arashi-docs/docs/workflows/hooks.md";
+    const source = "repos/arashi-docs/docs/reference/hooks.md";
     const root = await fixture({
       [source]: files[source].replace("cmd set /p", "cmd input"),
     });

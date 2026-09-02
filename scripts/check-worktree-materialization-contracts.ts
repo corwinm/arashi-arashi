@@ -4,6 +4,7 @@ import {
   lstat,
   mkdtemp,
   mkdir,
+  realpath,
   readFile,
   rm,
   writeFile,
@@ -32,7 +33,7 @@ const guidanceGroups = [
     category: "docs",
     source: "repos/arashi-docs/docs",
     sources: [
-      "repos/arashi-docs/docs/workflows/config.md",
+      "repos/arashi-docs/docs/reference/configuration.md",
       "repos/arashi-docs/docs/commands/create.md",
     ],
   },
@@ -40,8 +41,9 @@ const guidanceGroups = [
     category: "generated",
     source: "repos/arashi-docs/public",
     sources: [
-      "repos/arashi-docs/public/workflows/config.md",
+      "repos/arashi-docs/public/reference/configuration.md",
       "repos/arashi-docs/public/commands/create.md",
+      "repos/arashi-docs/public/llms.txt",
       "repos/arashi-docs/public/llms-full.txt",
     ],
   },
@@ -284,7 +286,9 @@ async function readPackagedSkillGuidance(root: string): Promise<string> {
   const extracted = join(temporaryRoot, "extracted");
   try {
     const skillsRoot = join(root, "repos/arashi-skills");
-    const producer = join(skillsRoot, "scripts/create-release-archive.mjs");
+    const producer = await realpath(
+      join(skillsRoot, "scripts/create-release-archive.mjs"),
+    );
     const created = spawnSync(
       process.execPath,
       [producer, "--output", archive],

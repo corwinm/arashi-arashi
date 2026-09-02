@@ -10,9 +10,7 @@ const checkerIdentity = "scripts/check-worktree-naming-contracts.ts";
 const sources = [
   "repos/arashi/schema/config.schema.json",
   "repos/arashi/docs/configuration.md",
-  "repos/arashi-docs/docs/workflows/config.md",
   "repos/arashi-docs/docs/commands/create.md",
-  "repos/arashi-docs/public/workflows/config.md",
   "repos/arashi-docs/public/commands/create.md",
   "repos/arashi-docs/public/llms-full.txt",
   "repos/arashi-docs/public/llms.txt",
@@ -25,9 +23,7 @@ const schemaSource = "repos/arashi/schema/config.schema.json";
 const cliGuidanceSource = "repos/arashi/docs/configuration.md";
 const pathBudgetGuidanceSources = [
   cliGuidanceSource,
-  "repos/arashi-docs/docs/workflows/config.md",
   "repos/arashi-docs/docs/commands/create.md",
-  "repos/arashi-docs/public/workflows/config.md",
   "repos/arashi-docs/public/commands/create.md",
   "repos/arashi-docs/public/llms-full.txt",
   "repos/arashi-docs/public/llms.txt",
@@ -397,7 +393,7 @@ describe("worktree naming cross-repository contract", () => {
     expect(runAggregate(root).status).toBe(0);
   });
   test("rejects every removed destination row through both paths", async () => {
-    const source = "repos/arashi-docs/docs/workflows/config.md";
+    const source = "repos/arashi-docs/docs/commands/create.md";
     const rows = [
       "| Bare `default` + `preserve` | `example/feature/auth` |",
       "| Bare `default` + `flatten` | `example/feature-auth` |",
@@ -501,7 +497,7 @@ describe("worktree naming cross-repository contract", () => {
     }
   }, 20_000);
   test("rejects removed defaults and guarantees plus additive contradictions", async () => {
-    const source = "repos/arashi-docs/docs/workflows/config.md";
+    const source = "repos/arashi-docs/docs/commands/create.md";
     const drifts: [string, string, string][] = [
       [
         "default omission",
@@ -564,19 +560,19 @@ describe("worktree naming cross-repository contract", () => {
     const drifts: [string, string, string, string][] = [
       [
         "interactive reversal",
-        "repos/arashi-docs/docs/workflows/config.md",
+        "repos/arashi-docs/docs/commands/create.md",
         "not available in interactive `aw configure`",
         "available through interactive `aw configure`; direct JSON editing is unnecessary",
       ],
       [
         "custom style",
-        "repos/arashi-docs/docs/workflows/config.md",
+        "repos/arashi-docs/docs/commands/create.md",
         "`style`: `default | branch | repo-branch`",
         "`style`: `default | branch | repo-branch | custom`",
       ],
       [
         "wrong omission default",
-        "repos/arashi-docs/docs/workflows/config.md",
+        "repos/arashi-docs/docs/commands/create.md",
         "Omitting `style` means `default`",
         "Omitting `style` selects `repo-branch`",
       ],
@@ -609,7 +605,7 @@ describe("worktree naming cross-repository contract", () => {
     const drifts: [string, string, string, string][] = [
       [
         "detailed conflicting row",
-        "repos/arashi-docs/docs/workflows/config.md",
+        "repos/arashi-docs/docs/commands/create.md",
         "| Bare `default` + `preserve` | `example/feature/auth` |",
         "| Bare `default` + `preserve` | `example/feature/auth` |\n| Bare `default` + `preserve` | `WRONG/path` |",
       ],
@@ -627,7 +623,7 @@ describe("worktree naming cross-repository contract", () => {
       ],
       [
         "natural custom style",
-        "repos/arashi-docs/docs/workflows/config.md",
+        "repos/arashi-docs/docs/commands/create.md",
         "Omitting `style` means `default`",
         "Omitting `style` means `default`. `style` can be `custom`",
       ],

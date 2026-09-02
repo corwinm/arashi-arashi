@@ -139,9 +139,6 @@ dist
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 
-# Spec-kit generated files
-.specify/specs/*/node_modules/
-.specify/specs/*/.env
 
 # OS files
 .DS_Store
