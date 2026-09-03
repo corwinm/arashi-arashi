@@ -1,10 +1,4 @@
-# project-ci Specification
-
-## Purpose
-
-TBD - created by archiving change consolidate-legacy-speckit-specifications. Update Purpose after archive.
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: CLI continuous integration validates pull requests and main
 
@@ -24,15 +18,6 @@ The Arashi CLI CI workflow SHALL run for pull-request creation/update and pushes
 
 - **WHEN** a separate post-build validation/materialization/specialized job returns, a supported build or acceptance platform is omitted, acceptance is removed or assigned to the wrong platform, required setup or artifact mapping drifts, the acceptance matrix disconnects from `build`, a platform failure can cancel sibling platforms, an earlier acceptance failure can hide a later applicable group, or a failing acceptance can be treated as non-fatal
 - **THEN** focused workflow-contract validation fails before the topology can be accepted
-
-### Requirement: Quality gates cover authored and generated source
-
-CI SHALL validate the generated configuration schema, CLI contracts, shell completions, canonical documentation link, lint rules, and formatting before accepting the quality stage. Local package scripts SHALL expose equivalent focused checks and actionable fix commands.
-
-#### Scenario: Generated or authored content drifts
-
-- **WHEN** a generated contract is stale or source violates lint/format policy
-- **THEN** the quality stage fails with diagnostics identifying the owning check
 
 ### Requirement: Supported binaries are built and smoke-tested natively
 
