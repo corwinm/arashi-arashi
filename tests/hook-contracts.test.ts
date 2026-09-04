@@ -385,6 +385,7 @@ describe("cross-repository lifecycle-hook contract", () => {
       "When aliases collide, the compatible repository-local hook takes precedence over the canonical workspace-owned hook.",
       "When aliases collide, Arashi selects the canonical workspace-owned hook over the compatible repository-local hook.",
       "When aliases collide, Arashi chooses the compatible repository-local hook over the canonical workspace-owned hook.",
+      "The canonical workspace-owned hook does not take precedence over the compatible repository-local hook, but the compatible repository-local hook takes precedence over the canonical workspace-owned hook.",
       "Arashi runs the canonical workspace-owned hook and then the compatible repository-local hook.",
       "Arashi executes the compatible repository-local hook after the canonical workspace-owned hook.",
       "If the canonical workspace-owned hook is unavailable, Arashi uses the compatible repository-local hook as a fallback.",
@@ -407,6 +408,8 @@ describe("cross-repository lifecycle-hook contract", () => {
 
   test.each([
     "The canonical workspace-owned hook does not take precedence over the compatible repository-local hook.",
+    "The canonical workspace-owned hook doesn't take precedence over the compatible repository-local hook.",
+    "The canonical workspace-owned hook doesn’t take precedence over the compatible repository-local hook.",
     "On collision, the canonical workspace-owned hook is not preferred.",
     "When aliases collide, Arashi does not select the canonical workspace-owned hook over the compatible repository-local hook.",
     "When aliases collide, Arashi never chooses the compatible repository-local hook over the canonical workspace-owned hook.",
