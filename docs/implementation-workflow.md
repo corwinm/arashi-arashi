@@ -18,25 +18,23 @@ arashi-arashi/
 
 A parent commit cannot contain child-repository code. Commit and open a pull request in every repository that owns changed files.
 
-## 1. Define the Change
+## 1. Select the Specification Track
 
-Use the agent-native interface for each OpenSpec phase. Pi and OpenCode provide `/opsx-*` prompts; with Hermes, request the phase in plain language.
+Confirm the issue, current behavior, affected repositories, acceptance criteria, and contract impact. Then select one track:
 
-1. Confirm the issue, current behavior, affected repositories, and acceptance criteria.
-2. Use OpenSpec Explore for unresolved questions.
-3. Use OpenSpec Propose to create the named change.
-4. Review:
-   - `openspec/changes/<change-name>/proposal.md`
-   - `design.md`
-   - `specs/*/spec.md`
-   - `tasks.md`
-5. Validate before implementation:
+- **Direct implementation** — no durable product contract changes. The issue and implementation pull requests own scope, tasks, and verification.
+- **Lightweight OpenSpec** — settled behavior changes a canonical requirement. Use the `lightweight` schema, which requires `proposal.md` and `specs/*/spec.md`.
+- **Full OpenSpec** — use the default `spec-driven` schema when design alternatives remain or the change is destructive, migratory, security-sensitive, or difficult to reverse.
 
-   ```bash
-   openspec validate <change-name> --strict
-   ```
+Cross-repository scope alone does not require OpenSpec when an issue fully specifies a mechanical change. Move direct work to lightweight or full OpenSpec before delivery if implementation reveals a durable contract decision.
 
-For modified capabilities, delta requirements must preserve complete existing requirement blocks when using `## MODIFIED Requirements`.
+For OpenSpec work, use Explore when requirements are unclear, create the artifacts required by the selected schema, and validate before implementation:
+
+```bash
+openspec validate <change-name> --strict
+```
+
+Pi and OpenCode provide the checked-in `/opsx-*` prompts; with Hermes, request the phase in plain language. For modified capabilities, delta requirements must preserve complete existing requirement blocks when using `## MODIFIED Requirements`.
 
 ## 2. Create the Worktree
 
@@ -52,11 +50,10 @@ Before editing, record each repository's branch, exact head, and dirty state. Do
 
 ## 3. Implement
 
-Use OpenSpec Apply or follow `tasks.md` directly.
-
 - Write tests before runtime behavior changes.
 - Keep source, tests, and repository-specific docs in the owning child repository.
-- Keep shared requirements, coordination notes, and OpenSpec artifacts in the parent.
+- Keep durable shared requirements and OpenSpec artifacts in the parent.
+- Keep implementation checklists and transient verification evidence in issues, pull requests, tests, and CI unless they establish a durable contract.
 - Update docs, skills, editor integration, and generated contracts when their canonical interfaces are affected.
 - Commit each repository separately and cross-link companion pull requests.
 
@@ -91,7 +88,7 @@ Use each other child repository's `AGENTS.md` and package scripts for its exact 
 2. Run an independent repository-aware review before the first ready-for-review push.
 3. Push exact reviewed heads and open issue-linked pull requests.
 4. Verify remote CI on those heads.
-5. Merge child implementation first when the parent archives child-owned behavior.
-6. Use OpenSpec Archive only after implementation is complete and approved.
+5. For OpenSpec tracks, merge child implementation first when the parent archives child-owned behavior.
+6. Archive OpenSpec changes only after implementation is complete and approved. Direct changes need a parent pull request only when the parent itself changes.
 
 The archived change is historical evidence; `openspec/specs/` is the post-archive canonical contract.

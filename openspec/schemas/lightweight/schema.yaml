@@ -1,0 +1,41 @@
+name: lightweight
+version: 1
+description: Proposal and capability deltas for straightforward durable contract changes
+artifacts:
+  - id: proposal
+    generates: proposal.md
+    description: High-level description of the change, its motivation, and scope
+    template: proposal.md
+    instruction: |
+      Create a concise proposal that establishes WHY this change is needed.
+
+      Sections:
+      - **Why**: State the problem or opportunity in 1-2 sentences.
+      - **What Changes**: List the concrete behavioral changes. Mark breaking changes with **BREAKING**.
+      - **Capabilities**: List every new or modified canonical capability by its exact kebab-case name. Research `openspec/specs/` before classifying a capability as new or modified.
+      - **Impact**: Name affected repositories, interfaces, dependencies, or systems.
+
+      The Capabilities section is the contract between proposal and specs. Every listed capability needs one matching delta file. Keep implementation tasks and transient verification evidence in the issue, pull request, tests, and CI.
+    requires: []
+  - id: specs
+    generates: specs/**/*.md
+    description: Detailed specifications with requirements and scenarios
+    template: specs/spec.md
+    instruction: |
+      Create one specification file per capability listed in the proposal.
+
+      - New capability: use `specs/<capability>/spec.md` with `## ADDED Requirements`.
+      - Modified capability: use the existing folder name from `openspec/specs/<capability>/`.
+      - Use `## MODIFIED Requirements` only for changed existing behavior. Copy the complete canonical requirement block and preserve its exact heading before editing it.
+      - Use `## ADDED Requirements` for new concerns that do not change an existing requirement.
+      - Use `## REMOVED Requirements` with **Reason** and **Migration**.
+      - Use `## RENAMED Requirements` with FROM:/TO: for heading-only renames.
+
+      Each requirement uses `### Requirement: <name>`, normative SHALL/MUST language, and at least one `#### Scenario:` with WHEN/THEN steps. Requirements must be independently testable.
+    requires:
+      - proposal
+
+apply:
+  requires: [proposal, specs]
+  instruction: |
+    Read the proposal and capability deltas, then implement the issue or pull-request acceptance criteria. This schema intentionally has no task artifact; keep implementation progress and transient verification evidence outside OpenSpec. Pause if implementation reveals an unresolved design choice or a broader durable contract that requires the full workflow.

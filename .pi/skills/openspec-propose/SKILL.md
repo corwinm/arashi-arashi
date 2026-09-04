@@ -1,6 +1,6 @@
 ---
 name: openspec-propose
-description: Propose a new change with all artifacts generated in one step. Use when the user wants to quickly describe what they want to build and get a complete proposal with design, specs, and tasks ready for implementation.
+description: Propose a new change with the artifacts required by its selected schema.
 license: MIT
 compatibility: Requires openspec CLI.
 metadata:
@@ -9,18 +9,15 @@ metadata:
   generatedBy: "1.2.0"
 ---
 
-Propose a new change - create the change and generate all artifacts in one step.
+Propose a new change and generate the artifacts required by its schema.
 
-I'll create a change with artifacts:
-- proposal.md (what & why)
-- design.md (how)
-- tasks.md (implementation steps)
+The repository workflow selects either the `lightweight` schema (proposal and specs) or the default `spec-driven` schema (proposal, specs, design, and tasks).
 
 When ready to implement, run /opsx:apply
 
 ---
 
-**Input**: The user's request should include a change name (kebab-case) OR a description of what they want to build.
+**Input**: The user's request should include a change name (kebab-case) OR a description of what they want to build. It may also identify the lightweight or full OpenSpec track.
 
 **Steps**
 
@@ -33,9 +30,11 @@ When ready to implement, run /opsx:apply
 
    **IMPORTANT**: Do NOT proceed without understanding what the user wants to build.
 
+   Select `lightweight` when repository guidance classifies the change as Lightweight OpenSpec. Select `spec-driven` for Full OpenSpec. If the track is ambiguous and changes the required artifacts, ask which track to use.
+
 2. **Create the change directory**
    ```bash
-   openspec new change "<name>"
+   openspec new change "<name>" --schema "<schema>"
    ```
    This creates a scaffolded change at `openspec/changes/<name>/` with `.openspec.yaml`.
 
@@ -89,7 +88,7 @@ When ready to implement, run /opsx:apply
 After completing all artifacts, summarize:
 - Change name and location
 - List of artifacts created with brief descriptions
-- What's ready: "All artifacts created! Ready for implementation."
+- What's ready: "All required artifacts created! Ready for implementation."
 - Prompt: "Run `/opsx:apply` or ask me to implement to start working on the tasks."
 
 **Artifact Creation Guidelines**

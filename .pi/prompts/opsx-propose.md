@@ -1,19 +1,16 @@
 ---
-description: Propose a new change - create it and generate all artifacts in one step
+description: Propose a new change with the selected schema
 ---
 
-Propose a new change - create the change and generate all artifacts in one step.
+Propose a new change and generate the artifacts required by its schema.
 
-I'll create a change with artifacts:
-- proposal.md (what & why)
-- design.md (how)
-- tasks.md (implementation steps)
+The repository workflow selects either the `lightweight` schema (proposal and specs) or the default `spec-driven` schema (proposal, specs, design, and tasks).
 
 When ready to implement, run /opsx:apply
 
 ---
 
-**Input**: The argument after `/opsx:propose` is the change name (kebab-case), OR a description of what the user wants to build.
+**Input**: The argument after `/opsx:propose` is the change name (kebab-case), OR a description of what the user wants to build. It may also identify the lightweight or full OpenSpec track.
 
 **Steps**
 
@@ -26,9 +23,11 @@ When ready to implement, run /opsx:apply
 
    **IMPORTANT**: Do NOT proceed without understanding what the user wants to build.
 
+   Select `lightweight` when repository guidance classifies the change as Lightweight OpenSpec. Select `spec-driven` for Full OpenSpec. If the track is ambiguous and changes the required artifacts, ask which track to use.
+
 2. **Create the change directory**
    ```bash
-   openspec new change "<name>"
+   openspec new change "<name>" --schema "<schema>"
    ```
    This creates a scaffolded change at `openspec/changes/<name>/` with `.openspec.yaml`.
 
@@ -82,7 +81,7 @@ When ready to implement, run /opsx:apply
 After completing all artifacts, summarize:
 - Change name and location
 - List of artifacts created with brief descriptions
-- What's ready: "All artifacts created! Ready for implementation."
+- What's ready: "All required artifacts created! Ready for implementation."
 - Prompt: "Run `/opsx:apply` to start implementing."
 
 **Artifact Creation Guidelines**

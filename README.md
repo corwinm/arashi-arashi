@@ -8,7 +8,7 @@ Planning and specification workspace for the Arashi project.
 
 ## Overview
 
-- Proposed changes, designs, and task breakdowns live in `openspec/changes/`.
+- Durable change proposals and capability deltas live in `openspec/changes/`.
 - Canonical capability requirements live in `openspec/specs/`.
 - Implementation is done in the affected repository under `repos/`.
 
@@ -19,16 +19,17 @@ Planning and specification workspace for the Arashi project.
 - Specs and coordination: [github.com/corwinm/arashi-arashi](https://github.com/corwinm/arashi-arashi)
 - Presentation: [live deck](https://arashi-presentation.netlify.app/) · [source](https://github.com/corwinm/arashi-presentation)
 
-## OpenSpec Workflow
+## Specification Tracks
 
-Use the same phases from any coding agent. Pi and OpenCode provide the checked-in `/opsx-*` prompts; with Hermes, request the phase in plain language.
+Select a track during issue triage:
 
-1. Explore the problem with OpenSpec Explore when requirements are unclear.
-2. Create or refine a change with OpenSpec Propose.
-3. Review the generated proposal, design, capability deltas, and tasks.
-4. Implement approved tasks with OpenSpec Apply in the repositories that own the changes.
-5. Validate every touched repository and the OpenSpec change.
-6. Archive completed changes with OpenSpec Archive after implementation is merged.
+- **Direct implementation** — no durable product contract changes. Work from the issue directly in the owning repositories.
+- **Lightweight OpenSpec** — settled behavior needs a canonical requirement. Use the `lightweight` schema for a proposal and capability deltas.
+- **Full OpenSpec** — use the default `spec-driven` schema when design alternatives remain or the change is destructive, migratory, security-sensitive, or difficult to reverse.
+
+Cross-repository scope alone does not require OpenSpec. A mechanical coordinated change can use direct implementation when the issue fully specifies it. If direct work reveals a durable contract decision, move it to lightweight or full OpenSpec before delivery.
+
+Pi and OpenCode provide the checked-in `/opsx-*` prompts; with Hermes, request the OpenSpec phase in plain language. Validate and archive every change that uses OpenSpec.
 
 ## Repository Layout
 
@@ -36,7 +37,8 @@ Use the same phases from any coding agent. Pi and OpenCode provide the checked-i
 .
 ├── openspec/
 │   ├── changes/          # Proposed and archived changes
-│   └── specs/            # Canonical capability requirements
+│   ├── specs/            # Canonical capability requirements
+│   └── schemas/          # Project-local workflow schemas
 ├── repos/                # Project repositories
 │   ├── arashi/
 │   ├── arashi-docs/

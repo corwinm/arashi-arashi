@@ -49,7 +49,15 @@ Implement tasks from an OpenSpec change.
    - **spec-driven**: proposal, specs, design, tasks
    - Other schemas: follow the contextFiles from CLI output
 
-5. **Show current progress**
+5. **Handle taskless schemas**
+
+   If the task list is empty and the apply state is `ready`:
+   - Treat the issue or pull-request acceptance criteria plus the listed context files as the implementation contract.
+   - Implement and verify that contract without creating or marking task checkboxes.
+   - Pause if the implementation scope is unavailable or if work reveals an unresolved design choice that requires a full OpenSpec change.
+   - Skip the task-progress loop and report changed files plus actual verification results on completion.
+
+6. **Show current progress**
 
    Display:
    - Schema being used
@@ -57,7 +65,7 @@ Implement tasks from an OpenSpec change.
    - Remaining tasks overview
    - Dynamic instruction from CLI
 
-6. **Implement tasks (loop until done or blocked)**
+7. **Implement tasks (loop until done or blocked)**
 
    For each pending task:
    - Show which task is being worked on
@@ -72,7 +80,7 @@ Implement tasks from an OpenSpec change.
    - Error or blocker encountered → report and wait for guidance
    - User interrupts
 
-7. **On completion or pause, show status**
+8. **On completion or pause, show status**
 
    Display:
    - Tasks completed this session
