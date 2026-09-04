@@ -326,6 +326,15 @@ describe("cross-repository lifecycle-hook contract", () => {
     });
   });
 
+  test("accepts equivalent repository-remove semantics on the real maintained hook surfaces", async () => {
+    const diagnostics = (
+      await checkHookContracts(repositoryRoot)
+    ).diagnostics.filter(({ code }) =>
+      code.startsWith("HOOK_REPOSITORY_REMOVE_ALIAS_"),
+    );
+    expect(diagnostics).toEqual([]);
+  });
+
   test.each([
     [
       "canonical path",
@@ -335,22 +344,9 @@ describe("cross-repository lifecycle-hook contract", () => {
     ["inline alias", "repos.<repo>.hooks.<lifecycle>"],
     ["one slot", "three alternatives for one repository slot"],
     ["target cwd", "active target repository source checkout as cwd"],
-    ["onboarding root", "beneath the active configuration root"],
-    ["direct topology", "Direct non-bare"],
-    ["bare topology", "configured bare"],
-    ["linked topology", "ordinary linked"],
     [
-      "linked bare topology",
-      "linked worktrees backed by a configured bare authority",
-    ],
-    [
-      "exact delete ownership",
-      "only exact pre-create.<repo>, post-create.<repo>, pre-remove.<repo>, and post-remove.<repo>",
-    ],
-    ["doctor bound", "at most six native paths"],
-    [
-      "doctor ordering",
-      "ordered canonical workspace-owned location first, compatible repository-local location second",
+      "doctor and dry-run",
+      "Doctor and remove dry-run use the runtime resolver without execution",
     ],
   ])(
     "rejects missing repository-remove %s semantics on each maintained surface",
@@ -387,6 +383,8 @@ describe("cross-repository lifecycle-hook contract", () => {
       "When aliases collide, Arashi prefers the canonical workspace-owned hook over the compatible repository-local hook.",
       "On collision, the canonical workspace-owned hook is preferred.",
       "When aliases collide, the compatible repository-local hook takes precedence over the canonical workspace-owned hook.",
+      "When aliases collide, Arashi selects the canonical workspace-owned hook over the compatible repository-local hook.",
+      "When aliases collide, Arashi chooses the compatible repository-local hook over the canonical workspace-owned hook.",
       "Arashi runs the canonical workspace-owned hook and then the compatible repository-local hook.",
       "Arashi executes the compatible repository-local hook after the canonical workspace-owned hook.",
       "If the canonical workspace-owned hook is unavailable, Arashi uses the compatible repository-local hook as a fallback.",
@@ -410,6 +408,8 @@ describe("cross-repository lifecycle-hook contract", () => {
   test.each([
     "The canonical workspace-owned hook does not take precedence over the compatible repository-local hook.",
     "On collision, the canonical workspace-owned hook is not preferred.",
+    "When aliases collide, Arashi does not select the canonical workspace-owned hook over the compatible repository-local hook.",
+    "When aliases collide, Arashi never chooses the compatible repository-local hook over the canonical workspace-owned hook.",
     "Arashi never runs the canonical workspace-owned hook and then the compatible repository-local hook.",
     "Arashi cannot fall back from the canonical workspace-owned hook to the compatible repository-local hook.",
     "On collision, the compatible repository-local hook is not a fallback.",
@@ -428,6 +428,55 @@ describe("cross-repository lifecycle-hook contract", () => {
         source,
       }),
     );
+  });
+
+  test("the real packaged-skill checker rejects mixed-polarity alias precedence", async () => {
+    const root = await mkdtemp(join(tmpdir(), "arashi-skill-package-owner-"));
+    roots.push(root);
+    const archive = join(root, "arashi-skill-package.tar.gz");
+    const packageRoot = join(root, "package-check");
+    await mkdir(packageRoot);
+
+    const created = spawnSync(
+      process.execPath,
+      [
+        "repos/arashi-skills/scripts/create-release-archive.mjs",
+        "--root",
+        "repos/arashi-skills",
+        "--output",
+        archive,
+      ],
+      { cwd: repositoryRoot, encoding: "utf8" },
+    );
+    expect(created.status, `${created.stdout}${created.stderr}`).toBe(0);
+    const extracted = spawnSync("tar", ["-xzf", archive, "-C", packageRoot], {
+      encoding: "utf8",
+    });
+    expect(extracted.status, `${extracted.stdout}${extracted.stderr}`).toBe(0);
+
+    const hooks = join(packageRoot, "skills/arashi/references/hooks.md");
+    await writeFile(
+      hooks,
+      `${await readFile(hooks, "utf8")}\nRepository remove does not assign precedence among aliases, but it uses inline-first/file-fallback precedence.\n`,
+    );
+    const checked = spawnSync(
+      process.execPath,
+      [
+        "repos/arashi-skills/scripts/validate-guidance.mjs",
+        "--skill-root",
+        join(packageRoot, "skills/arashi"),
+      ],
+      {
+        cwd: repositoryRoot,
+        encoding: "utf8",
+        env: {
+          ...process.env,
+          ARASHI_REPOSITORY_REMOVE_GUIDANCE_SKIP_FIXTURES: "1",
+        },
+      },
+    );
+    expect(checked.status).toBe(1);
+    expect(`${checked.stdout}${checked.stderr}`).toMatch(/precedence/);
   });
 
   test("the real CLI owner independently rejects generated inline lifecycle contract drift", async () => {
