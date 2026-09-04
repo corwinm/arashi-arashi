@@ -1,37 +1,44 @@
 ## 1. Contract and RED coverage
 
 - [x] 1.1 Record approval of the proposal contract before implementation edits.
-- [ ] 1.2 Extend CLI and meta semantic contract tests first so stale repository-remove filename, ownership, ambiguity, onboarding, docs, and packaged guidance surfaces fail.
-- [ ] 1.3 Add focused CLI RED tests proving qualified workspace repository files are currently absent from runtime, dry-run, and doctor plans on POSIX and Windows.
-- [ ] 1.4 Add RED tests for inline/qualified-file, legacy/qualified-file, and Windows multi-candidate collisions before mutation.
-- [ ] 1.5 Add onboarding and delete RED tests for the canonical qualified active path, exact ownership, no-overwrite, compatible-source publication races, and preservation of lookalikes.
-- [ ] 1.6 Add direct non-bare, configured bare, ordinary linked, and bare-backed linked RED topology tests that compare the planned onboarding destination with runtime discovery and independently assert configuration authority, canonical clone versus active worktree, selected source path, and target-checkout cwd.
+- [x] 1.2 Extend CLI and meta semantic contract tests first so stale repository-remove filename, ownership, ambiguity, onboarding, docs, and packaged guidance surfaces fail.
+- [x] 1.3 Add focused CLI RED tests proving qualified workspace repository files are currently absent from runtime, dry-run, and doctor plans on POSIX and Windows.
+- [x] 1.4 Add RED tests for inline/qualified-file, legacy/qualified-file, and Windows multi-candidate collisions before mutation.
+- [x] 1.5 Add onboarding and delete RED tests for the canonical qualified active path, exact ownership, no-overwrite, compatible-source publication races, and preservation of lookalikes.
+- [x] 1.6 Add direct non-bare, configured bare, ordinary linked, and bare-backed linked RED topology tests that compare the planned onboarding destination with runtime discovery and independently assert configuration authority, canonical clone versus active worktree, selected source path, and target-checkout cwd.
 
 ## 2. CLI implementation
 
-- [ ] 2.1 Add one shared configured repository-remove candidate planner for workspace-owned qualified and compatible repository-local native files.
-- [ ] 2.2 Route real remove and dry-run through the shared planner while preserving scope order, plain lifecycle identity, target-checkout cwd/context, input, timeout, JSON, gating, and finalization.
-- [ ] 2.3 Route doctor through the same candidates, validation, interpreter preflight, and bounded ambiguity metadata.
-- [ ] 2.4 Change repository hook onboarding to create safe active remove scaffolds at `.arashi/hooks/<lifecycle>.<repo><ext>` and block every competing claim.
-- [ ] 2.5 Include only exact qualified repository remove files in configured delete planning and transactional cleanup.
-- [ ] 2.6 Update generated CLI/inline contracts and deterministic freshness artifacts without changing workspace config version.
+- [x] 2.1 Add one shared configured repository-remove candidate planner for workspace-owned qualified and compatible repository-local native files.
+- [x] 2.2 Route real remove and dry-run through the shared planner while preserving scope order, plain lifecycle identity, target-checkout cwd/context, input, timeout, JSON, gating, and finalization.
+- [x] 2.3 Route doctor through the same candidates, validation, interpreter preflight, and bounded ambiguity metadata.
+- [x] 2.4 Change repository hook onboarding to create safe active remove scaffolds at `.arashi/hooks/<lifecycle>.<repo><ext>` and block every competing claim.
+- [x] 2.5 Include only exact qualified repository remove files in configured delete planning and transactional cleanup.
+- [x] 2.6 Update generated CLI/inline contracts and deterministic freshness artifacts without changing workspace config version.
 
 ## 3. Companion guidance
 
-- [ ] 3.1 Update maintained CLI hooks, remove, configuration, configure/add, and delete guidance with canonical and compatible locations plus collision/cwd behavior.
-- [ ] 3.2 Update website canonical sources and regenerate checked agent-readable exports.
-- [ ] 3.3 Update the packaged Arashi skill source and release-shaped guidance checks.
-- [ ] 3.4 After affected child changes are committed, prove meta cross-repository checks execute the CLI, docs, and extracted-skill validations at those exact immutable revisions.
+- [x] 3.1 Update maintained CLI hooks, remove, configuration, configure/add, and delete guidance with canonical and compatible locations plus collision/cwd behavior.
+- [x] 3.2 Update website canonical sources and regenerate checked agent-readable exports.
+- [x] 3.3 Update the packaged Arashi skill source and release-shaped guidance checks.
+- [x] 3.4 After affected child changes are committed, prove meta cross-repository checks execute the CLI, docs, and extracted-skill validations at those exact immutable revisions.
 
 ## 4. Verification and delivery
 
-- [ ] 4.1 Prove each regression test fails against pre-change behavior and passes with the implementation.
-- [ ] 4.2 Run focused POSIX runtime/dry-run/doctor/onboarding/delete tests and native Windows discovery/execution/ambiguity acceptance.
-- [ ] 4.3 Run CLI format, lint, typecheck, build, full tests, contract/schema freshness, and built-binary smoke tests.
-- [ ] 4.4 Run docs checks/build and skill source/archive checks, then commit every affected child repository and record its immutable head.
-- [ ] 4.5 Run complete meta cross-repository validation against those exact child heads with clean lockfiles and status.
+- [x] 4.1 Prove each regression test fails against pre-change behavior and passes with the implementation.
+- [x] 4.2 Run focused POSIX runtime/dry-run/doctor/onboarding/delete tests and native Windows discovery/execution/ambiguity acceptance.
+- [x] 4.3 Run CLI format, lint, typecheck, build, full tests, contract/schema freshness, and built-binary smoke tests.
+- [x] 4.4 Run docs checks/build and skill source/archive checks, then commit every affected child repository and record its immutable head.
+- [x] 4.5 Run complete meta cross-repository validation against those exact child heads with clean lockfiles and status.
 - [ ] 4.6 Push each affected child repository, open coordinated PRs linked to #354, and require independent review plus exact-head CI.
 - [ ] 4.7 Merge child PRs only after approval and green exact-head gates; verify the released/installed CLI exposes the new contract before meta dogfood depends on it.
+
+### Implementation evidence
+
+- CLI: `507740b920ce9e30849bc6c3c084d3b42e755948` — 2,946 tests passed, 17 skipped; native Windows acceptance passed on `HP-G4-MINI-01`; PR [corwinm/arashi#181](https://github.com/corwinm/arashi/pull/181).
+- Docs: `c9b32bac104ca822edda2e295db48127ce076ea0` — full validation and final exact-head review passed; PR [corwinm/arashi-docs#105](https://github.com/corwinm/arashi-docs/pull/105).
+- Skills: `8b97617807f00b61344280d08040836e335fbbef` — source and extracted-package checks passed 20/20; final exact-head review passed; PR [corwinm/arashi-skills#75](https://github.com/corwinm/arashi-skills/pull/75).
+- Meta contracts: `68a69695e6cd7821b00055d532d120ebac4f3e2f` — 521 tests and 7/7 cross-repository contract checkers passed; final exact-head review passed.
 
 ## 5. Archive and cleanup
 
