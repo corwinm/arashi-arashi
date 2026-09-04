@@ -1,3 +1,4 @@
+import { spawnSync } from "node:child_process";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 
@@ -14,6 +15,18 @@ export interface HookContractResult {
   diagnostics: HookContractDiagnostic[];
 }
 
+type OwningCheckerRunner = (
+  command: string,
+  args: string[],
+  options: { cwd: string; encoding: "utf8"; env: NodeJS.ProcessEnv },
+) => {
+  error?: Error;
+  signal?: NodeJS.Signals | null;
+  status: number | null;
+  stderr: string;
+  stdout: string;
+};
+
 const surfaces = [
   { source: "repos/arashi/src/commands/init.ts", category: "cli" },
   { source: "repos/arashi/docs/hooks.md", category: "cli" },
@@ -26,6 +39,12 @@ const surfaces = [
 ] as const;
 
 const guidanceSurfaces = new Set(surfaces.slice(1).map(({ source }) => source));
+const repositoryRemoveAliasSurfaces = new Set([
+  "repos/arashi/docs/hooks.md",
+  "repos/arashi-docs/docs/reference/hooks.md",
+  "repos/arashi-docs/public/llms-full.txt",
+  "repos/arashi-skills/skills/arashi/references/hooks.md",
+]);
 const hookInputGuidanceSurfaces = new Set(surfaces.map(({ source }) => source));
 const hookInputModes = ["tty", "disabled", "unavailable"] as const;
 const docsAggregate = "pnpm --dir repos/arashi-docs validate:semantic-docs";
@@ -215,6 +234,143 @@ function addMetaDiagnostic(
     severity: "error",
     source,
   });
+}
+
+function repositoryRemoveAliasContractDefects(content: string): string[] {
+  const plain = content.replaceAll("`", "").replace(/\s+/g, " ");
+  const lower = plain.toLowerCase();
+  const requirements: Array<[string, boolean]> = [
+    [
+      "canonical configuration-root qualified filename",
+      lower.includes(
+        "<configurationroot>/.arashi/hooks/<lifecycle>.<repo><ext>",
+      ),
+    ],
+    [
+      "compatible active-repository local alias",
+      lower.includes("<active-repository>/.arashi/hooks/<lifecycle><ext>"),
+    ],
+    [
+      "inline repository alias",
+      lower.includes("repos.<repo>.hooks.<lifecycle>"),
+    ],
+    [
+      "one repository slot with fail-closed collision",
+      /three alternatives for one repository slot[^.]*exactly zero or one[^.]*collision[^.]*fails before[^.]*(?:hook|removal) mutation/i.test(
+        plain,
+      ),
+    ],
+    [
+      "plain lifecycle identity and repository ownership",
+      /plain pre-remove or post-remove lifecycle identity[^.]*repository scope[^.]*owner <repo>/i.test(
+        plain,
+      ),
+    ],
+    [
+      "target-checkout cwd and separate source identity",
+      /active target repository source checkout as cwd[^.]*arashi_hook_execution_path[^.]*arashi_hook_source_path[^.]*selected file independently of cwd/i.test(
+        plain,
+      ),
+    ],
+    [
+      "configuration-root onboarding destination",
+      /repository hook onboarding[^.]*qualified create and remove files beneath the active configuration root[^.]*never into the target checkout or canonical clone/i.test(
+        plain,
+      ),
+    ],
+    [
+      "direct, bare, linked, and linked-bare topology",
+      /direct non-bare, configured bare, ordinary linked, and linked worktrees backed by a configured bare authority[^.]*configuration authority[^.]*active target checkout/i.test(
+        plain,
+      ),
+    ],
+    [
+      "exact delete ownership",
+      /deletion owns only exact pre-create\.<repo>, post-create\.<repo>, pre-remove\.<repo>, and post-remove\.<repo>[^.]*exact \.example templates/i.test(
+        plain,
+      ) &&
+        /never glob-deletes[^.]*compatible repository-local[^.]*shared workspace[^.]*user-global hooks/i.test(
+          plain,
+        ),
+    ],
+    [
+      "doctor and dry-run shared non-executing resolver",
+      /doctor and remove dry-run use the runtime resolver without execution/i.test(
+        plain,
+      ),
+    ],
+    [
+      "bounded ordered all-native ambiguity paths",
+      /hook_ambiguous reports hookname, scope, sourcekinds, sourceownerkind, sourceownername, nullable sourcescriptpath, and de-duplicated sourcescriptpaths: at most six native paths ordered canonical workspace-owned location first, compatible repository-local location second, then established platform extension order within each location/i.test(
+        plain,
+      ),
+    ],
+  ];
+  return requirements.filter(([, present]) => !present).map(([label]) => label);
+}
+
+function contradictsRepositoryRemoveAliases(content: string): boolean {
+  return content
+    .replaceAll("`", "")
+    .split(/(?<=[.!?])\s+|\n+/)
+    .map((statement) => statement.replace(/\s+/g, " ").trim())
+    .filter(Boolean)
+    .some(
+      (statement) =>
+        /both repository files|canonical[^.]*compatible|workspace-owned[^.]*repository-local/i.test(
+          statement,
+        ) &&
+        (/(?:prefers?|takes precedence|wins|falls back to)[^.]*repository-local/i.test(
+          statement,
+        ) ||
+          /executes? both|both hooks? (?:execute|run)/i.test(statement)),
+    );
+}
+
+export function checkOwningHookContracts(
+  root: string,
+  runner: OwningCheckerRunner = spawnSync,
+): HookContractDiagnostic[] {
+  const diagnostics: HookContractDiagnostic[] = [];
+  const checks = [
+    {
+      args: ["--dir", "repos/arashi", "contract:check"],
+      category: "cli" as const,
+      command: "pnpm",
+      source: "repos/arashi/package.json#scripts.contract:check",
+    },
+    {
+      args: ["--dir", "repos/arashi-docs", "validate:semantic-docs"],
+      category: "docs" as const,
+      command: "pnpm",
+      source: "repos/arashi-docs/package.json#scripts.validate:semantic-docs",
+    },
+    {
+      args: [join(root, "repos/arashi-skills/scripts/validate-guidance.mjs")],
+      category: "skills" as const,
+      command: process.execPath,
+      source: "repos/arashi-skills/scripts/validate-guidance.mjs",
+    },
+  ];
+  for (const check of checks) {
+    const result = runner(check.command, check.args, {
+      cwd: root,
+      encoding: "utf8",
+      env: { ...process.env, NO_COLOR: "1" },
+    });
+    if (result.status === 0 && !result.error && !result.signal) continue;
+    addDiagnostic(
+      diagnostics,
+      check.category,
+      "HOOK_OWNING_CHECKER_FAILED",
+      check.source,
+      result.error?.message ??
+        (result.signal
+          ? `Owning checker terminated by ${result.signal}.`
+          : `Owning checker exited with status ${result.status}: ${(result.stderr || result.stdout).trim()}`),
+    );
+  }
+  return diagnostics;
 }
 
 export async function checkHookContracts(
@@ -766,6 +922,28 @@ export async function checkHookContracts(
           source: surface.source,
           message: "The 1.x compatibility boundary is missing.",
         });
+      }
+    }
+
+    if (repositoryRemoveAliasSurfaces.has(surface.source)) {
+      const defects = repositoryRemoveAliasContractDefects(content);
+      if (defects.length > 0) {
+        addDiagnostic(
+          diagnostics,
+          surface.category,
+          "HOOK_REPOSITORY_REMOVE_ALIAS_CONTRACT_MISSING",
+          surface.source,
+          `Missing approved repository-remove alias semantics: ${defects.join(", ")}.`,
+        );
+      }
+      if (contradictsRepositoryRemoveAliases(content)) {
+        addDiagnostic(
+          diagnostics,
+          surface.category,
+          "HOOK_REPOSITORY_REMOVE_ALIAS_CONTRADICTION",
+          surface.source,
+          "Repository-remove aliases collide in one slot; they never use silent precedence or double execution.",
+        );
       }
     }
 
