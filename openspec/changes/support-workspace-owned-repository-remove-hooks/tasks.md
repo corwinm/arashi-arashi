@@ -35,10 +35,10 @@
 
 ### Implementation evidence
 
-- CLI: `9f02a0f7765956e6acdc9ed5b5784b401a34634d` — 2,953 tests passed, 17 skipped; native Windows acceptance passed on `HP-G4-MINI-01`; PR [corwinm/arashi#181](https://github.com/corwinm/arashi/pull/181).
-- Docs: `604226ee724483d9653bdbc5eee20775bd32709b` — full validation and final exact-head review passed; PR [corwinm/arashi-docs#105](https://github.com/corwinm/arashi-docs/pull/105).
-- Skills: `aa82241abbcdad0e5c4fa6fd848540638406ba96` — source and extracted-package checks passed 20/20; final exact-head review passed; PR [corwinm/arashi-skills#75](https://github.com/corwinm/arashi-skills/pull/75).
-- Meta contracts: `68a69695e6cd7821b00055d532d120ebac4f3e2f` — 521 tests and 7/7 cross-repository contract checkers passed; final exact-head review passed.
+- CLI: `4df5b4f64fca51bc3eb8e91cc18c911229eb798e` — 2,957 tests passed, 17 skipped; native Windows acceptance passed at the exact head on `HP-G4-MINI-01`; final exact-head review passed; PR [corwinm/arashi#181](https://github.com/corwinm/arashi/pull/181).
+- Docs: `aedf597e5232ec0c38e4a8523044ed2becc47238` — full validation, CI, and final exact-head review passed; PR [corwinm/arashi-docs#105](https://github.com/corwinm/arashi-docs/pull/105).
+- Skills: `f826b5c1a40f76a5e9cbee2d31765c6a0aa14b90` — source and extracted-package checks passed 20/20; archive, security, CI, and final exact-head review passed; PR [corwinm/arashi-skills#75](https://github.com/corwinm/arashi-skills/pull/75).
+- Meta contracts: `68a69695e6cd7821b00055d532d120ebac4f3e2f` — 521 tests and 7/7 cross-repository contract checkers passed; final exact-head review passed. The coordinated meta check is the authoritative cross-repository result while child reusable workflows remain loaded from meta `main`.
 
 ## 5. Archive and cleanup
 
