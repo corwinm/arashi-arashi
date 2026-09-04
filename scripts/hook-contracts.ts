@@ -373,11 +373,16 @@ function contradictsRepositoryRemoveAliases(content: string): boolean {
       ];
       return actions.some(({ pattern, relevant }) => {
         if (!relevant) return false;
-        const match = pattern.exec(statement);
-        if (!match) return false;
-        const prefix = statement.slice(0, match.index);
-        return !/(?:\bnever|\bnot|\bcannot|\bneither)\b[^,;:.!?]{0,180}$/i.test(
-          prefix,
+        const flags = pattern.flags.includes("g")
+          ? pattern.flags
+          : `${pattern.flags}g`;
+        return [...statement.matchAll(new RegExp(pattern.source, flags))].some(
+          (match) => {
+            const prefix = statement.slice(0, match.index);
+            return !/(?:\bnever|\bnot|\bcannot|\bneither)\b[^,;:.!?]{0,180}$/i.test(
+              prefix,
+            );
+          },
         );
       });
     });
