@@ -79,10 +79,10 @@ pnpm run build
 
 ## Pull Request Checklist
 
-- Issue and OpenSpec change linked
+- Issue and any OpenSpec change linked
 - Changes committed in the owning repositories
 - Companion pull requests cross-linked
 - Exact validation results recorded
 - Independent base-to-head review complete
 - Remote CI verified on the reviewed heads
-- OpenSpec archived only after implementation completion
+- Any OpenSpec change archived only after implementation completion
