@@ -2,9 +2,7 @@
 
 ## Purpose
 Define the closed, source-safe configuration and runtime contract for workspace- and repository-owned inline lifecycle hooks across validation, persistence, interpreter selection, execution, diagnostics, and generated artifacts.
-
 ## Requirements
-
 ### Requirement: Configured inline hooks have one typed closed configuration model
 Arashi SHALL accept workspace inline lifecycle values at `hooks.scripts.<lifecycle>` and repository-owned values at `repos.<name>.hooks.<lifecycle>`, where `<lifecycle>` is exactly `pre-create`, `post-create`, `pre-remove`, or `post-remove`. Each value SHALL be either a non-empty, non-whitespace string shorthand for `{ "bash": <string> }` or a non-empty object whose own keys are drawn only from `bash`, `powershell`, and `cmd` and whose values are non-empty, non-whitespace strings. Repository ownership SHALL be represented only by nesting beneath `repos.<name>.hooks`; encoded keys such as `pre-create.<repo>` and `post-create.<repo>` MUST NOT be accepted as inline configuration.
 
@@ -65,21 +63,36 @@ For a normalized inline map, POSIX SHALL select configured `bash` only and resol
 - **AND** runtime performs no lifecycle mutation or hook execution
 
 ### Requirement: Inline and file sources fail closed at one logical location
-An inline definition SHALL be an alternative source for one existing configured logical scope/lifecycle, not an additional hook. Root inline create hooks conflict with corresponding workspace create files; repository inline create hooks conflict with corresponding repository-specific workspace filenames; root inline remove hooks conflict with corresponding workspace remove files; and repository inline remove hooks conflict with corresponding repository-local remove files. If both sources exist, runtime, dry-run, and doctor MUST fail before lifecycle mutation, identify logical lifecycle, scope, owner, source kinds, and the file path, and MUST NOT select or execute either source. Hooks at different existing scopes SHALL continue to compose in their established order.
+
+An inline definition SHALL be an alternative source for one existing configured logical scope/lifecycle, not an additional hook. Root inline create hooks conflict with corresponding workspace create files; repository inline create hooks conflict with corresponding repository-specific workspace filenames; root inline remove hooks conflict with corresponding workspace remove files; and repository inline remove hooks conflict with both workspace-owned repository-specific and compatible repository-local remove files. The two repository native remove forms also conflict with each other. If multiple sources claim one location, runtime, dry-run, and doctor MUST fail before lifecycle mutation, identify lifecycle, scope, owner, source kinds, and every native candidate path, and MUST NOT select or execute any source. Hooks at different scopes SHALL continue to compose in established order.
 
 #### Scenario: Workspace location is ambiguous
-- **WHEN** root inline `pre-remove` and a workspace `pre-remove` file both claim the configured workspace location
+
+- **WHEN** root inline `pre-remove` and workspace `pre-remove` file both claim configured workspace scope
 - **THEN** resolution fails before removal mutation and identifies both source kinds
-- **AND** neither source executes
+- **AND** neither executes
 
 #### Scenario: Repository create location is ambiguous
-- **WHEN** `repos.api.hooks.post-create` and the workspace repository-specific `post-create.api` file both exist
+
+- **WHEN** `repos.api.hooks.post-create` and workspace `post-create.api` file both exist
 - **THEN** resolution fails before create mutation and identifies repository `api` and the file path
-- **AND** does not disclose the inline value
+- **AND** does not disclose inline value
+
+#### Scenario: Repository remove inline conflicts with workspace-owned file
+
+- **WHEN** `repos.api.hooks.pre-remove` and `.arashi/hooks/pre-remove.api<ext>` both exist
+- **THEN** runtime, dry-run, and doctor reject the repository location before mutation
+- **AND** expose no inline text
+
+#### Scenario: Repository remove native forms conflict
+
+- **WHEN** `.arashi/hooks/pre-remove.api<ext>` and `repos/api/.arashi/hooks/pre-remove<ext>` both exist
+- **THEN** runtime, dry-run, and doctor reject the repository location and identify both paths
 
 #### Scenario: Different scopes compose
-- **WHEN** an inline repository remove hook and a file-backed workspace or user-global hook exist at different logical locations
-- **THEN** both remain eligible in the existing scope order
+
+- **WHEN** one valid repository source and file-backed workspace or user-global hooks exist
+- **THEN** all remain eligible in established scope order
 
 ### Requirement: Inline sources preserve established logical names and classifications
 Repository-owned configured create inline sources SHALL expose `pre-create.<repo>` or `post-create.<repo>` as both public `hookName` and `ARASHI_HOOK_NAME`. Workspace create and all configured remove inline sources SHALL preserve the plain lifecycle name; configured remove repository ownership SHALL be represented by scope and owner metadata rather than encoded into the name. Inline/file ambiguity SHALL produce `reasonCode: "validation_failed"`; configured-create JSON SHALL retain `CREATE_FAILED`, configured-remove JSON SHALL retain `HOOK_CONFIGURATION_INVALID`, and doctor SHALL emit `HOOK_AMBIGUOUS` with detail keys `hookName`, `scope`, `sourceKinds`, `sourceOwnerKind`, `sourceOwnerName`, and nullable `sourceScriptPath`. Unavailable interpreters SHALL retain `interpreter_unavailable` and doctor code `HOOK_INTERPRETER_UNAVAILABLE`.

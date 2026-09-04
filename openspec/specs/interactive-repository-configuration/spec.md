@@ -2,9 +2,7 @@
 
 ## Purpose
 Define the optional, transactional repository-configuration flow offered by `aw add`, including eligibility, supported fields, hook sources, safe file materialization, confirmation, persistence, and rollback behavior.
-
 ## Requirements
-
 ### Requirement: Add offers optional repository configuration only in eligible human invocations
 
 After cloning and inspecting a repository but before configuration persistence, `aw add` SHALL offer optional repository-owned worktree setup only when stdin and stdout are TTYs and neither `--json` nor `--force` is active. The top-level confirmation MUST default to no. Declining it SHALL continue add with the existing minimal `path` and `gitUrl` entry and SHALL NOT be treated as cancellation.
@@ -120,56 +118,51 @@ Arashi SHALL discover likely local-file suggestions only from clone-surviving st
 
 ### Requirement: Hook onboarding offers one canonical inline or executable file source
 
-Selected repository hooks SHALL use exactly `pre-create`, `post-create`, `pre-remove`, and `post-remove`. For each selected lifecycle, Arashi SHALL offer exactly one source mode: (a) inline Bash shorthand or a non-empty explicit map drawn only from `bash`, `powershell`, and `cmd`, validated through canonical inline-hook normalization; or (b) a host-native editable script containing a fixed safe no-op scaffold at that repository-owned lifecycle's exact canonical active file location. Arashi MUST NOT infer or pre-fill executable behavior from repository files, setup scripts, package metadata, or lockfiles.
+Selected repository hooks SHALL use exactly `pre-create`, `post-create`, `pre-remove`, and `post-remove`. For each lifecycle, Arashi SHALL offer exactly one source mode: inline Bash shorthand or explicit canonical interpreter map; or one host-native editable script with a fixed safe no-op scaffold at the workspace-owned repository-specific canonical active filename. Arashi MUST NOT infer executable behavior from repository files, setup scripts, package metadata, or lockfiles. Compatible repository-local remove files remain runtime sources and MUST block creating a competing canonical file.
 
 #### Scenario: User supplies Bash shorthand
 
-- **WHEN** the user selects one lifecycle and enters a non-empty Bash shorthand body
+- **WHEN** the user selects one lifecycle and enters non-empty Bash shorthand
 - **THEN** the candidate normalizes it through the canonical hook value shape
 - **AND** records only that selected lifecycle
 
 #### Scenario: User supplies explicit platform variants
 
-- **WHEN** the user selects explicit interpreter variants for one lifecycle
-- **THEN** the candidate retains only non-empty canonical `bash`, `powershell`, and/or `cmd` members
-- **AND** rejects empty or unsupported members through the relevant hook prompt
+- **WHEN** the user selects explicit interpreter variants
+- **THEN** the candidate retains only non-empty `bash`, `powershell`, and/or `cmd` members
+- **AND** rejects empty or unsupported members
 
 #### Scenario: User chooses editable script files
 
 - **WHEN** the user selects file mode for one or more lifecycles
 - **THEN** the plan uses `.sh` on POSIX or exactly one `.ps1` on Windows and a fixed successful no-op scaffold
-- **AND** maps configured create scripts from the active configuration root to `.arashi/hooks/<lifecycle>.<repo><ext>`
-- **AND** maps configured remove scripts from the configured target repository path resolved by the runtime resolver to `.arashi/hooks/<lifecycle><ext>`
-- **AND** linked-parent remove scripts therefore reside in the active child worktree rather than the canonical clone
+- **AND** maps configured create and remove scripts from the active configuration root to `.arashi/hooks/<lifecycle>.<repo><ext>`
 - **AND** persists no inline value for those lifecycles
 
 #### Scenario: Generated script is immediately executable and safe
 
-- **WHEN** add successfully creates a planned hook script
+- **WHEN** onboarding creates a planned hook script
 - **THEN** the complete script is atomically visible at the exact active filename without a rename step
-- **AND** POSIX `.sh` mode is `0755` while Windows `.ps1` is runtime-ready under the canonical executor
-- **AND** its unedited body emits no output, performs no repository or worktree mutation, and exits successfully
-- **AND** human output says the file is active, safe as generated, and ready for manual editing
+- **AND** POSIX mode is `0755` while Windows `.ps1` is runtime-ready
+- **AND** unedited content is silent, non-mutating, and successful
 
 #### Scenario: Hook source already exists or collides
 
-- **WHEN** a selected lifecycle already has an inline value, active native source, destination collision, ambiguous native candidates, symlinked parent, or another unsafe destination
+- **WHEN** a selected lifecycle already has inline value, canonical active native source, compatible repository-local remove source, destination collision, ambiguous native candidates, symlinked parent, or another unsafe destination
 - **THEN** Arashi does not overwrite or create another source
 - **AND** returns a bounded field-attributed choice or transaction failure without reading source contents
 
 #### Scenario: A parent path changes during installation
 
-- **WHEN** any configuration-root, target-repository, `.arashi`, or `hooks` directory component is replaced, symlinked, or changes identity between planning and installation
-- **THEN** Arashi's pre-publication and post-publication path validation detects the changed or symlinked component when observable and fails the transaction
-- **AND** Arashi never overwrites an existing destination and removes only an invocation-created file whose recorded identity, bytes, and mode remain unchanged
-- **AND** documentation acknowledges the residual local race when another process with workspace write access substitutes an ancestor between validation and atomic publication
-- **AND** documentation also acknowledges that pure Node/Bun cannot conditionally unlink by file identity, leaving a narrow residual race if another local writer replaces a rollback path after its final ownership check and before unlink
+- **WHEN** any configuration-root, workspace `.arashi`/hooks, target-repository, or compatible repository-local `.arashi`/hooks component changes identity, becomes symlinked, or gains a competing source between planning and publication
+- **THEN** pre-publication and post-publication validation rechecks both the destination hierarchy and compatible repository-local source location and fails the transaction without leaving competing active sources
+- **AND** rollback removes only a proven invocation-owned unchanged file
 
 #### Scenario: Setup script was detected
 
-- **WHEN** add detected or created a setup script before onboarding
-- **THEN** Arashi may mention the script name as context
-- **AND** does not read it to generate, pre-fill, or silently confirm an inline command
+- **WHEN** onboarding detected or created a setup script
+- **THEN** Arashi may mention its name as context
+- **AND** does not read it to generate or pre-fill hook behavior
 
 ### Requirement: Hook bodies and generated script contents remain secret across every output boundary
 
@@ -297,11 +290,11 @@ Configure-owned repository active-file plans SHALL preserve the exact topology, 
 #### Scenario: Configure plans a repository hook file
 
 - **WHEN** the user replaces or clears the existing source and selects active-file mode
-- **THEN** create lifecycle paths resolve from the active configuration root and remove lifecycle paths resolve from the runtime-configured target repository
-- **AND** linked mode uses the active child worktree for remove hooks
+- **THEN** create and remove lifecycle paths resolve from the active configuration root to `.arashi/hooks/<lifecycle>.<repo><ext>`
+- **AND** linked mode does not redirect remove hook storage into the active child worktree or canonical clone
 
 #### Scenario: Existing active file must be retained
 
-- **WHEN** an existing native source cannot be replaced safely
+- **WHEN** an existing canonical or compatible native source cannot be replaced safely
 - **THEN** configure never overwrites it and offers a skip/keep-existing path
 - **AND** a confirmed edit to other settings leaves that file byte-identical

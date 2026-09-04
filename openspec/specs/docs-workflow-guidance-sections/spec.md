@@ -120,13 +120,19 @@ Canonical documentation SHALL explain that automatic launch defaults to a new wi
 
 ### Requirement: Canonical hook guidance publishes the normative lifecycle matrix
 
-The documentation SHALL provide one discoverable hooks workflow that distinguishes configured and standalone modes and defines each supported lifecycle's discovery locations, platform extensions, invocation multiplicity, mutation timing, cwd, environment context, timeout, failure/rollback/finalization behavior, and human/JSON outcome semantics.
+The documentation SHALL provide one discoverable hooks workflow that distinguishes configured and standalone modes and defines each supported lifecycle's discovery locations, platform extensions, invocation multiplicity, mutation timing, cwd, environment context, timeout, failure/rollback/finalization behavior, and human/JSON outcome semantics. For configured remove, it SHALL identify `.arashi/hooks/<lifecycle>.<repo><ext>` under the active configuration root as the canonical workspace-owned repository source, identify `<active-repository>/.arashi/hooks/<lifecycle><ext>` as a compatible source, and explain that either native form and `repos.<repo>.hooks.<lifecycle>` claim one repository logical slot and conflict rather than compose.
 
 #### Scenario: User compares configured create scopes
 
 - **WHEN** a user reads create-hook guidance
 - **THEN** it distinguishes workspace pre/post hooks from repository-specific pre/post hooks
 - **AND** accurately states that `pre-create.<repo>` runs after that repository worktree is materialized
+
+#### Scenario: User compares configured remove scopes
+
+- **WHEN** a user reads configured remove-hook guidance
+- **THEN** it distinguishes the canonical workspace-owned qualified repository source from the compatible repository-local source and workspace/global scopes
+- **AND** explains repository-slot collision behavior, plain lifecycle identity, and target-checkout cwd
 
 #### Scenario: User compares standalone scopes
 
@@ -193,7 +199,7 @@ Node setup examples SHALL instruct users to follow the committed `packageManager
 
 ### Requirement: Canonical and generated hook guidance remain semantically identical
 
-Hook aliases, lifecycle timing, activation, timeout, platform, package-manager, and failure claims SHALL be checked from canonical docs through generated Markdown/LLM exports rather than maintained as unaudited prose copies.
+Hook aliases, repository-remove canonical and compatible filenames, ownership, cwd, collision behavior, lifecycle timing, activation, timeout, platform, package-manager, and failure claims SHALL be checked from canonical docs through generated Markdown/LLM exports rather than maintained as unaudited prose copies.
 
 #### Scenario: Canonical hook guidance changes
 
@@ -370,7 +376,7 @@ A focused docs semantic checker SHALL be directly executable and registered unde
 
 ### Requirement: Public docs explain optional add onboarding proportionately
 
-Canonical website onboarding, add-command, and configuration guidance SHALL explain that eligible human `aw add` invocations offer one default-no repository setup flow for canonical direct `copy`, `symlink`, and repository lifecycle hooks before final mutation. Hook guidance SHALL offer an exclusive inline command or editable active native script per lifecycle, explain that generated scripts are installed at exact canonical filenames as safe no-ops with runtime-ready permissions and require no rename/chmod activation, and distinguish active-configuration-root repository-specific create paths from runtime-resolved configured-target remove paths, including the active child worktree in linked mode. Guidance SHALL distinguish top-level decline from cancellation, state that automation/non-TTY/`--json`/`--force` preserve minimal add, explain that suggestions are unselected and content-free, route exhaustive field, rollback, and security semantics to their owning references, and route later supported existing-workspace changes to `aw configure` without claiming add edits existing entries.
+Canonical website onboarding, add-command, and configuration guidance SHALL explain that eligible human `aw add` invocations offer one default-no repository setup flow for canonical direct `copy`, `symlink`, and repository lifecycle hooks before final mutation. Hook guidance SHALL offer an exclusive inline command or editable active native script per lifecycle, explain that generated scripts are installed at exact canonical filenames as safe no-ops with runtime-ready permissions and require no rename/chmod activation, and identify the active configuration root as the authority for repository-qualified create and remove paths in direct, bare, and linked modes. It SHALL distinguish that storage root from the active target source checkout used as repository-remove cwd, identify target-repository remove files as compatible rather than canonical, distinguish top-level decline from cancellation, state that automation/non-TTY/`--json`/`--force` preserve minimal add, explain that suggestions are unselected and content-free, route exhaustive field, rollback, and security semantics to their owning references, and route later supported existing-workspace changes to `aw configure` without claiming add edits existing entries.
 
 #### Scenario: User onboards a repository
 
@@ -389,7 +395,8 @@ Canonical website onboarding, add-command, and configuration guidance SHALL expl
 - **WHEN** docs describe lifecycle-hook onboarding
 - **THEN** they list canonical repository lifecycles and the exclusive inline-or-file choice
 - **AND** inline guidance uses canonical Bash/platform variants and user-supplied commands
-- **AND** file guidance describes exact active paths, safe no-op scaffolds, no-overwrite behavior, immediate executable readiness, and manual editing without rename/chmod activation
+- **AND** file guidance describes qualified create/remove paths under the active configuration root, compatible target-repository remove paths, safe no-op scaffolds, no-overwrite behavior, immediate executable readiness, and manual editing without rename/chmod activation
+- **AND** linked guidance keeps native remove storage at the configuration authority while using the active child checkout as execution cwd
 - **AND** summaries identify inline lifecycle/interpreter presence or generated-script lifecycle/path/executable state without bodies or generated contents
 
 #### Scenario: User needs later configuration changes

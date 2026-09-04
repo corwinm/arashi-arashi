@@ -3,7 +3,6 @@
 ## Purpose
 
 Define the safe, transactional lifecycle for deleting configured repositories, including exact target selection, Git-loss prevention, resumable execution, configuration updates, hooks, and machine-readable results.
-
 ## Requirements
 ### Requirement: Delete is the configured repository lifecycle inverse
 
@@ -130,7 +129,7 @@ Before any mutation, Arashi SHALL resolve the active parent configuration author
 
 ### Requirement: Deletion scope is complete and minimal
 
-The plan SHALL include the selected child's canonical clone, all owned linked worktrees and stale owned registrations including coordinated descendants under other parent worktrees, child-local branch/tag/stash/detached-commit refs that cease to exist, the temporary resume-receipt path, the complete active `repos.<repository>` entry, and only exact canonical workspace-root `pre-create.<repository>` and `post-create.<repository>` active files/templates. It SHALL preserve all unrelated configuration, managed-ignore policy, shared hooks, and user-global hooks.
+The plan SHALL include the selected child's canonical clone, all owned linked worktrees and stale owned registrations including coordinated descendants under other parent worktrees, child-local branch/tag/stash/detached-commit refs that cease to exist, the temporary resume-receipt path, the complete active `repos.<repository>` entry, and only exact canonical workspace-root `pre-create.<repository>`, `post-create.<repository>`, `pre-remove.<repository>`, and `post-remove.<repository>` active files/templates. It SHALL preserve all unrelated configuration, managed-ignore policy, shared hooks, compatible repository-local hook content outside existing clone/worktree ownership, and user-global hooks.
 
 #### Scenario: Complete repository entry is planned
 
@@ -158,13 +157,13 @@ The plan SHALL include the selected child's canonical clone, all owned linked wo
 
 #### Scenario: Workspace-targeted hook files exist
 
-- **WHEN** canonical discovery finds exact active native files for logical names `pre-create.<repository>` or `post-create.<repository>` or a concrete inert template formed only by appending `.example` to one exact active candidate path
+- **WHEN** canonical discovery finds exact active native files for logical names `pre-create.<repository>`, `post-create.<repository>`, `pre-remove.<repository>`, or `post-remove.<repository>`, or a concrete inert template formed only by appending `.example` to one exact active candidate path
 - **THEN** each exact path is planned as a workspace-hook item
 - **AND** hook contents are not read or emitted
 
 #### Scenario: Concrete and generic templates coexist
 
-- **WHEN** `pre-create.api.sh.example` or its exact native Windows equivalent coexists with literal generic `pre-create.<repo>.sh.example` or `pre-create.REPO.ps1.example`
+- **WHEN** one concrete exact-key create/remove template or its exact native Windows equivalent coexists with a literal generic `<repo>` or `REPO` template
 - **THEN** only the concrete exact-key template is planned
 - **AND** every generic placeholder template is preserved
 
