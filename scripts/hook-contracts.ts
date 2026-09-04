@@ -379,7 +379,7 @@ function contradictsRepositoryRemoveAliases(content: string): boolean {
         return [...statement.matchAll(new RegExp(pattern.source, flags))].some(
           (match) => {
             const prefix = statement.slice(0, match.index);
-            return !/(?:\bnever|\bnot|\bcannot|\bneither)\b[^,;:.!?]{0,180}$/i.test(
+            return !/(?:\b(?:never|not|cannot|neither)\b|n['’]t\b)[^,;:.!?]{0,180}$/i.test(
               prefix,
             );
           },

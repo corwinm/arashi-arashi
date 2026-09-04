@@ -408,6 +408,8 @@ describe("cross-repository lifecycle-hook contract", () => {
 
   test.each([
     "The canonical workspace-owned hook does not take precedence over the compatible repository-local hook.",
+    "The canonical workspace-owned hook doesn't take precedence over the compatible repository-local hook.",
+    "The canonical workspace-owned hook doesn’t take precedence over the compatible repository-local hook.",
     "On collision, the canonical workspace-owned hook is not preferred.",
     "When aliases collide, Arashi does not select the canonical workspace-owned hook over the compatible repository-local hook.",
     "When aliases collide, Arashi never chooses the compatible repository-local hook over the canonical workspace-owned hook.",
