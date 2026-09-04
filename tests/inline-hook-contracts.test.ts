@@ -46,10 +46,27 @@ const inlineContract = {
     createJsonCode: "CREATE_FAILED",
     removeJsonCode: "HOOK_CONFIGURATION_INVALID",
     doctorCode: "HOOK_AMBIGUOUS",
+    sourceScriptPaths: {
+      deduplicated: true,
+      locationOrder: ["canonical-workspace", "compatible-repository-local"],
+      maxNativeCandidates: 6,
+      platformExtensionOrder: {
+        posix: [".sh"],
+        windows: [".ps1", ".cmd", ".bat"],
+      },
+      singularSourceScriptPathCompatible: true,
+    },
   },
   options: {
     create: { noHooks: true, noHookInput: true },
     remove: { noHooks: false, noHookInput: true },
+  },
+  repositoryRemoveSources: {
+    canonicalWorkspace: ".arashi/hooks/<lifecycle>.<repo><ext>",
+    compatibleRepositoryLocal: "<repo>/.arashi/hooks/<lifecycle><ext>",
+    executionCwd: "target-repository-checkout",
+    logicalSlot: "repository:<repo>:<lifecycle>",
+    nativePrecedence: "none",
   },
   dryRun: {
     create: {
@@ -71,6 +88,7 @@ const inlineContract = {
       "sourceOwnerKind",
       "sourceOwnerName",
       "sourceScriptPath",
+      "sourceScriptPaths",
     ],
     sourceKinds: ["file", "inline-config"],
     ownerKinds: ["workspace", "repository", "user-global"],
@@ -583,6 +601,18 @@ ${contradiction}
         },
       },
       "INLINE_SOURCE_METADATA_MISMATCH",
+    ],
+    [
+      "repository remove source projection",
+      "repos/arashi/contracts/inline-lifecycle-hooks.json",
+      {
+        ...inlineContract,
+        repositoryRemoveSources: {
+          ...inlineContract.repositoryRemoveSources,
+          nativePrecedence: "canonical-workspace-first",
+        },
+      },
+      "INLINE_REPOSITORY_REMOVE_SOURCES_MISMATCH",
     ],
   ])(
     "rejects normalized contract drift in %s",

@@ -47,10 +47,27 @@ const expected = {
     createJsonCode: "CREATE_FAILED",
     removeJsonCode: "HOOK_CONFIGURATION_INVALID",
     doctorCode: "HOOK_AMBIGUOUS",
+    sourceScriptPaths: {
+      deduplicated: true,
+      locationOrder: ["canonical-workspace", "compatible-repository-local"],
+      maxNativeCandidates: 6,
+      platformExtensionOrder: {
+        posix: [".sh"],
+        windows: [".ps1", ".cmd", ".bat"],
+      },
+      singularSourceScriptPathCompatible: true,
+    },
   },
   options: {
     create: { noHooks: true, noHookInput: true },
     remove: { noHooks: false, noHookInput: true },
+  },
+  repositoryRemoveSources: {
+    canonicalWorkspace: ".arashi/hooks/<lifecycle>.<repo><ext>",
+    compatibleRepositoryLocal: "<repo>/.arashi/hooks/<lifecycle><ext>",
+    executionCwd: "target-repository-checkout",
+    logicalSlot: "repository:<repo>:<lifecycle>",
+    nativePrecedence: "none",
   },
   dryRun: {
     create: {
@@ -72,6 +89,7 @@ const expected = {
       "sourceOwnerKind",
       "sourceOwnerName",
       "sourceScriptPath",
+      "sourceScriptPaths",
     ],
     sourceKinds: ["file", "inline-config"],
     ownerKinds: ["workspace", "repository", "user-global"],
@@ -84,6 +102,13 @@ const expected = {
     fileOnlyCompatible: true,
   },
 } as const;
+
+const inlineGuidanceSourceMetadataFields = [
+  "sourceKind",
+  "sourceOwnerKind",
+  "sourceOwnerName",
+  "sourceScriptPath",
+] as const;
 
 const contractSource = "repos/arashi/contracts/inline-lifecycle-hooks.json";
 const commandSource = "repos/arashi/contracts/cli-commands.json";
@@ -480,7 +505,7 @@ const guidanceRequirementDefinitions: readonly GuidanceRequirement[] = [
     message:
       "Guidance must retain non-secret source metadata, null inline path semantics, and explicit snippet non-disclosure.",
     accepts: (content) =>
-      expected.sourceMetadata.fields.every((field) =>
+      inlineGuidanceSourceMetadataFields.every((field) =>
         content.includes(field),
       ) &&
       /sourceScriptPath[\s\S]{0,120}(?:is\s+`?null`?|null\s+or\s+omitted)/i.test(
@@ -606,6 +631,12 @@ async function check(
         actual: contract.options,
         wanted: expected.options,
         message: "Inline-hook command option ownership changed.",
+      },
+      {
+        code: "INLINE_REPOSITORY_REMOVE_SOURCES_MISMATCH",
+        actual: contract.repositoryRemoveSources,
+        wanted: expected.repositoryRemoveSources,
+        message: "Repository remove source projection changed.",
       },
       {
         code: "INLINE_DRY_RUN_MISMATCH",
