@@ -38,7 +38,7 @@ The repository logical location can be claimed by:
 2. workspace-owned `.arashi/hooks/<lifecycle>.<repo><ext>`;
 3. compatible repository-local `<repo>/.arashi/hooks/<lifecycle><ext>`.
 
-Exactly zero or one claim is valid. Any two or more claims produce the existing validation/ambiguity classification before hook execution or removal mutation, with every native candidate path and source kind retained in bounded diagnostics. Native extension ambiguity within either directory is part of the same preflight. Silent precedence and double execution were rejected because either can unexpectedly bypass or duplicate destructive-operation policy.
+Exactly zero or one claim is valid. Any two or more claims produce the existing validation/ambiguity classification before hook execution or removal mutation. Diagnostics retain source kinds, keep the compatible nullable singular `sourceScriptPath`, and add `sourceScriptPaths`: a de-duplicated array of at most six native candidates ordered workspace-owned first, repository-local second, and by established platform extension order within each location. Native extension ambiguity within either directory is part of the same preflight. Silent precedence and double execution were rejected because either can unexpectedly bypass or duplicate destructive-operation policy.
 
 ### 3. One shared planner supplies runtime, preview, and doctor
 
@@ -46,7 +46,7 @@ Configured remove planning will build repository candidates from the configurati
 
 ### 4. Interactive repository file onboarding uses the workspace-owned form
 
-When add/configure repository onboarding chooses file mode for `pre-remove` or `post-remove`, the active safe scaffold will be written under the configuration root with the repository-qualified filename. Existing repository-local files remain discoverable but block creating a second claim. Planning and publication revalidate both the workspace destination hierarchy and the target repository's compatible hook location so a concurrent file or ancestor replacement cannot leave two active claims. This aligns file ownership with `repos.<name>` configuration and avoids writing operational workspace policy into a child checkout or the wrong linked worktree.
+When add/configure repository onboarding chooses file mode for `pre-remove` or `post-remove`, the active safe scaffold will be written under the configuration root with the repository-qualified filename. The resolver keeps configuration authority, execution root, and active target repository distinct: direct workspaces use the same configuration/execution root; configured bare authorities use the bare root; ordinary linked worktrees use their linked configured parent as authority; and linked worktrees backed by a configured bare authority keep the bare common directory as configuration authority while projecting the target from the linked execution root. Existing repository-local files remain discoverable but block creating a second claim. Planning and publication revalidate both the workspace destination hierarchy and the target repository's compatible hook location so a concurrent file or ancestor replacement cannot leave two active claims. This aligns file ownership with `repos.<name>` configuration and avoids writing operational workspace policy into a child checkout or the wrong linked worktree.
 
 The existing active-file safety, no-overwrite, permissions, transaction, and rollback rules remain unchanged.
 

@@ -5,6 +5,7 @@
 - [ ] 1.3 Add focused CLI RED tests proving qualified workspace repository files are currently absent from runtime, dry-run, and doctor plans on POSIX and Windows.
 - [ ] 1.4 Add RED tests for inline/qualified-file, legacy/qualified-file, and Windows multi-candidate collisions before mutation.
 - [ ] 1.5 Add onboarding and delete RED tests for the canonical qualified active path, exact ownership, no-overwrite, compatible-source publication races, and preservation of lookalikes.
+- [ ] 1.6 Add direct non-bare, configured bare, ordinary linked, and bare-backed linked RED topology tests that compare the planned onboarding destination with runtime discovery and independently assert configuration authority, canonical clone versus active worktree, selected source path, and target-checkout cwd.
 
 ## 2. CLI implementation
 
@@ -20,16 +21,17 @@
 - [ ] 3.1 Update maintained CLI hooks, remove, configuration, configure/add, and delete guidance with canonical and compatible locations plus collision/cwd behavior.
 - [ ] 3.2 Update website canonical sources and regenerate checked agent-readable exports.
 - [ ] 3.3 Update the packaged Arashi skill source and release-shaped guidance checks.
-- [ ] 3.4 Prove meta cross-repository checks execute the CLI, docs, and extracted-skill validations at the intended immutable revisions.
+- [ ] 3.4 After affected child changes are committed, prove meta cross-repository checks execute the CLI, docs, and extracted-skill validations at those exact immutable revisions.
 
 ## 4. Verification and delivery
 
 - [ ] 4.1 Prove each regression test fails against pre-change behavior and passes with the implementation.
 - [ ] 4.2 Run focused POSIX runtime/dry-run/doctor/onboarding/delete tests and native Windows discovery/execution/ambiguity acceptance.
 - [ ] 4.3 Run CLI format, lint, typecheck, build, full tests, contract/schema freshness, and built-binary smoke tests.
-- [ ] 4.4 Run docs checks/build, skill source/archive checks, and complete meta cross-repository validation with clean lockfiles/status.
-- [ ] 4.5 Commit and push each affected child repository, open coordinated PRs linked to #354, and require independent review plus exact-head CI.
-- [ ] 4.6 Merge child PRs only after approval and green exact-head gates; verify the released/installed CLI exposes the new contract before meta dogfood depends on it.
+- [ ] 4.4 Run docs checks/build and skill source/archive checks, then commit every affected child repository and record its immutable head.
+- [ ] 4.5 Run complete meta cross-repository validation against those exact child heads with clean lockfiles and status.
+- [ ] 4.6 Push each affected child repository, open coordinated PRs linked to #354, and require independent review plus exact-head CI.
+- [ ] 4.7 Merge child PRs only after approval and green exact-head gates; verify the released/installed CLI exposes the new contract before meta dogfood depends on it.
 
 ## 5. Archive and cleanup
 

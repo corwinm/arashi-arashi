@@ -30,6 +30,16 @@ For configured remove lifecycles, the system SHALL discover repository-scope scr
 - **WHEN** a lifecycle location has multiple supported extensions or repository scope is claimed by both workspace-owned and repository-local files
 - **THEN** discovery fails before lifecycle mutation and reports all native candidates
 
+### Requirement: Deterministic execution order across scopes
+
+The system MUST execute configured remove lifecycle hooks in deterministic logical-scope order: repository first, workspace second, global-targeted third, and global-shared last. Storage does not determine scope: a workspace-owned qualified repository file occupies the repository slot, and the compatible repository-local file is an alias for that same slot.
+
+#### Scenario: Scope ordering is enforced
+
+- **WHEN** configured remove lifecycle sources are discovered in all four logical scopes
+- **THEN** execution occurs in the exact order repository, workspace, global-targeted, global-shared
+- **AND** the repository source executes once whether it is inline, workspace-owned qualified, or compatible repository-local
+
 ### Requirement: Scope-specific working directory behavior
 
 The system SHALL expose exact normalized cwd as `ARASHI_HOOK_EXECUTION_PATH`. For configured remove, repository-scope hooks—whether stored under the workspace root or target repository—plus global-repository and global-shared hooks SHALL run from the current target repository's configured source checkout; workspace hooks SHALL run from the configured workspace root. Standalone global hooks SHALL run from the resolved main root. Configured create cwd SHALL follow `lifecycle-hook-contracts`.

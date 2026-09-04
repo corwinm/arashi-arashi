@@ -24,6 +24,7 @@ Configured repository lifecycle hooks are intended to offer either an inline sou
 - `remove-dry-run-preview`: Preview the new source and report the same ambiguity as real remove without execution.
 - `workspace-health-diagnostics`: Diagnose the same repository-specific candidates and collisions as runtime.
 - `interactive-repository-configuration`: Generate repository remove scripts at the workspace-owned repository-specific active filename.
+- `coordinated-add-materialization`: Keep linked add persistence and active-file publication on the configuration authority while remove executes from the active child checkout.
 - `configured-repository-deletion`: Include workspace-owned repository remove scripts in exact owned-hook cleanup while preserving unrelated hooks.
 - `docs-workflow-guidance-sections`: Document the symmetric repository-specific script/inline model without obscuring legacy compatibility.
 - `arashi-skill-guidance`: Keep packaged operational guidance aligned with the new configured remove filename and ambiguity rules.
