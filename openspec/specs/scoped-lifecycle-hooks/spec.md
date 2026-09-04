@@ -4,50 +4,74 @@
 TBD - created by archiving change expand-hooks-scope-and-options. Update Purpose after archive.
 ## Requirements
 ### Requirement: Multi-scope lifecycle hook discovery
-For configured remove lifecycles, the system SHALL discover scripts for a target repository from repository-local (`repos/<repo>/.arashi/hooks/<lifecycle><ext>`), workspace-root (`.arashi/hooks/<lifecycle><ext>`), and user-global shared/targeted locations. Configured create instead SHALL use the workspace and repository-specific filename contract defined by `lifecycle-hook-contracts`; it SHALL NOT silently activate repository-local or user-global policy. Supported `<ext>` values SHALL be `.sh` on POSIX and `.ps1`, `.cmd`, or `.bat` on Windows. More than one supported candidate for one logical lifecycle/location MUST be treated as a pre-mutation configuration error.
+
+For configured remove lifecycles, the system SHALL discover repository-scope scripts for target `<repo>` from workspace-owned `.arashi/hooks/<lifecycle>.<repo><ext>` and compatible repository-local `repos/<repo>/.arashi/hooks/<lifecycle><ext>` candidates, workspace scope from `.arashi/hooks/<lifecycle><ext>`, and user-global shared/targeted scopes from their established paths. Configured create SHALL retain its workspace and repository-specific filename contract and SHALL NOT silently activate repository-local or user-global policy. Supported `<ext>` values SHALL be `.sh` on POSIX and `.ps1`, `.cmd`, or `.bat` on Windows. More than one supported native candidate or source for one logical lifecycle/location MUST be a pre-mutation configuration error.
 
 #### Scenario: Remove hooks are present in multiple scopes
-- **WHEN** a configured remove lifecycle is triggered for repository `<repo>` and one supported script exists in repository-local, workspace-root, and user-global paths
-- **THEN** the system includes all discovered scripts in the lifecycle execution plan
+
+- **WHEN** a configured remove lifecycle is triggered for `<repo>` with one repository source plus workspace and user-global sources
+- **THEN** the system includes all selected sources in the lifecycle execution plan
+
+#### Scenario: Qualified workspace repository file is present
+
+- **WHEN** `.arashi/hooks/<lifecycle>.<repo><ext>` is the only repository claim
+- **THEN** it occupies repository scope rather than workspace scope
 
 #### Scenario: Some remove scopes do not define a hook
-- **WHEN** a configured remove lifecycle is triggered and one or more scope paths do not contain a platform-supported lifecycle script
-- **THEN** the system skips missing scripts without failing solely because they are absent
+
+- **WHEN** one or more scope locations contain no supported source
+- **THEN** the system skips missing locations without failing solely because they are absent
 
 #### Scenario: Configured create has similarly named scripts in inactive scopes
-- **WHEN** a configured create lifecycle finds repository-local or user-global scripts that are not part of its workspace/repository-specific filename contract
+
+- **WHEN** configured create finds repository-local or user-global scripts outside its filename contract
 - **THEN** Arashi does not execute those scripts
-- **AND** does not imply that configured create and configured remove share discovery locations
+- **AND** does not imply configured create and remove share every discovery location
 
 #### Scenario: One location is ambiguous
-- **WHEN** a lifecycle location contains multiple extensions supported on the current platform
-- **THEN** discovery fails before lifecycle mutation and reports all candidates
+
+- **WHEN** a lifecycle location has multiple supported extensions or repository scope is claimed by both workspace-owned and repository-local files
+- **THEN** discovery fails before lifecycle mutation and reports all native candidates
 
 ### Requirement: Deterministic execution order across scopes
-The system MUST execute lifecycle hooks in deterministic order by scope: repository-local first, workspace-root second, and user-global last.
+
+The system MUST execute configured remove lifecycle hooks in deterministic logical-scope order: repository first, workspace second, global-targeted third, and global-shared last. Storage does not determine scope: a workspace-owned qualified repository file occupies the repository slot, and the compatible repository-local file is an alias for that same slot.
 
 #### Scenario: Scope ordering is enforced
-- **WHEN** lifecycle scripts are discovered in all three scopes
-- **THEN** execution occurs in the exact order repository-local, workspace-root, user-global
+
+- **WHEN** configured remove lifecycle sources are discovered in all four logical scopes
+- **THEN** execution occurs in the exact order repository, workspace, global-targeted, global-shared
+- **AND** the repository source executes once whether it is inline, workspace-owned qualified, or compatible repository-local
 
 ### Requirement: Scope-specific working directory behavior
-The system SHALL expose the exact normalized cwd as `ARASHI_HOOK_EXECUTION_PATH`. For configured remove, repository-local, global-repository, and global-shared hooks SHALL run from the current target repository's configured source checkout, while workspace hooks SHALL run from the configured workspace root. For every standalone pre/post-create and pre/post-remove global hook, cwd SHALL be the resolved standalone main repository root. Configured create cwd behavior SHALL follow `lifecycle-hook-contracts`.
+
+The system SHALL expose exact normalized cwd as `ARASHI_HOOK_EXECUTION_PATH`. For configured remove, repository-scope hooks—whether stored under the workspace root or target repository—plus global-repository and global-shared hooks SHALL run from the current target repository's configured source checkout; workspace hooks SHALL run from the configured workspace root. Standalone global hooks SHALL run from the resolved main root. Configured create cwd SHALL follow `lifecycle-hook-contracts`.
+
+#### Scenario: Workspace-owned repository remove hook runs in target repository
+
+- **WHEN** `.arashi/hooks/pre-remove.<repo><ext>` executes
+- **THEN** cwd and `ARASHI_HOOK_EXECUTION_PATH` are `<repo>`'s configured source checkout
+- **AND** `ARASHI_HOOK_SOURCE_PATH` identifies the qualified workspace file
 
 #### Scenario: Repository-local remove hook runs in target repository
-- **WHEN** a repository-local remove lifecycle script executes
-- **THEN** its cwd and `ARASHI_HOOK_EXECUTION_PATH` are the target repository path
+
+- **WHEN** a compatible repository-local remove script executes
+- **THEN** its cwd and execution path remain the target repository path
 
 #### Scenario: Workspace-root hook runs in workspace root
-- **WHEN** a configured workspace-root remove script executes
-- **THEN** its cwd and execution-path context are the configured workspace root
+
+- **WHEN** a configured workspace-scope remove script executes
+- **THEN** its cwd and execution path are the configured workspace root
 
 #### Scenario: Configured user-global remove hook runs in source checkout
-- **WHEN** a configured user-global remove hook executes for repository `<repo>`
-- **THEN** its cwd and execution-path context are `<repo>`'s configured source checkout
+
+- **WHEN** a configured user-global remove hook executes for `<repo>`
+- **THEN** its cwd and execution path are `<repo>`'s configured source checkout
 
 #### Scenario: Standalone global hook runs in main root
-- **WHEN** a standalone pre-create, post-create, pre-remove, or post-remove global hook executes
-- **THEN** its cwd and execution-path context are the resolved standalone main repository root
+
+- **WHEN** a standalone create or remove global hook executes
+- **THEN** its cwd and execution path are the resolved standalone main root
 
 ### Requirement: Zero-config standalone lifecycles use only user-global hook scopes
 When a lifecycle runs in an implicit standalone workspace, Arashi SHALL discover platform-supported shared and repository-targeted user-global hooks and SHALL NOT activate repository-local or workspace-root `.arashi/hooks` scopes without configured workspace state.
@@ -68,17 +92,25 @@ When a lifecycle runs in an implicit standalone workspace, Arashi SHALL discover
 - **AND** hook context identifies standalone mode and the exact target
 
 ### Requirement: Configured remove locations accept scope-owned inline alternatives
-For each configured remove target, `repos.<name>.hooks.pre-remove|post-remove` SHALL provide the inline alternative for the existing repository-local logical location and root `hooks.scripts.pre-remove|post-remove` SHALL provide the inline alternative for the existing workspace logical location. User-global targeted and shared locations SHALL remain file-only. Resolver output SHALL retain exact target selection order and repository → workspace → global-repository → global-shared scope order, with one evaluated location per scope and lifecycle rather than appending inline execution as an extra scope.
+
+For each configured remove target, `repos.<name>.hooks.pre-remove|post-remove` SHALL be the inline alternative for the repository logical location claimed by either workspace-owned repository-specific or compatible repository-local native files. Root `hooks.scripts.pre-remove|post-remove` SHALL remain the inline alternative for workspace scope. User-global targeted and shared locations SHALL remain file-only. Resolver output SHALL retain target order and repository → workspace → global-repository → global-shared scope order, with at most one selected source per scope and lifecycle.
 
 #### Scenario: Repository and workspace inline hooks compose with global files
-- **WHEN** a configured target defines repository and workspace inline remove hooks and user-global file hooks exist
+
+- **WHEN** a target defines repository and workspace inline hooks and user-global files exist
 - **THEN** the plan orders repository inline, workspace inline, global-targeted file, then global-shared file
 - **AND** each logical location contributes at most one source
 
 #### Scenario: Inline source replaces only its logical file alternative
-- **WHEN** a repository inline hook exists without its corresponding repository-local file
-- **THEN** the resolver selects the inline source for repository scope
+
+- **WHEN** repository inline exists without either repository native file form
+- **THEN** the resolver selects inline for repository scope
 - **AND** does not suppress workspace or user-global locations
+
+#### Scenario: Inline conflicts with a qualified workspace repository file
+
+- **WHEN** `repos.<name>.hooks.pre-remove` and `.arashi/hooks/pre-remove.<name><ext>` both exist
+- **THEN** preflight rejects the repository location before execution or removal mutation
 
 ### Requirement: Configured remove inline cwd and target multiplicity match file scopes
 Repository-owned inline remove hooks SHALL run from the current target repository's configured source checkout; workspace inline remove hooks SHALL run from the configured workspace root. Both SHALL receive the same target-consistent context as their file alternatives and SHALL be evaluated once per target repository. Inline ownership MUST NOT change workspace-hook multiplicity to once per command.

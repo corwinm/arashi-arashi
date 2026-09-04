@@ -30,18 +30,18 @@
 - [x] 4.3 Run CLI format, lint, typecheck, build, full tests, contract/schema freshness, and built-binary smoke tests.
 - [x] 4.4 Run docs checks/build and skill source/archive checks, then commit every affected child repository and record its immutable head.
 - [x] 4.5 Run complete meta cross-repository validation against those exact child heads with clean lockfiles and status.
-- [ ] 4.6 Push each affected child repository, open coordinated PRs linked to #354, and require independent review plus exact-head CI.
-- [ ] 4.7 Merge child PRs only after approval and green exact-head gates; verify the released/installed CLI exposes the new contract before meta dogfood depends on it.
+- [x] 4.6 Push each affected child repository, open coordinated PRs linked to #354, and require independent review plus exact-head CI.
+- [x] 4.7 Merge child PRs only after approval and green exact-head gates; verify the released/installed CLI exposes the new contract before meta dogfood depends on it.
 
 ### Implementation evidence
 
-- CLI: `894412637ed4a607522ffdf161134ec1b73a1442` — independently approved exact implementation head; 2,961 tests passed, 17 skipped; native CI and Windows acceptance passed; 0 unresolved review threads; PR [corwinm/arashi#181](https://github.com/corwinm/arashi/pull/181).
-- Docs: `22241aba96d4a6033a226f846e49c53374c33b56` — restores the independently approved `aedf597e5232ec0c38e4a8523044ed2becc47238` tree; full validation and all docs-specific CI passed; PR [corwinm/arashi-docs#105](https://github.com/corwinm/arashi-docs/pull/105).
-- Skills: `f826b5c1a40f76a5e9cbee2d31765c6a0aa14b90` — source and extracted-package checks passed 20/20; archive, security, CI, and final exact-head review passed; PR [corwinm/arashi-skills#75](https://github.com/corwinm/arashi-skills/pull/75).
-- Meta contracts: merged prerequisite [#359](https://github.com/corwinm/arashi-arashi/pull/359) supplies the coordinated checker on `main`; after merging `main`, 523 tests, 7/7 cross-repository contract checkers, and strict OpenSpec validation passed against the exact child heads. Child-triggered contract runs use sibling `main` branches and therefore remain sequencing-red until the coordinated child set merges.
+- CLI: merged [corwinm/arashi#181](https://github.com/corwinm/arashi/pull/181) as `85871dcdd3799159abd0f3398043f55391d10dfc`; 2,961 tests passed, 17 skipped at the final reviewed head; Linux, Windows, macOS, native Windows acceptance, packaging, and installed-entrypoint checks passed; 0 unresolved review threads. Its sole red contract check was the documented sibling-main merge-train deadlock, merged only after Corwin's explicit exception approval and an exact combined-head contract pass.
+- Docs: merged [corwinm/arashi-docs#105](https://github.com/corwinm/arashi-docs/pull/105) as `52fb988851d494eb9a5c884b68f93e6bb0d4634a`; the merged tree restores the independently approved `aedf597e5232ec0c38e4a8523044ed2becc47238` content; full docs validation, Netlify, and the post-CLI cross-repository contract rerun passed; 0 unresolved review threads.
+- Skills: merged [corwinm/arashi-skills#75](https://github.com/corwinm/arashi-skills/pull/75) as `1c23a9ef9d69fd59803a45c08ed0d0e154e40df1`; source and extracted-package checks passed 20/20; archive, security, CI, and exact-head review passed; 0 unresolved review threads.
+- Meta contracts: merged prerequisite [#359](https://github.com/corwinm/arashi-arashi/pull/359) as `e9b28853018eff6c15e093c4e8fb929b83a929d3`. Against the three merged child revisions above, 523 tests and all 7 cross-repository contract checkers pass.
 
 ## 5. Archive and cleanup
 
-- [ ] 5.1 Reconcile implementation evidence, merged child revisions, installed-version/native acceptance, review threads, and every task before archive.
+- [x] 5.1 Reconcile implementation evidence, merged child revisions, installed-version/native acceptance, review threads, and every task before archive.
 - [ ] 5.2 Archive and sync the completed change, validate canonical specs and meta gates, then update the existing meta PR with exact child pointers and sole closing linkage for #354.
 - [ ] 5.3 Merge the meta PR after the atomic archive/readiness guard, verify issue closure, remove coordinated worktrees/branches, and confirm clean `aw status --verbose`.
