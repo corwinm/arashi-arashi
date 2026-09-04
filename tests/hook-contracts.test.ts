@@ -1,13 +1,16 @@
 import { afterEach, describe, expect, test } from "vitest";
-import { mkdtemp, mkdir, rm, writeFile } from "node:fs/promises";
+import { cp, mkdtemp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import { spawnSync } from "node:child_process";
 import { dirname, join } from "node:path";
 import { tmpdir } from "node:os";
 import {
   checkHookContracts,
   type HookContractDiagnostic,
 } from "../scripts/hook-contracts.ts";
+import * as hookContractModule from "../scripts/hook-contracts.ts";
 
 const roots: string[] = [];
+const repositoryRoot = join(import.meta.dirname, "..");
 const hookInputSemanticPolicy = () => ({
   hookInput: {
     disabledMode: "disabled",
@@ -67,6 +70,13 @@ TTY mode inherits terminal stdin. --json takes precedence and disabled or unavai
 Native examples use Bash read, PowerShell Read-Host, and cmd set /p.
 Lifecycle hooks are trusted executables, but do not enter passwords, tokens, or other secrets into prompts.
 `;
+const repositoryRemoveAliasGuidance = `
+Configured repository remove hooks use the canonical <configurationRoot>/.arashi/hooks/<lifecycle>.<repo><ext> workspace-owned file or the compatible <active-repository>/.arashi/hooks/<lifecycle><ext> child-local alias. Repository inline repos.<repo>.hooks.<lifecycle>, the canonical file, and the compatible file are three alternatives for one repository slot: exactly zero or one source is selected, and every collision fails before hooks or removal mutation instead of using precedence or executing twice.
+The selected source keeps plain pre-remove or post-remove lifecycle identity, repository scope and owner <repo>, and runs with the active target repository source checkout as cwd and ARASHI_HOOK_EXECUTION_PATH; ARASHI_HOOK_SOURCE_PATH identifies the selected file independently of cwd.
+Repository hook onboarding writes qualified create and remove files beneath the active configuration root, never into the target checkout or canonical clone. Direct non-bare, configured bare, ordinary linked, and linked worktrees backed by a configured bare authority retain their configuration authority while repository remove execution uses the active target checkout.
+Configured repository deletion owns only exact pre-create.<repo>, post-create.<repo>, pre-remove.<repo>, and post-remove.<repo> native candidates and their exact .example templates. It never glob-deletes similarly named, compatible repository-local, shared workspace, or user-global hooks.
+Doctor and remove dry-run use the runtime resolver without execution. HOOK_AMBIGUOUS reports hookName, scope, sourceKinds, sourceOwnerKind, sourceOwnerName, nullable sourceScriptPath, and de-duplicated sourceScriptPaths: at most six native paths ordered canonical workspace-owned location first, compatible repository-local location second, then established platform extension order within each location.
+`;
 const files: Record<string, string> = {
   "repos/arashi/contracts/cli-commands.json": JSON.stringify(commandContract),
   "repos/arashi/schema/config.schema.json": JSON.stringify({
@@ -88,12 +98,12 @@ const files: Record<string, string> = {
       },
     },
   }),
-  "repos/arashi/src/lib/hooks.ts": `export interface LifecycleHookOutcome { hookName: string; scope: HookScope; workspaceMode: "configured" | "standalone"; hookStatus: HookOutcomeStatus; reasonCode: HookOutcomeReasonCode; message: string; repositoryId: string; sourceKind: "file" | "inline-config"; sourceOwnerKind: "repository" | "user-global" | "workspace"; sourceOwnerName: string | null; sourceScriptPath: string | null; executionPath: string | null; targetRepositoryName: string | null; targetRepositoryPath: string | null; targetWorktreePath: string | null; durationMs?: number; }`,
+  "repos/arashi/src/lib/hooks.ts": `export interface LifecycleHookOutcome { hookName: string; scope: HookScope; workspaceMode: "configured" | "standalone"; hookStatus: HookOutcomeStatus; reasonCode: HookOutcomeReasonCode; message: string; repositoryId: string; sourceKind: "file" | "inline-config"; sourceOwnerKind: "repository" | "user-global" | "workspace"; sourceOwnerName: string | null; sourceScriptPath: string | null; sourceScriptPaths?: readonly string[]; executionPath: string | null; targetRepositoryName: string | null; targetRepositoryPath: string | null; targetWorktreePath: string | null; durationMs?: number; }`,
   "repos/arashi/src/commands/init.ts": `ARASHI_BRANCH_NAME ARASHI_REMOVE_TARGETS_JSON corepack pnpm --ignore-workspace install --frozen-lockfile ${hookInputGuidance}`,
-  "repos/arashi/docs/hooks.md": `ARASHI_BRANCH_NAME ARASHI_REMOVE_TARGETS_JSON 300000 .ps1 .cmd .bat supported throughout 1.x ${hookInputGuidance}`,
-  "repos/arashi-docs/docs/reference/hooks.md": `ARASHI_BRANCH_NAME ARASHI_REMOVE_TARGETS_JSON 300000 .ps1 .cmd .bat supported throughout 1.x ${hookInputGuidance}`,
-  "repos/arashi-docs/public/llms-full.txt": `ARASHI_BRANCH_NAME ARASHI_REMOVE_TARGETS_JSON 300000 .ps1 .cmd .bat supported throughout 1.x ${hookInputGuidance}`,
-  "repos/arashi-skills/skills/arashi/references/hooks.md": `ARASHI_BRANCH_NAME ARASHI_REMOVE_TARGETS_JSON 300000 .ps1 .cmd .bat supported throughout 1.x ${hookInputGuidance}`,
+  "repos/arashi/docs/hooks.md": `ARASHI_BRANCH_NAME ARASHI_REMOVE_TARGETS_JSON 300000 .ps1 .cmd .bat supported throughout 1.x ${hookInputGuidance} ${repositoryRemoveAliasGuidance}`,
+  "repos/arashi-docs/docs/reference/hooks.md": `ARASHI_BRANCH_NAME ARASHI_REMOVE_TARGETS_JSON 300000 .ps1 .cmd .bat supported throughout 1.x ${hookInputGuidance} ${repositoryRemoveAliasGuidance}`,
+  "repos/arashi-docs/public/llms-full.txt": `ARASHI_BRANCH_NAME ARASHI_REMOVE_TARGETS_JSON 300000 .ps1 .cmd .bat supported throughout 1.x ${hookInputGuidance} ${repositoryRemoveAliasGuidance}`,
+  "repos/arashi-skills/skills/arashi/references/hooks.md": `ARASHI_BRANCH_NAME ARASHI_REMOVE_TARGETS_JSON 300000 .ps1 .cmd .bat supported throughout 1.x ${hookInputGuidance} ${repositoryRemoveAliasGuidance}`,
   ".arashi/config.json": JSON.stringify({ hooks: { timeout: 300000 } }),
   ".github/workflows/cross-repo-command-contracts.yml": `
 path: meta/repos/arashi
@@ -156,6 +166,48 @@ async function fixture(overrides: Record<string, string> = {}) {
   return root;
 }
 
+async function docsOwningCheckerFixture() {
+  const root = await mkdtemp(join(tmpdir(), "arashi-docs-hook-owner-"));
+  roots.push(root);
+  await mkdir(join(root, "scripts"), { recursive: true });
+  await cp(
+    join(
+      repositoryRoot,
+      "repos/arashi-docs/scripts/check-repository-remove-hook-docs.ts",
+    ),
+    join(root, "scripts/check-repository-remove-hook-docs.ts"),
+  );
+  for (const relativePath of [
+    "docs/reference/hooks.md",
+    "docs/commands/remove.md",
+    "docs/reference/configuration.md",
+    "docs/commands/add.md",
+    "docs/commands/configure.md",
+    "docs/commands/delete.md",
+    "public/reference/hooks.md",
+    "public/commands/remove.md",
+    "public/reference/configuration.md",
+    "public/commands/add.md",
+    "public/commands/configure.md",
+    "public/commands/delete.md",
+    "public/llms.txt",
+    "public/llms-full.txt",
+  ]) {
+    const target = join(root, relativePath);
+    await mkdir(dirname(target), { recursive: true });
+    await cp(join(repositoryRoot, "repos/arashi-docs", relativePath), target);
+  }
+  return root;
+}
+
+function runNodeChecker(root: string, script: string, args: string[] = []) {
+  return spawnSync(process.execPath, [script, ...args], {
+    cwd: root,
+    encoding: "utf8",
+    env: { ...process.env, NO_COLOR: "1" },
+  });
+}
+
 afterEach(async () => {
   await Promise.all(
     roots.splice(0).map((root) => rm(root, { recursive: true, force: true })),
@@ -163,12 +215,358 @@ afterEach(async () => {
 });
 
 describe("cross-repository lifecycle-hook contract", () => {
+  test("invokes each owning child checker instead of substituting weaker meta checks", () => {
+    const runOwningChecks = (
+      hookContractModule as typeof hookContractModule & {
+        checkOwningHookContracts?: (
+          root: string,
+          runner: (...args: unknown[]) => unknown,
+        ) => HookContractDiagnostic[];
+      }
+    ).checkOwningHookContracts;
+    expect(runOwningChecks).toBeTypeOf("function");
+    const calls: unknown[][] = [];
+    const diagnostics = runOwningChecks!("/contract-root", (...args) => {
+      calls.push(args);
+      return {
+        error: undefined,
+        signal: null,
+        status: 0,
+        stderr: "",
+        stdout: "",
+      };
+    });
+    expect(diagnostics).toEqual([]);
+    expect(calls.map(([command, args]) => [command, args])).toEqual([
+      ["pnpm", ["--dir", "repos/arashi", "contract:check"]],
+      ["pnpm", ["--dir", "repos/arashi-docs", "validate:semantic-docs"]],
+      [
+        process.execPath,
+        ["/contract-root/repos/arashi-skills/scripts/validate-guidance.mjs"],
+      ],
+      [
+        process.execPath,
+        [
+          "/contract-root/repos/arashi-skills/scripts/create-release-archive.mjs",
+          "--root",
+          "/contract-root/repos/arashi-skills",
+          "--output",
+          expect.stringMatching(/arashi-skill-package\.tar\.gz$/),
+        ],
+      ],
+      [
+        "tar",
+        [
+          "-xzf",
+          expect.stringMatching(/arashi-skill-package\.tar\.gz$/),
+          "-C",
+          expect.stringMatching(/package-check$/),
+        ],
+      ],
+      [
+        process.execPath,
+        [
+          "/contract-root/repos/arashi-skills/scripts/validate-guidance.mjs",
+          "--skill-root",
+          expect.stringMatching(/package-check\/skills\/arashi$/),
+        ],
+      ],
+    ]);
+  });
+
+  test("propagates extracted skills package validation failure", () => {
+    const calls: Array<[string, string[]]> = [];
+    const diagnostics = hookContractModule.checkOwningHookContracts(
+      "/contract-root",
+      (command, args) => {
+        calls.push([command, args]);
+        const packageValidation = args.includes("--skill-root");
+        return {
+          error: undefined,
+          signal: null,
+          status: packageValidation ? 1 : 0,
+          stderr: packageValidation ? "packaged guidance drift" : "",
+          stdout: "",
+        };
+      },
+    );
+    expect(calls.at(-1)?.[1]).toContain("--skill-root");
+    expect(diagnostics).toContainEqual(
+      expect.objectContaining({
+        category: "skills",
+        code: "HOOK_OWNING_CHECKER_FAILED",
+        source:
+          "repos/arashi-skills/scripts/validate-guidance.mjs#extracted-package",
+      }),
+    );
+  });
+
   test("accepts aligned CLI, docs, generated export, and packaged skill semantics", async () => {
     const root = await fixture();
     expect(await checkHookContracts(root)).toEqual({
       diagnostics: [],
       ok: true,
     });
+  });
+
+  test("accepts the complete repository-remove alias contract on every maintained hook surface", async () => {
+    const maintained = [
+      "repos/arashi/docs/hooks.md",
+      "repos/arashi-docs/docs/reference/hooks.md",
+      "repos/arashi-docs/public/llms-full.txt",
+      "repos/arashi-skills/skills/arashi/references/hooks.md",
+    ];
+    const overrides = Object.fromEntries(
+      maintained.map((source) => [source, files[source]]),
+    );
+    const root = await fixture(overrides);
+    expect(await checkHookContracts(root)).toEqual({
+      diagnostics: [],
+      ok: true,
+    });
+  });
+
+  test("accepts equivalent repository-remove semantics on the real maintained hook surfaces", async () => {
+    const diagnostics = (
+      await checkHookContracts(repositoryRoot)
+    ).diagnostics.filter(({ code }) =>
+      code.startsWith("HOOK_REPOSITORY_REMOVE_ALIAS_"),
+    );
+    expect(diagnostics).toEqual([]);
+  });
+
+  test.each([
+    [
+      "canonical path",
+      "<configurationRoot>/.arashi/hooks/<lifecycle>.<repo><ext>",
+    ],
+    ["compatible alias", "<active-repository>/.arashi/hooks/<lifecycle><ext>"],
+    ["inline alias", "repos.<repo>.hooks.<lifecycle>"],
+    ["one slot", "three alternatives for one repository slot"],
+    ["target cwd", "active target repository source checkout as cwd"],
+    [
+      "doctor and dry-run",
+      "Doctor and remove dry-run use the runtime resolver without execution",
+    ],
+  ])(
+    "rejects missing repository-remove %s semantics on each maintained surface",
+    async (_label, fragment) => {
+      const maintained = [
+        "repos/arashi/docs/hooks.md",
+        "repos/arashi-docs/docs/reference/hooks.md",
+        "repos/arashi-docs/public/llms-full.txt",
+        "repos/arashi-skills/skills/arashi/references/hooks.md",
+      ];
+      for (const source of maintained) {
+        const result = await checkHookContracts(
+          await fixture({ [source]: files[source].replace(fragment, "") }),
+        );
+        expect(result.diagnostics).toContainEqual(
+          expect.objectContaining({
+            code: "HOOK_REPOSITORY_REMOVE_ALIAS_CONTRACT_MISSING",
+            source,
+          }),
+        );
+      }
+    },
+    20_000,
+  );
+
+  test("rejects alias precedence, sequential execution, and fallback contradictions on every maintained surface", async () => {
+    const maintained = [
+      "repos/arashi/docs/hooks.md",
+      "repos/arashi-docs/docs/reference/hooks.md",
+      "repos/arashi-docs/public/llms-full.txt",
+      "repos/arashi-skills/skills/arashi/references/hooks.md",
+    ];
+    const contradictions = [
+      "When aliases collide, Arashi prefers the canonical workspace-owned hook over the compatible repository-local hook.",
+      "On collision, the canonical workspace-owned hook is preferred.",
+      "When aliases collide, the compatible repository-local hook takes precedence over the canonical workspace-owned hook.",
+      "When aliases collide, Arashi selects the canonical workspace-owned hook over the compatible repository-local hook.",
+      "When aliases collide, Arashi chooses the compatible repository-local hook over the canonical workspace-owned hook.",
+      "The canonical workspace-owned hook does not take precedence over the compatible repository-local hook, but the compatible repository-local hook takes precedence over the canonical workspace-owned hook.",
+      "Arashi runs the canonical workspace-owned hook and then the compatible repository-local hook.",
+      "Arashi executes the compatible repository-local hook after the canonical workspace-owned hook.",
+      "If the canonical workspace-owned hook is unavailable, Arashi uses the compatible repository-local hook as a fallback.",
+      "On collision, the compatible repository-local hook becomes the fallback.",
+    ];
+    for (const source of maintained) {
+      for (const contradiction of contradictions) {
+        const root = await fixture({
+          [source]: `${files[source]}\n${contradiction}`,
+        });
+        expect((await checkHookContracts(root)).diagnostics).toContainEqual(
+          expect.objectContaining({
+            code: "HOOK_REPOSITORY_REMOVE_ALIAS_CONTRADICTION",
+            source,
+          }),
+        );
+      }
+    }
+  }, 20_000);
+
+  test.each([
+    "The canonical workspace-owned hook does not take precedence over the compatible repository-local hook.",
+    "The canonical workspace-owned hook doesn't take precedence over the compatible repository-local hook.",
+    "The canonical workspace-owned hook doesn’t take precedence over the compatible repository-local hook.",
+    "On collision, the canonical workspace-owned hook is not preferred.",
+    "When aliases collide, Arashi does not select the canonical workspace-owned hook over the compatible repository-local hook.",
+    "When aliases collide, Arashi never chooses the compatible repository-local hook over the canonical workspace-owned hook.",
+    "Arashi never runs the canonical workspace-owned hook and then the compatible repository-local hook.",
+    "Arashi cannot fall back from the canonical workspace-owned hook to the compatible repository-local hook.",
+    "On collision, the compatible repository-local hook is not a fallback.",
+    "Neither the canonical workspace-owned nor compatible repository-local hook is preferred.",
+  ])("accepts truthful alias collision negation: %s", async (statement) => {
+    const source = "repos/arashi-docs/docs/reference/hooks.md";
+    expect(
+      (
+        await checkHookContracts(
+          await fixture({ [source]: `${files[source]}\n${statement}` }),
+        )
+      ).diagnostics,
+    ).not.toContainEqual(
+      expect.objectContaining({
+        code: "HOOK_REPOSITORY_REMOVE_ALIAS_CONTRADICTION",
+        source,
+      }),
+    );
+  });
+
+  test("the real packaged-skill checker rejects mixed-polarity alias precedence", async () => {
+    const root = await mkdtemp(join(tmpdir(), "arashi-skill-package-owner-"));
+    roots.push(root);
+    const archive = join(root, "arashi-skill-package.tar.gz");
+    const packageRoot = join(root, "package-check");
+    await mkdir(packageRoot);
+
+    const created = spawnSync(
+      process.execPath,
+      [
+        "repos/arashi-skills/scripts/create-release-archive.mjs",
+        "--root",
+        "repos/arashi-skills",
+        "--output",
+        archive,
+      ],
+      { cwd: repositoryRoot, encoding: "utf8" },
+    );
+    expect(created.status, `${created.stdout}${created.stderr}`).toBe(0);
+    const extracted = spawnSync("tar", ["-xzf", archive, "-C", packageRoot], {
+      encoding: "utf8",
+    });
+    expect(extracted.status, `${extracted.stdout}${extracted.stderr}`).toBe(0);
+
+    const hooks = join(packageRoot, "skills/arashi/references/hooks.md");
+    await writeFile(
+      hooks,
+      `${await readFile(hooks, "utf8")}\nRepository remove does not assign precedence among aliases, but it uses inline-first/file-fallback precedence.\n`,
+    );
+    const checked = spawnSync(
+      process.execPath,
+      [
+        "repos/arashi-skills/scripts/validate-guidance.mjs",
+        "--skill-root",
+        join(packageRoot, "skills/arashi"),
+      ],
+      {
+        cwd: repositoryRoot,
+        encoding: "utf8",
+        env: {
+          ...process.env,
+          ARASHI_REPOSITORY_REMOVE_GUIDANCE_SKIP_FIXTURES: "1",
+        },
+      },
+    );
+    expect(checked.status).toBe(1);
+    expect(`${checked.stdout}${checked.stderr}`).toMatch(/precedence/);
+  });
+
+  test("the real CLI owner independently rejects generated inline lifecycle contract drift", async () => {
+    const root = await mkdtemp(join(tmpdir(), "arashi-inline-hook-owner-"));
+    roots.push(root);
+    await mkdir(join(root, "scripts/contracts"), { recursive: true });
+    await mkdir(join(root, "src/lib"), { recursive: true });
+    await mkdir(join(root, "contracts"), { recursive: true });
+    await cp(
+      join(
+        repositoryRoot,
+        "repos/arashi/scripts/contracts/inline-lifecycle-hooks.ts",
+      ),
+      join(root, "scripts/contracts/inline-lifecycle-hooks.ts"),
+    );
+    await writeFile(
+      join(root, "src/lib/config.ts"),
+      'export const CURRENT_CONFIG_VERSION = "1.0.0" as const;\n',
+    );
+    expect(
+      runNodeChecker(root, "scripts/contracts/inline-lifecycle-hooks.ts")
+        .status,
+    ).toBe(0);
+    expect(
+      runNodeChecker(root, "scripts/contracts/inline-lifecycle-hooks.ts", [
+        "--check",
+      ]).status,
+    ).toBe(0);
+    const generated = await readFile(
+      join(root, "contracts/inline-lifecycle-hooks.json"),
+      "utf8",
+    );
+
+    await writeFile(
+      join(root, "contracts/inline-lifecycle-hooks.json"),
+      generated.replace(
+        '"fileOnlyCompatible": true',
+        '"fileOnlyCompatible": false',
+      ),
+    );
+    const drift = runNodeChecker(
+      root,
+      "scripts/contracts/inline-lifecycle-hooks.ts",
+      ["--check"],
+    );
+    expect(drift.status).toBe(1);
+    expect(drift.stderr).toContain("inline-lifecycle-hooks.json is stale");
+  });
+
+  test.each([
+    "public/reference/hooks.md",
+    "public/commands/remove.md",
+    "public/reference/configuration.md",
+    "public/commands/add.md",
+    "public/commands/configure.md",
+    "public/commands/delete.md",
+  ])(
+    "the real docs owner independently requires generated Markdown route %s",
+    async (route) => {
+      const root = await docsOwningCheckerFixture();
+      expect(
+        runNodeChecker(root, "scripts/check-repository-remove-hook-docs.ts")
+          .status,
+      ).toBe(0);
+      await rm(join(root, route));
+      const drift = runNodeChecker(
+        root,
+        "scripts/check-repository-remove-hook-docs.ts",
+      );
+      expect(drift.status).toBe(1);
+      expect(drift.stderr).toContain(`${route} is missing`);
+    },
+  );
+
+  test("the real docs owner independently requires the curated llms.txt export", async () => {
+    const root = await docsOwningCheckerFixture();
+    expect(
+      runNodeChecker(root, "scripts/check-repository-remove-hook-docs.ts")
+        .status,
+    ).toBe(0);
+    await rm(join(root, "public/llms.txt"));
+    const drift = runNodeChecker(
+      root,
+      "scripts/check-repository-remove-hook-docs.ts",
+    );
+    expect(drift.status).toBe(1);
+    expect(drift.stderr).toContain("public/llms.txt is missing");
   });
 
   test("rejects a stale branch alias in any consumer", async () => {
@@ -453,7 +851,7 @@ path: meta/repos/arashi-vscode
     );
   });
 
-  test("rejects any added public lifecycle outcome field", async () => {
+  test("rejects any unapproved public lifecycle outcome field", async () => {
     const source = "repos/arashi/src/lib/hooks.ts";
     const root = await fixture({
       [source]: files[source].replace(

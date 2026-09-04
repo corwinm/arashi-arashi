@@ -1,5 +1,8 @@
+import { spawnSync } from "node:child_process";
+import { mkdirSync, mkdtempSync, rmSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
+import { tmpdir } from "node:os";
 
 export interface HookContractDiagnostic {
   severity: "error";
@@ -14,6 +17,18 @@ export interface HookContractResult {
   diagnostics: HookContractDiagnostic[];
 }
 
+type OwningCheckerRunner = (
+  command: string,
+  args: string[],
+  options: { cwd: string; encoding: "utf8"; env: NodeJS.ProcessEnv },
+) => {
+  error?: Error;
+  signal?: NodeJS.Signals | null;
+  status: number | null;
+  stderr: string;
+  stdout: string;
+};
+
 const surfaces = [
   { source: "repos/arashi/src/commands/init.ts", category: "cli" },
   { source: "repos/arashi/docs/hooks.md", category: "cli" },
@@ -26,6 +41,12 @@ const surfaces = [
 ] as const;
 
 const guidanceSurfaces = new Set(surfaces.slice(1).map(({ source }) => source));
+const repositoryRemoveAliasSurfaces = new Set([
+  "repos/arashi/docs/hooks.md",
+  "repos/arashi-docs/docs/reference/hooks.md",
+  "repos/arashi-docs/public/llms-full.txt",
+  "repos/arashi-skills/skills/arashi/references/hooks.md",
+]);
 const hookInputGuidanceSurfaces = new Set(surfaces.map(({ source }) => source));
 const hookInputModes = ["tty", "disabled", "unavailable"] as const;
 const docsAggregate = "pnpm --dir repos/arashi-docs validate:semantic-docs";
@@ -49,6 +70,7 @@ const publicOutcomeFields = [
   "sourceOwnerKind",
   "sourceOwnerName",
   "sourceScriptPath",
+  "sourceScriptPaths",
   "executionPath",
   "targetRepositoryName",
   "targetRepositoryPath",
@@ -215,6 +237,260 @@ function addMetaDiagnostic(
     severity: "error",
     source,
   });
+}
+
+function repositoryRemoveAliasContractDefects(content: string): string[] {
+  const plain = content.replaceAll("`", "").replace(/\s+/g, " ");
+  const canonicalPath =
+    /<(?:configurationroot|workspace)>\/\.arashi\/hooks\/(?:<lifecycle>\.<repo>|(?:pre|post)-remove\.<(?:repo|repository)>)(?:<ext>)?/i.test(
+      plain,
+    ) ||
+    /(?:canonical|workspace-owned)[\s\S]{0,120}\.arashi\/hooks\/(?:<lifecycle>\.<repo>|(?:pre|post)-remove\.<(?:repo|repository)>)(?:<ext>)?/i.test(
+      plain,
+    );
+  const compatiblePath =
+    /<(?:active-repository|activerepo|repo)>\/\.arashi\/hooks\/(?:<lifecycle>|(?:pre|post)-remove)(?:<ext>)?/i.test(
+      plain,
+    ) && /\b(?:compatible|child-local|repository-local)\b/i.test(plain);
+  const inlineAlias = /repos\.<(?:repo|name)>\.hooks\.<lifecycle>/i.test(plain);
+  const oneSlot =
+    /one (?:repository )?(?:logical )?slot[\s\S]{0,500}(?:three (?:possible )?claims|inline[\s\S]{0,160}(?:qualified|canonical)[\s\S]{0,160}(?:child-local|repository-local|compatible))/i.test(
+      plain,
+    ) ||
+    /three (?:aliases|alternatives|claims)[\s\S]{0,80}(?:one|same) repository (?:logical )?slot/i.test(
+      plain,
+    ) ||
+    /inline[\s\S]{0,180}(?:qualified|canonical)[\s\S]{0,180}(?:child-local|repository-local|compatible)[\s\S]{0,180}(?:one|same) repository (?:logical )?slot/i.test(
+      plain,
+    );
+  const collisionIsAmbiguous =
+    /(?:any two|two or more|multiple|overlap|collision)[\s\S]{0,240}(?:ambigu|fail)/i.test(
+      plain,
+    );
+  const collisionPrecedesMutation =
+    /(?:any two|two or more|multiple|overlap|collision)[\s\S]{0,300}(?:before[\s\S]{0,100}(?:hooks?|hook execution|removal mutation|mutation))/i.test(
+      plain,
+    ) || /(?:ambigu|fail)[\s\S]{0,100}before[\s\S]{0,80}mutation/i.test(plain);
+  const rejectsPrecedenceOrComposition =
+    /(?:one (?:repository )?(?:logical )?slot|three (?:aliases|alternatives|claims))[\s\S]{0,520}(?:no precedence|none takes precedence|never compose|no composition|instead of using precedence|runs? nothing|executes? neither|neither source)/i.test(
+      plain,
+    ) ||
+    /(?:no precedence|none takes precedence|never compose|no composition|runs? nothing|executes? neither|neither source)[\s\S]{0,260}(?:one (?:repository )?(?:logical )?slot|three (?:aliases|alternatives|claims))/i.test(
+      plain,
+    );
+  const failClosedCollision =
+    collisionIsAmbiguous &&
+    collisionPrecedesMutation &&
+    rejectsPrecedenceOrComposition;
+  const lifecycleIdentity =
+    /plain (?:pre-remove or post-remove )?lifecycle(?: hook)? (?:identity|name)/i.test(
+      plain,
+    ) &&
+    /repository scope/i.test(plain) &&
+    /(?:repository owner|owner <repo>|named repository owner)/i.test(plain);
+  const targetCheckoutCwd =
+    /(?:active target|target child|current target)[\s\S]{0,80}(?:repository )?(?:source )?checkout[\s\S]{0,80}(?:cwd|working directory|executes? from|run from)/i.test(
+      plain,
+    ) ||
+    /(?:cwd|working directory|executes? from|run from)[\s\S]{0,80}(?:active target|target child|current target)[\s\S]{0,80}(?:repository )?(?:source )?checkout/i.test(
+      plain,
+    );
+  const separateSourceIdentity =
+    /(?:exact selected (?:file|path)|selected source path|source is the exact selected path|arashi_hook_source_path[\s\S]{0,100}(?:exact|selected|source path))/i.test(
+      plain,
+    );
+  const sharedInspection =
+    /(?:aw )?doctor/i.test(plain) &&
+    /(?:remove --dry-run|remove dry-run)/i.test(plain) &&
+    /(?:without|does not|never)[\s\S]{0,80}(?:hook )?execution/i.test(plain);
+  const requirements: Array<[string, boolean]> = [
+    ["canonical configuration-root qualified filename", canonicalPath],
+    ["compatible active-repository local alias", compatiblePath],
+    ["inline repository alias", inlineAlias],
+    [
+      "one repository slot with fail-closed collision",
+      oneSlot && failClosedCollision,
+    ],
+    ["plain lifecycle identity and repository ownership", lifecycleIdentity],
+    [
+      "target-checkout cwd and separate source identity",
+      targetCheckoutCwd && separateSourceIdentity,
+    ],
+    ["doctor and dry-run non-executing inspection", sharedInspection],
+  ];
+  return requirements.filter(([, present]) => !present).map(([label]) => label);
+}
+
+function contradictsRepositoryRemoveAliases(content: string): boolean {
+  return content
+    .replaceAll("`", "")
+    .split(/(?<=[.!?])\s+|\n+/)
+    .map((statement) => statement.replace(/\s+/g, " ").trim())
+    .filter(Boolean)
+    .some((statement) => {
+      const namesCanonical = /\b(?:canonical|workspace-owned)\b/i.test(
+        statement,
+      );
+      const namesCompatible =
+        /\b(?:compatible|repository-local|child-local)\b/i.test(statement);
+      const namesBothAliases = namesCanonical && namesCompatible;
+      const namesBothFiles = /both repository (?:hook )?files/i.test(statement);
+      const collisionContext =
+        /\b(?:alias(?:es)?|collision|collide|overlap|multiple sources?)\b/i.test(
+          statement,
+        );
+
+      const actions: Array<{ pattern: RegExp; relevant: boolean }> = [
+        {
+          pattern:
+            /\b(?:prefers?|preferred|takes? precedence|wins?|has priority|selects?|chooses?)\b/i,
+          relevant:
+            namesBothAliases ||
+            namesBothFiles ||
+            (collisionContext && (namesCanonical || namesCompatible)),
+        },
+        {
+          pattern:
+            /\b(?:falls? back|fallback|uses?\b[\s\S]{0,100}\bas (?:a )?fallback)\b/i,
+          relevant:
+            namesBothAliases ||
+            namesBothFiles ||
+            (collisionContext && namesCompatible),
+        },
+        {
+          pattern:
+            /\b(?:runs?|executes?)\b[\s\S]{0,120}\b(?:and then|then|followed by|after)\b/i,
+          relevant: namesBothAliases || namesBothFiles,
+        },
+        {
+          pattern: /\bboth\b[\s\S]{0,100}\b(?:run|runs|execute|executes)\b/i,
+          relevant: namesBothAliases || namesBothFiles,
+        },
+        {
+          pattern: /\b(?:run|runs|execute|executes)\b[\s\S]{0,100}\bboth\b/i,
+          relevant: namesBothAliases || namesBothFiles,
+        },
+      ];
+      return actions.some(({ pattern, relevant }) => {
+        if (!relevant) return false;
+        const flags = pattern.flags.includes("g")
+          ? pattern.flags
+          : `${pattern.flags}g`;
+        return [...statement.matchAll(new RegExp(pattern.source, flags))].some(
+          (match) => {
+            const prefix = statement.slice(0, match.index);
+            return !/(?:\b(?:never|not|cannot|neither)\b|n['’]t\b)[^,;:.!?]{0,180}$/i.test(
+              prefix,
+            );
+          },
+        );
+      });
+    });
+}
+
+export function checkOwningHookContracts(
+  root: string,
+  runner: OwningCheckerRunner = spawnSync,
+): HookContractDiagnostic[] {
+  const diagnostics: HookContractDiagnostic[] = [];
+  const checks = [
+    {
+      args: ["--dir", "repos/arashi", "contract:check"],
+      category: "cli" as const,
+      command: "pnpm",
+      source: "repos/arashi/package.json#scripts.contract:check",
+    },
+    {
+      args: ["--dir", "repos/arashi-docs", "validate:semantic-docs"],
+      category: "docs" as const,
+      command: "pnpm",
+      source: "repos/arashi-docs/package.json#scripts.validate:semantic-docs",
+    },
+    {
+      args: [join(root, "repos/arashi-skills/scripts/validate-guidance.mjs")],
+      category: "skills" as const,
+      command: process.execPath,
+      source: "repos/arashi-skills/scripts/validate-guidance.mjs",
+    },
+  ];
+  for (const check of checks) {
+    const result = runner(check.command, check.args, {
+      cwd: root,
+      encoding: "utf8",
+      env: { ...process.env, NO_COLOR: "1" },
+    });
+    if (result.status === 0 && !result.error && !result.signal) continue;
+    addDiagnostic(
+      diagnostics,
+      check.category,
+      "HOOK_OWNING_CHECKER_FAILED",
+      check.source,
+      result.error?.message ??
+        (result.signal
+          ? `Owning checker terminated by ${result.signal}.`
+          : `Owning checker exited with status ${result.status}: ${(result.stderr || result.stdout).trim()}`),
+    );
+  }
+
+  const packageRoot = mkdtempSync(
+    join(tmpdir(), "arashi-hook-skills-package-"),
+  );
+  const archive = join(packageRoot, "arashi-skill-package.tar.gz");
+  const extractionRoot = join(packageRoot, "package-check");
+  mkdirSync(extractionRoot);
+  const packageChecks = [
+    {
+      args: [
+        join(root, "repos/arashi-skills/scripts/create-release-archive.mjs"),
+        "--root",
+        join(root, "repos/arashi-skills"),
+        "--output",
+        archive,
+      ],
+      command: process.execPath,
+      source: "repos/arashi-skills/scripts/create-release-archive.mjs",
+    },
+    {
+      args: ["-xzf", archive, "-C", extractionRoot],
+      command: "tar",
+      source:
+        "repos/arashi-skills/scripts/create-release-archive.mjs#extraction",
+    },
+    {
+      args: [
+        join(root, "repos/arashi-skills/scripts/validate-guidance.mjs"),
+        "--skill-root",
+        join(extractionRoot, "skills/arashi"),
+      ],
+      command: process.execPath,
+      source:
+        "repos/arashi-skills/scripts/validate-guidance.mjs#extracted-package",
+    },
+  ];
+  try {
+    for (const check of packageChecks) {
+      const result = runner(check.command, check.args, {
+        cwd: root,
+        encoding: "utf8",
+        env: { ...process.env, NO_COLOR: "1" },
+      });
+      if (result.status === 0 && !result.error && !result.signal) continue;
+      addDiagnostic(
+        diagnostics,
+        "skills",
+        "HOOK_OWNING_CHECKER_FAILED",
+        check.source,
+        result.error?.message ??
+          (result.signal
+            ? `Owning checker terminated by ${result.signal}.`
+            : `Owning checker exited with status ${result.status}: ${(result.stderr || result.stdout).trim()}`),
+      );
+      break;
+    }
+  } finally {
+    rmSync(packageRoot, { force: true, recursive: true });
+  }
+  return diagnostics;
 }
 
 export async function checkHookContracts(
@@ -769,6 +1045,28 @@ export async function checkHookContracts(
       }
     }
 
+    if (repositoryRemoveAliasSurfaces.has(surface.source)) {
+      const defects = repositoryRemoveAliasContractDefects(content);
+      if (defects.length > 0) {
+        addDiagnostic(
+          diagnostics,
+          surface.category,
+          "HOOK_REPOSITORY_REMOVE_ALIAS_CONTRACT_MISSING",
+          surface.source,
+          `Missing approved repository-remove alias semantics: ${defects.join(", ")}.`,
+        );
+      }
+      if (contradictsRepositoryRemoveAliases(content)) {
+        addDiagnostic(
+          diagnostics,
+          surface.category,
+          "HOOK_REPOSITORY_REMOVE_ALIAS_CONTRADICTION",
+          surface.source,
+          "Repository-remove aliases collide in one slot; they never use silent precedence or double execution.",
+        );
+      }
+    }
+
     if (
       surface.category === "cli" &&
       surface.source.endsWith("init.ts") &&
@@ -844,7 +1142,7 @@ export async function checkHookContracts(
         "cli",
         "HOOK_INPUT_PUBLIC_OUTCOME_FIELDS_CHANGED",
         hookRuntimeSource,
-        "LifecycleHookOutcome must retain its existing fields and must not publish captured stdout or stderr.",
+        "LifecycleHookOutcome must retain its approved fields, including sourceScriptPaths, and must not publish captured stdout or stderr.",
       );
     }
   } catch (error) {
