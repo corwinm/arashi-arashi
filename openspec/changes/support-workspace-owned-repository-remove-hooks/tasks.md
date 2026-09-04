@@ -1,6 +1,6 @@
 ## 1. Contract and RED coverage
 
-- [ ] 1.1 Record approval of the proposal contract before implementation edits.
+- [x] 1.1 Record approval of the proposal contract before implementation edits.
 - [ ] 1.2 Extend CLI and meta semantic contract tests first so stale repository-remove filename, ownership, ambiguity, onboarding, docs, and packaged guidance surfaces fail.
 - [ ] 1.3 Add focused CLI RED tests proving qualified workspace repository files are currently absent from runtime, dry-run, and doctor plans on POSIX and Windows.
 - [ ] 1.4 Add RED tests for inline/qualified-file, legacy/qualified-file, and Windows multi-candidate collisions before mutation.
