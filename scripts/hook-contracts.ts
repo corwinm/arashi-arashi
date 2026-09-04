@@ -1,6 +1,8 @@
 import { spawnSync } from "node:child_process";
+import { mkdirSync, mkdtempSync, rmSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
+import { tmpdir } from "node:os";
 
 export interface HookContractDiagnostic {
   severity: "error";
@@ -315,16 +317,60 @@ function contradictsRepositoryRemoveAliases(content: string): boolean {
     .split(/(?<=[.!?])\s+|\n+/)
     .map((statement) => statement.replace(/\s+/g, " ").trim())
     .filter(Boolean)
-    .some(
-      (statement) =>
-        /both repository files|canonical[^.]*compatible|workspace-owned[^.]*repository-local/i.test(
+    .some((statement) => {
+      const namesCanonical = /\b(?:canonical|workspace-owned)\b/i.test(
+        statement,
+      );
+      const namesCompatible =
+        /\b(?:compatible|repository-local|child-local)\b/i.test(statement);
+      const namesBothAliases = namesCanonical && namesCompatible;
+      const namesBothFiles = /both repository (?:hook )?files/i.test(statement);
+      const collisionContext =
+        /\b(?:alias(?:es)?|collision|collide|overlap|multiple sources?)\b/i.test(
           statement,
-        ) &&
-        (/(?:prefers?|takes precedence|wins|falls back to)[^.]*repository-local/i.test(
-          statement,
-        ) ||
-          /executes? both|both hooks? (?:execute|run)/i.test(statement)),
-    );
+        );
+
+      const actions: Array<{ pattern: RegExp; relevant: boolean }> = [
+        {
+          pattern:
+            /\b(?:prefers?|preferred|takes? precedence|wins?|has priority)\b/i,
+          relevant:
+            namesBothAliases ||
+            namesBothFiles ||
+            (collisionContext && (namesCanonical || namesCompatible)),
+        },
+        {
+          pattern:
+            /\b(?:falls? back|fallback|uses?\b[\s\S]{0,100}\bas (?:a )?fallback)\b/i,
+          relevant:
+            namesBothAliases ||
+            namesBothFiles ||
+            (collisionContext && namesCompatible),
+        },
+        {
+          pattern:
+            /\b(?:runs?|executes?)\b[\s\S]{0,120}\b(?:and then|then|followed by|after)\b/i,
+          relevant: namesBothAliases || namesBothFiles,
+        },
+        {
+          pattern: /\bboth\b[\s\S]{0,100}\b(?:run|runs|execute|executes)\b/i,
+          relevant: namesBothAliases || namesBothFiles,
+        },
+        {
+          pattern: /\b(?:run|runs|execute|executes)\b[\s\S]{0,100}\bboth\b/i,
+          relevant: namesBothAliases || namesBothFiles,
+        },
+      ];
+      return actions.some(({ pattern, relevant }) => {
+        if (!relevant) return false;
+        const match = pattern.exec(statement);
+        if (!match) return false;
+        const prefix = statement.slice(0, match.index);
+        return !/(?:\bnever|\bnot|\bcannot|\bneither)\b[^,;:.!?]{0,180}$/i.test(
+          prefix,
+        );
+      });
+    });
 }
 
 export function checkOwningHookContracts(
@@ -369,6 +415,65 @@ export function checkOwningHookContracts(
           ? `Owning checker terminated by ${result.signal}.`
           : `Owning checker exited with status ${result.status}: ${(result.stderr || result.stdout).trim()}`),
     );
+  }
+
+  const packageRoot = mkdtempSync(
+    join(tmpdir(), "arashi-hook-skills-package-"),
+  );
+  const archive = join(packageRoot, "arashi-skill-package.tar.gz");
+  const extractionRoot = join(packageRoot, "package-check");
+  mkdirSync(extractionRoot);
+  const packageChecks = [
+    {
+      args: [
+        join(root, "repos/arashi-skills/scripts/create-release-archive.mjs"),
+        "--root",
+        join(root, "repos/arashi-skills"),
+        "--output",
+        archive,
+      ],
+      command: process.execPath,
+      source: "repos/arashi-skills/scripts/create-release-archive.mjs",
+    },
+    {
+      args: ["-xzf", archive, "-C", extractionRoot],
+      command: "tar",
+      source:
+        "repos/arashi-skills/scripts/create-release-archive.mjs#extraction",
+    },
+    {
+      args: [
+        join(root, "repos/arashi-skills/scripts/validate-guidance.mjs"),
+        "--skill-root",
+        join(extractionRoot, "skills/arashi"),
+      ],
+      command: process.execPath,
+      source:
+        "repos/arashi-skills/scripts/validate-guidance.mjs#extracted-package",
+    },
+  ];
+  try {
+    for (const check of packageChecks) {
+      const result = runner(check.command, check.args, {
+        cwd: root,
+        encoding: "utf8",
+        env: { ...process.env, NO_COLOR: "1" },
+      });
+      if (result.status === 0 && !result.error && !result.signal) continue;
+      addDiagnostic(
+        diagnostics,
+        "skills",
+        "HOOK_OWNING_CHECKER_FAILED",
+        check.source,
+        result.error?.message ??
+          (result.signal
+            ? `Owning checker terminated by ${result.signal}.`
+            : `Owning checker exited with status ${result.status}: ${(result.stderr || result.stdout).trim()}`),
+      );
+      break;
+    }
+  } finally {
+    rmSync(packageRoot, { force: true, recursive: true });
   }
   return diagnostics;
 }
