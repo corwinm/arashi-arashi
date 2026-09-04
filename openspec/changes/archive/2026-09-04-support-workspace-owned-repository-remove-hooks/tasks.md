@@ -43,5 +43,5 @@
 ## 5. Archive and cleanup
 
 - [x] 5.1 Reconcile implementation evidence, merged child revisions, installed-version/native acceptance, review threads, and every task before archive.
-- [ ] 5.2 Archive and sync the completed change, validate canonical specs and meta gates, then update the existing meta PR with exact child pointers and sole closing linkage for #354.
+- [x] 5.2 Archive and sync the completed change, validate canonical specs and meta gates, then update the existing meta PR with exact child pointers and sole closing linkage for #354.
 - [ ] 5.3 Merge the meta PR after the atomic archive/readiness guard, verify issue closure, remove coordinated worktrees/branches, and confirm clean `aw status --verbose`.
