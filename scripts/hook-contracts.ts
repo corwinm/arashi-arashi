@@ -70,6 +70,7 @@ const publicOutcomeFields = [
   "sourceOwnerKind",
   "sourceOwnerName",
   "sourceScriptPath",
+  "sourceScriptPaths",
   "executionPath",
   "targetRepositoryName",
   "targetRepositoryPath",
@@ -1136,7 +1137,7 @@ export async function checkHookContracts(
         "cli",
         "HOOK_INPUT_PUBLIC_OUTCOME_FIELDS_CHANGED",
         hookRuntimeSource,
-        "LifecycleHookOutcome must retain its existing fields and must not publish captured stdout or stderr.",
+        "LifecycleHookOutcome must retain its approved fields, including sourceScriptPaths, and must not publish captured stdout or stderr.",
       );
     }
   } catch (error) {
