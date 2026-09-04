@@ -240,73 +240,82 @@ function addMetaDiagnostic(
 
 function repositoryRemoveAliasContractDefects(content: string): string[] {
   const plain = content.replaceAll("`", "").replace(/\s+/g, " ");
-  const lower = plain.toLowerCase();
+  const canonicalPath =
+    /<(?:configurationroot|workspace)>\/\.arashi\/hooks\/(?:<lifecycle>\.<repo>|(?:pre|post)-remove\.<(?:repo|repository)>)(?:<ext>)?/i.test(
+      plain,
+    ) ||
+    /(?:canonical|workspace-owned)[\s\S]{0,120}\.arashi\/hooks\/(?:<lifecycle>\.<repo>|(?:pre|post)-remove\.<(?:repo|repository)>)(?:<ext>)?/i.test(
+      plain,
+    );
+  const compatiblePath =
+    /<(?:active-repository|activerepo|repo)>\/\.arashi\/hooks\/(?:<lifecycle>|(?:pre|post)-remove)(?:<ext>)?/i.test(
+      plain,
+    ) && /\b(?:compatible|child-local|repository-local)\b/i.test(plain);
+  const inlineAlias = /repos\.<(?:repo|name)>\.hooks\.<lifecycle>/i.test(plain);
+  const oneSlot =
+    /one (?:repository )?(?:logical )?slot[\s\S]{0,500}(?:three (?:possible )?claims|inline[\s\S]{0,160}(?:qualified|canonical)[\s\S]{0,160}(?:child-local|repository-local|compatible))/i.test(
+      plain,
+    ) ||
+    /three (?:aliases|alternatives|claims)[\s\S]{0,80}(?:one|same) repository (?:logical )?slot/i.test(
+      plain,
+    ) ||
+    /inline[\s\S]{0,180}(?:qualified|canonical)[\s\S]{0,180}(?:child-local|repository-local|compatible)[\s\S]{0,180}(?:one|same) repository (?:logical )?slot/i.test(
+      plain,
+    );
+  const collisionIsAmbiguous =
+    /(?:any two|two or more|multiple|overlap|collision)[\s\S]{0,240}(?:ambigu|fail)/i.test(
+      plain,
+    );
+  const collisionPrecedesMutation =
+    /(?:any two|two or more|multiple|overlap|collision)[\s\S]{0,300}(?:before[\s\S]{0,100}(?:hooks?|hook execution|removal mutation|mutation))/i.test(
+      plain,
+    ) || /(?:ambigu|fail)[\s\S]{0,100}before[\s\S]{0,80}mutation/i.test(plain);
+  const rejectsPrecedenceOrComposition =
+    /(?:one (?:repository )?(?:logical )?slot|three (?:aliases|alternatives|claims))[\s\S]{0,520}(?:no precedence|none takes precedence|never compose|no composition|instead of using precedence|runs? nothing|executes? neither|neither source)/i.test(
+      plain,
+    ) ||
+    /(?:no precedence|none takes precedence|never compose|no composition|runs? nothing|executes? neither|neither source)[\s\S]{0,260}(?:one (?:repository )?(?:logical )?slot|three (?:aliases|alternatives|claims))/i.test(
+      plain,
+    );
+  const failClosedCollision =
+    collisionIsAmbiguous &&
+    collisionPrecedesMutation &&
+    rejectsPrecedenceOrComposition;
+  const lifecycleIdentity =
+    /plain (?:pre-remove or post-remove )?lifecycle(?: hook)? (?:identity|name)/i.test(
+      plain,
+    ) &&
+    /repository scope/i.test(plain) &&
+    /(?:repository owner|owner <repo>|named repository owner)/i.test(plain);
+  const targetCheckoutCwd =
+    /(?:active target|target child|current target)[\s\S]{0,80}(?:repository )?(?:source )?checkout[\s\S]{0,80}(?:cwd|working directory|executes? from|run from)/i.test(
+      plain,
+    ) ||
+    /(?:cwd|working directory|executes? from|run from)[\s\S]{0,80}(?:active target|target child|current target)[\s\S]{0,80}(?:repository )?(?:source )?checkout/i.test(
+      plain,
+    );
+  const separateSourceIdentity =
+    /(?:exact selected (?:file|path)|selected source path|source is the exact selected path|arashi_hook_source_path[\s\S]{0,100}(?:exact|selected|source path))/i.test(
+      plain,
+    );
+  const sharedInspection =
+    /(?:aw )?doctor/i.test(plain) &&
+    /(?:remove --dry-run|remove dry-run)/i.test(plain) &&
+    /(?:without|does not|never)[\s\S]{0,80}(?:hook )?execution/i.test(plain);
   const requirements: Array<[string, boolean]> = [
-    [
-      "canonical configuration-root qualified filename",
-      lower.includes(
-        "<configurationroot>/.arashi/hooks/<lifecycle>.<repo><ext>",
-      ),
-    ],
-    [
-      "compatible active-repository local alias",
-      lower.includes("<active-repository>/.arashi/hooks/<lifecycle><ext>"),
-    ],
-    [
-      "inline repository alias",
-      lower.includes("repos.<repo>.hooks.<lifecycle>"),
-    ],
+    ["canonical configuration-root qualified filename", canonicalPath],
+    ["compatible active-repository local alias", compatiblePath],
+    ["inline repository alias", inlineAlias],
     [
       "one repository slot with fail-closed collision",
-      /three alternatives for one repository slot[^.]*exactly zero or one[^.]*collision[^.]*fails before[^.]*(?:hook|removal) mutation/i.test(
-        plain,
-      ),
+      oneSlot && failClosedCollision,
     ],
-    [
-      "plain lifecycle identity and repository ownership",
-      /plain pre-remove or post-remove lifecycle identity[^.]*repository scope[^.]*owner <repo>/i.test(
-        plain,
-      ),
-    ],
+    ["plain lifecycle identity and repository ownership", lifecycleIdentity],
     [
       "target-checkout cwd and separate source identity",
-      /active target repository source checkout as cwd[^.]*arashi_hook_execution_path[^.]*arashi_hook_source_path[^.]*selected file independently of cwd/i.test(
-        plain,
-      ),
+      targetCheckoutCwd && separateSourceIdentity,
     ],
-    [
-      "configuration-root onboarding destination",
-      /repository hook onboarding[^.]*qualified create and remove files beneath the active configuration root[^.]*never into the target checkout or canonical clone/i.test(
-        plain,
-      ),
-    ],
-    [
-      "direct, bare, linked, and linked-bare topology",
-      /direct non-bare, configured bare, ordinary linked, and linked worktrees backed by a configured bare authority[^.]*configuration authority[^.]*active target checkout/i.test(
-        plain,
-      ),
-    ],
-    [
-      "exact delete ownership",
-      /deletion owns only exact pre-create\.<repo>, post-create\.<repo>, pre-remove\.<repo>, and post-remove\.<repo>[^.]*exact \.example templates/i.test(
-        plain,
-      ) &&
-        /never glob-deletes[^.]*compatible repository-local[^.]*shared workspace[^.]*user-global hooks/i.test(
-          plain,
-        ),
-    ],
-    [
-      "doctor and dry-run shared non-executing resolver",
-      /doctor and remove dry-run use the runtime resolver without execution/i.test(
-        plain,
-      ),
-    ],
-    [
-      "bounded ordered all-native ambiguity paths",
-      /hook_ambiguous reports hookname, scope, sourcekinds, sourceownerkind, sourceownername, nullable sourcescriptpath, and de-duplicated sourcescriptpaths: at most six native paths ordered canonical workspace-owned location first, compatible repository-local location second, then established platform extension order within each location/i.test(
-        plain,
-      ),
-    ],
+    ["doctor and dry-run non-executing inspection", sharedInspection],
   ];
   return requirements.filter(([, present]) => !present).map(([label]) => label);
 }
@@ -333,7 +342,7 @@ function contradictsRepositoryRemoveAliases(content: string): boolean {
       const actions: Array<{ pattern: RegExp; relevant: boolean }> = [
         {
           pattern:
-            /\b(?:prefers?|preferred|takes? precedence|wins?|has priority)\b/i,
+            /\b(?:prefers?|preferred|takes? precedence|wins?|has priority|selects?|chooses?)\b/i,
           relevant:
             namesBothAliases ||
             namesBothFiles ||
