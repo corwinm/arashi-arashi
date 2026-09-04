@@ -21,7 +21,9 @@ Planning and specification workspace for the Arashi project.
 
 ## OpenSpec Workflow
 
-Use the same phases from any coding agent. Pi and OpenCode provide the checked-in `/opsx-*` prompts; with Hermes, request the phase in plain language.
+Use OpenSpec when a change creates or modifies a durable product requirement, needs design decisions resolved before implementation, or carries destructive, migration, or security risk. Routine maintenance, narrow fixes to already-specified behavior, test gaps, internal refactors, CI cleanup, and copy-only documentation can proceed directly from an issue to implementation pull requests. Cross-repository scope alone does not require OpenSpec when the issue fully specifies a mechanical change.
+
+When OpenSpec is warranted, use the same phases from any coding agent. Pi and OpenCode provide the checked-in `/opsx-*` prompts; with Hermes, request the phase in plain language.
 
 1. Explore the problem with OpenSpec Explore when requirements are unclear.
 2. Create or refine a change with OpenSpec Propose.

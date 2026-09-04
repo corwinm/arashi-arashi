@@ -20,17 +20,18 @@ A parent commit cannot contain child-repository code. Commit and open a pull req
 
 ## 1. Define the Change
 
-Use the agent-native interface for each OpenSpec phase. Pi and OpenCode provide `/opsx-*` prompts; with Hermes, request the phase in plain language.
+Confirm the issue, current behavior, affected repositories, acceptance criteria, and contract impact. Use OpenSpec when the change creates or modifies a durable product requirement, needs design decisions resolved before implementation, or carries destructive, migration, or security risk. Routine maintenance, narrow fixes to already-specified behavior, test gaps, internal refactors, CI cleanup, and copy-only documentation can proceed directly from the issue. Cross-repository scope alone does not require OpenSpec when the issue fully specifies a mechanical change.
 
-1. Confirm the issue, current behavior, affected repositories, and acceptance criteria.
-2. Use OpenSpec Explore for unresolved questions.
-3. Use OpenSpec Propose to create the named change.
-4. Review:
+When OpenSpec is warranted, use the agent-native interface for each phase. Pi and OpenCode provide `/opsx-*` prompts; with Hermes, request the phase in plain language.
+
+1. Use OpenSpec Explore for unresolved questions.
+2. Use OpenSpec Propose to create the named change.
+3. Review:
    - `openspec/changes/<change-name>/proposal.md`
    - `design.md`
    - `specs/*/spec.md`
    - `tasks.md`
-5. Validate before implementation:
+4. Validate before implementation:
 
    ```bash
    openspec validate <change-name> --strict
@@ -52,7 +53,7 @@ Before editing, record each repository's branch, exact head, and dirty state. Do
 
 ## 3. Implement
 
-Use OpenSpec Apply or follow `tasks.md` directly.
+Use OpenSpec Apply, follow `tasks.md`, or implement directly from the issue when OpenSpec is not warranted.
 
 - Write tests before runtime behavior changes.
 - Keep source, tests, and repository-specific docs in the owning child repository.
@@ -92,6 +93,6 @@ Use each other child repository's `AGENTS.md` and package scripts for its exact 
 3. Push exact reviewed heads and open issue-linked pull requests.
 4. Verify remote CI on those heads.
 5. Merge child implementation first when the parent archives child-owned behavior.
-6. Use OpenSpec Archive only after implementation is complete and approved.
+6. When an OpenSpec change exists, use OpenSpec Archive only after implementation is complete and approved.
 
 The archived change is historical evidence; `openspec/specs/` is the post-archive canonical contract.
