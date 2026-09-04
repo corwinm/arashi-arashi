@@ -35,10 +35,10 @@
 
 ### Implementation evidence
 
-- CLI: `4df5b4f64fca51bc3eb8e91cc18c911229eb798e` — 2,957 tests passed, 17 skipped; native Windows acceptance passed at the exact head on `HP-G4-MINI-01`; final exact-head review passed; PR [corwinm/arashi#181](https://github.com/corwinm/arashi/pull/181).
-- Docs: `aedf597e5232ec0c38e4a8523044ed2becc47238` — full validation, CI, and final exact-head review passed; PR [corwinm/arashi-docs#105](https://github.com/corwinm/arashi-docs/pull/105).
+- CLI: `010b5d73508d14cf8d2c9e1b7f18837eb7dfd69e` — empty CI refresh over independently approved implementation head `4df5b4f64fca51bc3eb8e91cc18c911229eb798e`; 2,957 tests passed, 17 skipped; native Windows acceptance passed at the implementation head on `HP-G4-MINI-01`; PR [corwinm/arashi#181](https://github.com/corwinm/arashi/pull/181).
+- Docs: `22241aba96d4a6033a226f846e49c53374c33b56` — restores the independently approved `aedf597e5232ec0c38e4a8523044ed2becc47238` tree; full validation and all docs-specific CI passed; PR [corwinm/arashi-docs#105](https://github.com/corwinm/arashi-docs/pull/105).
 - Skills: `f826b5c1a40f76a5e9cbee2d31765c6a0aa14b90` — source and extracted-package checks passed 20/20; archive, security, CI, and final exact-head review passed; PR [corwinm/arashi-skills#75](https://github.com/corwinm/arashi-skills/pull/75).
-- Meta contracts: `68a69695e6cd7821b00055d532d120ebac4f3e2f` — 521 tests and 7/7 cross-repository contract checkers passed; final exact-head review passed. The coordinated meta check is the authoritative cross-repository result while child reusable workflows remain loaded from meta `main`.
+- Meta contracts: merged prerequisite [#359](https://github.com/corwinm/arashi-arashi/pull/359) supplies the coordinated checker on `main`; after merging `main`, 523 tests, 7/7 cross-repository contract checkers, and strict OpenSpec validation passed against the exact child heads. Child-triggered contract runs use sibling `main` branches and therefore remain sequencing-red until the coordinated child set merges.
 
 ## 5. Archive and cleanup
 
