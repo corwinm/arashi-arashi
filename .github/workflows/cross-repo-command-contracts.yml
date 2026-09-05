@@ -32,7 +32,7 @@ jobs:
     steps:
       - name: Resolve immutable revisions
         id: revisions
-        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         env:
           CHANGED_REPOSITORY: ${{ inputs.changed_repository }}
           CHANGED_SOURCE_REPOSITORY: ${{ inputs.changed_source_repository }}
@@ -259,7 +259,7 @@ jobs:
           persist-credentials: false
 
       - name: Write revision manifest
-        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         env:
           CHANGED_REPOSITORY: ${{ inputs.changed_repository }}
           ARASHI_ARASHI_SOURCE: ${{ steps.revisions.outputs.arashi_arashi_source }}
@@ -332,7 +332,7 @@ jobs:
           retention-days: 30
 
       - name: Report revision artifact digest
-        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         env:
           ARTIFACT_DIGEST: ${{ steps.revision_artifact.outputs.artifact-digest }}
         with:
