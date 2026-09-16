@@ -69,8 +69,15 @@ For every worktree considered for cross-worktree sharing, the context MUST execu
 
 #### Scenario: Config snapshot cannot be obtained exactly
 - **WHEN** Git rejects the required command or emits malformed/truncated fields
-- **THEN** cross-worktree fetches execute separately or fail according to the established operation
-- **AND** no lossy config fallback authorizes sharing
+- **THEN** the retry-safe configuration probe rejects and is compare-and-delete evicted after concurrent consumers observe that attempt
+- **AND** the current repository inspection returns the established repository operational error without starting fetch or later status probes
+- **AND** a later inspection may retry the exact configuration probe
+- **AND** no lossy config fallback or separate fetch authorizes progress for the failed snapshot
+
+#### Scenario: Successful snapshots differ
+- **WHEN** two worktrees obtain structurally valid exact configuration snapshots whose bytes or proven execution semantics differ
+- **THEN** their fetch attempts execute separately
+- **AND** neither successful snapshot is treated as an operational error
 
 ### Requirement: Secret-safe complete spawn-semantic fingerprint
 Cross-worktree sharing MUST be gated by a normalized record containing canonical repository and execution/CWD semantics, resolved executable and PATH/PATHEXT lookup semantics, every environment entry passed to spawn, HOME/USERPROFILE/XDG, SSH/askpass/proxy/credential/transport inputs, Git discovery/storage/config injection, exact effective-config bytes, and exact fetch argv/options. Windows environment keys MUST be case-normalized and duplicate case variants rejected. The record MUST use versioned domain separation and length framing and a cryptographic SHA-256 digest. Digest equality MUST be followed by exact normalized-byte equality so collisions do not share. Raw secrets MUST NOT enter errors, diagnostics, logs, traces, snapshots, or artifacts.
