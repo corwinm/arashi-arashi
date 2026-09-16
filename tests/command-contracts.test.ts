@@ -2152,15 +2152,17 @@ This property is unsupported; migrate to root \`baseBranch\`.
     const root = await schemaV5Fixture();
     const path = join(root, "repos/arashi/contracts/cli-commands.json");
     const data = JSON.parse(await readFile(path, "utf8"));
-    data.commands
-      .find((entry: any) => entry.path === "status")
-      .options.push(null);
+    const statusOptions = data.commands.find(
+      (entry: any) => entry.path === "status",
+    ).options;
+    const malformedIndex = statusOptions.length;
+    statusOptions.push(null);
     await writeFile(path, JSON.stringify(data));
 
     expect((await checkContracts(root)).diagnostics).toContainEqual(
       expect.objectContaining({
         code: "CLI_OPTION_SCHEMA_INVALID",
-        subject: "status.options[5]",
+        subject: `status.options[${malformedIndex}]`,
       }),
     );
   });
