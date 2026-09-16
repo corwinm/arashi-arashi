@@ -1,171 +1,242 @@
 ## Context
 
-Issue #372 is the canonical caching slice split from #364 after #371 delivered public `status --local`, truthful freshness, NUL-delimited porcelain-v2 parsing, native verbose status, and truthful per-repository Trace2 attribution. At CLI child revision `b648825295a5c342b6920be0585711678377b452`, refreshed status still resolves overlapping topology, configuration, refs, tracking targets, fetches, and comparisons through independent helpers.
+Issue #372 is the caching slice split from #364 after #371 delivered public `status --local`, truthful freshness, NUL-delimited porcelain-v2 parsing, native verbose status, and per-repository Trace2 attribution. The immutable comparison base is CLI `b648825295a5c342b6920be0585711678377b452`.
 
-Correct sharing cannot use a configured path as repository identity: a root, subdirectory, symlink, linked worktree, separate-Git-dir checkout, and environment-directed invocation can name the same or a different Git repository. It also cannot parse `.git`, gitfiles, `commondir`, refs, or object storage directly. Git plumbing must establish identity before any alias is trusted.
-
-The benchmark harness delivered by #371 counts Arashi-originated root Git Trace2 sessions and attributes them to canonical worktrees. Current measured refreshed baselines are 39 normal / 42 verbose for the small fixture and 93 normal / 102 verbose for the large fixture. Representative per-repository baselines are 13 normal / 14 verbose for the main repository and 9 normal / 10 verbose for a child repository. The fixture topology, configuration, command boundary, runtime, and attribution rules are fixed comparison inputs.
+Configured paths are only hints: roots, subdirectories, symlinks, linked worktrees, separate Git directories, and Git discovery overrides can name the same or different repositories. Sharing also cannot be inferred from common-directory identity alone because relative remotes, worktree config, conditional includes, helpers, environment, and execution directory can change fetch meaning.
 
 ## Goals / Non-Goals
 
-**Goals:**
+**Goals**
 
-- Establish one invocation-owned context with Git-proven canonical repository and worktree identities.
-- Share stable repository facts, worktree-local facts, exact fetch attempts, and ref-derived snapshots at scopes that preserve Git semantics.
-- Deduplicate identical cross-worktree fetches only when effective Git configuration and environment semantics match.
-- Make ref reads linearizable around successful and failed fetch attempts.
-- Preserve retry behavior for transient discovery failures.
-- Integrate only after deterministic identity/lifecycle tests prove the context independently.
-- Reduce refreshed normal and verbose status Git starts for every named repository and in aggregate on both representative fixture sizes without changing #371 semantics.
+- Establish one invocation-owned, Git-proven context.
+- Specify exact commands, byte framing, parser ownership, fallbacks, and count accounting before implementation.
+- Share only facts and mutation attempts whose equivalence is positively proven.
+- Make ref reads linearizable and fetch reuse mutation-epoch aware.
+- Evict retry-safe failed probes without allowing old cleanup to delete a newer attempt.
+- Preserve every #371 local/refreshed, freshness, parsing, diagnostic, and native-output behavior.
+- Prove lower process counts against one pinned base and unchanged external measurement boundary.
 
-**Non-Goals:**
+**Non-goals**
 
-- Persistent, daemon, cross-command, or time-based caching.
-- Parsing Git-internal filesystem formats or reading refs/object storage directly.
-- Treating configured paths, realpaths alone, or Trace2 records as identity authority.
-- Replacing native verbose `git status`, changing public status output, or weakening refresh/failure diagnostics.
-- Implementing or modifying Rust.
+- Persistent/cross-command caches, Git-internal filesystem parsing, Rust changes, a new CLI option, or synthesized verbose status.
 
 ## Decisions
 
-### 1. One context owns all probe state for one command invocation
+### 1. Context scopes and general failure retention
 
-The command entry point creates one `GitProbeContext` and passes it through status orchestration and Git-remote helpers. The context owns identity discovery, scoped promise maps, effective-semantics fingerprints, fetch attempts, and repository ref generations. It is neither global nor reusable; all maps become unreachable when the invocation settles.
+The status command creates exactly one `GitProbeContext`, passes it through configured/standalone orchestration and remote helpers, and drops it when the invocation settles. It distinguishes:
 
-The API distinguishes:
+- discovery hint: caller path plus spawn semantics used only to ask Git;
+- repository key: canonical realpath of Git's common directory;
+- worktree key: repository key plus canonical top level, or a distinct bare sentinel;
+- repository/worktree facts at their narrowest valid scope;
+- repository-only ref metadata at `(repository key, generation)` and HEAD-relative comparisons at `(worktree key, exact HEAD identity, generation)`;
+- fetch attempts at `(repository key, semantic-record digest+bytes, exact argv, attempt token)`.
 
-- **discovery hints**: caller-provided paths and environment used only to ask Git for identity;
-- **repository key**: canonical common Git directory;
-- **worktree key**: repository key plus canonical top level, with an explicit bare sentinel;
-- **stable repository probes**: common across linked worktrees only when their semantics permit sharing;
-- **worktree probes**: HEAD, porcelain status, native status, and other checkout-local facts;
-- **ref-derived probes**: keyed by repository ref generation;
-- **mutation attempts**: exact targeted fetch calls with ordered invalidation.
+Any repository, worktree, ref, configuration, identity/discovery, or derived-probe rejection that is safe to retry is shared only while in flight and then compare-and-delete evicted. Cleanup removes the entry only if it still points to the rejecting promise. Arbitrary failures are never retained for invocation lifetime. The sole retained classified failures are exact mutation attempts whose concurrent consumers must observe one logical attempt; retention is bounded by that attempt token and repository mutation epoch. Explicit retry always allocates a new token.
 
-This prevents a convenient cache key from silently broadening the semantic scope of a value.
+### 2. Exact Git-proven identity and replacement of old discovery
 
-### 2. Git proves identity in one combined plumbing probe
-
-For a non-bare discovery hint, the context runs exactly:
+Every spawn uses argv arrays, never a shell. From the canonicalized existing discovery directory, identity runs:
 
 ```text
-git rev-parse --show-toplevel --git-common-dir --is-bare-repository
+executable: <resolved git executable>
+argv: ["rev-parse", "--show-toplevel", "--git-common-dir", "--is-bare-repository"]
+cwd: canonical discovery directory
+stdout framing: exactly three LF-terminated UTF-8 fields, with one optional final LF
+parser owner: GitProbeContext identity parser
 ```
 
-It parses the three ordered outputs strictly. If Git rejects `--show-toplevel` because the repository is bare, the context uses the bare-compatible fallback:
+The parser rejects NUL, extra/missing fields, non-`true|false` bare values, a bare result from the three-field form, and failed realpath. Relative top-level/common-dir output is resolved against the command CWD before realpath.
+
+Only when Git's failure is the expected absence of a top level does it run:
 
 ```text
-git rev-parse --git-common-dir --is-bare-repository
+argv: ["rev-parse", "--git-common-dir", "--is-bare-repository"]
+stdout: two LF-delimited fields
 ```
 
-The fallback is accepted only when Git reports `true`; any other combined-probe failure remains a discovery failure. Relative Git paths are resolved according to the probe working directory, then both the common directory and non-bare top level are canonicalized with filesystem `realpath`. A non-bare result without a top level, a bare fallback that reports non-bare, malformed output, or failed canonicalization is rejected rather than guessed.
+The fallback is accepted only with `true`; otherwise discovery fails closed. Bare uses a typed sentinel, not a fake top level.
 
-The canonical common directory is the repository key. The worktree key is a structured pair of that key and the canonical top level; bare repositories use a distinct `bare` member rather than pretending the common directory is a worktree. Root paths, subdirectories, and symlink aliases therefore converge only after Git and `realpath` prove they converge. Separate Git directories and linked worktrees retain Git's own common-directory relationship. Git discovery environment overrides are passed into the probe and participate in the semantics fingerprint; a configured path is never promoted from hint to identity. A missing/unusable working directory reports the established missing/local failure rather than manufacturing identity.
+This combined identity supplies repository type, common identity, and top level. Its top-level/bare result replaces `shouldIncludeWorkspaceRootInRepositoryChecks()`; status includes a non-bare canonical top level and applies established bare-workspace reporting without a separate `rev-parse --is-bare-repository`. Upstream/default discovery comes from the single ref snapshot plus porcelain branch headers below, replacing standalone `rev-parse @{upstream}`, `show-ref`, branch-list, and repeated config helpers on the clean path.
 
-Rejected identity promises are removed with identity-safe compare-and-delete logic: concurrent callers observe the same failed attempt, while a later call can retry. Successful identities remain for the invocation.
+Optional `git -c core.quotePath=false worktree list --porcelain` seeding is permitted only after direct identity, canonicalizes every path, rejects prunable/ambiguous entries, and is charged to the repository. It may run only when it removes at least one direct identity spawn and preserves the cap.
 
-### 3. Optional worktree-list seeding follows, never replaces, proven identity
+### 3. Exact effective-config snapshot and normalized spawn-semantic record
 
-After one path has a proven repository key, the context may run:
+For each worktree considered for cross-worktree sharing, status runs exactly:
 
 ```text
-git -c core.quotePath=false worktree list --porcelain
+argv: ["config", "--null", "--list", "--show-origin", "--show-scope"]
+cwd: that canonical worktree execution directory
+stdout record: scope NUL origin NUL (key LF value | key-only) NUL, repeated in Git emission order
+parser owner: effective-config byte parser
 ```
 
-It may seed canonical top-level-to-worktree-key aliases only after realpath canonicalization and only under the already proven common-directory key. Each seeded path is a hint optimization; it cannot establish repository ownership for an unrelated request, bypass environment-sensitive discovery, or make a configured path authoritative. If seeding is not cost-effective, callers use the combined identity probe.
+The parser consumes raw bytes and requires groups of three NUL fields. In the third field, the first LF separates key from value when present; no LF is Git's valid valueless/key-only form and is distinct from `key LF NUL`, an explicitly empty value. It preserves duplicate keys, both value forms, origins, scope, order, and all remaining bytes, and rejects malformed/truncated output. The exact stdout bytes—not a reserialized map—enter the fingerprint. On the supported Git floor, failure of `--show-scope` is an operational error; no lossy config fallback may authorize sharing.
 
-The command is optional because it costs a Git start. On a measured path it must replace at least one later identity probe in the same named repository and remain within the command budget; otherwise it is omitted.
+A versioned normalized spawn-semantic record is encoded with domain `arashi.git-fetch-equivalence.v1` and unsigned 64-bit big-endian length prefixes. It contains:
 
-### 4. Effective semantics gate cross-worktree fetch sharing
+1. repository key and operation kind;
+2. canonical execution semantics: canonical worktree/CWD, plus a CWD-equivalence projection described below;
+3. resolved executable realpath and lookup mode; exact `PATH`, and on Windows `PATHEXT` and executable-suffix resolution;
+4. every environment entry actually passed to spawn, with presence distinguished from empty, sorted by byte key on POSIX and case-folded key on Windows; Windows duplicate case variants are rejected rather than last-write-wins;
+5. explicit HOME/USERPROFILE and XDG variables (also present in the complete environment section);
+6. SSH command/variant/config/agent/socket, askpass/display/terminal-prompt, proxy, credential-helper/prompt, HTTP(S), SSL/TLS, transport, protocol, and locale inputs through complete env/config capture;
+7. all Git discovery/storage/config injection semantics, including `GIT_DIR`, `GIT_WORK_TREE`, `GIT_COMMON_DIR`, `GIT_CEILING_DIRECTORIES`, `GIT_DISCOVERY_ACROSS_FILESYSTEM`, `GIT_NAMESPACE`, object/alternate/quarantine paths, config system/global/nosystem/count/indexed key-value entries, and command `-c` options;
+8. exact effective-config stdout bytes;
+9. exact fetch executable, ordered argv, resolved remote endpoint proof, stdin/stdio policy, timeout/signal policy, and platform spawn flags.
 
-Linked worktrees share refs but can observe different effective configuration through worktree config, conditional includes, command environment, and Git discovery overrides. Before cross-worktree fetch sharing, the context captures one deterministic, NUL-delimited effective configuration snapshot through Git, including origin and scope, and fingerprints that byte sequence together with the normalized values/presence of Git environment inputs that can affect discovery, config, ref namespace/storage, transport, credentials, and fetch behavior. At minimum this includes `GIT_DIR`, `GIT_WORK_TREE`, `GIT_COMMON_DIR`, `GIT_NAMESPACE`, `GIT_OBJECT_DIRECTORY`, `GIT_ALTERNATE_OBJECT_DIRECTORIES`, `GIT_CONFIG_SYSTEM`, `GIT_CONFIG_GLOBAL`, `GIT_CONFIG_NOSYSTEM`, `GIT_CONFIG_COUNT` and its indexed key/value entries, and transport/config injection variables retained by the production spawn environment. The implementation keeps the fingerprint internal and does not expose secrets in diagnostics or benchmark artifacts.
+The context computes SHA-256 over those framed bytes with a separate hash domain from every other cache key. Digest equality alone is not proof: the in-memory bucket retains normalized bytes and requires byte equality; a synthetic or cryptographic collision forms separate attempts. Raw record/config/environment values may exist only in memory long enough to compare/hash. Errors, status diagnostics, logs, Trace2 labels, benchmark JSON, snapshots, and artifacts expose neither raw bytes nor secret-bearing hashes that can be used as diagnostics; tests inject canary credentials and assert absence.
 
-An exact fetch-attempt key contains:
+### 4. CWD and relative-remote equivalence are proven, never assumed
+
+Before cross-worktree sharing, GitProbeContext derives an execution-equivalence projection for each canonical worktree. It resolves the selected remote's effective URL/pushURL and any direct relative fetch argument under the exact canonical execution CWD using Git's local-path rules. It also examines the exact config bytes and environment for CWD-sensitive conditional includes, URL rewrites, external remote helpers, credential/askpass helpers, proxy commands, SSH commands/config, hooks, and transport commands.
+
+- Relative filesystem remotes are represented by their canonical resolved endpoint, not their identical raw text.
+- If two worktrees resolve identical raw `../remote.git` to different endpoints, their records differ and they MUST execute separately.
+- If an input may consult CWD and independence cannot be positively established, the projection includes the canonical CWD and attempts do not share.
+- A shared `cwd-independent` projection is allowed only when remote/transport endpoints resolve identically, effective config bytes and complete environment are equal, no worktree/conditional config differs, and no helper/command can observe a different CWD. This permits a real safe linked-worktree case with an absolute remote and otherwise equivalent spawn semantics to share once.
+
+Thus CWD is never omitted; it is either material to the record or replaced by an explicit, test-backed proof that this operation is CWD-independent. Ambiguity fails toward separate attempts.
+
+### 5. Exact ref snapshots, comparison data, and supported-Git fallback
+
+The one porcelain command runs before ref resolution/fetch. Its branch headers identify current symbolic branch or detached/unborn state and upstream; the exact config snapshot supplies `branch.<name>.remote` and `.merge` when no porcelain upstream exists. This selects the exact fetch target without a separate probe. Porcelain worktree records remain valid across ref-only fetch mutation, while its pre-fetch `branch.ab` is never used for refreshed divergence.
+
+For a born HEAD, pre- and post-mutation snapshots run from that canonical worktree and use exactly:
 
 ```text
-(repository key, effective-semantics fingerprint, remote,
- source ref, destination ref, prune/force/options)
+argv: ["for-each-ref",
+       "--format=%(refname)%00%(objectname)%00%(symref)%00%(ahead-behind:HEAD)%00",
+       "refs/heads", "refs/remotes"]
+stdout record: refname NUL object-id NUL symref NUL "ahead behind" NUL LF
+parser owner: ref-snapshot parser
 ```
 
-Only an identical key shares one in-flight and settled attempt. Different fingerprints, refspecs, remotes, or options execute independently even when common-directory identity matches. The shared value is the complete classified attempt result, including missing-remote-ref and generic failure, so all consumers of that logical attempt observe the same success or failure rather than silently retrying. This is attempt sharing, not a claim of lasting remote freshness.
+The parser consumes bytes, requires trailing `NUL LF` for every record, validates full refnames/OIDs, accepts an empty symref, parses two non-negative decimal counts, rejects duplicates/malformed records, and never splits path data through locale-sensitive whitespace. Git's atom reports `<ref>-only HEAD-only`; status reports HEAD-relative divergence, so the parser normalizes `ahead = HEAD-only` (second count) and `behind = ref-only` (first count). The fallback `rev-list HEAD...<ref>` already reports `HEAD-only ref-only` and is not swapped. Asymmetric real-Git tests require both paths to yield identical status orientation. These namespaces contain local heads, remote-tracking refs, and symbolic `refs/remotes/<remote>/HEAD`; tags and unrelated refs are intentionally excluded. Because `ahead-behind:HEAD` is worktree/HEAD-relative, the snapshot/comparison cache key is `(worktree key, exact HEAD identity, repository generation)`, never repository/generation alone. Repository-only ref metadata may be projected and shared only after discarding every HEAD-relative comparison field.
 
-Alternative: share by common directory and target alone. Rejected because linked worktrees can have different effective fetch semantics.
+When porcelain reports unborn HEAD, the context does not invoke the HEAD-relative atom. It uses the metadata-only format `%(refname)%00%(objectname)%00%(symref)%00` for the same namespaces, marks HEAD-relative comparisons unavailable, and preserves unborn status without treating it as a snapshot failure.
 
-### 5. Ref generations form barriers around every fetch attempt
+For a supported Git version lacking `%(ahead-behind:HEAD)`, the first unsupported-atom failure is classified without parsing its stdout. The context reruns the stable snapshot with:
 
-Each repository key owns a monotonic ref generation. Ref snapshots and ref-derived resolutions include the generation in their cache key. Starting an exact fetch attempt acquires the repository mutation sequencer, advances the generation and invalidates ref-derived entries **before** spawning Git. Completion advances it and invalidates again **after** the attempt settles, whether it succeeded or failed. Waiters that require post-attempt state await the shared attempt and then read only from the resulting generation.
+```text
+--format=%(refname)%00%(objectname)%00%(symref)%00
+```
 
-The pre-barrier prevents a read that races with mutation from being reused as current. The post-barrier prevents a snapshot taken while Git was running—or while a failed fetch partially changed refs—from surviving. Successful and failed fetches receive identical invalidation treatment because Git failure does not prove no local ref mutation occurred. Independent exact fetch keys for one repository are serialized through the same mutation sequencer; identical keys share one result. Worktree-local non-ref facts remain separately scoped.
+and computes each unique needed non-porcelain comparison with exactly `git rev-list --left-right --count HEAD...<full-ref>`, deduplicated only by worktree key, exact HEAD identity, full ref, and generation. This compatibility path preserves behavior but is not the 7/8 benchmark path; benchmark provenance records a Git version supporting the atom. Other snapshot errors do not trigger fallback.
 
-Alternative: invalidate only after successful fetch. Rejected because failed fetches can still alter refs and racing snapshots can become stale. Alternative: invalidate only after completion. Rejected because reads started during the mutation could be admitted into the post-fetch generation.
+When no snapshot symbolic ref resolves the selected remote HEAD, the only symbolic fallback is:
 
-### 6. The passed design gate fixes a conservative fixture command budget
+```text
+argv: ["symbolic-ref", "--quiet", "--short", "refs/remotes/<remote>/HEAD"]
+```
 
-For the clean tracked fixture path, status uses the following maximum root Git sessions per named repository in normal mode:
+Its parser requires exactly `<remote>/<branch>` plus optional final LF. Remote order is selected/upstream remote, then `origin`, then one unique remaining symbolic remote HEAD from the snapshot; ambiguity is not guessed.
 
-1. combined identity probe (or an amortized, charged worktree-seeding substitution);
-2. effective configuration/environment snapshot;
-3. pre-fetch ref snapshot;
-4. one exact targeted `fetch --prune` attempt;
-5. post-fetch ref snapshot after the generation barrier;
-6. `status --porcelain=v2 --branch -z` for worktree state and upstream divergence;
-7. symbolic remote-HEAD resolution only when the selected remote/default cannot be resolved from the ref snapshot.
+### 6. Exact fetch, porcelain, and native verbose commands
 
-Verbose mode adds exactly one native `git status`, for a conservative target of **7 normal / 8 verbose per named repository**. The symbolic remote-HEAD item is a reserved fallback budget: when the snapshot resolves it, the actual count is lower. Optional `worktree list --porcelain` is charged and may be used only when its seeded aliases remove at least as many identity probes while preserving the same per-repository cap. No hidden `rev-list`, repeated config lookup, duplicate fetch, or second porcelain call may exceed this fixture budget; non-happy-path diagnostics may use additional probes only when required to preserve established semantics and must be covered separately.
+A targeted refresh is exactly:
 
-The budget is below the measured representative baselines (main 13/14 and child 9/10), and therefore demonstrates a net path before implementation. Acceptance is not satisfied by the budget alone: measured candidate counts must be strictly below their same-topology baselines for every named repository and aggregate in small and large refreshed normal and verbose cases. Current aggregate baselines are small 39/42 and large 93/102. Candidate runs must also have no unexplained unattributed root sessions.
+```text
+argv: ["fetch", "--no-tags", "--prune", "<remote>",
+       "+refs/heads/<branch>:refs/remotes/<remote>/<branch>"]
+```
 
-### 7. Status integration preserves #371 behavior and ordering
+Remote/branch are validated as names and passed as separate argv. The complete classified result distinguishes success, missing source ref, and generic transport/authentication/command failure. No shell or broad default refspec is used.
 
-Context tests land and pass before status receives the context. Refreshed status keeps the semantic order: resolve the exact target, establish a pre-mutation ref view, perform/await the targeted fetch, establish the post-mutation ref view, and only then consume porcelain divergence for refreshed reporting. Local mode performs no fetch and never claims refreshed refs. Configured-base, upstream, default-branch, duplicate-target, detached/unborn HEAD, missing-ref, stale-tracking, missing-repository, bare-workspace, and JSON warning/error behavior remain unchanged.
+Before target resolution and fetch, worktree status is exactly:
 
-Porcelain v2 remains NUL-delimited and continues to preserve all #371 path/status cases. Symbolic default HEAD resolution remains remote-aware: preferred/upstream remote first, `origin` fallback, then a unique unambiguous remote; unresolved or ambiguous cases retain current diagnostics. Verbose output remains one native `git status`, not a porcelain reconstruction. Repository output ordering and repository-local failure isolation remain unchanged.
+```text
+argv: ["status", "--porcelain=v2", "--branch", "-z"]
+parser owner: existing NUL porcelain-v2 parser
+```
 
-## Alternatives Rejected
+It owns `# branch.oid`, `# branch.head`, `# branch.upstream`, `# branch.ab`, ordinary/rename/unmerged/untracked/ignored records, detached/unborn state, and path bytes. Branch identity/upstream plus effective config select the fetch target. Worktree/path records remain the status result; pre-fetch `branch.ab` is discarded for refreshed roles and post-fetch snapshot comparisons are used. No second porcelain call is permitted.
 
-- **Configured-path trust:** configured roots and child paths are hints, not proof; aliases, nested paths, linked worktrees, and environment overrides break this identity.
-- **Realpath-only identity:** filesystem identity cannot prove Git repository/common-directory membership and does not model separate Git directories.
-- **Worktree-list-only identity:** the listing is repository-scoped only after a repository is known, may omit/prune entries, and cannot safely classify an arbitrary initial path or environment override.
-- **Trace2 identity:** Trace2 is measurement telemetry emitted after process start, can be unavailable, and is not a correctness API for pre-probe cache keys.
-- **Git-internal parsing:** reading `.git`, gitfiles, `commondir`, refs, or object storage directly violates the stable-plumbing constraint and creates portability/format races.
+Verbose adds exactly:
+
+```text
+argv: ["status"]
+parser owner: none; stdout is preserved as Git-native human output
+```
+
+### 7. Linearizable ref reads
+
+Every ref reader follows this loop:
+
+1. await the repository's active mutation, if any;
+2. capture generation `g` while no mutation is active;
+3. reuse or start the generation-keyed probe;
+4. before publishing, re-enter the repository sequencer and verify generation is still `g` and no mutation is active;
+5. publish only if both checks hold; otherwise discard that result from the map and retry from step 1.
+
+A mutation increments generation and invalidates before spawn, then increments/invalidates again after success or failure. Therefore a read already in flight when mutation starts cannot escape after settlement. Deterministic barrier tests pause a snapshot between spawn and publish, run a mutator, release the snapshot, and require retry/fresh bytes.
+
+### 8. Fetch attempt epoch/token semantics
+
+Each repository has a monotonic mutation epoch and sequencer. A new exact attempt token reserves its key at the current epoch. Concurrent identical requests joining before settlement share one promise/result/failure. Starting any distinct mutation—including one with an overlapping destination—advances the epoch and makes all settled attempt entries from prior epochs ineligible. Consequently settled A cannot survive B, and A→B→A runs A twice. Distinct mutations serialize even when destinations overlap only partially.
+
+A retained failed result is observable only by consumers holding that exact token. An explicit retry allocates a new token, advances through normal mutation barriers, and spawns again. An old completion/cleanup cannot delete or satisfy a newer token because every map operation compare-checks key, token, and epoch.
+
+### 9. Auditable clean-fixture command ledger and count proof
+
+The unchanged clean tracked refreshed benchmark path records every root session with executable, argv, CWD, parser, repository attribution, and purpose:
+
+| Slot | Exact purpose | Root sessions |
+|---|---|---:|
+| 1 | combined identity; also replaces `shouldIncludeWorkspaceRootInRepositoryChecks()` and separate topology/type discovery | 1 |
+| 2 | exact effective-config snapshot; complete environment normalization is in-process | 1 |
+| 3 | one NUL porcelain-v2 status, supplying current branch/upstream before fetch | 1 |
+| 4 | pre-fetch `for-each-ref` snapshot | 1 |
+| 5 | one exact targeted fetch/refspec per deduplicated fixture target | 1 |
+| 6 | post-fetch `for-each-ref` snapshot with all refreshed target comparisons | 1 |
+| 7 | reserved symbolic remote-HEAD fallback; zero when snapshot resolves it | 0–1 |
+| 8 | verbose-only native status | 0 normal / 1 verbose |
+
+Normal is at most 7; verbose at most 8. The supported benchmark Git uses `ahead-behind`, the clean fixture has born HEAD and deduplicates tracking/base/default to its one targeted ref, and pre-fetch porcelain plus config select the target while post-fetch snapshots provide refreshed comparisons. Therefore no `rev-list`, config getter, upstream `rev-parse`, `show-ref`, branch listing, duplicate fetch, or second porcelain call is hidden in 7/8. Optional worktree seeding replaces and is charged against identity, never added. Unsupported-Git, unborn, and non-happy-path compatibility/diagnostic probes are separately attributed and are not misreported as meeting the clean-fixture cap.
+
+### 10. #371 local and freshness semantics
+
+`--local` starts no transport-capable operation: no fetch, `ls-remote`, remote helper, credential helper, SSH, HTTP(S), or other network command. It may read only existing local refs/config/status. Refreshed status preserves resolve target → pre-view → exact fetch → post-view → status/report order.
+
+The established human notice and JSON freshness object remain truthful through the following matrix; existing per-role warning/unavailable/skipped records supply details without inventing success:
+
+| Repository outcome | JSON freshness | Human/role evidence |
+|---|---|---|
+| successful refresh | `mode=refreshed`, `remoteRefsRefreshed=true` | refreshed notice/available roles |
+| failed refresh | `mode=refreshed`, `remoteRefsRefreshed=false` | missing-ref or stale warning/unavailable reason |
+| skipped applicable target | `mode=refreshed`, `remoteRefsRefreshed=false` | established skipped reason |
+| not applicable/no target | `mode=refreshed`, `remoteRefsRefreshed=false` | incomplete-or-not-applicable notice; no false warning |
+| local | `mode=local`, `remoteRefsRefreshed=false` | `Freshness: local remote-tracking refs (no fetch performed)` |
+
+Command-level `remoteRefsRefreshed` is true only when every evaluated present repository that participates in the result reports successful refresh; empty, failed, skipped, not-applicable, local, and mixed outcomes are false. Missing repositories retain established visibility and are never probed.
+
+### 11. Benchmark provenance
+
+Before harness edits, evidence captures base SHA `b648825295a5c342b6920be0585711678377b452`; fixture source hash/version; exact repository count, canonical paths, worktrees, branches, refs, remotes, config, groups, dirty state, and local/refresh mode; external adapter source hash and argv; Trace2 root-session/attribution rule; OS/architecture; Git/Node/Bun/pnpm versions; build command/options/environment; base executable hash; warm-up/sample counts; and metric method.
+
+Base and candidate are built separately, with executable hashes and logs. The same unchanged external adapter invokes both binaries at the same public CLI boundary. An internal base collector may not be compared with a candidate CLI. Named counts plus explicit unattributed count must equal aggregate, with no unexplained unattributed sessions and identical semantic output/canonical paths.
+
+Pinned baselines are small 39/42 and large 93/102 normal/verbose aggregate, representative main 13/14, and child 9/10. Candidate must be strictly lower for every named repository and aggregate in all four cases and meet 7/8 on the clean tracked fixture.
 
 ## Risks / Trade-offs
 
-- **[Risk] The identity probe consumes the savings it enables** → combine all identity fields in one call, allow post-proof seeding only when amortized, enforce 7/8 per-repository targets, and require measured per-repository and aggregate reductions.
-- **[Risk] The environment fingerprint omits a fetch-affecting input** → derive it at the normalized Git spawn boundary, enumerate Git override families in tests, include the effective config byte snapshot, and fail toward separate fetches rather than unsafe sharing.
-- **[Risk] The fingerprint captures secrets** → hash in memory, never serialize raw config/environment values, and assert diagnostics/artifacts contain neither snapshot bytes nor credential values.
-- **[Risk] Fetch failure leaves partially changed refs** → run both generation barriers for every settled result and test a failing mutator that changes the ref view before rejecting.
-- **[Risk] Promise eviction deletes a newer retry** → delete rejected discovery entries only when the map still points to the rejecting promise.
-- **[Risk] Optional seeding aliases a stale/prunable worktree** → canonicalize entries, retain prune state, use entries only as hints under proven identity, and require direct discovery when semantics are uncertain.
-- **[Risk] Ref snapshots cannot replace every historical helper probe on edge cases** → keep explicit fallback probes where semantics demand them, test them deterministically, and reject the implementation if representative acceptance regresses.
-- **[Trade-off] Invocation-only caching repeats work across commands** → accept repetition to keep correctness and invalidation bounded; persistent caching remains a non-goal.
+- Positive equivalence is intentionally conservative; uncertain CWD/helper semantics lose sharing, not correctness.
+- The exact config snapshot contains secrets in memory; domain-separated hashing, byte equality, redaction tests, and no serialization bound exposure.
+- Failed fetch can partially mutate refs; identical pre/post barriers apply to success and failure.
+- Unsupported Git can exceed the optimized-path count; it preserves correctness and is reported separately rather than hidden.
+- Invocation-only state repeats work across commands but keeps invalidation bounded.
 
 ## Migration Plan
 
-1. Add deterministic tests and a standalone probe-context module without wiring status.
-2. Prove identity, scope separation, effective-semantics fingerprints, exact fetch sharing/failure sharing, barriers, retries, and invocation disposal.
-3. Integrate the context into status and Git-remote helpers while retaining dependency injection and all #371 tests.
-4. Run focused and full CLI gates, real-Git topology tests, and built-executable status smoke tests.
-5. Measure unchanged small and large fixtures for refreshed normal and verbose status against the recorded baselines; inspect aggregate, every named repository, and unattributed sessions.
-6. Deliver the CLI child change first; archive/synchronize this OpenSpec change in the meta repository only after the implementation and evidence gates pass.
-
-Rollout is internal and requires no data migration or feature flag. Roll back by reverting the status integration and context together; no persisted state or public contract needs cleanup. If identity correctness, #371 parity, or any required benchmark comparison fails, stop delivery and retain the existing uncached behavior.
-
-## Deterministic Test Plan
-
-- Root, nested subdirectory, and symlink hints converge to one repository/worktree key only after Git identity and realpath canonicalization.
-- Two linked worktrees share the common-directory repository key but have distinct common-directory-plus-top-level worktree keys; repository probes share and worktree probes do not.
-- Bare repositories use the fallback and bare sentinel; separate-Git-dir repositories canonicalize correctly.
-- `GIT_DIR`, `GIT_WORK_TREE`, config injection, and conditional/worktree config fixtures prove discovery and effective-semantics separation.
-- Missing paths and malformed Git output fail closed; concurrent discovery callers share one failure; the rejecting entry is evicted; a later corrected retry succeeds without deleting a newer promise.
-- Worktree-list seeding cannot precede identity, cross repository keys, trust prunable/uncanonicalizable entries, or change results; its charged probe removes an equal or greater number of direct identity probes.
-- Identical fetch keys across linked worktrees execute once and return the same success object; differing config/environment fingerprints or refspec/options execute separately.
-- Identical failing fetches execute once and return the same classified failure to every consumer.
-- Barrier-controlled tests prove pre-fetch snapshots are not reused after start, in-flight snapshots are not reused after settlement, and post-fetch snapshots are fresh after both success and a failure that mutates refs.
-- A fresh context repeats probes, proving invocation-only lifetime and no module-global retention.
-- Status parity fixtures cover local/refreshed freshness, configured base, upstream/default deduplication, preferred and fallback symbolic remote HEAD, detached and unborn HEAD, missing remote ref, generic fetch failure, bare workspace, missing repository, NUL-path edge cases, JSON warnings/errors, stable ordering, and native verbose output.
-- Benchmark tests assert unchanged fixture/topology/boundary, totals equal named-repository plus unattributed counts, no unexplained unattributed sessions, the 7/8 normal/verbose target where applicable, and strict candidate reduction versus 39/42 small, 93/102 large, 13/14 representative main, and 9/10 representative child baselines.
+1. Land deterministic context tests, including real-Git relative/equivalent linked-worktree cases, without status wiring.
+2. Implement identity, parsing, fingerprint, failure eviction, linearizable reads, epochs, and optional charged seeding.
+3. Integrate status and preserve the complete #371 matrix.
+4. Run focused/full gates and real built-binary smoke.
+5. Capture pinned base/candidate evidence with the unchanged adapter and accept only strict reductions.
+6. Deliver CLI child first; archive/synchronize OpenSpec only after implementation evidence.
 
 ## Open Questions
 
-None. The design gate is passed; implementation remains conditional on the deterministic context tests and measured acceptance above.
+None. Ambiguous equivalence executes separately; correctness and #371 behavior override sharing or benchmark acceptance.
