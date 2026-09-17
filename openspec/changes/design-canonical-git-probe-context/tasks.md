@@ -41,7 +41,7 @@
 
 ## 5. Verification and Delivery
 
-- [x] 5.1 Run CLI format, lint, typecheck, focused/full tests, benchmarks, contracts, completion, and build in producer-before-consumer order.
-- [x] 5.2 Obtain exact-head specification-compliance and architecture/code-quality review and resolve all blockers.
+- [x] 5.1 Run CLI format, lint, typecheck, focused/full tests, benchmarks, contracts, completion, and build in producer-before-consumer order. See [evidence.md](evidence.md).
+- [ ] 5.2 Obtain exact-head specification-compliance and architecture/code-quality review and resolve all blockers.
 - [ ] 5.3 Commit/open the CLI child PR, verify exact-head CI, and record immutable evidence without modifying Rust.
 - [ ] 5.4 After child merge, update evidence, strictly validate/archive this change, run all-spec/manifest/scenario/diff/coordinated checks, and deliver the signed meta closeout.
