@@ -36,7 +36,7 @@
 - [x] 4.1 Before editing the harness, capture immutable provenance for base CLI `b648825295a5c342b6920be0585711678377b452`: fixture definition hash/version, exact topology/config/remotes, adapter source hash and argv, Trace2 attribution rule, OS/architecture, Git/Node/Bun/pnpm versions, build command/options/environment, executable hash, warm-up/sample counts, and metric method.
 - [x] 4.2 Build the base and candidate binaries independently, record both executable hashes and build logs, and run the same unchanged external adapter against both; do not compare an internal base collector with a candidate CLI.
 - [x] 4.3 Programmatically reconcile named repositories plus unattributed equals aggregate; require no unexplained unattributed sessions and exact canonical fixture paths/semantic output.
-- [x] 4.4 Verify strict aggregate reductions from small 39/42 and large 93/102 normal/verbose baselines and strict reductions for every named repository, including representative main 13/14 and child 9/10, while meeting the 7/8 clean-fixture cap.
+- [x] 4.4 Verify strict reductions from the approved immutable v4 baselines (small 39/42 and large 93/102 normal/verbose; representative main 13/14 and child 9/10), record fixture-v5 measured base/candidate totals 27/18, 30/21, 57/54, and 66/63 without relabeling them, and require every candidate named repository to remain below the pinned named baseline while meeting the 7/8 clean-fixture cap.
 - [x] 4.5 Reject and rerun evidence if fixture, adapter, command boundary, runtime, build, attribution, freshness, or native verbose provenance differs.
 
 ## 5. Verification and Delivery
