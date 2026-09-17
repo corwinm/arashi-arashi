@@ -39,7 +39,7 @@ The failing cases were `dangling remote HEAD retains its intended missing defaul
 
 ## Immutable full-field probe comparison
 
-Artifact: `/private/tmp/issue372-final-probe-comparison.json`  
+Artifact: `/private/tmp/issue372-final-probe-comparison.json`
 SHA-256: `10712fe2f4374d6d2f2ebf6cbc6d89ee59123258793f50039c239c1cc5fff747`
 
 | Fixture | Mode | Base | Candidate | Candidate cap |
