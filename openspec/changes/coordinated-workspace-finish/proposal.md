@@ -5,9 +5,9 @@ Issue [#374](https://github.com/corwinm/arashi-arashi/issues/374) asks for a sin
 ## What Changes
 
 - Add configured-workspace-only `aw finish [target]`, with exact contextual selection or an interactive main-workspace picker, a repository-by-repository completion assessment, and an optional coordinated cleanup handoff.
-- Refresh remote evidence, compare each participant with its **currently configured effective base** (not an inferred creation base), and support exact Git ancestry or tightly correlated merged GitHub PR evidence. Report failed/unavailable evidence as unknown, not merged.
+- Refresh remote evidence, compare each participant with its **currently configured effective base** (not an inferred creation base), or require an explicitly named per-repository target when omitted. Support exact Git ancestry and merged GitHub PR evidence only when authenticated merge-time head provenance exists; otherwise report unknown, not merged or positively unmerged merely from negative ancestry.
 - Permit one interactive manual-completion confirmation for all unknown participants; require separate explicit discard consent for dirty/unpublished work. `--force` covers discard only, never completion. JSON and non-TTY callers cannot provide manual completion in v1.
-- Preview assessment and the actual `remove` operation plan before any destructive mutation; preserve `remove` hooks, ordering, branch retention, concurrency and partial-failure behavior. Add a post-`pre-remove` finish evidence gate inside the remove boundary rather than assuming remove's existing descendant-only gate is sufficient.
+- Preview assessment and a typed `remove` operation plan before any destructive mutation; preserve hooks, ordering, branch retention and partial-failure behavior. Add a shared cross-process mutator lock and post-`pre-remove` finish evidence gate inside the same typed remove executor. External actors remain outside the lock; safe output projects allowlisted typed results rather than raw ledgers.
 - Document the meaning and limits of completion in CLI docs, canonical docs and packaged skill guidance; update generated command contracts and shell completion as appropriate.
 
 ## Capabilities
@@ -18,7 +18,7 @@ Issue [#374](https://github.com/corwinm/arashi-arashi/issues/374) asks for a sin
 
 ### Modified Capabilities
 
-- `coordinated-worktree-removal`: A narrowly scoped caller-supplied pre-mutation validation gate; default remove semantics stay unchanged.
+- `coordinated-worktree-removal`: Internal typed plan/executor/result boundary, shared coordination lock and narrowly scoped finish guard; ordinary remove evidence semantics stay unchanged.
 - `machine-readable-cli-output`: Stable finish JSON report and error/exit contract.
 
 ## Impact
