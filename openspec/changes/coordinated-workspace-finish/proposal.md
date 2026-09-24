@@ -5,9 +5,9 @@ Issue [#374](https://github.com/corwinm/arashi-arashi/issues/374) asks for a sin
 ## What Changes
 
 - Add configured-workspace-only `aw finish [target]`, with exact contextual selection or an interactive main-workspace picker, a repository-by-repository completion assessment, and an optional coordinated cleanup handoff.
-- Refresh remote evidence, compare each participant with its **currently configured effective base** (not an inferred creation base), or require an explicitly named per-repository target when omitted. Support exact Git ancestry and merged GitHub PR evidence only when authenticated merge-time head provenance exists; otherwise report unknown, not merged or positively unmerged merely from negative ancestry.
-- Permit one interactive manual-completion confirmation for all unknown participants; require separate explicit discard consent for dirty/unpublished work. `--force` covers discard only, never completion. JSON and non-TTY callers cannot provide manual completion in v1.
-- Preview assessment and a typed `remove` operation plan before any destructive mutation; preserve hooks, ordering, branch retention and partial-failure behavior. Add a shared cross-process mutator lock and post-`pre-remove` finish evidence gate inside the same typed remove executor. External actors remain outside the lock; safe output projects allowlisted typed results rather than raw ledgers.
+- Refresh remote evidence in disposable Git storage and compare each participant with its **currently configured effective base** (not an inferred creation base). Omitted policy remains unknown in preview; interactive execution can name a per-repository target. Exact Git ancestry may prove integration. Attempt `gh` for verifiable correlation, but do not claim unavailable historical merge-time head proof; otherwise offer grouped manual completion.
+- Separate main-workspace picker selection from nonmutating preview: the picker may select, but preview never asks cleanup/policy/completion questions or runs hooks. Require separate completion judgment and dirty/unpublished discard consent on execution. `--force` covers discard and ordinary remove confirmation only, never completion. JSON/non-TTY cannot manually confirm completion in v1.
+- Preview exact remove operations and reuse existing remove behavior with a narrow finish-specific post-`pre-remove` pre-mutation gate and safe result projection. Do not introduce a universal cross-command lock or refactor create/prune/add/delete; document the residual external and concurrent-command race.
 - Document the meaning and limits of completion in CLI docs, canonical docs and packaged skill guidance; update generated command contracts and shell completion as appropriate.
 
 ## Capabilities
@@ -18,7 +18,7 @@ Issue [#374](https://github.com/corwinm/arashi-arashi/issues/374) asks for a sin
 
 ### Modified Capabilities
 
-- `coordinated-worktree-removal`: Internal typed plan/executor/result boundary, shared coordination lock and narrowly scoped finish guard; ordinary remove evidence semantics stay unchanged.
+- `coordinated-worktree-removal`: Minimal internal action/result exposure and finish-only pre-mutation callback; ordinary remove semantics stay unchanged.
 - `machine-readable-cli-output`: Stable finish JSON report and error/exit contract.
 
 ## Impact
