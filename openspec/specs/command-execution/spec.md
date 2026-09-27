@@ -14,8 +14,8 @@ The system SHALL provide an `arashi exec` command that runs a caller-provided ch
 - **AND** the command reports one result for each selected repository
 
 #### Scenario: Child command receives arguments after delimiter
-- **WHEN** a user runs `arashi exec -- bun run test -- --watch=false`
-- **THEN** Arashi treats `bun run test -- --watch=false` as the child command and arguments
+- **WHEN** a user runs `arashi exec -- pnpm run test --watch=false`
+- **THEN** Arashi treats `pnpm run test --watch=false` as the child command and arguments
 - **AND** Arashi does not parse child command flags as Arashi CLI options
 
 #### Scenario: No child command is provided
@@ -29,7 +29,7 @@ The system SHALL provide an `arashi exec` command that runs a caller-provided ch
 The system SHALL support repository selection for `arashi exec` so users can run commands across all managed repositories, explicitly selected repositories, or repositories with local changes.
 
 #### Scenario: Only selected repositories are targeted
-- **WHEN** a user runs `arashi exec --only arashi-docs -- bun run validate`
+- **WHEN** a user runs `arashi exec --only arashi-docs -- pnpm run validate`
 - **THEN** Arashi executes the child command only in the managed repository named `arashi-docs`
 - **AND** repositories not named by the filter are not executed
 
@@ -60,7 +60,7 @@ The system SHALL present human `arashi exec` output in repository-scoped groups 
 - **AND** the Arashi process exits with status code 0
 
 #### Scenario: Command fails in one repository
-- **WHEN** a user runs `arashi exec -- bun run test` and the child command exits non-zero in one selected repository
+- **WHEN** a user runs `arashi exec -- pnpm run test` and the child command exits non-zero in one selected repository
 - **THEN** human output identifies the failing repository and its child exit code
 - **AND** output from other executed repositories remains grouped under their repository names
 - **AND** the final summary reports the failure
@@ -71,7 +71,7 @@ The system SHALL present human `arashi exec` output in repository-scoped groups 
 The system SHALL support bounded parallel execution for `arashi exec` while preserving per-repository result reporting.
 
 #### Scenario: Bounded parallelism is requested
-- **WHEN** a user runs `arashi exec --jobs 4 -- bun run test`
+- **WHEN** a user runs `arashi exec --jobs 4 -- pnpm run test`
 - **THEN** Arashi runs at most four child commands concurrently
 - **AND** every selected repository is executed unless fail-fast prevents scheduling additional repositories
 - **AND** the reported results remain associated with the correct repository
@@ -86,13 +86,13 @@ The system SHALL support bounded parallel execution for `arashi exec` while pres
 The system SHALL support `--fail-fast` for `arashi exec` to stop scheduling additional repository executions after the first child command failure.
 
 #### Scenario: Fail-fast stops later serial execution
-- **WHEN** a user runs `arashi exec --fail-fast -- bun run test` and a selected repository fails during serial execution
+- **WHEN** a user runs `arashi exec --fail-fast -- pnpm run test` and a selected repository fails during serial execution
 - **THEN** Arashi does not start child commands for later selected repositories
 - **AND** the final summary reports executed failures and unstarted repositories
 - **AND** the Arashi process exits non-zero
 
 #### Scenario: Fail-fast with parallel execution
-- **WHEN** a user runs `arashi exec --jobs 4 --fail-fast -- bun run test` and one child command fails
+- **WHEN** a user runs `arashi exec --jobs 4 --fail-fast -- pnpm run test` and one child command fails
 - **THEN** Arashi stops scheduling additional repositories after observing the failure
 - **AND** already-running child commands are allowed to finish and are included in the reported results
 - **AND** repositories not started because of fail-fast are reported as skipped or not started

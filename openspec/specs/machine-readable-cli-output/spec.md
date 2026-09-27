@@ -130,7 +130,7 @@ The Arashi CLI SHALL provide structured JSON results for `arashi exec --json` us
 
 #### Scenario: Exec JSON reports child command failure
 
-- **WHEN** a user runs `arashi exec --json -- bun run test` and one or more selected repository commands exit non-zero
+- **WHEN** a user runs `arashi exec --json -- pnpm run test` and one or more selected repository commands exit non-zero
 - **THEN** stdout contains exactly one valid JSON envelope with `ok: false` and `command: "exec"`
 - **AND** the data or error details identify each failed repository and its child exit code
 - **AND** successful and skipped repository results remain available in the JSON payload
@@ -145,7 +145,7 @@ The Arashi CLI SHALL provide structured JSON results for `arashi exec --json` us
 
 #### Scenario: Exec JSON with fail-fast leaves repositories unstarted
 
-- **WHEN** a user runs `arashi exec --json --fail-fast --jobs 2 -- bun run test` and fail-fast prevents one or more selected repositories from starting
+- **WHEN** a user runs `arashi exec --json --fail-fast --jobs 2 -- pnpm run test` and fail-fast prevents one or more selected repositories from starting
 - **THEN** the JSON payload distinguishes successful, failed, skipped, and not-started repository results
 - **AND** the payload identifies that fail-fast caused the not-started results
 

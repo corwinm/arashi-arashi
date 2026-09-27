@@ -60,9 +60,9 @@ Examples:
    Quality checks before each commit:
    - Run project-required checks when available.
    - For `repos/arashi`, run:
-     - `bun run lint`
-     - `bun test`
-     - `bun run build`
+     - `pnpm run lint`
+     - `pnpm run test`
+     - `pnpm run build`
    - Fix failures before committing.
 
 4. **Prompt to create PRs**

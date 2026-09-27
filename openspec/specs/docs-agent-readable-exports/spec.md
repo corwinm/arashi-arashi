@@ -82,7 +82,7 @@ The docs validation flow SHALL cover generated agent-readable exports and repres
 
 #### Scenario: Contributor runs docs validation
 
-- **WHEN** a contributor runs `bun run validate`
+- **WHEN** a contributor runs `pnpm run validate`
 - **THEN** validation fails if required generated outputs such as `/llms.txt`, `/llms-full.txt`, `/workflows/agents-and-specs.md`, or `/commands/status.md` are missing or contain broken required links
 
 ### Requirement: Agent-readable exports include standalone workflow guidance

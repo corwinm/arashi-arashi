@@ -47,7 +47,7 @@ The system SHALL let users add explicit handoff context for links, validation ev
 - **AND** the links are preserved exactly as user-supplied Markdown-compatible text or URLs
 
 #### Scenario: User supplies validation evidence
-- **WHEN** a user runs `arashi handoff --validation "bun run test — passed" --validation "openspec validate add-agent-handoff-report — passed"`
+- **WHEN** a user runs `arashi handoff --validation "pnpm run test — passed" --validation "openspec validate add-agent-handoff-report — passed"`
 - **THEN** the report includes a validation section listing each supplied validation entry
 - **AND** the report does not claim that Arashi re-ran those commands unless it actually did so
 
