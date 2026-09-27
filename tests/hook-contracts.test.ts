@@ -301,12 +301,58 @@ describe("cross-repository lifecycle-hook contract", () => {
     );
   });
 
-  test("accepts aligned CLI, docs, generated export, and packaged skill semantics", async () => {
+  test("accepts the pre-finish CLI hook-input contract", async () => {
     const root = await fixture();
     expect(await checkHookContracts(root)).toEqual({
       diagnostics: [],
       ok: true,
     });
+  });
+
+  test("accepts finish with its own no-hook-input policy", async () => {
+    const contract = structuredClone(commandContract);
+    contract.commands.push({
+      path: "finish",
+      options: [
+        { long: "--no-hook-input", semanticPolicy: hookInputSemanticPolicy() },
+      ],
+      semantics: {},
+    });
+    const root = await fixture({
+      "repos/arashi/contracts/cli-commands.json": JSON.stringify(contract),
+    });
+    expect(await checkHookContracts(root)).toEqual({
+      diagnostics: [],
+      ok: true,
+    });
+  });
+
+  test("requires no-hook-input when finish exists", async () => {
+    const contract = structuredClone(commandContract);
+    contract.commands.push({ path: "finish", options: [], semantics: {} });
+    const root = await fixture({
+      "repos/arashi/contracts/cli-commands.json": JSON.stringify(contract),
+    });
+    expect((await checkHookContracts(root)).diagnostics).toContainEqual(
+      expect.objectContaining({ code: "HOOK_INPUT_OPTION_OWNERSHIP" }),
+    );
+  });
+
+  test("validates finish hook-input semantics", async () => {
+    const contract = structuredClone(commandContract);
+    const policy = hookInputSemanticPolicy();
+    policy.hookInput.immediateEof = false;
+    contract.commands.push({
+      path: "finish",
+      options: [{ long: "--no-hook-input", semanticPolicy: policy }],
+      semantics: {},
+    });
+    const root = await fixture({
+      "repos/arashi/contracts/cli-commands.json": JSON.stringify(contract),
+    });
+    expect((await checkHookContracts(root)).diagnostics).toContainEqual(
+      expect.objectContaining({ code: "HOOK_INPUT_STDIN_INVALID" }),
+    );
   });
 
   test("accepts the complete repository-remove alias contract on every maintained hook surface", async () => {
