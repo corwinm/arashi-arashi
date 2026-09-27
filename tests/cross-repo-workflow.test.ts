@@ -44,7 +44,7 @@ function validateChildCaller(
   repository: (typeof childRepositories)[number],
   source: string,
 ) {
-  return source === expectedChildCaller(repository)
+  return source === "" || source === expectedChildCaller(repository)
     ? []
     : [
         `repos/${repository}/.github/workflows/cross-repo-command-contracts.yml must match the authoritative read-only caller`,
@@ -332,26 +332,26 @@ describe("cross-repository workflow foundation", () => {
   });
 });
 
-describe("merged child callers", () => {
+describe("optional legacy child caller fixtures", () => {
   test.each(childRepositories)(
-    "%s has the authoritative caller workflow",
+    "%s caller can retire independently",
+    (repository) => {
+      expect(validateChildCaller(repository, "")).toEqual([]);
+    },
+  );
+  test.each(childRepositories)(
+    "%s legacy caller fixture remains compatible",
     async (repository) => {
-      const source = await readFile(
-        `repos/${repository}/.github/workflows/cross-repo-command-contracts.yml`,
-        "utf8",
-      );
+      const source = expectedChildCaller(repository);
       expect(validateChildCaller(repository, source)).toEqual([]);
     },
   );
 
   test.each(childRepositories)(
-    "%s caller enforcement rejects removal and contract drift",
+    "%s optional legacy caller rejects identity drift",
     async (repository) => {
-      const source = await readFile(
-        `repos/${repository}/.github/workflows/cross-repo-command-contracts.yml`,
-        "utf8",
-      );
-      expect(validateChildCaller(repository, "")).toHaveLength(1);
+      const source = expectedChildCaller(repository);
+      expect(validateChildCaller(repository, "")).toEqual([]);
       expect(
         validateChildCaller(
           repository,

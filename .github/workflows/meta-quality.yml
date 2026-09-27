@@ -1,0 +1,32 @@
+name: Meta quality
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    name: Meta quality checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: pnpm/setup@v2
+        with:
+          version: 11.22.0
+          runtime: node@24.18.0
+          cache: true
+          install: false
+      - name: Install pinned checker toolchain
+        run: pnpm install --frozen-lockfile
+      - name: Test checker
+        run: pnpm test
+      - name: Type-check checker
+        run: pnpm typecheck
+      - name: Check formatting
+        run: pnpm format:check
