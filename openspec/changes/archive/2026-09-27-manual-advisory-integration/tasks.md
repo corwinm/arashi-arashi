@@ -1,0 +1,25 @@
+## 1. Design gate and inventory
+
+- [x] 1.1 Obtain independent semantic and architecture approval at this exact design HEAD; repeat both after corrections. Structural validation alone is not approval.
+- [x] 1.2 Inventory all six repositories' callers, invocation consumers, test child reads, local quality/release workflows and live protection contexts; record a reviewed diff or explicit no-change finding for each child. Obtain scoped live-settings authorization before rollout writes.
+
+## 2. RED acceptance before implementation
+
+- [x] 2.1 Resolver tests: valid upstream main dispatch; reject non-main/tag/fork/call/automatic events, wrong workflow identity/ref, malformed or unequal workflow/event SHAs, wrong child source, missing main, API errors and malformed child SHAs before checkout. Prove one lookup per child and immutable checkout despite main advancing.
+- [x] 2.2 Evidence tests: reject wrong checkout HEAD, missing/duplicate/extra/out-of-order entries, wrong attribution/provenance, malformed SHA, missing artifact/file, empty/malformed digest and log-only evidence before semantic stages; preserve artifact on later semantic failure and distinguish early inability from drift.
+- [x] 2.3 Trigger/cleanup tests: final integration is dispatch-only without reusable/revision inputs, no direct or indirect automatic integration caller remains, and meta PR/main CI still runs local tests/typecheck/format. Prove the unique `Meta quality checks` context fails for local test, typecheck or formatting failure and remains required/blocking, while failed manual integration is non-required and does not itself block merge. Verify these effective protections and absence of obsolete required integration contexts by settings readback, not source assertions alone.
+- [x] 2.4 Test-isolation acceptance: run all default meta tests/typecheck/format in a clean checkout without `repos/` or child network access. Map every former child-dependent assertion to tracked fixture coverage or explicit manual integration tests; fail rather than skip missing children in integration mode.
+- [x] 2.5 Real semantic negatives: missing docs coverage, stale skills reference and missing VS Code parity fail with owning diagnostics; source/package aggregate checker failures propagate. Preserve registry mutation and stage-alignment tests, exactly-once authoritative stages, and unchanged real worktrees using isolated fixtures.
+
+## 3. Implementation after approvals
+
+- [x] 3.1 Separate automatic meta-local CI and deterministic fixtures from explicit child-dependent integration tests without losing checker coverage. Emit the stable unique `Meta quality checks` context, fail it on any local test/typecheck/format failure, and keep the advisory integration context distinct.
+- [x] 3.2 Implement main-only immutable resolution, provenance guards, complete evidence gate and truthful outcome reporting; retain stable semantic/package aggregates and least privilege.
+- [x] 3.3 Remove all five callers and audited invocation-only junk; replace caller-enforcement expectations and stale maintained docs. Preserve all child local quality/release checks and contract inputs.
+- [x] 3.4 Document exact dispatch/artifact inspection, local complete validation, advisory outcomes, snapshot limits, no automatic follow-up actions and the staged rollout.
+
+## 4. Delivery and verification
+
+- [x] 4.1 Run targeted and full meta-local tests, typecheck, formatting, explicit child-dependent integration tests and complete contracts/package validation; run affected child local checks, `openspec validate manual-advisory-integration --strict` and `git diff --check`. Record genuine failures without suppressing them.
+- [x] 4.2 Obtain exact-head implementation reviews and CI. Require successful `Meta quality checks` at the exact reviewed foundation HEAD, land the foundation with existing protections and `workflow_call` retained, then verify a successful main run and record the actual emitted context and run/SHA evidence before settings changes. With scoped authorization, replace meta ruleset `18285592` required `contracts` with that verified local context in one update; preserve all unrelated checks/settings. Separately perform removal-only of obsolete CLI/VS Code `contracts / contracts`. Read back exact targets and effective repository/organization rules and branch protections to prove meta-local CI is required and integration is not before deleting callers. Stop for absent/different/unsuccessful context or protections outside authorized control. Land and verify all five child deletions before removing `workflow_call`.
+- [x] 4.3 Verify final six-repository active wiring, no dangling references, protection readback (required/blocking meta-local failures versus non-required advisory integration failures) and preserved local/release coverage. Dispatch a new main run, inspect completion and downloaded revision evidence/digest, report actual drift separately from inability, then archive/sync the spec and close #377 with evidence. No green integration prerequisite for unrelated merges.
