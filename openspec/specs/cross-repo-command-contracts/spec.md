@@ -113,7 +113,7 @@ The cross-repository policy SHALL distinguish VS Code commands backed by Arashi 
 
 ### Requirement: Repository-local consistency gates
 
-The CLI repository SHALL validate command-contract generation and freshness without requiring sibling repositories, and the VS Code repository SHALL validate consistency among contributed commands, activation events, internal command IDs, and runtime handlers.
+The CLI repository SHALL validate command-contract generation and freshness without requiring sibling repositories, and the VS Code repository SHALL validate consistency among contributed commands, activation events, internal command IDs, and runtime handlers. All five children SHALL retain their repository-local quality and release/package validation. Automatic meta pull-request and main-push CI SHALL run checker tests, typecheck and formatting without live child checkouts or child network reads, using tracked deterministic fixtures and real meta checkers. The stable, uniquely named `Meta quality checks` status SHALL fail on any meta-local test, typecheck or formatting failure and SHALL be required for meta merges, distinct from the non-required manual integration status. Tests requiring actual child implementations SHALL remain in an explicit manual integration suite and SHALL fail, not skip, when required children are absent.
 
 #### Scenario: VS Code manifest and handlers diverge
 
@@ -125,15 +125,33 @@ The CLI repository SHALL validate command-contract generation and freshness with
 - **WHEN** CLI CI runs in a checkout without docs, skills, or VS Code siblings
 - **THEN** CLI contract unit tests and artifact freshness validation still complete independently
 
+#### Scenario: Meta checkout has no children
+
+- **WHEN** automatic meta-local CI runs in a clean checkout without `repos/`
+- **THEN** all default checker tests, typecheck and formatting execute without fetching children
+- **AND** fixture-based positive and negative checker coverage remains active
+
+#### Scenario: Meta-local quality fails
+
+- **WHEN** a meta-local test, typecheck or formatting check fails on a pull request
+- **THEN** the required `Meta quality checks` status fails and blocks merge under effective protections
+- **AND** an unsuccessful manual integration status remains non-required and does not itself block merge
+
+#### Scenario: Child implementation acceptance is partitioned
+
+- **WHEN** a test requires actual child aggregate, archive or guidance implementations
+- **THEN** it remains executable in the explicit manual integration suite after the revision-evidence gate
+- **AND** missing children fail that suite instead of silently skipping coverage
+
 ### Requirement: Reproducible local and CI execution
 
-The meta-repository SHALL document how to regenerate contract inputs and execute a complete coordinated validation path locally. The documented local path and authoritative CI SHALL contain the same semantic stage set: docs aggregate, skills source aggregate, canonical extracted-package aggregate, and registry-backed meta aggregate. CI SHALL check out all required child repositories at explicit revisions, execute each child aggregate once, and use the meta aggregate's explicit prevalidated-child mode only to avoid duplicate execution. Automated alignment validation SHALL fail if documentation, package scripts or coordinator, and authoritative workflow omit, duplicate, or rename a stable stage inconsistently.
+The meta-repository SHALL document how to regenerate contract inputs and execute a complete coordinated validation path locally. The documented local path and authoritative manual integration CI SHALL contain the same semantic stage set: docs aggregate, skills source aggregate, canonical extracted-package aggregate, and registry-backed meta aggregate. Manual integration CI SHALL check out all required child repositories at explicit revisions, execute each child aggregate once, and use the meta aggregate's explicit prevalidated-child mode only to avoid duplicate execution. Automated alignment validation SHALL fail if documentation, package scripts or coordinator, and authoritative workflow omit, duplicate, or rename a stable stage inconsistently.
 
 #### Scenario: Maintainer updates a command
 
 - **WHEN** a maintainer follows the documented update workflow
 - **THEN** the documentation identifies how to regenerate CLI metadata, update companion policy or coverage, create the canonical skills archive, and run repository-local and complete cross-repository checks
-- **AND** the documented semantic stage set matches authoritative CI
+- **AND** the documented semantic stage set matches authoritative manual integration CI
 
 #### Scenario: Cross-repository CI runs
 
@@ -452,11 +470,11 @@ The meta-repository SHALL compose stable repository-owned semantic validation en
 - **THEN** validation reports the missing stage by repository and mode
 - **AND** exits unsuccessfully
 
-#### Scenario: Coordinated trigger inputs remain reachable
+#### Scenario: Checker changes retain automatic local coverage
 
-- **WHEN** the authoritative meta workflow is migrated to stable child aggregates
-- **THEN** its pull-request path filters continue to include meta checker/test/config/workflow inputs
-- **AND** include each child repository's checker, manifest or runner, canonical guidance, generated-contract, package-boundary, and workflow inputs used by coordinated validation
+- **WHEN** a meta checker, test, registry, configuration, workflow or documentation changes in a pull request or on main
+- **THEN** automatic meta-local tests, typecheck and formatting remain reachable
+- **AND** the cross-repository semantic stage set runs only on explicit manual dispatch
 
 ### Requirement: Coordinated contract checkers use fail-closed registration
 
@@ -880,98 +898,95 @@ The typed CLI command-contract producer SHALL publish `uninstall` and `shell uni
 - **WHEN** documentation generation reads the versioned CLI contract
 - **THEN** it can list and link the new commands without duplicating a separate authored option inventory
 
-### Requirement: Child repositories SHALL invoke authoritative cross-repository validation
-
-Each participating child repository SHALL invoke the public authoritative cross-repository workflow for pull requests and pushes to its default branch. The caller SHALL identify its trusted logical upstream repository from the supported fixed set and SHALL pass the actual event source repository plus the event's full child commit SHA without passing secrets. The called workflow SHALL validate the upstream caller identity, require the supplied source and SHA to equal the caller event payload, and, when source differs from logical repository, validate that the public source belongs to the expected fork network.
-
-#### Scenario: Child pull request changes a shared contract
-
-- **WHEN** a participating child pull request is opened or updated
-- **THEN** the child commit runs the authoritative cross-repository semantic stage set
-- **AND** the reusable workflow receives the pull request head SHA as the triggering child revision
-- **AND** it records the trusted logical upstream separately from the pull request head source repository
-
-#### Scenario: Child change reaches main
-
-- **WHEN** a participating child commit is pushed to `main`
-- **THEN** the merged child commit runs the authoritative cross-repository semantic stage set
-- **AND** the reusable workflow receives `github.sha` as the triggering child revision
-
-#### Scenario: Caller attempts to pass authority
-
-- **WHEN** a child calls the reusable workflow
-- **THEN** the caller and called workflow use read-only contents permission
-- **AND** no PAT, release credential, inherited secret, or write permission is passed
-
 ### Requirement: Cross-repository CI SHALL bind validation to immutable revisions
 
-Before any repository checkout or semantic checker execution, authoritative CI SHALL validate its invocation and resolve exactly one source repository and full lowercase 40-character commit SHA for the meta repository and every participating child. The triggering child SHALL resolve to the explicit caller source and SHA. For a child-called run, the workflow SHALL require `job.workflow_repository` to equal `corwinm/arashi-arashi` and SHALL resolve the meta repository to `job.workflow_sha`, binding validation to the exact reusable-workflow commit selected by GitHub rather than a fresh default-branch lookup. Every repository checkout SHALL use the corresponding resolved source and SHA and SHALL NOT use a branch, tag, default checkout, pull-request merge ref, or other floating revision.
+Before repository checkout or semantic execution, authoritative integration CI SHALL accept only a `workflow_dispatch` in `corwinm/arashi-arashi` on `refs/heads/main` with the executing workflow repository/ref bound to that upstream main invocation and its full lowercase 40-character workflow commit SHA equal to the dispatch event SHA. The meta source SHALL be that upstream repository at the dispatch SHA, not a fresh main lookup. CI SHALL resolve each of the five fixed upstream child `refs/heads/main` refs exactly once to a validated canonical source and full lowercase 40-character commit SHA before checkout. Every checkout SHALL use only its resolved source/SHA with credentials not persisted. Branches, tags, default checkout, PR merge refs, matching branches, forks and proposed revision overrides SHALL NOT be checkout selections. The workflow SHALL use read-only contents permission without inherited secrets, release credentials or write tokens.
 
-#### Scenario: Child-triggered validation resolves repositories
+#### Scenario: Manual main snapshot is resolved
 
-- **WHEN** a supported child invokes validation with a valid full commit SHA
-- **THEN** that child is resolved to the supplied source repository and SHA
-- **AND** the meta repository is resolved to the called job's validated `job.workflow_repository` and `job.workflow_sha`
-- **AND** all other repositories are resolved once from their intended default refs before checkout
-- **AND** every checkout and checker uses only the resolved SHAs
+- **WHEN** a valid upstream main dispatch starts
+- **THEN** meta resolves to the equal workflow/event SHA and each child resolves once from its upstream main
+- **AND** subsequent main movement does not change any selected checkout SHA
+- **AND** the result describes that recorded snapshot, not atomic or continually fresh main state
 
-#### Scenario: Direct meta pull request uses coordinated branches
+#### Scenario: Invocation or resolution is invalid
 
-- **WHEN** the meta workflow runs for a pull request whose branch also exists in one or more children
-- **THEN** each matching child branch is resolved to its full SHA before checkout
-- **AND** children without that branch are resolved from `main`
+- **WHEN** the event is not dispatch, the ref is non-main, the workflow repository/ref is wrong, workflow/event SHA is malformed or mismatched, a child source is unexpected, or child main resolution fails or yields a malformed SHA
+- **THEN** validation fails before repository checkout and semantic execution
+- **AND** it reports inability to validate without branch fallback or fabricated evidence
 
-#### Scenario: Fork pull request is validated
+#### Scenario: Workflow is rerun
 
-- **WHEN** a supported child caller reports a source repository different from its trusted logical upstream
-- **THEN** validation verifies that source belongs to the expected public fork network
-- **AND** checks out the source repository at the exact pull request head SHA into the logical child's canonical path
-- **AND** records both logical and source repository identities in durable evidence
-
-#### Scenario: Invocation is malformed
-
-- **WHEN** the triggering logical repository is unsupported, caller identity is mismatched, the logical/source/SHA tuple is incomplete or differs from the caller event payload, the source is not the expected upstream or fork, the SHA is not a full lowercase hexadecimal commit identity, the called job workflow repository is unexpected, or a selected ref cannot be resolved
-- **THEN** validation exits unsuccessfully before repository checkout and semantic checker execution
+- **WHEN** a historical run is rerun
+- **THEN** its coordinator remains bound to its original workflow/event SHA
+- **AND** a fresh coordinator assessment requires a new main dispatch
 
 ### Requirement: Cross-repository CI SHALL publish durable complete revision evidence
 
-Authoritative CI SHALL generate one deterministic JSON manifest after checkout that records schema version, triggering logical/source repository and revision, and one canonical entry containing logical repository, source repository, and SHA for the meta repository and every participating child. It SHALL verify local `HEAD` identities equal the resolved revisions, append the manifest to the job summary, upload the exact manifest under the fixed name `cross-repo-revisions` with missing files treated as errors, require the upload action's non-empty SHA-256 artifact-archive digest, and append that digest to the summary.
+Authoritative integration CI SHALL generate a schema-versioned deterministic JSON manifest after verifying all checkout HEADs equal their resolved SHAs. It SHALL record the dispatch event/ref, coordinator workflow repository/ref/SHA, triggering meta logical/source repository and revision, and exactly one logical/source/SHA entry per repository in canonical order: meta, CLI, docs, skills, VS Code, presentation. It SHALL validate completeness and attribution, append the JSON to the job summary, upload identical JSON under `cross-repo-revisions` with missing files treated as errors, require a non-empty valid SHA-256 artifact-archive digest and append the digest with its archive meaning to the summary. This entire evidence gate SHALL precede semantic execution.
 
-#### Scenario: Revision evidence is published
+#### Scenario: Complete evidence is published
 
-- **WHEN** all repositories are checked out successfully
-- **THEN** the manifest lists every repository exactly once in canonical order with a full SHA
-- **AND** its trigger fields match the invocation
-- **AND** the identical JSON bytes are available in the summary and artifact
-- **AND** the summary identifies the non-empty GitHub artifact-archive digest
+- **WHEN** the evidence gate succeeds
+- **THEN** all six repository entries have full SHAs and correct canonical attribution and order
+- **AND** dispatch/coordinator provenance matches the invocation
+- **AND** identical JSON is available in summary and artifact with the identified archive digest
 
-#### Scenario: Semantic validation fails after checkout
+#### Scenario: Semantic validation fails after evidence publication
 
-- **WHEN** a later contract stage fails
-- **THEN** the already-created revision manifest remains available for that run
+- **WHEN** a later semantic stage detects drift
+- **THEN** the run remains unsuccessful and its already-published revision artifact remains available
+- **AND** the report identifies drift without converting the run into a merge requirement
 
-#### Scenario: Revision evidence drifts
+#### Scenario: Evidence is invalid or unavailable
 
-- **WHEN** a local checkout differs from its resolved SHA, an entry is missing or duplicated, logical/source attribution is wrong, ordering changes, a SHA is malformed, the called meta source is freshly resolved from `main`, the manifest upload can continue without its file, the upload digest is empty, or workflow reporting becomes log-only
-- **THEN** deterministic contract validation reports the mismatch and exits unsuccessfully
+- **WHEN** a checkout differs from its resolved SHA, a repository entry is missing/extra/duplicated/out of order, attribution or provenance differs, a SHA is malformed, the manifest is missing, upload fails, the digest is missing/malformed, or evidence is log-only
+- **THEN** validation fails before semantic execution and reports inability to validate
+- **AND** partial resolution or failed checkouts are never represented as complete checked revision evidence
 
 ### Requirement: Direct meta validation SHALL remain available
 
-The authoritative workflow SHALL retain pull-request, default-branch push, and manual triggers in the meta repository while also supporting child calls. Direct meta runs SHALL use the same immutable resolution and revision-evidence path as child-triggered runs.
+The authoritative integration workflow SHALL expose only manual dispatch, with the main-only invocation and immutable evidence policy above, and SHALL NOT expose reusable calls, revision-selection inputs, automatic PR/push triggers or schedules. Automatic meta-local tests/typecheck/formatting SHALL remain separate. Maintainers SHALL dispatch after coordinated changes land and on demand for diagnosis, inspect the completed run and revision artifact, and report actual semantic drift separately from execution/infrastructure inability to validate. Either failure SHALL remain unsuccessful without requiring the integration status for merges. No status fan-out, notification service, automatic merge, release or cleanup SHALL be introduced.
 
-#### Scenario: Maintainer validates a coordinated meta branch
+#### Scenario: Maintainer assesses merged sources
 
-- **WHEN** the workflow runs directly for a meta pull request
-- **THEN** matching coordinated child branches remain eligible
-- **AND** the run produces the same complete immutable revision manifest
+- **WHEN** a maintainer dispatches the workflow on upstream main after coordinated changes land or for diagnosis
+- **THEN** the same complete semantic and package stage set validates exact main revisions
+- **AND** delivery evidence records the resulting run and artifact rather than treating dispatch acceptance as successful validation
 
-#### Scenario: Maintainer manually validates current defaults
+#### Scenario: Meta pull request or main push occurs
 
-- **WHEN** the workflow runs by manual dispatch
-- **THEN** participating children resolve from their default branches
-- **AND** the run produces the same complete immutable revision manifest
+- **WHEN** meta receives a pull request update or main push
+- **THEN** automatic meta-local quality checks run without live children
+- **AND** cross-repository integration does not run automatically
 
-#### Scenario: Meta main changes
+#### Scenario: Manual assessment fails
 
-- **WHEN** a commit reaches the meta repository’s `main` branch
-- **THEN** authoritative cross-repository validation runs with the meta commit bound to `github.sha`
+- **WHEN** semantic drift, build/setup failure or infrastructure failure occurs
+- **THEN** the workflow preserves a failed outcome and reports known failure categories without misclassifying an unknown nonzero exit as proven drift
+- **AND** the advisory result does not automatically block merges or cause merge, release or cleanup actions
+
+### Requirement: Child repositories SHALL retain local gates without automatic integration callers
+
+All five participating children SHALL remove automatic cross-repository integration callers and invocation-only helpers/configuration, caller-enforcement tests and stale maintained references. Useful structured contracts, repository-local semantic validators, retained fixtures and release/package checks SHALL remain. Integration SHALL NOT be a required merge status in any participating repository; unrelated protections SHALL remain unchanged. Migration SHALL replace meta ruleset `18285592` required `contracts` with the verified, successfully emitted `Meta quality checks` context, not merely remove the meta requirement. The foundation SHALL pass that local check at its exact reviewed HEAD and land before a successful main run verifies the actual emitted context and before any required-status replacement. The authorized replacement SHALL preserve unrelated checks and settings in the same update. CLI and VS Code obsolete integration context `contracts / contracts` SHALL instead be removed without replacing or weakening their unrelated local gates. Every child SHALL have a reviewed cleanup diff or an explicit no-change finding.
+
+#### Scenario: Child pull request or main push runs
+
+- **WHEN** a child pull request is opened/updated or a commit reaches its main branch
+- **THEN** ordinary child-local quality/release workflows retain their intended coverage
+- **AND** no workflow automatically invokes the cross-repository integration suite
+
+#### Scenario: Required-status and caller retirement is staged
+
+- **WHEN** maintainers roll out the migration
+- **THEN** they inventory applicable repository and organization protections, require the local check to pass at the exact reviewed foundation HEAD, land the foundation, and verify its successful actual emitted local context on main before replacing meta ruleset `18285592` required `contracts` with that context
+- **AND** authorized CLI/VS Code `contracts / contracts` removal is distinct from that meta replacement, and all unrelated checks/settings are preserved
+- **AND** exact-target and effective repository/organization rules and branch-protection readback proves the meta-local context is required and obsolete integration contexts are not before deleting callers
+- **AND** all five child caller deletions land before the meta reusable interface is removed
+- **AND** an absent, different or unsuccessful local context or an unchangeable inherited requirement stops rollout rather than guessing, stranding PRs or bypassing protections
+
+#### Scenario: Cleanup encounters shared contract inputs
+
+- **WHEN** an artifact serves both integration and retained local or release checks
+- **THEN** consumer tracing preserves it and its needed fixtures
+- **AND** final audits find no active caller or required-status references to retired wiring
