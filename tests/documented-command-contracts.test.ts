@@ -1,33 +1,6 @@
 import { describe, expect, test } from "vitest";
-import {
-  checkDocumentedCommandContracts,
-  findPreferredArashiInvocations,
-  maintainedDocumentedCommandSources,
-} from "../scripts/documented-command-contracts";
-
+import { findPreferredArashiInvocations } from "../scripts/documented-command-contracts";
 describe("coordinated primary documented command contract", () => {
-  test("covers every configured repository and passes maintained guidance", () => {
-    const sources = maintainedDocumentedCommandSources(process.cwd());
-    for (const repository of [
-      "arashi",
-      "arashi-docs",
-      "arashi-presentation",
-      "arashi-skills",
-      "arashi-vscode",
-    ]) {
-      expect(
-        sources.some((source) => source.startsWith(`repos/${repository}/`)),
-        repository,
-      ).toBe(true);
-    }
-    expect(sources).toContain("repos/arashi-vscode/src/commands/handlers.ts");
-    expect(sources).toContain("repos/arashi-vscode/src/worktrees/service.ts");
-    expect(checkDocumentedCommandContracts(process.cwd())).toEqual({
-      ok: true,
-      diagnostics: [],
-    });
-  });
-
   test("rejects preferred arashi examples with stable source diagnostics", () => {
     expect(
       findPreferredArashiInvocations(
@@ -50,7 +23,6 @@ describe("coordinated primary documented command contract", () => {
       expect.objectContaining({ message: expect.stringContaining("line 5") }),
     ]);
   });
-
   test("folds only unescaped PowerShell backtick continuations", () => {
     const diagnostics = findPreferredArashiInvocations(
       [
@@ -79,7 +51,6 @@ describe("coordinated primary documented command contract", () => {
       expect.objectContaining({ message: expect.stringContaining("line 6") }),
     ]);
   });
-
   test("rejects commands preceded by documented option syntax", () => {
     expect(
       findPreferredArashiInvocations(
@@ -88,7 +59,6 @@ describe("coordinated primary documented command contract", () => {
       ),
     ).toHaveLength(3);
   });
-
   test("recognizes configure as part of the documented command vocabulary", () => {
     expect(
       findPreferredArashiInvocations(
@@ -102,7 +72,6 @@ describe("coordinated primary documented command contract", () => {
       }),
     ]);
   });
-
   test("rejects quoted executable invocations without matching quoted identifiers", () => {
     expect(
       findPreferredArashiInvocations(
@@ -127,7 +96,6 @@ describe("coordinated primary documented command contract", () => {
       ),
     ).toEqual([]);
   });
-
   test("masks only supported package-runner specifiers", () => {
     expect(
       findPreferredArashiInvocations(
@@ -153,7 +121,6 @@ describe("coordinated primary documented command contract", () => {
       ),
     ).toHaveLength(3);
   });
-
   test("limits compatibility exemptions to the compatibility clause", () => {
     expect(
       findPreferredArashiInvocations(
@@ -167,7 +134,6 @@ describe("coordinated primary documented command contract", () => {
       }),
     ]);
   });
-
   test("accepts historical framing without exempting unrelated history prose", () => {
     expect(
       findPreferredArashiInvocations(
@@ -182,7 +148,6 @@ describe("coordinated primary documented command contract", () => {
       ),
     ).toHaveLength(1);
   });
-
   test("accepts only completed version results in dated manual acceptance outcomes", () => {
     const recordedOutcome = [
       "## Manual Acceptance Outcomes (2026-02-11)",
@@ -207,7 +172,6 @@ describe("coordinated primary documented command contract", () => {
       ).toHaveLength(1);
     }
   });
-
   test("accepts identifiers, history, compatibility, and aw examples", () => {
     const valid = [
       "npm install -g arashi",

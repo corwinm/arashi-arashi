@@ -406,7 +406,7 @@ jobs:
         run: node repos/arashi-skills/scripts/validate-guidance.mjs --skill-root package-check/skills/arashi
       - name: Test checker
         working-directory: meta
-        run: pnpm test
+        run: pnpm test:integration
       - name: Type-check checker
         working-directory: meta
         run: pnpm typecheck

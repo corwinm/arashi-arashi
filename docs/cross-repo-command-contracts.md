@@ -2,6 +2,12 @@
 
 The meta-repository compares the generated CLI command contract with the canonical docs, structured skill coverage, and VS Code policy. For create launch configuration, it normalizes the CLI semantic manifest as the authority, verifies its modes, fields, and editor scopes against the generated CLI schema, and compares the docs and skill companions with those CLI-derived semantics. Switch configuration remains checked against its generated schema and companion contracts. Docs-local validation proves that canonical sources and generated agent exports agree with the docs contract; skill-local validation proves packaged guidance agrees with the skill contract.
 
+## Checker development (meta-only)
+
+Run `pnpm test`, `pnpm typecheck`, and `pnpm format:check` without populating
+children. Automatic CI reports **Meta quality checks**. See the
+[test boundary and moved assertion inventory](checker-test-boundaries.md).
+
 ## Run locally
 
 Populate all five `repos/*` checkouts, install the pinned private toolchain, then run:
@@ -25,6 +31,7 @@ mkdir package-check
 tar -xzf arashi-skill-package.tar.gz -C package-check
 node repos/arashi-skills/scripts/validate-guidance.mjs --skill-root package-check/skills/arashi
 pnpm contracts:check
+pnpm test:integration
 pnpm test
 pnpm typecheck
 ```

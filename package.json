@@ -9,8 +9,9 @@
     "contracts:check:ci": "node --experimental-strip-types scripts/run-contract-checks.ts --prevalidated-children",
     "contracts:hooks": "node --experimental-strip-types scripts/check-hook-contracts.ts",
     "test": "vitest run",
+    "test:integration": "vitest run --config vitest.integration.config.ts",
     "typecheck": "tsc --noEmit",
-    "format:check": "prettier --check package.json tsconfig.json scripts tests docs .github"
+    "format:check": "prettier --check package.json tsconfig.json vitest*.config.ts scripts tests docs .github"
   },
   "devDependencies": {
     "@types/node": "24.10.1",
