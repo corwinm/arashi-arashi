@@ -3172,40 +3172,6 @@ const runsInOrder = (runs: string[], commands: string[]): boolean => {
   return true;
 };
 
-const workflowPullRequestPaths = (workflow: string): Set<string> | null => {
-  const lines = workflow.split(/\r?\n/);
-  let onIndent = -1;
-  let pullRequestIndent = -1;
-  let pathsIndent = -1;
-  const result = new Set<string>();
-  for (const line of lines) {
-    if (/^\s*(?:#.*)?$/.test(line)) continue;
-    const indent = line.match(/^\s*/)?.[0].length ?? 0;
-    if (/^\s*["']?on["']?:\s*(?:#.*)?$/.test(line)) {
-      onIndent = indent;
-      pullRequestIndent = -1;
-      pathsIndent = -1;
-      continue;
-    }
-    if (onIndent < 0) continue;
-    if (indent <= onIndent) break;
-    if (/^\s*pull_request:\s*(?:#.*)?$/.test(line)) {
-      pullRequestIndent = indent;
-      pathsIndent = -1;
-      continue;
-    }
-    if (pullRequestIndent < 0 || indent <= pullRequestIndent) continue;
-    if (/^\s*paths:\s*(?:#.*)?$/.test(line)) {
-      pathsIndent = indent;
-      continue;
-    }
-    if (pathsIndent < 0 || indent <= pathsIndent) continue;
-    const item = line.match(/^\s*-\s*(["']?)(.*?)\1\s*(?:#.*)?$/);
-    if (item) result.add(item[2]);
-  }
-  return pullRequestIndent >= 0 && pathsIndent < 0 ? null : result;
-};
-
 const executableCheckerSource = (content: string): boolean =>
   content
     .replace(/^#!.*$/gm, "")
@@ -4952,32 +4918,6 @@ export async function checkContracts(
         "create-base packaged skill",
         "The source checker must precede creation, extraction, and checking of release-shaped skill bytes in the checker job.",
       );
-
-    const triggerPaths = workflowPullRequestPaths(workflow);
-    for (const requiredPath of [
-      "repos/arashi/src/**",
-      "repos/arashi/schema/**",
-      "repos/arashi/contracts/**",
-      "repos/arashi/.github/workflows/**",
-      "repos/arashi-docs/docs/**",
-      "repos/arashi-docs/scripts/**",
-      "repos/arashi-docs/contracts/**",
-      "repos/arashi-docs/.github/workflows/**",
-      "repos/arashi-skills/skills/**",
-      "repos/arashi-skills/scripts/**",
-      "repos/arashi-skills/contracts/**",
-      "repos/arashi-skills/.github/workflows/**",
-    ])
-      if (triggerPaths !== null && !triggerPaths.has(requiredPath))
-        add(
-          d,
-          "error",
-          "schema",
-          "CREATE_BASE_TRIGGER_PATH_UNREACHABLE",
-          paths.workflow,
-          requiredPath,
-          "The coordinated contract workflow pull-request trigger must cover child sources, contracts, and workflow wiring.",
-        );
   }
   if (
     typeof contract?.schemaVersion === "number" &&

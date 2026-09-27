@@ -58,28 +58,10 @@ describe("cross-repository command contracts", () => {
     ).toEqual([]);
     expect(result.ok, JSON.stringify(result.diagnostics, null, 2)).toBe(true);
   });
-  test("accepts an unfiltered pull request trigger as complete path coverage", async () => {
+  test("accepts manual assessment without obsolete automatic path coverage", async () => {
     const root = await schemaV8Fixture();
-    const workflowPath = join(
-      root,
-      ".github/workflows/cross-repo-command-contracts.yml",
-    );
-    const workflow = await readFile(workflowPath, "utf8");
-    await writeFile(
-      workflowPath,
-      workflow.replace(
-        /  pull_request:\n    paths:\n(?:      - .+\n)+/,
-        "  pull_request:\n",
-      ),
-    );
-
     const result = await checkContracts(root);
-    expect(
-      result.diagnostics.filter(
-        (diagnostic) =>
-          diagnostic.code === "CREATE_BASE_TRIGGER_PATH_UNREACHABLE",
-      ),
-    ).toEqual([]);
+    expect(result.ok, JSON.stringify(result.diagnostics, null, 2)).toBe(true);
   });
   test("normalizes the complete canonical configure policy and companion classifications", async () => {
     const result = await checkContracts(await schemaV8Fixture());
@@ -719,38 +701,6 @@ This property is unsupported; migrate to root \`baseBranch\`.
     );
     expect(codes).toContain("CLI_CREATE_BASE_SCHEMA_GENERATION_UNREACHABLE");
     expect(codes).toContain("DOCS_CREATE_BASE_SEQUENCE_UNREACHABLE");
-  });
-  test("rejects missing create-base child source, workflow, and contract trigger paths", async () => {
-    const root = await schemaV7Fixture();
-    const path = join(
-      root,
-      ".github/workflows/cross-repo-command-contracts.yml",
-    );
-    const workflow = await readFile(path, "utf8");
-    await writeFile(
-      path,
-      workflow
-        .replace('      - "repos/arashi/src/**"\n', "")
-        .replace('      - "repos/arashi-docs/.github/workflows/**"\n', "")
-        .replace('      - "repos/arashi-skills/contracts/**"\n', ""),
-    );
-
-    expect((await checkContracts(root)).diagnostics).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({
-          code: "CREATE_BASE_TRIGGER_PATH_UNREACHABLE",
-          subject: "repos/arashi/src/**",
-        }),
-        expect.objectContaining({
-          code: "CREATE_BASE_TRIGGER_PATH_UNREACHABLE",
-          subject: "repos/arashi-docs/.github/workflows/**",
-        }),
-        expect.objectContaining({
-          code: "CREATE_BASE_TRIGGER_PATH_UNREACHABLE",
-          subject: "repos/arashi-skills/contracts/**",
-        }),
-      ]),
-    );
   });
   test.each([
     [

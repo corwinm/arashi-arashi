@@ -60,14 +60,27 @@ This sequence validates source guidance and then the extracted `skills/arashi` s
 - `VSCODE_*`: ensure mapping IDs exist in `package.json` contributions and classify extension-only navigation/panel commands explicitly.
 - CI records all checked-out revisions in `cross-repo-revisions.json`. Reproduce a failure by checking out each recorded `sourceRepository` at its exact `sha` into the meta root or corresponding `repos/*` path.
 
-## CI invocation and revision evidence
+## Manual advisory assessment and revision evidence
 
-The authoritative workflow runs directly for meta-repository pull requests, `main` pushes, and manual dispatches. A minimal read-only caller in each child repository also invokes it for pull requests and `main` pushes. Each caller passes its fixed logical upstream repository, the actual pull-request source repository, and the exact PR-head or push SHA. Fork pull requests therefore validate the fork commit while the coordinator separately verifies that the source belongs to the expected upstream fork network. No caller passes secrets.
-
-The coordinator resolves every other repository once, checks out only full SHAs, and verifies every checkout before validation. Its `cross-repo-revisions.json` artifact contains a canonical `repositories` array of `logicalRepository`, `sourceRepository`, and `sha` entries plus the triggering entry. Download it with:
+The integration workflow is **manual-only** (`workflow_dispatch`), without revision inputs. It is **not a merge gate**: child local CI and the required automatic **Meta quality checks** remain independent. Dispatch only upstream meta `main`:
 
 ```sh
-gh run download RUN_ID -R OWNER/REPOSITORY -n cross-repo-revisions
+gh workflow run cross-repo-command-contracts.yml --repo corwinm/arashi-arashi --ref main
+gh run list --repo corwinm/arashi-arashi --workflow cross-repo-command-contracts.yml --event workflow_dispatch
+gh run view RUN_ID --repo corwinm/arashi-arashi --log
+gh run download RUN_ID -R corwinm/arashi-arashi -n cross-repo-revisions
 ```
 
-To reproduce a run, check out each listed `sourceRepository` at its listed `sha`; do not substitute a current branch tip. The workflow summary also reports the artifact-archive SHA-256 from GitHub's upload action. That digest covers the downloadable artifact archive, not the manifest file alone. Compare it with the artifact API's `digest` field or hash the downloaded archive bytes before extraction when verifying durable evidence.
+A dispatch acknowledgment is not a validation result. Inspect the completed run, summary and downloaded manifest. The workflow rejects feature refs, tags, forks and automatic/reusable invocations before checkout. GitHub's executing `github.workflow_ref` must identify this upstream workflow at `refs/heads/main`, and its full lowercase `github.workflow_sha` must equal the dispatch `github.sha`. Meta is checked out at that event SHA, not a newer main tip. Each child's canonical upstream identity is checked and its `main` SHA resolved once; there is no matching-branch or default-branch fallback.
+
+The schemaVersion **2** `cross-repo-revisions.json` records `event` (name/repository/ref/sha), `coordinator` (repository/workflow ref/sha), the meta `trigger`, and exactly six `repositories` entries in meta, CLI, docs, skills, VS Code, presentation order. Every entry has `logicalRepository`, `sourceRepository`, and full `sha`; each checkout HEAD must match. The identical JSON appears in the summary. Manifest validation, summary publication, artifact upload (missing file is an error), and digest validation all precede toolchain installation and semantic validation. Later failures retain the artifact.
+
+The summary reports the **artifact-archive SHA-256** from GitHub's upload action. It covers the downloadable archive, not the JSON file alone. Compare it with the artifact API's `digest` field or hash downloaded archive bytes before extraction. To reproduce, check out each recorded source at its exact SHA into the meta root or corresponding `repos/*` path and execute the local sequence above; never substitute today's branch tips.
+
+This is a recorded snapshot, not an atomic six-repository transaction or a promise of current freshness. Main can advance during assessment. A new dispatch obtains a new snapshot; a rerun retains the original coordinator provenance and is not a fresh coordinator assessment.
+
+Failures remain unsuccessful. Confirmed semantic diagnostics identify **drift**; API, checkout, manifest, artifact, toolchain/build, runner and unclassified checker failures are **inability to validate**, not evidence of compatibility. The final summary names unsuccessful step IDs; those IDs identify workflow phases. It conservatively reports unclassified nonzero exits as inability, not proven drift. Inspect owning diagnostics to identify confirmed drift separately; both may be present. An early failure must not claim complete evidence. Cancellation or runner loss may prevent even the final summary. There is no automatic follow-up action, schedule, status fan-out or merge prohibition.
+
+## Staged rollout
+
+Do not deploy this final workflow before the foundation is merged and its exact-head/main **Meta quality checks** context is verified. With separate authorization, replace the meta integration requirement with that verified local-quality context, remove only obsolete child integration requirements, and read back effective protections. Retire and verify **all five child callers** while the foundation still supports the reusable interface. Only then land this final manual-only workflow. Inspect all six repositories for remaining automatic invocations, perform a real upstream-main dispatch and verify its completed result plus downloaded revision evidence/digest. Local fixtures exercise controlled failures without intentionally breaking main. Archive the OpenSpec change only after rollout acceptance, not during this preparation.
