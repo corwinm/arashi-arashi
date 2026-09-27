@@ -7,7 +7,7 @@
 
 ### Requirement: Repository-local consistency gates
 
-The CLI repository SHALL validate command-contract generation and freshness without requiring sibling repositories, and the VS Code repository SHALL validate consistency among contributed commands, activation events, internal command IDs, and runtime handlers. All five children SHALL retain their repository-local quality and release/package validation. Automatic meta pull-request and main-push CI SHALL run checker tests, typecheck and formatting without live child checkouts or child network reads, using tracked deterministic fixtures and real meta checkers. Tests requiring actual child implementations SHALL remain in an explicit manual integration suite and SHALL fail, not skip, when required children are absent.
+The CLI repository SHALL validate command-contract generation and freshness without requiring sibling repositories, and the VS Code repository SHALL validate consistency among contributed commands, activation events, internal command IDs, and runtime handlers. All five children SHALL retain their repository-local quality and release/package validation. Automatic meta pull-request and main-push CI SHALL run checker tests, typecheck and formatting without live child checkouts or child network reads, using tracked deterministic fixtures and real meta checkers. The stable, uniquely named `Meta quality checks` status SHALL fail on any meta-local test, typecheck or formatting failure and SHALL be required for meta merges, distinct from the non-required manual integration status. Tests requiring actual child implementations SHALL remain in an explicit manual integration suite and SHALL fail, not skip, when required children are absent.
 
 #### Scenario: VS Code manifest and handlers diverge
 
@@ -24,6 +24,12 @@ The CLI repository SHALL validate command-contract generation and freshness with
 - **WHEN** automatic meta-local CI runs in a clean checkout without `repos/`
 - **THEN** all default checker tests, typecheck and formatting execute without fetching children
 - **AND** fixture-based positive and negative checker coverage remains active
+
+#### Scenario: Meta-local quality fails
+
+- **WHEN** a meta-local test, typecheck or formatting check fails on a pull request
+- **THEN** the required `Meta quality checks` status fails and blocks merge under effective protections
+- **AND** an unsuccessful manual integration status remains non-required and does not itself block merge
 
 #### Scenario: Child implementation acceptance is partitioned
 
@@ -84,7 +90,7 @@ The meta-repository SHALL compose stable repository-owned semantic validation en
 
 ### Requirement: Child repositories SHALL retain local gates without automatic integration callers
 
-All five participating children SHALL remove automatic cross-repository integration callers and invocation-only helpers/configuration, caller-enforcement tests and stale maintained references. Useful structured contracts, repository-local semantic validators, retained fixtures and release/package checks SHALL remain. Integration SHALL NOT be a required merge status in any participating repository; unrelated protections SHALL remain unchanged. Every child SHALL have a reviewed cleanup diff or an explicit no-change finding.
+All five participating children SHALL remove automatic cross-repository integration callers and invocation-only helpers/configuration, caller-enforcement tests and stale maintained references. Useful structured contracts, repository-local semantic validators, retained fixtures and release/package checks SHALL remain. Integration SHALL NOT be a required merge status in any participating repository; unrelated protections SHALL remain unchanged. Migration SHALL replace meta ruleset `18285592` required `contracts` with the verified, successfully emitted `Meta quality checks` context, not merely remove the meta requirement. The foundation SHALL pass that local check at its exact reviewed HEAD and land before a successful main run verifies the actual emitted context and before any required-status replacement. The authorized replacement SHALL preserve unrelated checks and settings in the same update. CLI and VS Code obsolete integration context `contracts / contracts` SHALL instead be removed without replacing or weakening their unrelated local gates. Every child SHALL have a reviewed cleanup diff or an explicit no-change finding.
 
 #### Scenario: Child pull request or main push runs
 
@@ -95,9 +101,11 @@ All five participating children SHALL remove automatic cross-repository integrat
 #### Scenario: Required-status and caller retirement is staged
 
 - **WHEN** maintainers roll out the migration
-- **THEN** they inventory applicable repository and organization protections and remove only authorized obsolete integration requirements with exact-target readback before deleting callers
+- **THEN** they inventory applicable repository and organization protections, require the local check to pass at the exact reviewed foundation HEAD, land the foundation, and verify its successful actual emitted local context on main before replacing meta ruleset `18285592` required `contracts` with that context
+- **AND** authorized CLI/VS Code `contracts / contracts` removal is distinct from that meta replacement, and all unrelated checks/settings are preserved
+- **AND** exact-target and effective repository/organization rules and branch-protection readback proves the meta-local context is required and obsolete integration contexts are not before deleting callers
 - **AND** all five child caller deletions land before the meta reusable interface is removed
-- **AND** an unchangeable inherited requirement stops rollout rather than stranding PRs or bypassing protections
+- **AND** an absent, different or unsuccessful local context or an unchangeable inherited requirement stops rollout rather than guessing, stranding PRs or bypassing protections
 
 #### Scenario: Cleanup encounters shared contract inputs
 
