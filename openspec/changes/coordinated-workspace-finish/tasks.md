@@ -1,8 +1,15 @@
-# Implementation tasks (not started; design-only change)
+# Implementation tasks (delivered; bounded closeout)
+
+See [closeout.md](closeout.md) for immutable delivery and verification evidence, and
+[acceptance-audit.md](acceptance-audit.md) for the historical pre-repair audit.
+Section 1 remains unchecked because its compound historical RED obligations were
+not all established; this is not a claim that the delivered feature is unimplemented.
+The user accepted bounded prioritization and explicit deferred coverage rather than
+an exhaustive adapter/error matrix. No release or retrospective RED approval is implied.
 
 ## 0. Design gates and value checkpoint
-- [ ] Obtain independent semantic/evidence and remove-architecture reviews at the exact signed design HEAD before child implementation; repeat after correction. Verify actual `gh` provenance surface, private fetch feasibility and placement of a finish-only remove callback. `openspec validate --strict` alone is structural.
-- [ ] Keep v1 proportional: conservative assessment plus guarded remove handoff. No universal cross-command lock, create/prune/add/delete refactor or wholesale remove split. If the callback requires redesigning the existing remove implementation at large scale, return to design review rather than silently expanding scope. Child changes remain separate and reference #374.
+- [x] Obtain independent semantic/evidence and remove-architecture reviews at the exact signed design HEAD before child implementation; repeat after correction. Verify actual `gh` provenance surface, private fetch feasibility and placement of a finish-only remove callback. `openspec validate --strict` alone is structural.
+- [x] Keep v1 proportional: conservative assessment plus guarded remove handoff. No universal cross-command lock, create/prune/add/delete refactor or wholesale remove split. If the callback requires redesigning the existing remove implementation at large scale, return to design review rather than silently expanding scope. Child changes remain separate and reference #374.
 
 ## 1. Focused pre-implementation RED acceptance
 - [ ] Selection/scope: contextual parent/child, main picker selecting one target, ambiguous sibling branch, explicit path, detached/escaped/main/standalone rejection, non-TTY/JSON omitted rejection; child on different branch, absent nonparticipant and present unregistered/inaccessible/missing-clone blocker. Compare exact descendant/branch/hook-target actions, rejecting extras or no-op cleanup.
@@ -13,7 +20,7 @@
 - [ ] Remove gate: use real temporary worktrees and existing remove semantics. Change HEAD/config/remote/registration/plan in consent or successful pre-remove hook; assert finish-specific callback aborts before detach/worktree/branch action with hook outcomes retained. Repeated remote failure only with unchanged explicit manual judgment/identity/failure class; contradictory successful refresh invalidates. Assert ordinary remove unchanged, descendant-before-ancestor order, hook failure, partial removal and post-hook results. Document/test residual concurrent external mutation as a known non-atomic limitation, **not** a guaranteed prevention test or new lock-contending cross-command matrix.
 
 ## 2. Implementation after approval
-- [ ] Implement finish selection, conservative evidence and reporting in `repos/arashi`, using disposable fresh Git metadata; attempt `gh` correlation only when verifiable. No child edits in this design worktree.
-- [ ] Add minimal internal remove action/result exposure and finish-only post-hook pre-mutation callback. Reuse existing remove planning, confirmation, hook and execution flow, including branch retention and partial failures. Do not add a public bypass flag.
-- [ ] Update CLI/canonical docs and packaged skill guidance for evidence limits, picker versus preview, configured versus historical base, manual completion versus discard, metadata refresh, residual race and recovery. Update generated command contracts and shell completion only as needed.
-- [ ] Run focused and full child tests/lint/build, strict OpenSpec validation, and exact-head independent implementation review. Report untested/failing gates honestly before PR or release.
+- [x] Implement finish selection, conservative evidence and reporting in `repos/arashi`, using disposable fresh Git metadata; attempt `gh` correlation only when verifiable. No child edits in this design worktree.
+- [x] Add minimal internal remove action/result exposure and finish-only post-hook pre-mutation callback. Reuse existing remove planning, confirmation, hook and execution flow, including branch retention and partial failures. Do not add a public bypass flag.
+- [x] Update CLI/canonical docs and packaged skill guidance for evidence limits, picker versus preview, configured versus historical base, manual completion versus discard, metadata refresh, residual race and recovery. Update generated command contracts and shell completion only as needed.
+- [x] Run focused and full child tests/lint/build, strict OpenSpec validation, and exact-head independent implementation review. Report untested/failing gates honestly before PR or release.
