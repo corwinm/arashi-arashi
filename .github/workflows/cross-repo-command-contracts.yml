@@ -214,7 +214,7 @@ jobs:
               .addRaw(`**Artifact archive digest:** \`sha256:${artifactArchiveDigest}\``)
               .write();
 
-      - uses: pnpm/setup@v2
+      - uses: pnpm/setup@v3
         id: setup_toolchain
         with:
           version: 11.22.0
