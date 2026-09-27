@@ -1,397 +1,373 @@
 import { readFile } from "node:fs/promises";
-
 import { describe, expect, test } from "vitest";
 
 const workflowPath = ".github/workflows/cross-repo-command-contracts.yml";
-const sha = {
-  workflow: "a".repeat(40),
-  trigger: "b".repeat(40),
-  arashi: "c".repeat(40),
-  docs: "d".repeat(40),
-  skills: "e".repeat(40),
-  vscode: "f".repeat(40),
-  presentation: "1".repeat(40),
-};
-
-const revisions = [
-  {
-    logicalRepository: "arashi-arashi",
-    sourceRepository: "corwinm/arashi-arashi",
-    sha: sha.workflow,
-  },
-  {
-    logicalRepository: "arashi",
-    sourceRepository: "contributor/arashi",
-    sha: sha.trigger,
-  },
-  {
-    logicalRepository: "arashi-docs",
-    sourceRepository: "corwinm/arashi-docs",
-    sha: sha.docs,
-  },
-  {
-    logicalRepository: "arashi-skills",
-    sourceRepository: "corwinm/arashi-skills",
-    sha: sha.skills,
-  },
-  {
-    logicalRepository: "arashi-vscode",
-    sourceRepository: "corwinm/arashi-vscode",
-    sha: sha.vscode,
-  },
-  {
-    logicalRepository: "arashi-presentation",
-    sourceRepository: "corwinm/arashi-presentation",
-    sha: sha.presentation,
-  },
+const names = [
+  "arashi-arashi",
+  "arashi",
+  "arashi-docs",
+  "arashi-skills",
+  "arashi-vscode",
+  "arashi-presentation",
 ];
-
-function extractScript(workflow: string, stepName: string): string {
-  const step = workflow.indexOf(`- name: ${stepName}`);
+const sha = "a".repeat(40);
+const childShas = Object.fromEntries(
+  names.map((name, index) => [
+    name,
+    index === 0 ? sha : String(index).repeat(40),
+  ]),
+);
+const workflowRef =
+  "corwinm/arashi-arashi/.github/workflows/cross-repo-command-contracts.yml@refs/heads/main";
+const environment = {
+  EVENT_NAME: "workflow_dispatch",
+  EVENT_REPOSITORY: "corwinm/arashi-arashi",
+  EVENT_REF: "refs/heads/main",
+  EVENT_SHA: sha,
+  WORKFLOW_REF: workflowRef,
+  WORKFLOW_SHA: sha,
+};
+function extractScript(workflow: string, name: string) {
+  const step = workflow.indexOf(`- name: ${name}`);
   const marker = workflow.indexOf("          script: |\n", step);
-  if (step < 0 || marker < 0) throw new Error(`${stepName} script not found`);
+  if (step < 0 || marker < 0) throw new Error(`Missing script ${name}`);
   const lines = workflow
     .slice(marker + "          script: |\n".length)
     .split("\n");
-  const script: string[] = [];
+  const script = [];
   for (const line of lines) {
     if (line && !line.startsWith("            ")) break;
-    script.push(line.startsWith("            ") ? line.slice(12) : line);
+    script.push(line.slice(12));
   }
   return script.join("\n");
 }
-
-type RepositoryData = {
-  full_name: string;
-  fork: boolean;
-  source?: { full_name: string };
-  default_branch?: string;
-};
-
-type GithubMockOptions = {
-  sourceFork?: boolean;
-  sourceForkRoot?: string;
-  commitSha?: string;
-};
-
-function githubMock(
-  expectedRepository: string,
-  options: GithubMockOptions = {},
+async function run(
+  name: string,
+  env: Record<string, string | undefined> = {},
+  bindings: Record<string, unknown> = {},
+  transform = (s: string) => s,
 ) {
-  const branchShas = new Map([
-    ["arashi", sha.arashi],
-    ["arashi-docs", sha.docs],
-    ["arashi-skills", sha.skills],
-    ["arashi-vscode", sha.vscode],
-    ["arashi-presentation", sha.presentation],
-  ]);
-  return {
+  const script = extractScript(
+    transform(await readFile(workflowPath, "utf8")),
+    name,
+  );
+  const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor;
+  return new AsyncFunction("process", "core", ...Object.keys(bindings), script)(
+    { env: { ...environment, ...env } },
+    { setFailed: () => {}, setOutput: () => {}, ...(bindings.core as object) },
+    ...Object.values(bindings),
+  );
+}
+async function resolve(
+  env: Record<string, string | undefined> = {},
+  fault = "",
+  faultRepository = "arashi",
+) {
+  const calls: string[] = [];
+  const outputs: Record<string, string | undefined> = {};
+  const github = {
     rest: {
       repos: {
         get: async ({ owner, repo }: { owner: string; repo: string }) => {
-          const fullName = `${owner}/${repo}`;
-          const isTriggerSource = fullName === "contributor/arashi";
-          const data: RepositoryData = {
-            full_name: fullName,
-            fork: isTriggerSource ? (options.sourceFork ?? true) : false,
-            default_branch: "main",
+          calls.push(`identity:${repo}`);
+          if (fault === "api" && repo === faultRepository)
+            throw new Error("API unavailable");
+          return {
+            data: {
+              full_name:
+                fault === "identity" && repo === faultRepository
+                  ? "other/arashi"
+                  : `${owner}/${repo}`,
+              fork: fault === "fork" && repo === faultRepository,
+            },
           };
-          if (data.fork) {
-            data.source = {
-              full_name: options.sourceForkRoot ?? expectedRepository,
-            };
-          }
-          return { data };
         },
-        getCommit: async ({ ref }: { ref: string }) => ({
-          data: { sha: options.commitSha ?? ref },
-        }),
-        getBranch: async ({ repo }: { repo: string }) => ({
-          data: { commit: { sha: branchShas.get(repo) } },
-        }),
+        getBranch: async ({
+          repo,
+          branch,
+        }: {
+          repo: string;
+          branch: string;
+        }) => {
+          calls.push(`${repo}:${branch}`);
+          if (fault === "missing") throw new Error("main missing");
+          return {
+            data: {
+              name: branch,
+              commit: { sha: fault === "sha" ? "INVALID" : childShas[repo] },
+            },
+          };
+        },
       },
     },
   };
-}
-
-type ResolverOptions = {
-  changedRepository?: string;
-  changedSourceRepository?: string;
-  changedSha?: string;
-  eventSourceRepository?: string;
-  eventSha?: string;
-  eventName?: string;
-  callerRepository?: string;
-  workflowRepository?: string;
-  workflowSha?: string;
-  githubMock?: GithubMockOptions;
-};
-
-async function runResolver(options: ResolverOptions = {}) {
-  const workflow = await readFile(workflowPath, "utf8");
-  const script = extractScript(workflow, "Resolve immutable revisions");
-  const changedRepository = options.changedRepository ?? "arashi";
-  const changedSourceRepository =
-    options.changedSourceRepository ?? "contributor/arashi";
-  const changedSha = options.changedSha ?? sha.trigger;
-  const eventSourceRepository =
-    options.eventSourceRepository ?? "contributor/arashi";
-  const eventSha = options.eventSha ?? sha.trigger;
-  const callerRepository = options.callerRepository ?? "corwinm/arashi";
-  const [owner, repo] = callerRepository.split("/");
-  const core = {
-    setFailed: () => undefined,
-    setOutput: (name: string, value: string) => outputs.set(name, value),
-  };
-  const outputs = new Map<string, string>();
-  const context = {
-    eventName: options.eventName ?? "pull_request",
-    repo: { owner, repo },
-    payload: {
-      pull_request: {
-        head: {
-          repo: { full_name: eventSourceRepository },
-          sha: eventSha,
-        },
-      },
-      repository: { full_name: eventSourceRepository },
+  await run("Resolve immutable revisions", env, {
+    github,
+    core: {
+      setFailed: () => {},
+      setOutput: (k: string, v: string) => (outputs[k] = v),
     },
-    sha: eventSha,
-  };
-  const previous = { ...process.env };
-  Object.assign(process.env, {
-    CHANGED_REPOSITORY: changedRepository,
-    CHANGED_SOURCE_REPOSITORY: changedSourceRepository,
-    CHANGED_SHA: changedSha,
-    EVENT_NAME: context.eventName,
-    HEAD_REF: "feature",
-    META_EVENT_SOURCE: "corwinm/arashi-arashi",
-    META_EVENT_SHA: "3".repeat(40),
-    JOB_CONTEXT: JSON.stringify({
-      workflow_repository:
-        options.workflowRepository ?? "corwinm/arashi-arashi",
-      workflow_sha: options.workflowSha ?? sha.workflow,
-    }),
   });
-  try {
-    const AsyncFunction = Object.getPrototypeOf(
-      async function () {},
-    ).constructor;
-    await new AsyncFunction("github", "context", "core", script)(
-      githubMock("corwinm/arashi", options.githubMock),
-      context,
-      core,
+  return { calls, outputs };
+}
+describe("manual upstream resolution", () => {
+  test("pins dispatch coordinator and resolves each upstream main once", async () => {
+    const { calls, outputs } = await resolve();
+    expect(calls).toEqual(
+      names.flatMap((name, i) =>
+        i ? [`identity:${name}`, `${name}:main`] : [`identity:${name}`],
+      ),
     );
-    return outputs;
-  } finally {
-    process.env = previous;
-  }
-}
-
-type ManifestOptions = {
-  workflowTransform?: (source: string) => string;
-  environment?: Record<string, string>;
-  checkoutHeads?: Record<string, string>;
-};
-
-async function runManifest(options: ManifestOptions = {}) {
-  const workflow = (options.workflowTransform ?? ((source) => source))(
-    await readFile(workflowPath, "utf8"),
-  );
-  const script = extractScript(workflow, "Write revision manifest");
-  let manifest = "";
-  const summaries: string[] = [];
-  const heads = new Map(
-    revisions.map((entry) => [entry.logicalRepository, entry.sha]),
-  );
-  for (const [repository, head] of Object.entries(
-    options.checkoutHeads ?? {},
-  )) {
-    heads.set(repository, head);
-  }
-  const paths = new Map([
-    ["meta", "arashi-arashi"],
-    ["meta/repos/arashi", "arashi"],
-    ["meta/repos/arashi-docs", "arashi-docs"],
-    ["meta/repos/arashi-skills", "arashi-skills"],
-    ["meta/repos/arashi-vscode", "arashi-vscode"],
-    ["meta/repos/arashi-presentation", "arashi-presentation"],
-  ]);
-  const fakeRequire = (module: string) => {
-    if (module === "node:child_process") {
-      return {
-        execFileSync: (_command: string, args: string[]) => {
-          const repository = paths.get(args[1]);
-          if (!repository)
-            throw new Error(`unexpected checkout path: ${args[1]}`);
-          return `${heads.get(repository)}\n`;
-        },
-      };
+    for (const name of names) {
+      expect(outputs[`${name.replaceAll("-", "_")}_source`]).toBe(
+        `corwinm/${name}`,
+      );
+      expect(outputs[`${name.replaceAll("-", "_")}_sha`]).toBe(childShas[name]);
     }
-    if (module === "node:fs") {
-      return {
-        writeFileSync: (_path: string, bytes: string) => {
-          manifest = bytes;
-        },
-        appendFileSync: (_path: string, bytes: string) => summaries.push(bytes),
-      };
-    }
-    throw new Error(`unexpected module: ${module}`);
-  };
-  const previous = { ...process.env };
-  Object.assign(
-    process.env,
-    {
-      CHANGED_REPOSITORY: "arashi",
-      ARASHI_ARASHI_SOURCE: "corwinm/arashi-arashi",
-      ARASHI_ARASHI_SHA: sha.workflow,
-      ARASHI_SOURCE: "contributor/arashi",
-      ARASHI_SHA: sha.trigger,
-      ARASHI_DOCS_SOURCE: "corwinm/arashi-docs",
-      ARASHI_DOCS_SHA: sha.docs,
-      ARASHI_SKILLS_SOURCE: "corwinm/arashi-skills",
-      ARASHI_SKILLS_SHA: sha.skills,
-      ARASHI_VSCODE_SOURCE: "corwinm/arashi-vscode",
-      ARASHI_VSCODE_SHA: sha.vscode,
-      ARASHI_PRESENTATION_SOURCE: "corwinm/arashi-presentation",
-      ARASHI_PRESENTATION_SHA: sha.presentation,
-      GITHUB_STEP_SUMMARY: "/tmp/summary",
-    },
-    options.environment,
-  );
-  try {
-    const AsyncFunction = Object.getPrototypeOf(
-      async function () {},
-    ).constructor;
-    await new AsyncFunction("require", "core", script)(fakeRequire, {
-      setFailed: () => undefined,
-    });
-    return { manifest, summaries };
-  } finally {
-    process.env = previous;
-  }
-}
-
-describe("cross-repository revision resolver", () => {
-  test("binds a fork pull request and called workflow to exact sources and SHAs", async () => {
-    const outputs = await runResolver();
-
-    expect(outputs.get("arashi_arashi_source")).toBe("corwinm/arashi-arashi");
-    expect(outputs.get("arashi_arashi_sha")).toBe(sha.workflow);
-    expect(outputs.get("arashi_source")).toBe("contributor/arashi");
-    expect(outputs.get("arashi_sha")).toBe(sha.trigger);
-    expect(outputs.get("arashi_docs_sha")).toBe(sha.docs);
-    expect(outputs.get("arashi_skills_sha")).toBe(sha.skills);
-    expect(outputs.get("arashi_vscode_sha")).toBe(sha.vscode);
-    expect(outputs.get("arashi_presentation_sha")).toBe(sha.presentation);
   });
-
   test.each([
-    [
-      "caller source misattribution",
-      { changedSourceRepository: "corwinm/arashi" },
-      "does not match event source",
-    ],
-    [
-      "caller SHA misattribution",
-      { changedSha: "4".repeat(40) },
-      "does not match event SHA",
-    ],
-    [
-      "partial invocation tuple",
-      { changedSourceRepository: "" },
-      "requires logical repository, source repository, and SHA",
-    ],
-    [
-      "unsupported logical repository",
-      { changedRepository: "unknown", callerRepository: "corwinm/unknown" },
-      "Unsupported child repository",
-    ],
-    [
-      "malformed revision",
-      { changedSha: "not-a-sha", eventSha: "not-a-sha" },
-      "is not a full lowercase SHA",
-    ],
-    [
-      "unexpected workflow repository",
-      { workflowRepository: "contributor/arashi-arashi" },
-      "Unexpected workflow repository",
-    ],
-    [
-      "non-fork source repository",
-      { githubMock: { sourceFork: false } },
-      "is not in the corwinm/arashi fork network",
-    ],
-    [
-      "wrong fork-network root",
-      { githubMock: { sourceForkRoot: "other/arashi" } },
-      "is not in the corwinm/arashi fork network",
-    ],
-    [
-      "commit API identity mismatch",
-      { githubMock: { commitSha: "5".repeat(40) } },
-      "did not resolve to",
-    ],
-  ] as const)("rejects %s", async (_name, options, message) => {
-    await expect(runResolver(options)).rejects.toThrow(message);
+    { EVENT_NAME: "push" },
+    { EVENT_NAME: "pull_request" },
+    { EVENT_NAME: "workflow_call" },
+    { EVENT_REF: "refs/heads/feature" },
+    { EVENT_REF: "refs/tags/main" },
+    { EVENT_REPOSITORY: "fork/arashi-arashi" },
+    { WORKFLOW_REF: workflowRef.replace("corwinm", "fork") },
+    { WORKFLOW_REF: workflowRef.replace("heads/main", "heads/feature") },
+    { WORKFLOW_SHA: "b".repeat(40) },
+    { WORKFLOW_SHA: "A".repeat(40) },
+    { EVENT_SHA: "short" },
+    { WORKFLOW_SHA: "" },
+  ])("rejects provenance %j before API access", async (env) => {
+    await expect(resolve(env, "api", "arashi-arashi")).rejects.toThrow(
+      /dispatch|workflow|SHA|main|upstream/i,
+    );
   });
+  test.each(["identity", "fork", "api", "missing", "sha"])(
+    "fails closed on %s",
+    async (fault) => {
+      await expect(resolve({}, fault)).rejects.toThrow();
+    },
+  );
+});
+async function manifest(
+  env: Record<string, string | undefined> = {},
+  badHead = false,
+  transform = (s: string) => s,
+) {
+  let bytes = "";
+  let summary = "";
+  const revisions = names.map((logicalRepository) => ({
+    logicalRepository,
+    sourceRepository: `corwinm/${logicalRepository}`,
+    sha: childShas[logicalRepository],
+  }));
+  const variables = Object.fromEntries(
+    names.flatMap((name) => [
+      [`${name.replaceAll("-", "_").toUpperCase()}_SOURCE`, `corwinm/${name}`],
+      [`${name.replaceAll("-", "_").toUpperCase()}_SHA`, childShas[name]],
+    ]),
+  );
+  await run(
+    "Write revision manifest",
+    { ...variables, ...env },
+    {
+      require: (module: string) => {
+        if (module === "node:child_process")
+          return {
+            execFileSync: (command: string, args: string[]) => {
+              const logicalRepository =
+                args[1] === "meta"
+                  ? names[0]
+                  : args[1].replace("meta/repos/", "");
+              expect(command).toBe("git");
+              expect(args).toEqual([
+                "-C",
+                logicalRepository === names[0]
+                  ? "meta"
+                  : `meta/repos/${logicalRepository}`,
+                "rev-parse",
+                "HEAD",
+              ]);
+              return badHead ? "b".repeat(40) : childShas[logicalRepository];
+            },
+          };
+        if (module === "node:fs")
+          return {
+            writeFileSync: (_p: string, s: string) => (bytes = s),
+            appendFileSync: (_p: string, s: string) => (summary = s),
+          };
+        throw new Error(module);
+      },
+    },
+    transform,
+  );
+  return { bytes, summary, revisions };
+}
+describe("revision evidence", () => {
+  test("publishes the validated archive digest, not a manifest hash", async () => {
+    let text = "";
+    const summary = {
+      addRaw: (value: string) => {
+        text = value;
+        return summary;
+      },
+      write: async () => {},
+    };
+    await run(
+      "Report revision artifact digest",
+      { ARTIFACT_DIGEST: "d".repeat(64) },
+      { core: { summary } },
+    );
+    expect(text).toBe(
+      `**Artifact archive digest:** \`sha256:${"d".repeat(64)}\``,
+    );
+  });
+  test("emits deterministic schema v2 with coordinator provenance and identical summary JSON", async () => {
+    const { bytes, summary, revisions } = await manifest();
+    expect(bytes).toBe(
+      JSON.stringify(
+        {
+          schemaVersion: 2,
+          event: {
+            name: "workflow_dispatch",
+            repository: environment.EVENT_REPOSITORY,
+            ref: environment.EVENT_REF,
+            sha,
+          },
+          coordinator: {
+            repository: environment.EVENT_REPOSITORY,
+            ref: workflowRef,
+            sha,
+          },
+          trigger: revisions[0],
+          repositories: revisions,
+        },
+        null,
+        2,
+      ) + "\n",
+    );
+    expect(summary).toBe(
+      `## Cross-repository revisions\n\n\`\`\`json\n${bytes}\`\`\`\n`,
+    );
+  });
+  test.each([
+    { ARASHI_DOCS_SHA: "" },
+    { ARASHI_SHA: "BAD" },
+    { ARASHI_SOURCE: "fork/arashi" },
+    { EVENT_SHA: "b".repeat(40) },
+    { WORKFLOW_REF: "wrong" },
+  ])("rejects invalid evidence %j", async (env) => {
+    await expect(manifest(env)).rejects.toThrow();
+  });
+  test("rejects checkout mismatch", async () => {
+    await expect(manifest({}, true)).rejects.toThrow(/checkout/);
+  });
+  test.each(["missing", "duplicate", "extra", "reordered"])(
+    "rejects %s manifest definitions",
+    async (kind) => {
+      await expect(
+        manifest({}, false, (source) => {
+          const entry =
+            '["arashi-docs", "ARASHI_DOCS", "meta/repos/arashi-docs"],';
+          if (kind === "missing") return source.replace(entry, "");
+          if (kind === "duplicate")
+            return source.replace(entry, entry + "\n              " + entry);
+          if (kind === "extra")
+            return source.replace(
+              entry,
+              entry + '\n              ["extra", "EXTRA", "meta/repos/extra"],',
+            );
+          const cli = '["arashi", "ARASHI", "meta/repos/arashi"],';
+          return source
+            .replace(cli, "SWAP")
+            .replace(entry, cli)
+            .replace("SWAP", entry);
+        }),
+      ).rejects.toThrow();
+    },
+  );
+  test.each(["", "bad", "A".repeat(64)])(
+    "rejects invalid archive digest %s",
+    async (digest) => {
+      await expect(
+        run("Report revision artifact digest", { ARTIFACT_DIGEST: digest }),
+      ).rejects.toThrow(/digest/i);
+    },
+  );
 });
 
-describe("cross-repository revision manifest", () => {
-  test("writes the exact canonical object and repository order", async () => {
-    const { manifest, summaries } = await runManifest();
-    const expected = {
-      schemaVersion: 1,
-      trigger: revisions[1],
-      repositories: revisions,
-    };
-
-    expect(manifest).toBe(`${JSON.stringify(expected, null, 2)}\n`);
-    expect(summaries).toEqual([
-      `## Cross-repository revisions\n\n\`\`\`json\n${manifest}\`\`\`\n`,
-    ]);
+async function report(
+  overrides: Record<string, string> = {},
+  status = "success",
+) {
+  const source = await readFile(workflowPath, "utf8");
+  const steps = Object.fromEntries(
+    [...source.matchAll(/^        id: (.+)$/gm)].map((match) => [
+      match[1],
+      { outcome: "success" },
+    ]),
+  );
+  for (const [id, outcome] of Object.entries(overrides))
+    steps[id] = { outcome };
+  let text = "";
+  const summary = {
+    addHeading: () => summary,
+    addRaw: (s: string) => {
+      text += s;
+      return summary;
+    },
+    write: async () => {},
+  };
+  await run(
+    "Report advisory outcome",
+    { STEP_RESULTS: JSON.stringify(steps), JOB_STATUS: status },
+    { core: { summary, setFailed: () => {} } },
+  );
+  return text;
+}
+describe("truthful advisory reporting", () => {
+  test("reports only complete successful assessments", async () => {
+    expect(await report()).toContain("Assessment passed");
   });
-
-  test("canonical comparison catches reordered repository definitions", async () => {
-    const canonical = await runManifest();
-    const reordered = await runManifest({
-      workflowTransform: (workflow) =>
-        workflow.replace(
-          '["arashi", "ARASHI", "meta/repos/arashi"],\n              ["arashi-docs", "ARASHI_DOCS", "meta/repos/arashi-docs"],',
-          '["arashi-docs", "ARASHI_DOCS", "meta/repos/arashi-docs"],\n              ["arashi", "ARASHI", "meta/repos/arashi"],',
-        ),
-    });
-
-    expect(reordered.manifest).not.toBe(canonical.manifest);
-    expect(
-      JSON.parse(reordered.manifest).repositories.map(
-        (entry: { logicalRepository: string }) => entry.logicalRepository,
-      ),
-    ).not.toEqual(revisions.map((entry) => entry.logicalRepository));
-  });
-
   test.each([
-    [
-      "missing revision",
-      { environment: { ARASHI_DOCS_SHA: "" } },
-      "Incomplete revision for arashi-docs",
-    ],
-    [
-      "malformed revision",
-      { environment: { ARASHI_DOCS_SHA: "not-a-sha" } },
-      "Incomplete revision for arashi-docs",
-    ],
-    [
-      "checked-out HEAD mismatch",
-      { checkoutHeads: { "arashi-docs": "9".repeat(40) } },
-      "arashi-docs checkout mismatch",
-    ],
-    [
-      "trigger omitted from manifest",
-      { environment: { CHANGED_REPOSITORY: "unknown" } },
-      "Trigger repository is missing",
-    ],
-  ] as const)("rejects %s", async (_name, options, message) => {
-    await expect(runManifest(options)).rejects.toThrow(message);
+    "revisions",
+    "write_revision_manifest",
+    "revision_artifact",
+    "report_revision_artifact_digest",
+  ])("early failure %s cannot claim evidence or drift", async (id) => {
+    const result = await report(
+      {
+        [id]: "failure",
+        revision_artifact: "skipped",
+        report_revision_artifact_digest: "skipped",
+      },
+      "failure",
+    );
+    expect(result).toContain("Inability to validate");
+    expect(result).toContain("gate did not complete");
+    expect(result).not.toContain("Assessment passed");
+  });
+  test.each([
+    "check_documentation_semantics",
+    "check_authored_skill_guidance",
+    "check_packaged_skill_guidance",
+    "check_cross_repository_contracts",
+  ])("retains evidence on unclassified %s failure", async (id) => {
+    const result = await report({ [id]: "failure" }, "failure");
+    expect(result).toContain(id);
+    expect(result).toContain("Inability to validate");
+    expect(result).toContain("not proof of semantic drift");
+    expect(result).toContain("remains available");
+  });
+  test.each([
+    "check_documentation_semantics",
+    "check_authored_skill_guidance",
+    "check_packaged_skill_guidance",
+    "check_cross_repository_contracts",
+  ])("never calls skipped %s coverage a successful assessment", async (id) => {
+    expect(await report({ [id]: "skipped" })).not.toContain(
+      "Assessment passed",
+    );
   });
 });

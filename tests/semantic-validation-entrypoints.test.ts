@@ -290,17 +290,15 @@ describe("coordinated local and workflow composition", () => {
       /node repos\/arashi-skills\/scripts\/[a-z0-9-]+-guidance-selftest\.mjs/,
     );
   });
-  test("authoritative workflow always reports on pull requests and records exact child revisions", async () => {
+  test("authoritative workflow is manual-only and records exact child revisions", async () => {
     const workflow = await readFile(
       join(metaRoot, ".github/workflows/cross-repo-command-contracts.yml"),
       "utf8",
     );
-    expect(workflow).toMatch(
-      /on:\n  workflow_call:[\s\S]+?  pull_request:\n  push:/,
-    );
+    expect(workflow).toMatch(/on:\n  workflow_dispatch:\n/);
     expect(workflow).not.toMatch(/pull_request:\n(?:    .+\n)*?    paths:/);
-    expect(workflow).toContain("jobContext.workflow_repository");
-    expect(workflow).toContain("jobContext.workflow_sha");
+    expect(workflow).toContain("github.workflow_ref");
+    expect(workflow).toContain("github.workflow_sha");
     expect(workflow).toContain("name: Write revision manifest");
     expect(workflow).toContain("name: cross-repo-revisions");
     expect(workflow).toContain("if-no-files-found: error");

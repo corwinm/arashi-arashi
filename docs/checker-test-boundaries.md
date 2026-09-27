@@ -10,11 +10,11 @@ type checking, and formatting with only the meta checkout.
 revisions and run the CLI/docs generation and canonical skill archive stages in
 [cross-repo-command-contracts.md](cross-repo-command-contracts.md). The existing
 integration workflow invokes this command after publishing revision evidence and
-preparing those surfaces. Its reusable interface, automatic triggers, and resolver
-remain unchanged during caller retirement; this foundation does not yet make
-integration manual-only. Child caller presence is no longer enforced; legacy
-caller fixtures and resolver identity/fork negative tests retain compatibility
-coverage without reading any child's workflow.
+preparing those surfaces. Integration is now dispatch-only on upstream meta main;
+resolver and evidence fixtures reject invalid dispatch provenance, upstream identities,
+SHAs, checkout HEADs, manifest membership/order and artifact digests. Legacy caller
+fixtures and fork/branch-selection paths have been retired. This final workflow
+must not deploy until all five child callers have retired (see the rollout guide).
 
 ## Moved assertion inventory
 
@@ -32,7 +32,7 @@ Dependency: schemaV5/6/7/8Fixture copies live CLI contracts and child guidance/c
 - accepts the complete schema-v5 CLI option semantic contract
 - accepts schema v6 completion metadata and coordinated companion semantics
 - accepts schema-v8 shared repository-base semantics
-- accepts an unfiltered pull request trigger as complete path coverage
+- accepts manual assessment without obsolete automatic path coverage
 - normalizes the complete canonical configure policy and companion classifications
 - rejects controlled configure %s drift
 - rejects controlled configure generic %s drift
@@ -55,7 +55,7 @@ Dependency: schemaV5/6/7/8Fixture copies live CLI contracts and child guidance/c
 - rejects missing schema-v7 %s CI reachability
 - rejects schema-v7 create-base prerequisites in a sibling CI job
 - rejects commented and out-of-order schema-v7 CI commands
-- rejects missing create-base child source, workflow, and contract trigger paths
+- Retired: automatic create-base trigger-path enforcement and its negative test; dispatch-only policy is covered by local workflow tests, while the neighboring executable-stage and semantic-drift tests remain unchanged.
 - rejects %s
 - rejects CLI contract drift from optional-user SSH alias syntax
 - rejects missing canonical and generated SSH alias guidance

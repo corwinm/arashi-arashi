@@ -66,8 +66,9 @@ openspec validate --all --strict
 pnpm run format:check
 pnpm run typecheck
 pnpm test
-pnpm run contracts:check
 ```
+
+The automatic **Meta quality checks** gate needs no child checkouts. Cross-repository integration is a separate manual advisory assessment, not a prerequisite for every merge. With all five children provisioned, use the complete generation, semantic/package and integration-test sequence in [cross-repository checks](docs/cross-repo-command-contracts.md). That guide also covers upstream-main dispatch, exact revision evidence, failure interpretation and rollout order.
 
 When child repositories changed, also run their documented validation commands. For the CLI:
 
