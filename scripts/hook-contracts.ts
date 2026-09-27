@@ -776,16 +776,21 @@ export async function checkHookContracts(
       })
       .filter((path): path is string => typeof path === "string")
       .sort();
-    if (!sameStrings(owners, ["create", "remove"])) {
+    const hookInputCommands = commands.some(
+      (command) => command.path === "finish",
+    )
+      ? ["create", "finish", "remove"]
+      : ["create", "remove"];
+    if (!sameStrings(owners, hookInputCommands)) {
       addDiagnostic(
         diagnostics,
         "cli",
         "HOOK_INPUT_OPTION_OWNERSHIP",
         commandContractSource,
-        "--no-hook-input must be owned by exactly create and remove.",
+        `--no-hook-input must be owned by exactly ${hookInputCommands.join(", ")}.`,
       );
     }
-    for (const commandName of ["create", "remove"] as const) {
+    for (const commandName of hookInputCommands) {
       const command = commands.find(
         (candidate) => candidate.path === commandName,
       );
