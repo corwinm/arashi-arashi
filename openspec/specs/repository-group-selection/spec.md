@@ -32,7 +32,7 @@ The system SHALL provide a consistent `--group <group>` filter for commands that
 
 #### Scenario: Group filter supports multiple requested groups
 - **WHEN** a workspace has repositories in `core`, `docs`, and `extensions` groups
-- **AND** the user runs `arashi exec --group core --group docs -- bun run validate`
+- **AND** the user runs `arashi exec --group core --group docs -- pnpm run validate`
 - **THEN** Arashi selects repositories that belong to either `core` or `docs`
 - **AND** repositories that belong only to `extensions` are not executed
 
@@ -107,7 +107,7 @@ The system SHALL document repository groups for both human users and automation 
 
 #### Scenario: User reads command documentation
 - **WHEN** a user opens command documentation for repo-selecting commands
-- **THEN** the documentation includes examples such as `arashi status --group docs`, `arashi create feat/example --group core`, and `arashi exec --group docs -- bun run validate`
+- **THEN** the documentation includes examples such as `arashi status --group docs`, `arashi create feat/example --group core`, and `arashi exec --group docs -- pnpm run validate`
 - **AND** it explains that `--group` narrows `--only` when both are supplied
 
 #### Scenario: Agent reads Arashi skill guidance
