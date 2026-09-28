@@ -3,7 +3,9 @@
 ## Purpose
 
 Define the automation-safe machine-readable output contract for the Arashi CLI, including consistent JSON envelopes, stdout isolation, non-interactive behavior, command support classification, and related documentation and skill guidance.
+
 ## Requirements
+
 ### Requirement: JSON output envelope
 
 The Arashi CLI SHALL use a consistent JSON envelope for every command invocation that accepts `--json` and reaches command-level execution.
@@ -1157,3 +1159,26 @@ Configured create human, dry-run, JSON, and execution surfaces SHALL consume the
 - **WHEN** the final fitted destination is occupied or registered incompatibly
 - **THEN** configured create retains `WORKTREE_DESTINATION_COLLISION`
 - **AND** collision details identify the exact fitted destination rather than the ordinary over-budget candidate
+
+### Requirement: Create T3 handoff JSON results
+
+`aw create --t3 --json` SHALL use the standard one-document create envelope and include separate workspace creation, project, thread, prompt dispatch, UI, permission, bridge compatibility, receipt, and recovery fields without raw bridge output, prompt text, task-derived titles, credentials, or authenticated URLs.
+
+#### Scenario: JSON handoff succeeds
+
+- **WHEN** a JSON-mode create successfully hands the exact parent workspace to T3
+- **THEN** stdout contains exactly one valid `command: "create"` success envelope
+- **AND** data contains the exact workspace path, branch, effective permission, compatible bridge version, sanitized environment/project/thread identifiers, successful dispatch, and UI mode `none`
+
+#### Scenario: JSON handoff fails after workspace creation
+
+- **WHEN** JSON-mode create succeeds but T3 handoff fails or is indeterminate
+- **THEN** stdout contains exactly one valid `command: "create"` error envelope
+- **AND** error details preserve the complete successful creation data plus sanitized handoff stage, receipt, and recovery guidance
+- **AND** the process exits nonzero without human text on stdout
+
+#### Scenario: JSON validation fails before mutation
+
+- **WHEN** JSON-mode handoff has invalid prompt, permission, bridge, or conflicting launch input
+- **THEN** stdout contains exactly one valid structured error envelope
+- **AND** no workspace, receipt, project, or thread mutation occurs

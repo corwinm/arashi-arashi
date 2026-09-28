@@ -528,6 +528,13 @@ const completionCandidates = new Map<string, Obj>([
     "create.--conflict",
     { candidateKind: "choice", choices: ["ABORT", "REUSE_EXISTING"] },
   ],
+  [
+    "create.--permission",
+    {
+      candidateKind: "choice",
+      choices: ["approval-required", "auto-accept-edits", "full-access"],
+    },
+  ],
   ["create.--editor-host", { choices: ["cursor", "kiro", "vscode"] }],
   ["create.--group", { candidateKind: "group" }],
   ["create.--only", { candidateKind: "repository" }],
