@@ -46,11 +46,11 @@ No new live bridge dispatch was performed because `t3code` is not installed in t
 
 ## CI and review follow-up
 
-The CLI review identified four cases addressed by commits `1c8fa64` and `99aebb2`: optional-valued completion parsing, preserving proven remote success after receipt-storage failure, preserving bridge failures after receipt-storage failure, and keeping prompt cleanup errors separate from the dispatch outcome. Regression coverage includes generated shell completion behavior and injected filesystem failures. Human output and JSON recovery details retain actionable cleanup information without losing known project/thread IDs. All four review discussions were answered and resolved.
+The CLI review identified six cases addressed by commits `1c8fa64`, `99aebb2`, and `ad7d69f`: optional-valued completion parsing, preserving proven remote success after receipt-storage failure, preserving bridge failures after receipt-storage failure, keeping prompt cleanup errors separate from the dispatch outcome, blocking dispatch after move failures, and syncing receipt-directory metadata before dispatch on POSIX. Regression coverage includes generated shell completion behavior and injected filesystem failures. Human output and JSON recovery details retain actionable cleanup information without losing known project/thread IDs.
 
 Native Windows execution exposed a PowerShell security-module autoload failure in `Get-Acl`. The adapter now uses the Windows PowerShell .NET filesystem ACL methods directly, avoiding that module dependency while preserving owner-only permissions. A native-permissions dispatch test exercises the real platform implementation.
 
-The focused completion/handoff suite passed 322 tests (93 platform skips), and the final handoff/create suite passed 72 tests. Lint, typecheck, build, and canonical documentation validation passed. The full local suite after rebasing passed 3,361 tests with 111 skips and the same previously documented macOS `finish` failure.
+The focused completion/handoff suite passed 322 tests (93 platform skips), and the final handoff/create suite passed 74 tests. Lint, typecheck, build, and canonical documentation validation passed. The full local suite after rebasing passed 3,361 tests with 111 skips and the same previously documented macOS `finish` failure.
 
 ## Delivery state
 
