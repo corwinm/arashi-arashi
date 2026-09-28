@@ -35,4 +35,4 @@
 
 - [x] 6.1 Review CLI, docs, skill, and cross-repository diffs against the issue and OpenSpec artifacts; update artifacts if implementation evidence changes a design decision.
 - [x] 6.2 Run strict OpenSpec/meta validation and the applicable cross-repository command-contract assessment.
-- [x] 6.3 Commit each changed repository separately and open issue-linked, mutually cross-linked pull requests without archiving the OpenSpec change before merge.
+- [x] 6.3 Commit each changed repository separately and open issue-linked, mutually cross-linked pull requests. Archive timing was subsequently changed by the user's explicit request to archive and push before merging.

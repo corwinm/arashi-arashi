@@ -56,4 +56,6 @@ The focused completion/handoff suite passed 322 tests (93 platform skips), and t
 
 The change is delivered as separate pull requests for the [CLI implementation](https://github.com/corwinm/arashi/pull/202), [canonical documentation](https://github.com/corwinm/arashi-docs/pull/117), [packaged guidance](https://github.com/corwinm/arashi-skills/pull/82), and coordinating meta-repository artifacts. Each pull request references the originating issue and the complete related set.
 
-The OpenSpec change remains active. It must not be archived until the related implementation is merged.
+All four PRs passed their required checks before archive preparation, including Linux and Windows tests and builds/native acceptance on Linux, macOS, and Windows. The eight Codex review findings were addressed and resolved.
+
+The user explicitly requested archiving and pushing this change before merge after validation was complete, superseding the original post-merge archive timing. The implementation PRs remain open; archiving does not imply they have merged.
