@@ -35,6 +35,9 @@ The VS Code extension already invokes `aw create ... --editor-host vscode`; the 
 
 ## Review follow-up
 
+- Fresh non-bare initialization preserves worktree-directory omission unless the CLI explicitly sets it, including when no user file exists yet. Init resolves personal fallback paths for ignore reconciliation without copying them into shared configuration; bare initialization retains its existing repository-owned `..` layout when no personal fallback is selected.
+- Personal root resolution canonicalizes existing filesystem ancestors before deciding ignore applicability or rejecting the primary root. Linked configured commands inspect and reconcile repo-owned paths in the active checkout and personal worktree paths in primary, with scoped writes preserving unrelated rules and composing rollback snapshots.
+
 - In-repo configuration is the primary shared project policy. The separate home-directory configuration is an optional extra that supplies only unset personal fields; command-line options still take highest priority.
 - Legacy version migration preserves an omitted worktree directory in the persisted document, including across repeated invocations.
 - Standalone bootstrap, discovery, and doctor share effective-root ignore applicability. External roots require no Git ignore rule.
