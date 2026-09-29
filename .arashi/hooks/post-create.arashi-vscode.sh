@@ -2,5 +2,5 @@
 set -euo pipefail
 
 printf '%s\n' '***'
-CI=true corepack pnpm install --frozen-lockfile
+CI=true pnpm install --frozen-lockfile
 printf '%s\n' '***'
