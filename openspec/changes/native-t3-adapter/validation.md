@@ -10,15 +10,17 @@ An independent repository-aware review identified premature project selection an
 
 ## Local validation
 
-- CLI: focused adapter, receipt, create-default, and CLI-contract suite: 147 passed. Completion ownership audit: 306 passed, 98 skipped. Format, lint (existing warnings, no errors), TypeScript, generated contracts/completions, and compiled build passed.
+- CLI: focused adapter, receipt, create-default, and CLI-contract suite: 147 passed. Completion ownership audit: 306 passed, 98 skipped. Format, lint (existing warnings, no errors), TypeScript, generated contracts/completions/schema, and compiled build passed.
 - Docs: `pnpm validate` passed, including content, command semantics, build, links, and accessibility.
 - Skills: guidance aggregate passed all 21 checkers. Canonical release archive inspected (28 members); extracted-package guidance passed all 21 checkers.
 - Meta: strict active/all OpenSpec validation passed (84 changes); format, TypeScript, and tests passed (377 tests). Command, documented-command, and executable-distribution contract checks passed.
 
 Required broad checks were run, with existing baseline failures disclosed rather than described as passing:
 
-- CLI full suite: final counts recorded below. The unchanged starting CLI revision independently reproduces `finish` partial-descendant fault injection (`expected exit 1, received 0`) and `handoff --markdown` warning rendering (`[WARN]` versus Unicode warning symbol) on this macOS environment. Neither affected source nor those tests is changed by this feature.
+- CLI full suite on committed `9ab345b`: 3,407 passed, 116 skipped, two baseline failures (214 passing files, two failing, two skipped). The unchanged starting CLI revision independently reproduces `finish` partial-descendant fault injection (`expected exit 1, received 0`) and `handoff --markdown` warning rendering (`[WARN]` versus Unicode warning symbol) on this macOS environment. Neither affected source nor those tests is changed by this feature.
 - Meta `contracts:check`: hook, inline-hook, materialization, and naming checkers still reference removed `repos/arashi/docs/{hooks,configuration}.md`; the hook checker additionally flags existing `.arashi/hooks/post-create.arashi-presentation.sh` package provenance. Those guidance files are already absent in starting CLI e696367, and checker/hook files are unchanged from starting meta bdd73c9. No user guides were recreated in the CLI to mask these failures.
+
+Windows CI on the first implementation head passed all transport/catalog tests but exposed two POSIX-only receipt fault injectors. The test-only follow-up `0d0ed45` injects the Windows ACL step as well as directory sync, without changing runtime security behavior. Native/receipt unit tests and TypeScript passed locally after this fix; fresh CI runs validate the published head.
 
 The validation-only VS Code checkout and extracted skills package are temporary fixtures and are removed before delivery. These baseline failures remain compatibility/validation limitations; affected PR descriptions disclose them.
 
@@ -34,4 +36,4 @@ Supported authentication still requires a matching installed official CLI. Deskt
 
 ## Companion pull requests
 
-CLI commit `9ab345b`, docs commit `36133be`, skills commit `fdfd9f9` were independently reviewed and committed. Companions: [CLI #205](https://github.com/corwinm/arashi/pull/205), [docs #121](https://github.com/corwinm/arashi-docs/pull/121), [skills #85](https://github.com/corwinm/arashi-skills/pull/85). Meta coordination and remote check results follow after publication. Do not merge or archive this change as part of this task.
+CLI implementation commit `9ab345b` plus platform fault-injection test fix `0d0ed45`, docs commit `36133be`, skills commit `fdfd9f9` were independently reviewed and committed. Companions: [CLI #205](https://github.com/corwinm/arashi/pull/205), [docs #121](https://github.com/corwinm/arashi-docs/pull/121), [skills #85](https://github.com/corwinm/arashi-skills/pull/85). Meta coordination: [meta #390](https://github.com/corwinm/arashi-arashi/pull/390). All four PRs are cross-linked and registered with the originating T3 thread. Do not merge or archive this change as part of this task.
