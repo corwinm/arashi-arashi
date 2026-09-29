@@ -40,3 +40,5 @@ The VS Code extension already invokes `aw create ... --editor-host vscode`; the 
 - Standalone bootstrap, discovery, and doctor share effective-root ignore applicability. External roots require no Git ignore rule.
 - Bootstrap records each newly created directory and rolls back empty ancestors without removing pre-existing parents.
 - Companion create references and semantic checks describe optional standalone naming and full-path budget rejection without configured-mode shortening. Diagnostics use effective roots and exact planned destinations rather than fixed-layout inference.
+- Workspace editing loads preserve omitted personal fields; add, clone, pull, and preference-only init resolve personal ignore inputs separately from the state they persist. Neither normalized built-ins nor merged user values become authored project settings through unrelated mutations.
+- A personal worktree base cannot equal the primary checkout in either mode. Literal standalone ignore patterns escape metacharacters, and lifecycle JSON metadata reports the effective base consistently.
