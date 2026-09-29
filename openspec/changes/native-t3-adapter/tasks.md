@@ -7,4 +7,4 @@
 - [x] Update dedicated docs page, create reference, skill references, and generated contracts.
 - [x] Run required validation and review all affected diffs.
 - [x] Commit each repository independently and open cross-linked PRs referencing #389.
-- [ ] Verify remote checks and record evidence/compatibility limits; do not merge.
+- [x] Verify remote checks and record evidence/compatibility limits; do not merge.
