@@ -46,3 +46,16 @@ CLI implementation commit `9ab345b` plus platform fault-injection test follow-up
 - [Meta CI on 99c9ca2](https://github.com/corwinm/arashi-arashi/actions/runs/36624115632): passed. The final delivery-evidence-only commit is verified through the checks attached to meta #390.
 
 All implementation PRs remain open and unmerged. Local baseline broad-check failures above remain explicitly disclosed despite green remote feature CI.
+
+## Existing PR feedback corrections
+
+Addressed the existing Codex feedback without requesting another Codex review:
+
+- CLI [dry-run authentication mutation](https://github.com/corwinm/arashi/pull/205#discussion_r4137722009): dry-run checks CLI version and read-only runtime metadata, issuing/revoking no session. Actual execution still verifies authenticated capabilities.
+- CLI [project path equivalence](https://github.com/corwinm/arashi/pull/205#discussion_r4137722015): resolve existing roots and compare physical filesystem identities, retaining ambiguous-match protection and avoiding blind case folding. Coverage includes aliases, duplicate equivalent roots, and Windows casing/separators.
+- CLI [schema constraints](https://github.com/corwinm/arashi/pull/205#discussion_r4137846949): generated string/path patterns agree with runtime validation, including controls, whitespace, Unix/Windows/UNC paths, relative executable paths, trailing newlines, and Unicode line separators.
+- Docs [recovery selection](https://github.com/corwinm/arashi-docs/pull/121#discussion_r4137715281) and skills [recovery selection](https://github.com/corwinm/arashi-skills/pull/85#discussion_r4137725769): repeat original provider/model/effort overrides and permission. Receipts retain their saved selection; conflicting flags or Arashi defaults block retry, while changed T3 defaults do not replace it.
+
+Follow-up child commits: CLI `6187de4`, docs `961f77f`, skills `cec598b`. Independent repository-aware review checked the fixes; its two wording/regex findings were corrected before push. Focused adapter/create/schema tests: 115 passed, one Windows-only test skipped locally. CLI format, lint (zero errors), typecheck, generated schema, contracts/completions, and build pass. Docs `pnpm validate` passes. Skills guidance aggregate passes 21/21. Meta strict OpenSpec validation passes 84/84, format/typecheck pass, and tests pass 377/377. The complete local CLI suite and new-head remote CI are being checked separately.
+
+The meta aggregate remains limited by the documented baseline documentation/hook mismatches and absent validation-only VS Code/package fixtures; maintained documented-command checks pass. No VS Code implementation changes or additional live provider dispatch are needed for these focused fixes. The prior bounded T3 0.0.43 smoke remains the end-to-end evidence. All companion PRs remain cross-linked, open, and unmerged.

@@ -37,6 +37,12 @@ T3 handoff SHALL use official T3 0.0.43 and orchestration protocol 1 through a n
 - **THEN** Arashi fails before workspace mutation with selection/restart/version guidance
 - **AND** does not guess another profile or download a component
 
+#### Scenario: Dry-run avoids authentication mutation
+
+- **WHEN** create with `--t3` is invoked with `--dry-run`
+- **THEN** Arashi checks CLI version and read-only environment metadata without issuing or revoking a session
+- **AND** defers authenticated capability checks to actual execution and creates no receipt, project, thread, or task
+
 #### Scenario: Ordinary create has no T3 dependency
 
 - **WHEN** create is invoked without `--t3`
@@ -51,6 +57,12 @@ After successful coordinated creation and required setup, Arashi SHALL dispatch 
 - **WHEN** all selected parent and child worktrees are successfully prepared
 - **THEN** Arashi uses the exact canonical parent path as project workspaceRoot
 - **AND** sets worktreePath to null, opens no UI, and submits the validated task
+
+#### Scenario: Existing project uses an equivalent physical path
+
+- **WHEN** a live project root identifies the exact parent checkout through different casing, separators, or a filesystem alias
+- **THEN** Arashi reuses the physical matching project instead of creating another
+- **AND** refuses ambiguous multiple matches
 
 #### Scenario: Workspace preparation fails
 
