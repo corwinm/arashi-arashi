@@ -32,3 +32,11 @@ The VS Code extension already invokes `aw create ... --editor-host vscode`; the 
 - Shared absolute roots could collide: qualify by readable repository name plus a canonical-path digest.
 - A custom in-repository standalone root could leak into Git status: derive, append, and verify its directory ignore rule transactionally.
 - Tests could inherit a developer's real user file: integration fixtures set isolated `HOME` values where personal resolution is exercised; the validation suite runs with no repository user file assumed.
+
+## Review follow-up
+
+- In-repo configuration is the primary shared project policy. The separate home-directory configuration is an optional extra that supplies only unset personal fields; command-line options still take highest priority.
+- Legacy version migration preserves an omitted worktree directory in the persisted document, including across repeated invocations.
+- Standalone bootstrap, discovery, and doctor share effective-root ignore applicability. External roots require no Git ignore rule.
+- Bootstrap records each newly created directory and rolls back empty ancestors without removing pre-existing parents.
+- Companion create references and semantic checks describe optional standalone naming and full-path budget rejection without configured-mode shortening. Diagnostics use effective roots and exact planned destinations rather than fixed-layout inference.

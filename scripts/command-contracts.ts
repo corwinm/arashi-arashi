@@ -526,7 +526,10 @@ const completionCandidates = new Map<string, Obj>([
   ],
   [
     "config effective.--switch-mode",
-    { candidateKind: "choice", choices: ["auto", "cd", "herdr", "launch", "sesh"] },
+    {
+      candidateKind: "choice",
+      choices: ["auto", "cd", "herdr", "launch", "sesh"],
+    },
   ],
   [
     "completion.shell",
