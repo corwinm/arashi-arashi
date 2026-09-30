@@ -18,4 +18,4 @@ Issue #389 removes the separately maintained T3 bridge from Arashi's handoff pat
 
 ## Impact
 
-CLI, CLI schema and generated command/completion contracts, docs, skills, and meta coordination. No VS Code invocation change is required: new options are additive and editor launch remains incompatible with T3 handoff. No implementation PR will be merged in this task.
+CLI, CLI schema and generated command/completion contracts, docs, skills, and meta coordination. No VS Code invocation change is required: new options are additive and editor launch remains incompatible with T3 handoff. Child implementation, documentation, and skill PRs merge before the meta-repo syncs and archives the canonical specification.

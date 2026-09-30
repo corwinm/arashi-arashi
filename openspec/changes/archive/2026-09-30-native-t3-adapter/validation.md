@@ -34,7 +34,7 @@ Observed selection: provider instance `codex`, model `gpt-6.1-sol`, `reasoningEf
 
 Supported authentication still requires a matching installed official CLI. Desktop-only authentication and remote environment routing are not claimed. Existing bridge preferences migrate explicitly to `defaults.t3.{provider,model,effort}`; `thinkingEffort` maps to `effort`. Bridge-era receipts remain blocking.
 
-## Companion pull requests
+## Companion pull requests (initial delivery)
 
 CLI implementation commit `9ab345b` plus platform fault-injection test follow-ups through `304ee1d`, docs commit `36133be`, skills commit `fdfd9f9` were independently reviewed and committed. Companions: [CLI #205](https://github.com/corwinm/arashi/pull/205), [docs #121](https://github.com/corwinm/arashi-docs/pull/121), [skills #85](https://github.com/corwinm/arashi-skills/pull/85). Meta coordination: [meta #390](https://github.com/corwinm/arashi-arashi/pull/390). All four PRs are cross-linked and registered with the originating T3 thread. Do not merge or archive this change as part of this task.
 
@@ -85,3 +85,15 @@ Merged each affected checkout's latest `origin/main`: CLI `653ef88` (#204), docs
 Focused validation: 213 passed, 4 platform-specific skips across native transport/receipts, create defaults, shared user configuration/effective diagnostics, CLI contracts, and configuration schema constraints. CLI format, lint (zero errors), typecheck, both schema regeneration checks, CLI contracts/completions, and compiled build passed. Docs `pnpm validate` passed. Skills source/package guidance aggregate passed 21/21; personal naming drift fixtures now target their owning paragraph rather than an earlier T3 preferences mention.
 
 Meta: strict OpenSpec 85/85, format, typecheck, 377 tests, and maintained documented-command contracts passed. The broad contract aggregate remains unsuccessful: it expects absent VS Code/package fixtures and removed CLI user guides, flags existing hook provenance, and retains obsolete standalone naming expectations after #387. No removed guides were recreated to hide those failures. The full CLI host suite and fresh remote CI results are recorded on the companion implementation PR; the existing local finish fault-injection and handoff warning failures were observed again during that run. No new real-provider dispatch or Codex review was requested. All implementation PRs remain open and unmerged.
+
+## Approved final integration and archive
+
+The user subsequently authorized addressing existing feedback, syncing/archiving OpenSpec, and merging all four PRs with the meta-repo last. Earlier unmerged/no-archive statements above describe their historical delivery stage.
+
+Final review found one new docs issue: the central configuration reference excluded `defaults.t3`. Docs commit `4c3d806` adds all five optional fields, validation, field precedence, T3 fallback semantics, and effective-source diagnostics; the integration page links to it. `pnpm validate` and [docs CI](https://github.com/corwinm/arashi-docs/actions/runs/36686752683) passed. All seven existing review threads were verified against implementation/tests/guidance and resolved. No new Codex feedback was requested.
+
+[CLI CI](https://github.com/corwinm/arashi/actions/runs/36683675413) on `7280023` passed all quality, Linux/Windows full-suite, platform build, and native acceptance checks. Final local host suite: 3,480 passed, 123 skipped, and the same two baseline finish/handoff failures; no T3/user-configuration tests failed. [Skills CI](https://github.com/corwinm/arashi-skills/actions/runs/36683678130) passed on `966983f`. Local broad meta contract limitations above remain disclosed.
+
+Child merges completed before the canonical OpenSpec archive: [CLI #205](https://github.com/corwinm/arashi/pull/205) at `940611168e0e30cc0748a4a3c9a12164123c1281`, [skills #85](https://github.com/corwinm/arashi-skills/pull/85) at `d7697238748668430cfa9a079c0028ecaffca79b`, and [docs #121](https://github.com/corwinm/arashi-docs/pull/121) at `3db53923456d8332a98464447a9d5ff9274f7881`. Meta [#390](https://github.com/corwinm/arashi-arashi/pull/390) owns the canonical spec sync and historical archive and merges last after its final checks pass.
+
+Post-archive validation: canonical sync was compared against all nine complete delta requirement blocks; the former optional-bridge requirement is removed. Strict OpenSpec validation passed 84/84 active changes/specs, meta format/typecheck passed, all 377 meta tests passed, and maintained documented-command contracts passed. The broad local meta aggregate retains the disclosed unrelated removed-guide/naming/hook/absent-fixture failures.

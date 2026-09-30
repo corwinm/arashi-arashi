@@ -22,43 +22,6 @@
 - **THEN** Arashi returns an actionable validation error
 - **AND** does not mutate workspace, Git, hook, managed-ignore, receipt, project, or thread state
 
-### Requirement: Use a compatible native official T3 adapter
-
-T3 handoff SHALL accept stable official T3 releases >=0.0.43 with matching CLI/server versions, negotiated orchestration protocol 1, and required authentication/catalog capabilities through a native adapter. Acceptance SHALL NOT depend on an exact patch whitelist. Prerelease, malformed, older, mismatched, or incompatible components SHALL fail closed. CLI/server identity and versions SHALL be rechecked before dispatch authentication. Arashi SHALL verify the selected local environment and required installed official CLI, authenticate through official session mechanisms, and check scopes/catalog/snapshot before workspace mutation where feasible. Arashi SHALL NOT download runtime components, invoke the third-party bridge, or access private databases or credential stores. Ordinary commands SHALL NOT require T3.
-
-#### Scenario: Official environment is compatible
-
-- **WHEN** the selected local environment and installed official CLI report matching stable versions >=0.0.43 and protocol 1
-- **THEN** Arashi verifies authenticated capabilities before workspace mutation
-
-#### Scenario: Newer stable release is compatible
-
-- **WHEN** matching newer stable CLI/server components expose protocol 1 and required authentication/catalog/snapshot interfaces
-- **THEN** Arashi accepts the release without adding it to a patch whitelist
-
-#### Scenario: Component versions change during preparation
-
-- **WHEN** the installed CLI or selected server version changes after preflight
-- **THEN** Arashi rechecks compatibility before issuing a dispatch session
-- **AND** mismatched or changed components block remote mutation while preserving the prepared workspace
-
-#### Scenario: Prerequisites fail
-
-- **WHEN** discovery, authentication, reachability, or compatibility cannot be verified
-- **THEN** Arashi fails before workspace mutation with selection/restart/version guidance
-- **AND** does not guess another profile or download a component
-
-#### Scenario: Dry-run avoids authentication mutation
-
-- **WHEN** create with `--t3` is invoked with `--dry-run`
-- **THEN** Arashi checks CLI version and read-only environment metadata without issuing or revoking a session
-- **AND** defers authenticated capability checks to actual execution and creates no receipt, project, thread, or task
-
-#### Scenario: Ordinary create has no T3 dependency
-
-- **WHEN** create is invoked without `--t3`
-- **THEN** no T3 discovery, authentication, or invocation occurs
-
 ### Requirement: Dispatch to the exact created parent checkout
 
 After successful coordinated creation and required setup, Arashi SHALL dispatch through official interfaces with the exact created parent worktree as folder workspace, the current checkout, no UI opening, the validated prompt, and the effective permission mode. It SHALL NOT dispatch when creation fails or ask T3 to create another worktree.
@@ -173,6 +136,43 @@ Canonical documentation SHALL state that the command runs on the repository/T3 h
 
 ## ADDED Requirements
 
+### Requirement: Use a compatible native official T3 adapter
+
+T3 handoff SHALL accept stable official T3 releases >=0.0.43 with matching CLI/server versions, negotiated orchestration protocol 1, and required authentication/catalog capabilities through a native adapter. Acceptance SHALL NOT depend on an exact patch whitelist. Prerelease, malformed, older, mismatched, or incompatible components SHALL fail closed. CLI/server identity and versions SHALL be rechecked before dispatch authentication. Arashi SHALL verify the selected local environment and required installed official CLI, authenticate through official session mechanisms, and check scopes/catalog/snapshot before workspace mutation where feasible. Arashi SHALL NOT download runtime components, invoke the third-party bridge, or access private databases or credential stores. Ordinary commands SHALL NOT require T3.
+
+#### Scenario: Official environment is compatible
+
+- **WHEN** the selected local environment and installed official CLI report matching stable versions >=0.0.43 and protocol 1
+- **THEN** Arashi verifies authenticated capabilities before workspace mutation
+
+#### Scenario: Newer stable release is compatible
+
+- **WHEN** matching newer stable CLI/server components expose protocol 1 and required authentication/catalog/snapshot interfaces
+- **THEN** Arashi accepts the release without adding it to a patch whitelist
+
+#### Scenario: Component versions change during preparation
+
+- **WHEN** the installed CLI or selected server version changes after preflight
+- **THEN** Arashi rechecks compatibility before issuing a dispatch session
+- **AND** mismatched or changed components block remote mutation while preserving the prepared workspace
+
+#### Scenario: Prerequisites fail
+
+- **WHEN** discovery, authentication, reachability, or compatibility cannot be verified
+- **THEN** Arashi fails before workspace mutation with selection/restart/version guidance
+- **AND** does not guess another profile or download a component
+
+#### Scenario: Dry-run avoids authentication mutation
+
+- **WHEN** create with `--t3` is invoked with `--dry-run`
+- **THEN** Arashi checks CLI version and read-only environment metadata without issuing or revoking a session
+- **AND** defers authenticated capability checks to actual execution and creates no receipt, project, thread, or task
+
+#### Scenario: Ordinary create has no T3 dependency
+
+- **WHEN** create is invoked without `--t3`
+- **THEN** no T3 discovery, authentication, or invocation occurs
+
 ### Requirement: Resolve supported model preferences explicitly
 
 Arashi SHALL resolve `defaults.t3` per field using explicit CLI > workspace > user settings, followed by T3 project/server selections and unambiguous catalog defaults. Provider routing SHALL use a configured instance. Model and effort SHALL be validated against the official catalog without hardcoded model fallback. Bridge preferences SHALL require explicit migration and SHALL NOT be silently read.
@@ -206,3 +206,11 @@ Native receipts SHALL persist known environment/project/thread/message identifie
 
 - **WHEN** any valid version-1 receipt belongs to the exact checkout
 - **THEN** native dispatch is blocked until manual reconciliation
+
+## REMOVED Requirements
+
+### Requirement: Use an installed compatible optional bridge
+
+**Reason**: The native adapter replaces third-party bridge dispatch with supported official T3 interfaces and explicit version/capability negotiation.
+
+**Migration**: Install the matching official T3 CLI and use `defaults.t3` or explicit selection flags. Migrate chosen preferences explicitly; existing bridge-era receipts continue blocking duplicate dispatch until manually reconciled.
