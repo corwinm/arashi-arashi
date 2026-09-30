@@ -1,10 +1,4 @@
-# t3-code-workspace-handoff Specification
-
-## Purpose
-
-Define optional T3 Code handoff from coordinated workspace creation, including prompt validation, native official T3 transport and authentication, negotiated version/capability compatibility, model preferences, explicit permissions, exact-checkout dispatch, outcome reporting, and safe recovery with retained legacy receipt protection.
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: Validate exactly one T3 prompt source before mutation
 
@@ -140,6 +134,8 @@ Canonical documentation SHALL state that the command runs on the repository/T3 h
 - **THEN** documentation identifies that evidence exactly
 - **AND** does not claim Windows, Linux, or mobile end-to-end validation from unit-level subprocess coverage
 
+## ADDED Requirements
+
 ### Requirement: Use a compatible native official T3 adapter
 
 T3 handoff SHALL accept stable official T3 releases >=0.0.43 with matching CLI/server versions, negotiated orchestration protocol 1, and required authentication/catalog capabilities through a native adapter. Acceptance SHALL NOT depend on an exact patch whitelist. Prerelease, malformed, older, mismatched, or incompatible components SHALL fail closed. CLI/server identity and versions SHALL be rechecked before dispatch authentication. Arashi SHALL verify the selected local environment and required installed official CLI, authenticate through official session mechanisms, and check scopes/catalog/snapshot before workspace mutation where feasible. Arashi SHALL NOT download runtime components, invoke the third-party bridge, or access private databases or credential stores. Ordinary commands SHALL NOT require T3.
@@ -210,3 +206,11 @@ Native receipts SHALL persist known environment/project/thread/message identifie
 
 - **WHEN** any valid version-1 receipt belongs to the exact checkout
 - **THEN** native dispatch is blocked until manual reconciliation
+
+## REMOVED Requirements
+
+### Requirement: Use an installed compatible optional bridge
+
+**Reason**: The native adapter replaces third-party bridge dispatch with supported official T3 interfaces and explicit version/capability negotiation.
+
+**Migration**: Install the matching official T3 CLI and use `defaults.t3` or explicit selection flags. Migrate chosen preferences explicitly; existing bridge-era receipts continue blocking duplicate dispatch until manually reconciled.
