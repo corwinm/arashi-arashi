@@ -521,6 +521,17 @@ const sameStrings = (left: string[] | undefined, right: string[]): boolean =>
   JSON.stringify(sorted(left)) === JSON.stringify(sorted(right));
 const completionCandidates = new Map<string, Obj>([
   [
+    "config effective.--create-launch",
+    { candidateKind: "choice", choices: ["auto", "herdr", "none", "sesh"] },
+  ],
+  [
+    "config effective.--switch-mode",
+    {
+      candidateKind: "choice",
+      choices: ["auto", "cd", "herdr", "launch", "sesh"],
+    },
+  ],
+  [
     "completion.shell",
     { candidateKind: "shell", choices: ["bash", "fish", "powershell", "zsh"] },
   ],
