@@ -8,3 +8,5 @@
 - [x] Run required validation and review all affected diffs.
 - [x] Commit each repository independently and open cross-linked PRs referencing #389.
 - [x] Verify remote checks and record evidence/compatibility limits; do not merge.
+
+- [x] Replace the exact patch whitelist with a stable-version minimum, negotiated protocol/capabilities, matching CLI/server checks, and source review of newer official T3 interfaces.

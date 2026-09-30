@@ -24,12 +24,23 @@
 
 ### Requirement: Use a compatible native official T3 adapter
 
-T3 handoff SHALL use official T3 0.0.43 and orchestration protocol 1 through a native adapter. Arashi SHALL verify the selected local environment and required installed official CLI, authenticate through official session mechanisms, and check scopes/catalog/snapshot before workspace mutation where feasible. Arashi SHALL NOT download runtime components, invoke the third-party bridge, or access private databases or credential stores. Ordinary commands SHALL NOT require T3.
+T3 handoff SHALL accept stable official T3 releases >=0.0.43 with matching CLI/server versions, negotiated orchestration protocol 1, and required authentication/catalog capabilities through a native adapter. Acceptance SHALL NOT depend on an exact patch whitelist. Prerelease, malformed, older, mismatched, or incompatible components SHALL fail closed. CLI/server identity and versions SHALL be rechecked before dispatch authentication. Arashi SHALL verify the selected local environment and required installed official CLI, authenticate through official session mechanisms, and check scopes/catalog/snapshot before workspace mutation where feasible. Arashi SHALL NOT download runtime components, invoke the third-party bridge, or access private databases or credential stores. Ordinary commands SHALL NOT require T3.
 
 #### Scenario: Official environment is compatible
 
-- **WHEN** the selected local environment and installed official CLI report 0.0.43 and protocol 1
+- **WHEN** the selected local environment and installed official CLI report matching stable versions >=0.0.43 and protocol 1
 - **THEN** Arashi verifies authenticated capabilities before workspace mutation
+
+#### Scenario: Newer stable release is compatible
+
+- **WHEN** matching newer stable CLI/server components expose protocol 1 and required authentication/catalog/snapshot interfaces
+- **THEN** Arashi accepts the release without adding it to a patch whitelist
+
+#### Scenario: Component versions change during preparation
+
+- **WHEN** the installed CLI or selected server version changes after preflight
+- **THEN** Arashi rechecks compatibility before issuing a dispatch session
+- **AND** mismatched or changed components block remote mutation while preserving the prepared workspace
 
 #### Scenario: Prerequisites fail
 
